@@ -15,18 +15,21 @@ counts).
 | Catalog | Storage | Seq throughput | Seq p50 | Seq p99 | Concurrent (8w) | Conflict rate |
 |---|---|---|---|---|---|---|
 | **Nessie** 0.107.5 | MinIO / S3 | 170.6 /s | 4.87 ms | 16.2 ms | 136.3 /s | 82.1% |
-| **LakeCat** 0.2.1 | MinIO / S3 (Turso state) | 148.6 /s | 5.34 ms | 21.2 ms | 288.0 /s | 70.2% |
+| **LakeCat** 0.2.1 + read pool | MinIO / S3 (Turso state) | **178.9 /s** | **5.05 ms** | **13.47 ms** | **287.8 /s** | 72.3% |
 | **Gravitino** (iceberg-rest) | MinIO / S3 | 132.4 /s | 6.34 ms | 19.7 ms | 272.6 /s | 0% |
 | **Polaris** 1.5.0 | MinIO / S3 | 84.0 /s | 10.40 ms | 30.3 ms | 61.5 /s | 7.5% |
 
-(All four in one `bench-stack.sh` sweep; Polaris is auto-bootstrapped — an OAuth2
-token + an S3 catalog on the same `warehouse` bucket — by `polaris-bootstrap.sh`.)
+(Nessie, Gravitino, and Polaris are from the original all-catalog `bench-stack.sh`
+sweep. LakeCat was rerun independently on 2026-08-07 after adding the pooled read
+connections, with the same driver parameters and the same Docker MinIO network;
+the other catalog rows are retained as the reference sweep.)
 
-**LakeCat 0.2.1 is competitive with the mature Java catalogs — #2 on sequential
-latency and #1 on concurrent throughput.** Its commit p50 (5.34 ms) is *faster* than
-Gravitino (6.34 ms) and Polaris (10.40 ms) and within ~10% of Nessie (4.87 ms); on
-concurrent throughput it is **first** (288 /s, just ahead of Gravitino's 273 and
-~2.1× Nessie). That is a large change from 0.1.1, where LakeCat's commit p50 was
+**LakeCat 0.2.1 + read pool is now first on sequential throughput and concurrent
+throughput in this ranking.** Its commit p50 (5.05 ms) is second only to Nessie
+(4.87 ms), while its p99 (13.47 ms) is the best of the four reference rows. The
+178.9/s sequential result is 20% above the earlier LakeCat reference result of
+148.6/s; the concurrent result remains effectively unchanged at 287.8/s. This is
+a large change from 0.1.1, where LakeCat's commit p50 was
 ~2× worse and its concurrent throughput was the worst of the field (38.5 /s).
 
 The concurrent column reflects **commit-conflict policy** as much as raw speed:
@@ -72,8 +75,10 @@ write a real `metadata.json` per commit — see History below; before that, the
 
 ## Audit and Idempotency
 
-LakeCat's remaining ~13% sequential gap to Nessie (149 vs 171 commits/s) is **not a
-language gap — it is work the other catalogs do not do.** Every LakeCat commit runs
+The earlier LakeCat sequential gap to Nessie (149 vs 171 commits/s) was **not a
+language gap — it was work the other catalogs do not do.** The read-pool rerun now
+puts LakeCat ahead on sequential throughput, while the durable bookkeeping cost
+still explains why its p50 remains just behind Nessie. Every LakeCat commit runs
 **seven writes inside one transaction**:
 
 1. the metadata-pointer **compare-and-swap** (the actual commit),
@@ -124,7 +129,7 @@ waiting on S3; on tails, memory, and startup the Rust catalog keeps its edge.
   Idempotency*) — the bulk of its remaining sequential gap to Nessie's leaner
   version store.
 - **The concurrent column is commit-conflict policy, not speed.** Strict-CAS
-  catalogs (LakeCat 70%, Nessie 82%) both retry most of their 8-writer commits;
+  catalogs (LakeCat 72%, Nessie 82%) both retry most of their 8-writer commits;
   LakeCat still leads the column because its conflict detection and bounded retry
   are cheap, so it churns through successful same-table commits faster.
 

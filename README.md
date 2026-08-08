@@ -11,7 +11,7 @@ object-store cache) is meant to shine.
 
 | Name | Status | What it measures |
 | --- | --- | --- |
-| `commit` | **ready** | Iceberg REST **commit-path** latency + throughput across catalogs — the impartial, catalog-only comparison (detailed below). LakeCat lands **#2 of 4** (vs Nessie/Gravitino/Polaris). |
+| `commit` | **ready** | Iceberg REST **commit-path** latency + throughput across catalogs — the impartial, catalog-only comparison (detailed below). The latest LakeCat rerun lands **#1 on throughput** (vs Nessie/Gravitino/Polaris). |
 | `write-data` | **ready** | Realistic **writes**: a real Parquet data file → the same MinIO bucket, then a LakeCat commit. Write throughput under realistic payloads. |
 | `cache-scan` | **ready** | **Cold vs warm Parquet scan** via Sail's [Foyer object-store cache](https://github.com/lakehq/sail/issues/1015): measured **~26×** warm-vs-cold (per-file p50 warm 1.81 ms vs cold/no-cache ~47.5 ms; 87 MB dataset). |
 | `rust-vs-jvm` | **ready** | **Sail/DataFusion (Rust) vs Apache Spark 3.5.3 (JVM)**, same query/files/MinIO: **1.63×** engine edge with no local cache (Rust 446 ms vs Spark-warm 729 ms p50), **57.5×** with the warm Foyer cache. |
