@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build lakecat-service for Linux and stage the binary for the runtime image.
 #
-# As of LakeCat 0.2.1, the only external source dependency is Sail, consumed as a
+# As of LakeCat 0.3.0, the only external source dependency is Sail, consumed as a
 # Cargo *git* dependency on the querygraph/sail `lakecat` branch (public), so the
 # build needs network access to fetch it — not a ../sail path mount. Grust and
 # TypeSec are now published crates (Grust 0.11.0), so no sibling checkout is

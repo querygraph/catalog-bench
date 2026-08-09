@@ -1,14 +1,15 @@
 # Reproducible commit-benchmark harness for Iceberg REST catalogs.
 #
-# LakeCat is fully wired and verified here. Polaris, Gravitino, and Unity are
-# included behind compose profiles with best-effort upstream images + config;
-# each needs a bootstrap or auth step that is NOT hands-off (see README
-# "Bootstrap caveats"). Bring up only what you need, e.g.:
+# LakeCat is fully wired and verified here. Nessie, Polaris, Gravitino, and Unity
+# are included behind compose profiles with best-effort upstream images + config;
+# some require a bootstrap or auth step (see README "Bootstrap caveats"). Bring
+# up only what you need, e.g.:
 #
 #   docker/build-lakecat.sh && docker compose up -d lakecat
 #   docker compose run --rm bench --base-url http://lakecat:8181/catalog --create
 #
 # or enable an external catalog by profile:
+#   docker compose --profile nessie up -d nessie
 #   docker compose --profile gravitino up -d gravitino
 services:
   # --- LakeCat (verified) -------------------------------------------------
@@ -34,6 +35,27 @@ services:
       AWS_ALLOW_HTTP: "true"
     volumes:
       - lakecat-data:/data
+
+  # --- Apache Nessie -------------------------------------------------------
+  # Latest release used by the 2026-08-08 sweep. Its concurrent Iceberg REST
+  # commit path returned request-context HTTP 500s in every measured round; the
+  # profile is retained for exact reproduction, not presented as a valid row.
+  nessie:
+    image: ghcr.io/projectnessie/nessie:0.108.4-java
+    networks: [lakehouse-net]
+    ports: ["19120:19120"]
+    profiles: ["nessie"]
+    environment:
+      NESSIE_CATALOG_DEFAULT_WAREHOUSE: warehouse
+      NESSIE_CATALOG_WAREHOUSES_WAREHOUSE_LOCATION: s3://warehouse/
+      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_AUTH_TYPE: STATIC
+      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_ACCESS_KEY: urn:nessie-secret:quarkus:s3creds
+      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_ENDPOINT: http://minio:9000
+      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_EXTERNAL_ENDPOINT: http://127.0.0.1:9000
+      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_REGION: us-east-1
+      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_PATH_STYLE_ACCESS: "true"
+      S3CREDS_NAME: admin
+      S3CREDS_SECRET: password
 
   # --- Apache Polaris (best-effort; OAuth2 bootstrap required) -------------
   # Polaris bootstraps a root principal on first run and prints its

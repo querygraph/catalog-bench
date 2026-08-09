@@ -6,9 +6,9 @@ every catalog writes to one bucket), see **[README.md](README.md) → "Docker se
 for impartial runs with MinIO"**. This file covers the LakeCat-from-source build
 and day-to-day operation.
 
-**LakeCat is fully wired and verified here.** Polaris and Gravitino are included
-behind compose profiles with best-effort upstream images; each needs a
-bootstrap/auth step that is not hands-off (see *Bootstrap caveats*). Unity OSS has a
+**LakeCat is fully wired and verified here.** Nessie, Polaris, and Gravitino are
+included behind compose profiles with best-effort upstream images; some require
+upstream-specific bootstrap or auth (see *Bootstrap caveats*). Unity OSS has a
 profile too but is **not benchmarkable on the commit path** until its write
 endpoints ship (read-only until PR #1618 / 0.6.0 — see *Bootstrap caveats*).
 
@@ -23,7 +23,7 @@ builds:
   lakecat/                <- built from source
 ```
 
-As of LakeCat 0.2.1 the only sibling checkout needed is `lakecat` itself. Sail is
+As of LakeCat 0.3.0 the only sibling checkout needed is `lakecat` itself. Sail is
 a Cargo **git** dependency on `querygraph/sail#lakecat`, fetched during the build;
 Grust (0.11.0) and TypeSec are now **published crates**, so neither needs a local
 path checkout.
@@ -72,7 +72,13 @@ Builds LakeCat → image → (re)starts the container → ensures the MinIO `war
 bucket → benchmarks every reachable catalog with identical parameters (LakeCat with
 `--location s3://warehouse/lakecat` + idempotency; Nessie/Gravitino with their
 prefixes; Polaris when `POLARIS_TOKEN` is set). Tunables: `ITER`, `CONC`, `DUR`,
-`SKIP_BUILD=1`, `POLARIS_TOKEN`, `POLARIS_PREFIX`.
+`SKIP_BUILD=1`, `POLARIS_TOKEN`, `POLARIS_CATALOG`.
+
+The driver deliberately exits nonzero if any concurrent request fails. With
+Nessie 0.108.4, the one-shot command therefore stops on its reproduced
+request-context HTTP 500s; this is an integrity gate, not a harness failure. See
+[RESULTS.md](RESULTS.md) for the six-round final protocol that retains Nessie's
+complete report as DQ while continuing the other catalogs.
 
 ### Manual
 
@@ -93,6 +99,7 @@ Enable an external catalog by profile (or run them from `~/src/boat`):
 
 ```sh
 docker compose --profile gravitino up -d gravitino
+docker compose --profile nessie    up -d nessie
 docker compose --profile polaris   up -d polaris
 docker compose --profile unity     up -d unitycatalog
 ```
@@ -111,15 +118,19 @@ docker compose --profile unity     up -d unitycatalog
   object growth before accepting a run. Do not use `jdbc:sqlite::memory:` either:
   each pooled JDBC connection gets an isolated database and concurrent writers
   fail against missing schema; the compose file uses `/data/gravitino.db`.
+- **Nessie** uses the official `0.108.4-java` image. Its final five measured
+  eight-writer runs all returned Quarkus `ContextNotActiveException` HTTP 500s,
+  so its raw throughput is published as DQ. The compose profile is exact
+  reproduction infrastructure, not evidence of a valid result.
 - **Unity (OSS)** released builds (latest 0.5.0) serve Iceberg REST **read-only** —
   there is no external `updateTable`/`set-properties` commit handler, so Unity is
   *out of the comparison*, not merely un-bootstrapped. Commit support exists only in
   unmerged draft PR #1618 (unreleased 0.6.0); build the image from that branch to
   benchmark it. The `unity` compose profile is kept ready for when it lands.
 
-Polaris and Gravitino are scaffolded honestly: the service definitions and
-run-script hooks are correct, but their first-run bootstrap/auth is upstream-specific
-and must be completed before the commit numbers mean anything. Unity OSS is wired the
+Nessie, Polaris, and Gravitino are scaffolded honestly: the service definitions
+and run-script hooks are correct, but their setup and version-specific behavior
+must be checked before the commit numbers mean anything. Unity OSS is wired the
 same way but blocked upstream (read-only REST). LakeCat is the one path proven
 end-to-end in this harness.
 
