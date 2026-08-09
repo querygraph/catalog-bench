@@ -1,0 +1,111 @@
+# Why Nessie's row is marked Err
+
+Apache Nessie posts the fastest raw successful concurrent throughput in the
+final sweep — and its row carries no rank. It is listed last, marked **Err**,
+because in every measured round the server returned HTTP 500 responses, and a
+round with request errors is not rank-eligible. This document is the complete
+account: what failed, how we know it is the server and not the harness, why
+the row is *Err* rather than "disqualified", why an earlier public row looked
+healthy, and what would restore a numeric rank.
+
+## What happened
+
+In all five measured rounds of the 2026-08-08 final sweep, Nessie 0.108.4
+returned a total of **97 HTTP 500 responses** (median error rate 0.366%)
+alongside 190.0/s of successful commits. The benchmark's validity rule —
+declared before the sweep, applied identically to every catalog — is that a
+numeric rank requires **zero request errors in every measured round**. LakeCat,
+Polaris, and Gravitino each completed 5/5 valid rounds with zero errors;
+Nessie completed 0/5.
+
+An HTTP 500 is not a conflict. A 409 conflict is the catalog *working*: a
+stale writer correctly losing compare-and-swap. A 500 is the catalog
+*failing*: the request neither succeeded nor was correctly refused, and the
+client cannot know what state the server is in. Counting 500s as conflicts
+would inflate the correctness story; counting them as successes would inflate
+throughput; ignoring them — as an earlier driver version did — hides them
+entirely. The only honest treatment is the one applied: report the raw
+numbers, count the errors, and withhold the rank.
+
+## The failure, precisely
+
+Server logs across the rounds consistently identify a Quarkus
+`ContextNotActiveException`: Nessie's asynchronous catalog work accesses
+request-scoped state — `ObjectIO` / `S3ClientSupplier`, or
+`SecurityIdentityProxy` — after the originating HTTP request's context has
+been torn down. The relevant producers are explicitly `@RequestScoped` in
+[Nessie 0.108.4's source](https://github.com/projectnessie/nessie/blob/nessie-0.108.4/servers/quarkus-catalog/src/main/java/org/projectnessie/server/catalog/CatalogProducers.java):
+an async `CompletableFuture` outliving its request races the container's
+context teardown.
+
+This is not a version artifact or a tuning artifact of our stack:
+
+- Guarded preflights reproduced the same failure on **0.107.5, 0.107.6, and
+  0.108.4** — three releases, including the one an earlier public row used.
+- Reducing the async task pool from ten threads to one *reduced but did not
+  eliminate* the failures; setting the task minimum delay to zero did not
+  eliminate them either.
+- The failure is load-sensitive, which is why a benchmark surfaced it: eight
+  concurrent writers give the async work ample opportunity to outlive its
+  request.
+
+No patched or unreleased Nessie build is substituted in the public table; the
+row reflects the latest official release at the time of the run.
+
+## Why "Err", not "DQ"
+
+"Disqualified" implies a rules violation by the contestant. That framing is
+wrong twice. First, Nessie did not break a benchmark rule — its *server
+errored under load*, which is a measured result like any other, and arguably
+the most operationally important one in the table. Second, "DQ" invites the
+misreading that the row was excluded by judgment call. It was not: the
+exclusion is mechanical (errors > 0 in a measured round), declared before the
+sweep, and applied uniformly. **Err** states the fact: this row's numbers are
+real, its speed is real, and it errored — so its speed cannot be ranked
+against rows that did not.
+
+The row sits at the **bottom** of the table for the same reason. Sorting it
+first by raw throughput — even flagged — rewards the failure mode: a reader
+scanning the table sees Nessie on top and a footnote they may not read. A
+ranking is a claim, and the top row is its loudest word; a row with zero
+valid rounds has not earned it.
+
+## Why an earlier public row looked healthy
+
+The [previous public Nessie row](https://github.com/querygraph/catalog-bench/blob/9f3fc71e7815763dcc8987a89b6a36f61e59727c/RESULTS.md#commit-path-results)
+(0.107.5) appeared error-free because the old concurrent worker
+[deliberately discarded](https://github.com/querygraph/catalog-bench/blob/9f3fc71e7815763dcc8987a89b6a36f61e59727c/crates/commit/src/main.rs#L302-L310)
+every request failure that was neither an accepted commit nor a 409:
+
+```rust
+Err(_) => { /* transient; keep going */ }
+```
+
+Those failures never reached the report, never moved the conflict rate, and
+never failed the process. "The benchmark completed" meant only that enough
+requests succeeded to produce a throughput number — not that Nessie returned
+zero 500s. The old run kept no error counter, so its true failure count is
+unrecoverable. The strict driver reproduced the same request-context failure
+on the same 0.107.5 image, so the decisive change between the two publications
+is **observability and validity, not a Nessie regression**: errors that were
+silently dropped are now counted, and they void a round.
+
+## What this is not
+
+- **Not a claim that Nessie is slow.** Its 190.0/s median counts only
+  successful commits and remains the fastest raw concurrent value measured.
+- **Not a claim that Nessie always fails.** Sequential warmup and measurement
+  phases completed; the failure concentrates under concurrent load.
+- **Not a permanent verdict.** The moment a Nessie release survives the same
+  protocol — five measured rounds, eight writers, zero request errors, MinIO
+  object audit — its row re-enters the ranking at whatever position its
+  numbers earn. We would genuinely like to publish that row: an error-free
+  Nessie would be a serious contender.
+
+## Reproduce it
+
+The full protocol, immutable image digests, binary hashes, build commands, and
+per-run evidence (including the error counts) are in
+[RESULTS.md](../RESULTS.md); the raw evidence files are under
+[results/](../results/). The stack is Docker-composed; one command reruns the
+sweep against the official Nessie image.

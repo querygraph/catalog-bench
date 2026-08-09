@@ -8,17 +8,20 @@ the catalog pointer; there are no data files or query-engine work in this test.
 
 ## Concurrent ranking
 
-The table is sorted by raw successful concurrent throughput, as requested. A
-numeric rank requires **zero request errors in every measured round**. Nessie's
-raw throughput is shown in its sorted position, but it is disqualified rather
-than silently treating HTTP 500 responses as conflicts or successes.
+Ranked by median successful concurrent throughput **among error-free rows**. A
+numeric rank requires **zero request errors in every measured round** — an
+HTTP 500 is neither a success nor a conflict, so a row that errored cannot be
+ranked against rows that did not. Nessie's row is therefore listed last and
+marked **[Err](docs/NESSIE-ERROR.md)**, with its raw numbers preserved rather
+than hidden; the top of a ranking is a claim, and a row with zero valid rounds
+has not earned it.
 
-| Raw order | Rank | Catalog | Valid rounds | Concurrent, 8 writers | Sequential | p50 | p99 | Conflict rate | Error rate | Errors |
-|---:|:---:|---|:---:|---:|---:|---:|---:|---:|---:|---:|
-| 1 | **DQ** | Apache Nessie 0.108.4 | 0 / 5 | 190.0/s (173.3–223.8) | 312.3/s (215.9–328.9) | 2.986 ms | 5.602 ms | 81.00% | 0.366% | 97 |
-| 2 | **1** | **LakeCat** `3cca8d1c` | **5 / 5** | **153.0/s** (130.0–166.5) | **335.5/s** (285.2–342.6) | **2.697 ms** | **5.641 ms** | 85.42% | **0%** | **0** |
-| 3 | **2** | Apache Polaris 1.5.0 | **5 / 5** | 129.1/s (103.0–135.6) | 135.0/s (103.7–153.4) | 7.115 ms | 11.533 ms | 4.04% | **0%** | **0** |
-| 4 | **3** | Apache Gravitino 1.1.0 | **5 / 5** | 116.9/s (105.4–126.2) | 74.2/s (63.9–78.0) | 12.838 ms | 19.225 ms | 1.10% | **0%** | **0** |
+| Rank | Catalog | Valid rounds | Concurrent, 8 writers | Sequential | p50 | p99 | Conflict rate | Error rate | Errors |
+|:---:|---|:---:|---:|---:|---:|---:|---:|---:|---:|
+| **1** | **LakeCat** `3cca8d1c` | **5 / 5** | **153.0/s** (130.0–166.5) | **335.5/s** (285.2–342.6) | **2.697 ms** | **5.641 ms** | 85.42% | **0%** | **0** |
+| **2** | Apache Polaris 1.5.0 | **5 / 5** | 129.1/s (103.0–135.6) | 135.0/s (103.7–153.4) | 7.115 ms | 11.533 ms | 4.04% | **0%** | **0** |
+| **3** | Apache Gravitino 1.1.0 | **5 / 5** | 116.9/s (105.4–126.2) | 74.2/s (63.9–78.0) | 12.838 ms | 19.225 ms | 1.10% | **0%** | **0** |
+| **[Err](docs/NESSIE-ERROR.md)** | Apache Nessie 0.108.4 (raw #1 by successful throughput) | 0 / 5 | 190.0/s (173.3–223.8) | 312.3/s (215.9–328.9) | 2.986 ms | 5.602 ms | 81.00% | 0.366% | 97 |
 
 Values are medians of rounds 2–6; parenthesized values are the measured min–max
 range. Throughput counts only accepted commits and uses the phase's actual elapsed
@@ -63,7 +66,11 @@ Tracked evidence:
 The source output hashes are respectively `ce0730e6…`, `6aa5cd51…`, and
 `9cdfb8bb…`; the tracked files are byte-for-byte copies.
 
-## Nessie disqualification
+## The Nessie error row
+
+**The full account — the failure, the forensics, why "Err" rather than "DQ",
+and what would restore a rank — is in
+[docs/NESSIE-ERROR.md](docs/NESSIE-ERROR.md).** Summary below.
 
 Nessie 0.108.4, the latest release at the time of the run, returned HTTP 500 in
 all five measured rounds. The server logs consistently identify a Quarkus
@@ -80,7 +87,7 @@ invalid. No patched or unreleased Nessie build is substituted in the public tabl
 
 The driver still exits nonzero on these runs. It now emits its complete report
 first, allowing the raw 190.0 successful commits/s and 0.366% median error rate to
-be published as disqualified evidence instead of disappearing.
+be published as error-row evidence instead of disappearing.
 
 ### Why Nessie appeared to pass previously
 
@@ -112,12 +119,14 @@ image, on 0.107.6, and on 0.108.4. The old 0.107.5 logs fail while an asynchrono
 `CompletableFuture` accesses the request-scoped `ObjectIO`; 0.107.6 also exposes
 the same lifetime problem through `SecurityIdentityProxy`. The version changed,
 but the decisive change in the published result was **observability and validity**:
-errors that were previously dropped are now counted and disqualify the row.
+errors that were previously dropped are now counted, and they void the row's rank.
 
 Nessie did not collapse as a throughput engine. Its 190.0/s median counts only
 successful commits and is still the fastest raw concurrent value. It is marked
-DQ because 97 additional requests returned HTTP 500 across the five measured
-rounds, not because its successful commit path became slow.
+**Err** because 97 additional requests returned HTTP 500 across the five
+measured rounds, not because its successful commit path became slow — the
+label states the fact (the server errored under load) without the
+rules-violation framing "disqualified" would imply.
 
 ## Why the previous public rows were replaced
 
