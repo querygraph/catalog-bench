@@ -391,7 +391,9 @@ catalog-bench-commit --base-url http://127.0.0.1:8080/api/2.1/unity-catalog/iceb
   reflects **commit-conflict policy** as much as speed: strict-CAS catalogs (LakeCat,
   Nessie) show lower successful throughput under 8 writers to one table because most
   commits correctly conflict. Nessie's additional HTTP 500s are errors, not
-  conflicts, and disqualify its row.
+  conflicts, and disqualify its row. See
+  [Understanding LakeCat's CAS Conflict Rate](docs/CAS-CONFLICTS.md) for the
+  LakeCat/Turso boundary and recommended isolation benchmarks.
 - Put the catalog and the driver on the same host/network for the latency phase;
   cross-AZ RTT will dominate otherwise.
 - `--idempotency` only affects catalogs that implement an idempotency key

@@ -32,6 +32,10 @@ final Turso transaction; S3 preparation and commits to different tables remain
 parallel. This converts stale same-table writers into deterministic 409 conflicts
 instead of leaking `database is locked` as HTTP 500.
 
+See [Understanding LakeCat's CAS Conflict Rate](docs/CAS-CONFLICTS.md) for the
+full request timeline, the Turso retry boundary, and the benchmark variants that
+separate storage contention from optimistic-concurrency policy.
+
 ## Protocol and raw evidence
 
 - Six interleaved rounds used rotated order to spread warmup and host drift:
