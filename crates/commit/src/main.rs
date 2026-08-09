@@ -344,16 +344,14 @@ async fn main() -> Result<()> {
     let ok_n = ok.load(Ordering::Relaxed);
     let conflict_n = conflict.load(Ordering::Relaxed);
     let errors_n = errors.load(Ordering::Relaxed);
-    if errors_n > 0 {
-        let first = first_error
-            .get()
-            .map(String::as_str)
-            .unwrap_or("unknown error");
-        bail!("concurrent phase had {errors_n} request errors; first error: {first}");
-    }
     let conc_throughput = ok_n as f64 / conc_elapsed;
     let conflict_rate = if ok_n + conflict_n > 0 {
         conflict_n as f64 / (ok_n + conflict_n) as f64
+    } else {
+        0.0
+    };
+    let error_rate = if ok_n + conflict_n + errors_n > 0 {
+        errors_n as f64 / (ok_n + conflict_n + errors_n) as f64
     } else {
         0.0
     };
@@ -382,6 +380,7 @@ async fn main() -> Result<()> {
                 "ok": ok_n, "conflicts": conflict_n, "errors": errors_n,
                 "throughput_commits_per_s": conc_throughput,
                 "conflict_rate": conflict_rate,
+                "error_rate": error_rate,
             }
         });
         eprintln!("{}", serde_json::to_string_pretty(&out)?);
@@ -412,6 +411,7 @@ async fn main() -> Result<()> {
             conflict_rate * 100.0
         );
         eprintln!("  errors     : {errors_n}");
+        eprintln!("  error rate : {:>8.2}%", error_rate * 100.0);
         eprintln!("  throughput : {:>8.1} commits/s", conc_throughput);
     }
 
@@ -447,6 +447,7 @@ async fn main() -> Result<()> {
                     "conflicts": conflict_n,
                     "errors": errors_n,
                     "conflict_rate": conflict_rate,
+                    "error_rate": error_rate,
                 })),
             },
         ],
@@ -456,5 +457,16 @@ async fn main() -> Result<()> {
         )),
     };
     report.print_stdout();
+
+    // Preserve the strict integrity gate, but only after emitting the complete
+    // report. Callers can retain and publish a disqualified run's throughput
+    // and error rate without accidentally treating the process as successful.
+    if errors_n > 0 {
+        let first = first_error
+            .get()
+            .map(String::as_str)
+            .unwrap_or("unknown error");
+        bail!("concurrent phase had {errors_n} request errors; first error: {first}");
+    }
     Ok(())
 }
