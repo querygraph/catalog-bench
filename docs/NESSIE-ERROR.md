@@ -102,6 +102,37 @@ silently dropped are now counted, and they void a round.
   numbers earn. We would genuinely like to publish that row: an error-free
   Nessie would be a serious contender.
 
+## And why Unity Catalog OSS is not in the table at all
+
+Nessie *entered and errored*. Unity Catalog OSS could not enter: there is a
+difference between a contender that failed and a system with no way onto the
+track, and the table renders it as the difference between an **Err** row and
+no row.
+
+This benchmark measures exactly one axis: the **commit path** — an external
+client asking the catalog to advance a table pointer over Iceberg REST.
+Released Unity OSS (latest **0.5.0**) serves its Iceberg REST endpoint
+(`/api/2.1/unity-catalog/iceberg`) **read-only**: it has no external
+`updateTable` / `set-properties` commit handler, so a commit benchmark has
+nothing to exercise. It is not slow at committing; it does not expose
+committing. Write endpoints exist only in the **unmerged draft PR
+[#1618](https://github.com/unitycatalog/unitycatalog/pull/1618)** ("Implement
+Iceberg REST catalog write endpoints"), targeting an unreleased 0.6.0 — and
+this suite benchmarks released, official images, for the same reason no
+patched Nessie build is substituted above.
+
+Two clarifications to head off misreadings:
+
+- **Databricks-hosted Unity Catalog does have Iceberg REST writes.** That is a
+  separate hosted product, not the Docker-deployable OSS server this suite
+  measures; putting it in a table of self-hosted open-source catalogs on one
+  shared MinIO would compare unlike things.
+- **This is not a permanent exclusion.** The compose file already carries a
+  `unity` profile, and the README records the exact one-liner to run the
+  moment a write-capable build ships. When 0.6.0 (or a merged #1618) lands,
+  Unity's row enters the same protocol as everyone else and earns whatever
+  position its numbers deserve.
+
 ## Reproduce it
 
 The full protocol, immutable image digests, binary hashes, build commands, and
