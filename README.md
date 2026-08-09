@@ -73,6 +73,21 @@ zero request errors in all five measured rounds; round 1 of six was discarded.
 | 3 | **2** | Apache Polaris 1.5.0 | 129.1/s | **5 / 5** | **0** |
 | 4 | **3** | Apache Gravitino 1.1.0 | 116.9/s | **5 / 5** | **0** |
 
+#### Why did Nessie pass the previous benchmark?
+
+It did not prove that it was error-free. The previous public row used Nessie
+0.107.5 and came from one retained reference sweep. At that point the concurrent
+worker discarded every request failure other than an HTTP 409 as “transient,” so
+HTTP 500 responses were neither counted nor allowed to fail the process. The new
+driver records them and requires zero request errors in every measured round.
+
+Strict preflights reproduced the same Quarkus request-context failure on Nessie
+0.107.5, 0.107.6, and 0.108.4. The version update therefore does not explain the
+new DQ: the benchmark's observability and validity rules changed. Nessie remains
+the fastest raw concurrent row at 190.0 successful commits/s, but 97 HTTP 500s
+across the five measured rounds make it ineligible for a numeric rank. The full
+forensic explanation is in [RESULTS.md](RESULTS.md#why-nessie-appeared-to-pass-previously).
+
 The complete latency table, min–max ranges, production artifact hashes, Nessie
 failure analysis, and all raw runs/object audits are in [RESULTS.md](RESULTS.md).
 

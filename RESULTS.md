@@ -78,6 +78,43 @@ The driver still exits nonzero on these runs. It now emits its complete report
 first, allowing the raw 190.0 successful commits/s and 0.366% median error rate to
 be published as disqualified evidence instead of disappearing.
 
+### Why Nessie appeared to pass previously
+
+The [previous public Nessie row](https://github.com/querygraph/catalog-bench/blob/9f3fc71e7815763dcc8987a89b6a36f61e59727c/RESULTS.md#commit-path-results)
+did **not** establish an error-free run. It used Nessie 0.107.5 and was retained
+from one earlier comparison sweep while LakeCat was rerun separately. More
+importantly, the [old concurrent worker](https://github.com/querygraph/catalog-bench/blob/9f3fc71e7815763dcc8987a89b6a36f61e59727c/crates/commit/src/main.rs#L302-L310)
+deliberately discarded every request failure that was neither an accepted commit
+nor an HTTP 409 conflict:
+
+```rust
+Err(_) => { /* transient; keep going */ }
+```
+
+Those failures were absent from the report, did not affect the conflict rate,
+and did not make the process exit nonzero. “The benchmark completed” therefore
+meant only that enough requests succeeded to produce throughput; it did not mean
+that Nessie returned zero HTTP 500 responses. The old run preserved no error
+counter, so its exact failure count cannot be reconstructed after the fact.
+
+The current driver counts every such failure, records the first error, emits the
+complete report, and then exits nonzero if the count is not zero. The final
+protocol additionally requires zero errors in all five measured rounds, fresh
+catalog state, rotated run order, and a matching MinIO object-growth audit.
+
+This is not evidence that upgrading Nessie caused a regression. Guarded runs with
+the strict driver reproduced the same request-context failure on the old 0.107.5
+image, on 0.107.6, and on 0.108.4. The old 0.107.5 logs fail while an asynchronous
+`CompletableFuture` accesses the request-scoped `ObjectIO`; 0.107.6 also exposes
+the same lifetime problem through `SecurityIdentityProxy`. The version changed,
+but the decisive change in the published result was **observability and validity**:
+errors that were previously dropped are now counted and disqualify the row.
+
+Nessie did not collapse as a throughput engine. Its 190.0/s median counts only
+successful commits and is still the fastest raw concurrent value. It is marked
+DQ because 97 additional requests returned HTTP 500 across the five measured
+rounds, not because its successful commit path became slow.
+
 ## Why the previous public rows were replaced
 
 The earlier LakeCat 287.8/s, Gravitino 272.6/s, and retained comparison rows are
