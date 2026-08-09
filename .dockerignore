@@ -1,0 +1,5 @@
+.git
+.linux-target
+target
+**/.venv
+docker/lakecat/lakecat-service

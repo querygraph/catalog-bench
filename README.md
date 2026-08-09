@@ -103,7 +103,7 @@ bucket.
                        iceberg_lakehouse-net  (external docker network)
    ┌───────────┐   ┌──────────┐   ┌───────────┐   ┌──────────┐   ┌──────────────┐
    │  lakecat  │   │  nessie  │   │ gravitino │   │ polaris  │   │ catalog-     │
-   │  :8181    │   │  :19120  │   │  :9001    │   │  :8181   │   │ commit-bench │
+   │  :8181    │   │  :19120  │   │  :9001    │   │  :8181   │   │ bench-commit │
    └─────┬─────┘   └────┬─────┘   └─────┬─────┘   └────┬─────┘   └──────┬───────┘
          └──────────────┴───── s3://warehouse ─────────┴────────────────┘
                               ┌──────────────┐
@@ -173,18 +173,36 @@ services:
   # Comparison catalogs are usually run from ~/src/boat, but are also available
   # here behind profiles for a self-contained stack:
   polaris:                       # docker compose --profile polaris up -d polaris
-    image: apache/polaris:latest
-    ports: ["8182:8181"]
+    image: apache/polaris:1.5.0
+    networks: [lakehouse-net]
+    ports: ["8185:8181"]
     profiles: ["polaris"]
     environment:
-      POLARIS_BOOTSTRAP_CREDENTIALS: "default-realm,root,s3cr3t"
+      POLARIS_BOOTSTRAP_CREDENTIALS: "POLARIS,root,secret"
+      polaris.realm-context.realms: POLARIS
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: us-east-1
   gravitino:                     # docker compose --profile gravitino up -d gravitino
-    image: apache/gravitino-iceberg-rest:latest
-    ports: ["9001:9001"]
+    image: apache/gravitino-iceberg-rest:1.1.0
+    networks: [lakehouse-net]
+    ports: ["9002:9001"]
     profiles: ["gravitino"]
     environment:
-      GRAVITINO_ICEBERG_REST_CATALOG_BACKEND: memory
-      GRAVITINO_ICEBERG_REST_CATALOG_WAREHOUSE: /tmp/gravitino-warehouse
+      # `memory` acknowledges commits without writing metadata.json to S3.
+      GRAVITINO_CATALOG_BACKEND: jdbc
+      # File-backed SQLite shares one schema across the JDBC connection pool;
+      # jdbc:sqlite::memory: creates an isolated database per connection.
+      GRAVITINO_URI: jdbc:sqlite:/data/gravitino.db
+      GRAVITINO_WAREHOUSE: s3://warehouse/
+      GRAVITINO_IO_IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      GRAVITINO_S3_ACCESS_KEY: admin
+      GRAVITINO_S3_SECRET_KEY: password
+      GRAVITINO_S3_ENDPOINT: http://minio:9000
+      GRAVITINO_S3_REGION: us-east-1
+      GRAVITINO_S3_PATH_STYLE_ACCESS: "true"
+    volumes:
+      - gravitino-data:/data
   unitycatalog:                  # read-only Iceberg REST until PR #1618 / 0.6.0
     image: unitycatalog/unitycatalog:0.5.0
     ports: ["8080:8080"]         # server 8080 (UI 3000); not in the comparison yet
@@ -195,11 +213,13 @@ services:
     build:
       context: .
       dockerfile: docker/bench.Dockerfile
-    image: catalog-commit-bench:latest
+    image: catalog-bench-commit:latest
+    networks: [lakehouse-net]
     profiles: ["bench"]
-    entrypoint: ["/usr/local/bin/catalog-commit-bench"]
+    entrypoint: ["/usr/local/bin/catalog-bench-commit"]
 
 volumes:
+  gravitino-data:
   lakecat-data:
 
 networks:
@@ -252,18 +272,18 @@ P="--namespace bench --table commits --create --iterations 1000 --concurrency 8 
 
 ### LakeCat
 ```sh
-catalog-commit-bench --base-url http://127.0.0.1:8181/catalog \
+catalog-bench-commit --base-url http://127.0.0.1:8181/catalog \
   --location s3://warehouse/lakecat --idempotency $P
 ```
 
 ### Apache Nessie
 ```sh
-catalog-commit-bench --base-url http://127.0.0.1:19120/iceberg --prefix main $P
+catalog-bench-commit --base-url http://127.0.0.1:19120/iceberg --prefix main $P
 ```
 
 ### Apache Gravitino
 ```sh
-catalog-commit-bench --base-url http://127.0.0.1:9002/iceberg $P
+catalog-bench-commit --base-url http://127.0.0.1:9002/iceberg $P
 ```
 
 ### Apache Polaris
@@ -271,7 +291,7 @@ OAuth2: `polaris-bootstrap.sh` fetches a token and creates an S3 catalog on the
 shared MinIO `warehouse` bucket; the prefix is the catalog name.
 ```sh
 TOKEN=$(./polaris-bootstrap.sh)
-catalog-commit-bench --base-url http://127.0.0.1:8185/api/catalog \
+catalog-bench-commit --base-url http://127.0.0.1:8185/api/catalog \
   --prefix bench --token "$TOKEN" $P
 ```
 
@@ -282,7 +302,7 @@ draft PR [#1618](https://github.com/unitycatalog/unitycatalog/pull/1618) (unrele
 0.6.0). Against a **write-capable build** of that branch the recipe would be a bearer
 token on the bare commit path:
 ```sh
-catalog-commit-bench --base-url http://127.0.0.1:8080/api/2.1/unity-catalog/iceberg \
+catalog-bench-commit --base-url http://127.0.0.1:8080/api/2.1/unity-catalog/iceberg \
   --prefix unity --token "$UC_TOKEN" $P
 ```
 

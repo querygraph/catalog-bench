@@ -412,7 +412,7 @@ AWS_ENDPOINT=http://127.0.0.1:9000 AWS_ACCESS_KEY_ID=admin AWS_SECRET_ACCESS_KEY
 cd ~/src/boat && docker compose up -d minio nessie gravitino polaris
 
 # 2. build LakeCat from source, deploy its image, and bench every reachable catalog
-cd ~/src/catalog-commit-bench && ./bench-stack.sh
+cd ~/src/catalog-bench && ./bench-stack.sh
 ```
 
 `bench-stack.sh` builds `lakecat-service` for Linux (Sail fetched from the

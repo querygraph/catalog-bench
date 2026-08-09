@@ -40,22 +40,37 @@ services:
   # client_id/secret to the logs. Exchange them for a bearer token, then pass it
   # to the bench with --token. There is no fully hands-off default.
   polaris:
-    image: apache/polaris:latest
-    ports: ["8182:8181"]
+    image: apache/polaris:1.5.0
+    networks: [lakehouse-net]
+    ports: ["8185:8181"]
     profiles: ["polaris"]
     environment:
-      POLARIS_BOOTSTRAP_CREDENTIALS: "default-realm,root,s3cr3t"
+      POLARIS_BOOTSTRAP_CREDENTIALS: "POLARIS,root,secret"
+      polaris.realm-context.realms: POLARIS
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: us-east-1
 
-  # --- Apache Gravitino Iceberg REST server (best-effort) -----------------
-  # Memory-backed Iceberg REST catalog. Confirm the image tag exposes the REST
-  # service on 9001; older tags differ.
+  # --- Apache Gravitino Iceberg REST server --------------------------------
+  # The JDBC backend is required here: the image's memory backend returns S3
+  # metadata locations but does not write metadata files to object storage.
   gravitino:
-    image: apache/gravitino-iceberg-rest:latest
-    ports: ["9001:9001"]
+    image: apache/gravitino-iceberg-rest:1.1.0
+    networks: [lakehouse-net]
+    ports: ["9002:9001"]
     profiles: ["gravitino"]
     environment:
-      GRAVITINO_ICEBERG_REST_CATALOG_BACKEND: memory
-      GRAVITINO_ICEBERG_REST_CATALOG_WAREHOUSE: /tmp/gravitino-warehouse
+      GRAVITINO_CATALOG_BACKEND: jdbc
+      GRAVITINO_URI: jdbc:sqlite:/data/gravitino.db
+      GRAVITINO_WAREHOUSE: s3://warehouse/
+      GRAVITINO_IO_IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      GRAVITINO_S3_ACCESS_KEY: admin
+      GRAVITINO_S3_SECRET_KEY: password
+      GRAVITINO_S3_ENDPOINT: http://minio:9000
+      GRAVITINO_S3_REGION: us-east-1
+      GRAVITINO_S3_PATH_STYLE_ACCESS: "true"
+    volumes:
+      - gravitino-data:/data
 
   # --- Unity Catalog OSS (read-only Iceberg REST; NOT in the comparison) ---
   # Released Unity OSS (latest 0.5.0) exposes its Iceberg REST endpoint at
@@ -76,11 +91,13 @@ services:
     build:
       context: .
       dockerfile: docker/bench.Dockerfile
-    image: catalog-commit-bench:latest
+    image: catalog-bench-commit:latest
+    networks: [lakehouse-net]
     profiles: ["bench"]
-    entrypoint: ["/usr/local/bin/catalog-commit-bench"]
+    entrypoint: ["/usr/local/bin/catalog-bench-commit"]
 
 volumes:
+  gravitino-data:
   lakecat-data:
 
 networks:

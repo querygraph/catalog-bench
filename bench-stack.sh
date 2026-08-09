@@ -28,7 +28,7 @@ ITER="${ITER:-1000}"; CONC="${CONC:-8}"; DUR="${DUR:-6}"
 NS="${NS:-bench$(date +%s)}"; TABLE="${TABLE:-commits}"
 NET="${NET:-iceberg_lakehouse-net}"
 FEATURES="${FEATURES:-turso-local,sail-local}"
-BENCH=./target/release/catalog-commit-bench
+BENCH=./target/release/catalog-bench-commit
 
 reachable() { curl -fsS -o /dev/null --max-time 2 "$1/v1/config" 2>/dev/null; }
 
@@ -41,7 +41,7 @@ docker network inspect "$NET" >/dev/null 2>&1 || {
 
 # --- 1. build the host bench binary -----------------------------------------
 echo "==> building the bench binary"
-cargo build --release
+cargo build --locked --release -p catalog-bench-commit --bin catalog-bench-commit
 
 # --- 2. build LakeCat for Linux -> image -> (re)start the container ----------
 if [[ "${SKIP_BUILD:-0}" != "1" ]]; then
@@ -63,12 +63,27 @@ docker run --rm --network "$NET" --entrypoint sh minio/mc -c \
 # --- 4. bench every reachable catalog (identical params; all -> same MinIO) --
 common=(--namespace "$NS" --table "$TABLE" --create \
   --iterations "$ITER" --concurrency "$CONC" --duration-secs "$DUR")
+object_count() {
+  docker run --rm --network "$NET" --entrypoint sh minio/mc -c \
+    "mc alias set m http://minio:9000 admin password >/dev/null 2>&1 && \
+     mc ls --recursive --json m/warehouse 2>/dev/null | wc -l" \
+    | tr -d '[:space:]'
+}
 run_one() {
   local name="$1" base="$2"; shift 2
+  local objects_before objects_after object_delta
   echo "============================================================"
   echo "  $name  ->  $base"
   echo "============================================================"
+  objects_before="$(object_count)"
   "$BENCH" --base-url "$base" "${common[@]}" "$@"
+  objects_after="$(object_count)"
+  object_delta=$((objects_after - objects_before))
+  if (( object_delta <= 0 )); then
+    echo "invalid $name run: no new metadata objects appeared in MinIO" >&2
+    return 1
+  fi
+  echo "  MinIO object delta: +$object_delta"
   echo
 }
 

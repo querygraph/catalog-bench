@@ -6,7 +6,7 @@
 # `--create` + commit flow; no per-catalog provisioning or commit-suffix.
 set -uo pipefail
 
-BENCH="${BENCH:-./target/release/catalog-commit-bench}"
+BENCH="${BENCH:-./target/release/catalog-bench-commit}"
 ITER="${ITER:-2000}"
 CONC="${CONC:-8}"
 DUR="${DUR:-10}"
@@ -34,7 +34,7 @@ else
 fi
 
 # --- Polaris (needs --token; set POLARIS_TOKEN) ------------------------------
-POLARIS_BASE="${POLARIS_BASE:-http://127.0.0.1:8182/api/catalog}"
+POLARIS_BASE="${POLARIS_BASE:-http://127.0.0.1:8185/api/catalog}"
 if [[ -n "${POLARIS_TOKEN:-}" ]] && reachable "$POLARIS_BASE/v1/config"; then
   run_one "Polaris" "$POLARIS_BASE" --prefix "${POLARIS_PREFIX:-my_catalog}" \
     --token "$POLARIS_TOKEN" --create
@@ -43,7 +43,7 @@ else
 fi
 
 # --- Gravitino ---------------------------------------------------------------
-GRAVITINO_BASE="${GRAVITINO_BASE:-http://127.0.0.1:9001/iceberg}"
+GRAVITINO_BASE="${GRAVITINO_BASE:-http://127.0.0.1:9002/iceberg}"
 if reachable "$GRAVITINO_BASE/v1/config"; then
   run_one "Gravitino" "$GRAVITINO_BASE" --create
 else

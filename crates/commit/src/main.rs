@@ -12,7 +12,7 @@
 //! and the part TPC-style engine benchmarks never measure.
 
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, OnceLock};
 use std::time::{Duration, Instant};
 
 use anyhow::{bail, Context, Result};
@@ -256,14 +256,18 @@ async fn main() -> Result<()> {
 
     // Warmup.
     for i in 0..args.warmup {
-        cat.commit(
-            &args.namespace,
-            &args.table,
-            &uuid,
-            1_000_000 + i,
-            args.idempotency,
-        )
-        .await?;
+        let committed = cat
+            .commit(
+                &args.namespace,
+                &args.table,
+                &uuid,
+                1_000_000 + i,
+                args.idempotency,
+            )
+            .await?;
+        if !committed {
+            bail!("warmup commit {i} unexpectedly conflicted");
+        }
     }
 
     // --- Sequential latency phase ---
@@ -271,8 +275,12 @@ async fn main() -> Result<()> {
     let seq_start = Instant::now();
     for i in 0..args.iterations {
         let t = Instant::now();
-        cat.commit(&args.namespace, &args.table, &uuid, i, args.idempotency)
+        let committed = cat
+            .commit(&args.namespace, &args.table, &uuid, i, args.idempotency)
             .await?;
+        if !committed {
+            bail!("sequential commit {i} unexpectedly conflicted");
+        }
         lat_ms.push(t.elapsed().as_secs_f64() * 1000.0);
     }
     let seq_elapsed = seq_start.elapsed().as_secs_f64();
@@ -280,9 +288,10 @@ async fn main() -> Result<()> {
     let seq_throughput = args.iterations as f64 / seq_elapsed;
 
     // --- Concurrent throughput phase ---
-    let stop = Arc::new(tokio::sync::Notify::new());
     let ok = Arc::new(AtomicU64::new(0));
     let conflict = Arc::new(AtomicU64::new(0));
+    let errors = Arc::new(AtomicU64::new(0));
+    let first_error = Arc::new(OnceLock::<String>::new());
     let deadline = Instant::now() + Duration::from_secs(args.duration_secs);
     let conc_start = Instant::now();
     let mut handles = Vec::new();
@@ -293,7 +302,12 @@ async fn main() -> Result<()> {
             args.table.clone(),
             uuid.clone(),
         );
-        let (ok, conflict) = (ok.clone(), conflict.clone());
+        let (ok, conflict, errors, first_error) = (
+            ok.clone(),
+            conflict.clone(),
+            errors.clone(),
+            first_error.clone(),
+        );
         let idem = args.idempotency;
         handles.push(tokio::spawn(async move {
             let mut n = w * 10_000_000;
@@ -306,18 +320,28 @@ async fn main() -> Result<()> {
                     Ok(false) => {
                         conflict.fetch_add(1, Ordering::Relaxed);
                     }
-                    Err(_) => { /* transient; keep going */ }
+                    Err(error) => {
+                        errors.fetch_add(1, Ordering::Relaxed);
+                        first_error.get_or_init(|| error.to_string());
+                    }
                 }
             }
         }));
     }
     for h in handles {
-        let _ = h.await;
+        h.await.context("concurrent writer task")?;
     }
-    let _ = stop; // reserved for future signal-based stop
     let conc_elapsed = conc_start.elapsed().as_secs_f64();
     let ok_n = ok.load(Ordering::Relaxed);
     let conflict_n = conflict.load(Ordering::Relaxed);
+    let errors_n = errors.load(Ordering::Relaxed);
+    if errors_n > 0 {
+        let first = first_error
+            .get()
+            .map(String::as_str)
+            .unwrap_or("unknown error");
+        bail!("concurrent phase had {errors_n} request errors; first error: {first}");
+    }
     let conc_throughput = ok_n as f64 / conc_elapsed;
     let conflict_rate = if ok_n + conflict_n > 0 {
         conflict_n as f64 / (ok_n + conflict_n) as f64
@@ -346,7 +370,7 @@ async fn main() -> Result<()> {
             "concurrent": {
                 "writers": args.concurrency,
                 "duration_secs": conc_elapsed,
-                "ok": ok_n, "conflicts": conflict_n,
+                "ok": ok_n, "conflicts": conflict_n, "errors": errors_n,
                 "throughput_commits_per_s": conc_throughput,
                 "conflict_rate": conflict_rate,
             }
@@ -378,6 +402,7 @@ async fn main() -> Result<()> {
             "  conflicts  : {conflict_n}  (rate {:.2}%)",
             conflict_rate * 100.0
         );
+        eprintln!("  errors     : {errors_n}");
         eprintln!("  throughput : {:>8.1} commits/s", conc_throughput);
     }
 
@@ -411,6 +436,7 @@ async fn main() -> Result<()> {
                     "duration_secs": conc_elapsed,
                     "ok": ok_n,
                     "conflicts": conflict_n,
+                    "errors": errors_n,
                     "conflict_rate": conflict_rate,
                 })),
             },
