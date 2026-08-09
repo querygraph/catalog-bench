@@ -196,7 +196,7 @@ impl Catalog {
         table: &str,
         uuid: &str,
         counter: u64,
-        idem: bool,
+        idempotency_scope: Option<&str>,
     ) -> Result<bool> {
         let body = json!({
             "requirements": [{"type": "assert-table-uuid", "uuid": uuid}],
@@ -207,8 +207,8 @@ impl Catalog {
         });
         let url = format!("{}{}", self.table_path(ns, table), self.commit_suffix);
         let mut rb = self.req(self.http.post(url)).json(&body);
-        if idem {
-            rb = rb.header("Idempotency-Key", format!("bench-{uuid}-{counter}"));
+        if let Some(scope) = idempotency_scope {
+            rb = rb.header("Idempotency-Key", format!("bench-{uuid}-{scope}-{counter}"));
         }
         let resp = rb.send().await?;
         let status = resp.status().as_u16();
@@ -262,7 +262,7 @@ async fn main() -> Result<()> {
                 &args.table,
                 &uuid,
                 1_000_000 + i,
-                args.idempotency,
+                args.idempotency.then_some("warmup"),
             )
             .await?;
         if !committed {
@@ -276,7 +276,13 @@ async fn main() -> Result<()> {
     for i in 0..args.iterations {
         let t = Instant::now();
         let committed = cat
-            .commit(&args.namespace, &args.table, &uuid, i, args.idempotency)
+            .commit(
+                &args.namespace,
+                &args.table,
+                &uuid,
+                i,
+                args.idempotency.then_some("sequential"),
+            )
             .await?;
         if !committed {
             bail!("sequential commit {i} unexpectedly conflicted");
@@ -308,12 +314,15 @@ async fn main() -> Result<()> {
             errors.clone(),
             first_error.clone(),
         );
-        let idem = args.idempotency;
+        let idempotency_scope = args.idempotency.then(|| format!("concurrent-{w}"));
         handles.push(tokio::spawn(async move {
             let mut n = w * 10_000_000;
             while Instant::now() < deadline {
                 n += 1;
-                match cat.commit(&ns, &table, &uuid, n, idem).await {
+                match cat
+                    .commit(&ns, &table, &uuid, n, idempotency_scope.as_deref())
+                    .await
+                {
                     Ok(true) => {
                         ok.fetch_add(1, Ordering::Relaxed);
                     }
