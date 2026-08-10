@@ -21,7 +21,7 @@ has not earned it.
 | **1** | **LakeCat** `3cca8d1c` | **5 / 5** | **153.0/s** (130.0–166.5) | **335.5/s** (285.2–342.6) | **2.697 ms** | **5.641 ms** | 85.42% | **0%** | **0** |
 | **2** | Apache Polaris 1.5.0 | **5 / 5** | 129.1/s (103.0–135.6) | 135.0/s (103.7–153.4) | 7.115 ms | 11.533 ms | 4.04% | **0%** | **0** |
 | **3** | Apache Gravitino 1.1.0 | **5 / 5** | 116.9/s (105.4–126.2) | 74.2/s (63.9–78.0) | 12.838 ms | 19.225 ms | 1.10% | **0%** | **0** |
-| **[Err](docs/NESSIE-ERROR.md)** | Apache Nessie 0.108.4 (raw #1 by successful throughput) | 0 / 5 | 190.0/s (173.3–223.8) | 312.3/s (215.9–328.9) | 2.986 ms | 5.602 ms | 81.00% | 0.366% | 97 |
+| **[Err](docs/NESSIE-ERROR.md)** | Apache Nessie 0.108.4 | 0 / 5 | 190.0/s (173.3–223.8) | 312.3/s (215.9–328.9) | 2.986 ms | 5.602 ms | 81.00% | 0.366% | 97 |
 
 Values are medians of rounds 2–6; parenthesized values are the measured min–max
 range. Throughput counts only accepted commits and uses the phase's actual elapsed
