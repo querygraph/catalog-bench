@@ -1,58 +1,216 @@
 # Commit-path results
 
-Same host, same driver, identical parameters: **1000 sequential commits**, then
-**8 concurrent writers for 6 s**, `set-properties` commits (no data files).
-Catalogs brought up from `~/src/boat/docker-compose.yml` (Nessie, Gravitino,
-Polaris on a shared MinIO/S3 backend); LakeCat built from source into its image
-(`./bench-stack.sh`) with `--features turso-local,sail-local`, pointed at the same
-MinIO. The numbers below are a fresh run on the current host — absolute throughput
-differs from earlier rounds, so read them *within* the run, not across rounds.
+Final public sweep: **2026-08-08 (America/Los_Angeles)**. Every request was sent
+from one Linux ARM64 Docker container to catalogs on the same Docker network and
+the same MinIO instance. Each accepted `set-properties` commit validates the
+request, writes a fresh Iceberg `metadata.json` to `s3://warehouse`, and advances
+the catalog pointer; there are no data files or query-engine work in this test.
 
-**All do the same unit of work**: validate the commit, apply the updates, write a
-new `metadata.json` to S3, and advance the pointer (verified by MinIO object
-counts).
+## Concurrent ranking
 
-| Catalog | Storage | Seq throughput | Seq p50 | Seq p99 | Concurrent (8w) | Conflict rate |
-|---|---|---|---|---|---|---|
-| **Nessie** 0.107.5 | MinIO / S3 | 170.6 /s | 4.87 ms | 16.2 ms | 136.3 /s | 82.1% |
-| **LakeCat** 0.2.1 | MinIO / S3 (Turso state) | 148.6 /s | 5.34 ms | 21.2 ms | 288.0 /s | 70.2% |
-| **Gravitino** (iceberg-rest) | MinIO / S3 | 132.4 /s | 6.34 ms | 19.7 ms | 272.6 /s | 0% |
-| **Polaris** 1.5.0 | MinIO / S3 | 84.0 /s | 10.40 ms | 30.3 ms | 61.5 /s | 7.5% |
+Ranked by median successful concurrent throughput **among error-free rows**. A
+numeric rank requires **zero request errors in every measured round** — an
+HTTP 500 is neither a success nor a conflict, so a row that errored cannot be
+ranked against rows that did not. Nessie's row is therefore listed last and
+marked **[Err](docs/NESSIE-ERROR.md)**, with its raw numbers preserved rather
+than hidden; the top of a ranking is a claim, and a row with zero valid rounds
+has not earned it.
 
-(All four in one `bench-stack.sh` sweep; Polaris is auto-bootstrapped — an OAuth2
-token + an S3 catalog on the same `warehouse` bucket — by `polaris-bootstrap.sh`.)
+| Rank | Catalog | Valid rounds | Concurrent, 8 writers | Sequential | p50 | p99 | Conflict rate | Error rate | Errors |
+|:---:|---|:---:|---:|---:|---:|---:|---:|---:|---:|
+| **1** | **LakeCat** `3cca8d1c` | **5 / 5** | **153.0/s** (130.0–166.5) | **335.5/s** (285.2–342.6) | **2.697 ms** | **5.641 ms** | 85.42% | **0%** | **0** |
+| **2** | Apache Polaris 1.5.0 | **5 / 5** | 129.1/s (103.0–135.6) | 135.0/s (103.7–153.4) | 7.115 ms | 11.533 ms | 4.04% | **0%** | **0** |
+| **3** | Apache Gravitino 1.1.0 | **5 / 5** | 116.9/s (105.4–126.2) | 74.2/s (63.9–78.0) | 12.838 ms | 19.225 ms | 1.10% | **0%** | **0** |
+| **[Err](docs/NESSIE-ERROR.md)** | Apache Nessie 0.108.4 | 0 / 5 | 190.0/s (173.3–223.8) | 312.3/s (215.9–328.9) | 2.986 ms | 5.602 ms | 81.00% | 0.366% | 97 |
 
-**LakeCat 0.2.1 is competitive with the mature Java catalogs — #2 on sequential
-latency and #1 on concurrent throughput.** Its commit p50 (5.34 ms) is *faster* than
-Gravitino (6.34 ms) and Polaris (10.40 ms) and within ~10% of Nessie (4.87 ms); on
-concurrent throughput it is **first** (288 /s, just ahead of Gravitino's 273 and
-~2.1× Nessie). That is a large change from 0.1.1, where LakeCat's commit p50 was
-~2× worse and its concurrent throughput was the worst of the field (38.5 /s).
+Values are medians of rounds 2–6; parenthesized values are the measured min–max
+range. Throughput counts only accepted commits and uses the phase's actual elapsed
+time. The conflict rate is HTTP 409 responses divided by accepted-plus-conflicting
+responses. The error rate includes all other request failures.
 
-The concurrent column reflects **commit-conflict policy** as much as raw speed:
-LakeCat (70%) and Nessie (82%) enforce strict optimistic concurrency — 8 writers to
-the *same* table mostly conflict and retry, so successful throughput is held down by
-design — while Gravitino (0%) and Polaris (8%) accept concurrent `set-properties`
-more permissively. (LakeCat leads the concurrent column *despite* a strict-CAS
-policy: all 8 writers hit the same table, so its edge is cheap conflict detection +
-a fast bounded retry loop, not parallelism — the losers retry quickly and the
-winners commit fast.)
-**Polaris is the heaviest per commit** (10.40 ms p50) owing to RBAC checks +
-credential subscoping on top of the S3 write — that is governance cost, not
-inefficiency.
+**LakeCat is the valid concurrent and sequential leader.** Its same-table workload
+is also the strictest in the valid set: about 85% of attempts correctly lose the
+metadata-pointer CAS. The short per-table gate added at `3cca8d1c` covers only the
+final Turso transaction; S3 preparation and commits to different tables remain
+parallel. This converts stale same-table writers into deterministic 409 conflicts
+instead of leaking `database is locked` as HTTP 500.
 
-## How LakeCat got here (0.1.1 → 0.2.0)
+See [Understanding LakeCat's CAS Conflict Rate](docs/CAS-CONFLICTS.md) for the
+full request timeline, the Turso retry boundary, and the benchmark variants that
+separate storage contention from optimistic-concurrency policy.
 
-Four changes took LakeCat's S3 commit p50 from **12.6 ms** (worst in the field) to
-**4.14 ms** — without changing *what* a commit does (governance and graph/lineage
-sinks were off or trivial throughout). It was never doing more catalog work than
-the Java catalogs; it was missing connection-reuse optimizations they had long made.
+## Protocol and raw evidence
+
+- Six interleaved rounds used rotated order to spread warmup and host drift:
+  `L/N/G/P`, `N/G/P/L`, `G/P/L/N`, `P/L/N/G`, then the first two orders again.
+  Round 1 was conditioning and discarded. The published result is the median of
+  rounds 2–6.
+- Every run created a unique namespace and table, performed 50 unmeasured warmup
+  commits, 1,000 measured sequential commits, then eight same-table writers for
+  six seconds.
+- Every catalog began the final sweep with fresh private state. LakeCat used a
+  file-backed Turso store; Gravitino used file-backed SQLite JDBC; Nessie and
+  Polaris used their image defaults. All Iceberg metadata went to the same MinIO.
+- A run is valid only when the driver exits zero, records zero request errors, and
+  MinIO grows by at least `50 + 1000 + concurrent_ok` objects. All 24 object audits
+  passed. LakeCat's object delta exactly equaled that minimum in every round.
+- LakeCat idempotency keys include phase and writer scope. Warmup, sequential, and
+  concurrent requests therefore cannot become cheap replays of one another.
+
+Tracked evidence:
+
+- [Median summary](results/commit-2026-08-08-summary.tsv)
+- [All 24 runs, including discarded round 1](results/commit-2026-08-08-runs.tsv)
+- [Per-run MinIO object audit](results/commit-2026-08-08-object-audit.tsv)
+
+The source output hashes are respectively `ce0730e6…`, `6aa5cd51…`, and
+`9cdfb8bb…`; the tracked files are byte-for-byte copies.
+
+## The Nessie error row
+
+**The full account — the failure, the forensics, why "Err" rather than "DQ",
+and what would restore a rank — is in
+[docs/NESSIE-ERROR.md](docs/NESSIE-ERROR.md).** Summary below.
+
+Nessie 0.108.4, the latest release at the time of the run, returned HTTP 500 in
+all five measured rounds. The server logs consistently identify a Quarkus
+`ContextNotActiveException`: asynchronous catalog work accesses request-scoped
+`ObjectIO` / `S3ClientSupplier` or `SecurityIdentityProxy` after the request
+context is inactive. The relevant upstream producers are explicitly
+`@RequestScoped` in [Nessie's 0.108.4 source](https://github.com/projectnessie/nessie/blob/nessie-0.108.4/servers/quarkus-catalog/src/main/java/org/projectnessie/server/catalog/CatalogProducers.java).
+
+This was not a transient version or tuning artifact. Guarded preflights reproduced
+it on 0.107.5, 0.107.6, and 0.108.4. Reducing the supported async task pool from 10
+threads to one reduced but did not eliminate failures; setting the task minimum
+delay to zero did not eliminate them either. Zero race waits made table creation
+invalid. No patched or unreleased Nessie build is substituted in the public table.
+
+The driver still exits nonzero on these runs. It now emits its complete report
+first, allowing the raw 190.0 successful commits/s and 0.366% median error rate to
+be published as error-row evidence instead of disappearing.
+
+### Why Nessie appeared to pass previously
+
+The [previous public Nessie row](https://github.com/querygraph/catalog-bench/blob/9f3fc71e7815763dcc8987a89b6a36f61e59727c/RESULTS.md#commit-path-results)
+did **not** establish an error-free run. It used Nessie 0.107.5 and was retained
+from one earlier comparison sweep while LakeCat was rerun separately. More
+importantly, the [old concurrent worker](https://github.com/querygraph/catalog-bench/blob/9f3fc71e7815763dcc8987a89b6a36f61e59727c/crates/commit/src/main.rs#L302-L310)
+deliberately discarded every request failure that was neither an accepted commit
+nor an HTTP 409 conflict:
+
+```rust
+Err(_) => { /* transient; keep going */ }
+```
+
+Those failures were absent from the report, did not affect the conflict rate,
+and did not make the process exit nonzero. “The benchmark completed” therefore
+meant only that enough requests succeeded to produce throughput; it did not mean
+that Nessie returned zero HTTP 500 responses. The old run preserved no error
+counter, so its exact failure count cannot be reconstructed after the fact.
+
+The current driver counts every such failure, records the first error, emits the
+complete report, and then exits nonzero if the count is not zero. The final
+protocol additionally requires zero errors in all five measured rounds, fresh
+catalog state, rotated run order, and a matching MinIO object-growth audit.
+
+This is not evidence that upgrading Nessie caused a regression. Guarded runs with
+the strict driver reproduced the same request-context failure on the old 0.107.5
+image, on 0.107.6, and on 0.108.4. The old 0.107.5 logs fail while an asynchronous
+`CompletableFuture` accesses the request-scoped `ObjectIO`; 0.107.6 also exposes
+the same lifetime problem through `SecurityIdentityProxy`. The version changed,
+but the decisive change in the published result was **observability and validity**:
+errors that were previously dropped are now counted, and they void the row's rank.
+
+Nessie did not collapse as a throughput engine. Its 190.0/s median counts only
+successful commits and is still the fastest raw concurrent value. It is marked
+**Err** because 97 additional requests returned HTTP 500 across the five
+measured rounds, not because its successful commit path became slow — the
+label states the fact (the server errored under load) without the
+rules-violation framing "disqualified" would imply.
+
+## Why the previous public rows were replaced
+
+The earlier LakeCat 287.8/s, Gravitino 272.6/s, and retained comparison rows are
+not comparable to this sweep and must not be reused:
+
+1. The old concurrent driver discarded request errors, which hid Nessie's HTTP
+   500s and LakeCat's Turso busy failures.
+2. LakeCat's old idempotency counters overlapped between sequential traffic and
+   concurrent writer 0, so part of the concurrent phase measured cheap replay.
+3. Gravitino's `memory` backend acknowledged commits and returned S3 metadata
+   locations while writing zero objects. The final run uses its bundled
+   file-backed SQLite JDBC backend; `jdbc:sqlite::memory:` is also invalid because
+   each pooled connection receives an isolated database.
+4. A single retained row per catalog amplified run-order and warmup effects. The
+   final protocol uses fresh state, rotated order, a discarded conditioning round,
+   and five-round medians.
+
+## Exact production artifacts
+
+| Component | Immutable source or image | Artifact |
+|---|---|---|
+| Benchmark driver | `catalog-bench@fbdf684566edb877abca94629ff702c93d6ca2fb` | stripped ARM64 ELF, 2,626,432 bytes, SHA-256 `c04e363420ae8152a229ad4e12e126b28a18deb056c976e4e9af48a6ced75139` |
+| LakeCat | `lakecat@3cca8d1c749fcf1c7cbd30661ba2bd4805b256d3` | stripped ARM64 ELF, 19,494,560 bytes, SHA-256 `56b5081b82aab567eede1b42fbd6e5f4a767d992eff3c0b29915a7b79d076617` |
+| LakeCat runtime | source ELF packaged without recompilation | image `sha256:5f661e70cd67f7c4eb720c2eb030b6373b49a1b7c9b86a25796d98547020ad06` |
+| Nessie 0.108.4 | official `0.108.4-java` ARM64 image | `sha256:c0f42874c810f28ac30fc991e979c1b8cf5a2cbfa94212086cdddeae49629517` |
+| Polaris 1.5.0 | official ARM64 image | `sha256:03a04f0459948da3977f7ea2ad2fb9ea672b2b503ec409c89c2934d400d71c67` |
+| Gravitino 1.1.0 | official ARM64 image; bundled jars report 1.1.0 | `sha256:906b392c22df95bb3a26085e97a96d2ada3db570c2b40b630f130fa6e1c6648b` |
+| MinIO | shared official ARM64 image | `sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e` |
+| Build/runner | `rust:1-bookworm`, Rust 1.96.0, 10 ARM64 CPUs, 7.8 GiB RAM | `sha256:5e2214abe154fe26e39f64488952e5c991eeed1d6d6da7cc8381ae83927f0cfc` |
+
+The driver lockfile SHA-256 is `5c9c924c…`; LakeCat's is `2c580d64…`.
+Both Rust executables were built in that same runner with locked dependencies,
+`-Ctarget-cpu=native`, optimization level 3, fat LTO, one codegen unit, stripped
+symbols, panic abort, debug disabled, and incremental compilation disabled. The
+LakeCat feature set was `turso-local,sail-local`. MinIO was audited with `mc`
+`RELEASE.2025-08-13T08-35-41Z`, binary SHA-256 `14c8c961…`.
+
+Production build commands (both executed in `querygraph-bench-runner`):
+
+```sh
+cd /src/catalog-bench
+CXXFLAGS= RUSTFLAGS="-Ctarget-cpu=native" \
+  CARGO_TARGET_DIR=/target/catalog-bench-public-final \
+  CARGO_PROFILE_RELEASE_OPT_LEVEL=3 \
+  CARGO_PROFILE_RELEASE_LTO=fat \
+  CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 \
+  CARGO_PROFILE_RELEASE_DEBUG=false \
+  CARGO_PROFILE_RELEASE_STRIP=symbols \
+  CARGO_PROFILE_RELEASE_PANIC=abort \
+  CARGO_PROFILE_RELEASE_INCREMENTAL=false \
+  cargo build --locked --release \
+    -p catalog-bench-commit --bin catalog-bench-commit -j1
+
+cd /src/lakecat
+CXXFLAGS= RUSTFLAGS="-Ctarget-cpu=native" \
+  CARGO_TARGET_DIR=/target/lakecat-public-final \
+  CARGO_PROFILE_RELEASE_OPT_LEVEL=3 \
+  CARGO_PROFILE_RELEASE_LTO=fat \
+  CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 \
+  CARGO_PROFILE_RELEASE_DEBUG=false \
+  CARGO_PROFILE_RELEASE_STRIP=symbols \
+  CARGO_PROFILE_RELEASE_PANIC=abort \
+  CARGO_PROFILE_RELEASE_INCREMENTAL=false \
+  cargo build --locked --release \
+    -p lakecat-service --bin lakecat-service \
+    --features turso-local,sail-local -j1
+```
+
+The second ELF was copied directly into the runtime image and its in-container
+SHA-256 was verified before acceptance and the final sweep. No debug or development
+binary appears in the published data.
+
+## How LakeCat got here (0.1.1 → `3cca8d1c`)
+
+Six changes took LakeCat's S3 commit p50 from the historical **12.6 ms** to a
+**2.697 ms** five-round median without removing its audit, outbox, idempotency, or
+pointer-CAS guarantees:
 
 1. **Turso MVCC concurrent writes.** 0.1.1 serialized every write through one
    per-store async mutex, so 8 concurrent commits effectively ran one-at-a-time
    (38.5 /s, 85% conflict). 0.2.0 uses `journal_mode=mvcc` + `BEGIN CONCURRENT` with
    bounded retry: different-table commits run in parallel and same-table races
-   converge to the metadata-pointer CAS. Concurrent throughput 38.5 → ~200+ /s.
+   converge to the metadata-pointer CAS.
 2. **Cache the object-store client.** LakeCat rebuilt the S3 client — credential
    chain, HTTP client, a *fresh connection with no keep-alive* — on every commit. A
    MinIO request trace showed ~1 PutObject/commit at ~1.7 ms server-side, so most of
@@ -60,9 +218,16 @@ the Java catalogs; it was missing connection-reuse optimizations they had long m
    sequential p50 12.6 → 6.8 ms.
 3. **Pool the write connection.** `write_txn` opened a new Turso connection and
    re-applied the MVCC pragmas on every commit. Pooling pragma-warmed connections
-   (still a distinct one per concurrent writer, so MVCC is unchanged) cut p50
-   6.8 → 4.14 ms.
-4. **Sail as a git dependency.** LakeCat builds Sail from `querygraph/sail`'s
+   still gives concurrent writers distinct connections, preserving MVCC.
+4. **Pool read connections.** Commit validation performs several small catalog
+   reads. Reusing those connections removes repeated connection setup without
+   changing transaction boundaries.
+5. **Bound busy retries, then gate only same-table final transactions.** Retrying
+   Turso's busy/write-conflict/dependency-abort cases handles transient contention.
+   A keyed weak-reference mutex around the final transaction prevents a continuous
+   same-table writer stream from exhausting that retry budget. Distinct tables and
+   S3 preparation remain parallel, and stale pointers still return 409.
+6. **Sail as a git dependency.** LakeCat builds Sail from `querygraph/sail`'s
    `lakecat` branch (metadata evolution + planning helpers), so the benchmark image
    is reproducible without a local Sail checkout.
 
@@ -70,34 +235,25 @@ the Java catalogs; it was missing connection-reuse optimizations they had long m
 write a real `metadata.json` per commit — see History below; before that, the
 "303 /s, 0 objects" figure was the catalog doing no metadata work at all.)
 
-## Audit and Idempotency
+## Audit and idempotency
 
-LakeCat's remaining ~13% sequential gap to Nessie (149 vs 171 commits/s) is **not a
-language gap — it is work the other catalogs do not do.** Every LakeCat commit runs
-**seven writes inside one transaction**:
+LakeCat's accepted commit advances the metadata pointer with compare-and-swap and
+records pointer history, an audit event, a transactional-outbox entry, and an
+idempotency result in the same embedded-store transaction. Namespace/table reads
+validate the request first. A repeated key replays the prior result rather than
+double-applying it; the final driver uses disjoint keys for every phase and writer.
 
-1. the metadata-pointer **compare-and-swap** (the actual commit),
-2. a **metadata-pointer log** row (the history of pointer movements),
-3. an **audit event** (who committed what, when),
-4. a **transactional-outbox** row — lineage/graph events staged *atomically* with
-   the commit and drained later, so a catalog change can never be lost or emitted
-   without the commit,
-5. an **idempotency record** — a retried commit with the same key replays the prior
-   result instead of double-applying,
-
-plus the namespace/table reads that validate the request. That is a durable audit
-trail + an atomic outbox + idempotency, fsynced to the embedded store, *per commit*.
-Nessie's version store and Gravitino's memory backend do less per commit because
-they offer less per commit. **LakeCat is paying for features, not losing on speed** —
-you would close the gap by relaxing those guarantees, not by changing languages.
+The competitors do not expose an identical feature set or private-state backend,
+so the ranking should not be read as a pure language comparison. It is the measured
+cost of each released/configured catalog performing the common Iceberg REST unit of
+work while retaining its own semantics.
 
 ### Why "Rust" did not make it fast (and why that is fine)
 
-The commit path is **I/O-bound**, so the runtime's CPU speed is nearly irrelevant: a
-MinIO trace showed ~1 `PutObject`/commit at ~1.7 ms server-side, and LakeCat's own
-CPU + state work against *local* storage was p50 0.89 ms. A commit is a network PUT
-plus a durable transaction; "Rust is faster than Java" buys little when the hot path
-waits on S3 and fsync.
+The commit path is substantially **I/O-bound**: an accepted commit includes a
+network object write plus private-state work. Runtime CPU speed therefore explains
+less than connection reuse, object-store reuse, transaction setup, and contention
+behavior.
 
 What actually made LakeCat slow at first (12.6 ms p50) was **missing connection
 reuse** — rebuilding the S3 client and opening a new store connection on every commit
@@ -107,26 +263,21 @@ here*). And a 1000-commit loop against a warm, long-running server is the **JVM'
 best case**: JIT-compiled hot paths and warm connection pools shine, while its real
 weaknesses — cold start and memory footprint — never appear.
 
-Where Rust still pays off is exactly what a warm steady-state benchmark hides: no GC
-pauses (steadier **tail latency**), a far smaller resident **footprint**, and instant
-**cold start** — which matter for serverless, edge, and many-tenant-per-host
-deployments. On median warm latency both runtimes converge because both are just
-waiting on S3; on tails, memory, and startup the Rust catalog keeps its edge.
+Cold start, resident memory, and GC behavior are outside this benchmark. They need
+separate measurements rather than being inferred from the warm commit loop.
 
 ## Notes on fairness
 
 - **Turso is LakeCat's catalog-state store, not table data.** It holds the
   metadata pointer, pointer log, idempotency, audit, and outbox rows — the
   analogue of Polaris's metastore, Nessie's version store, and Gravitino's
-  backend (all also local/in-memory here). The Iceberg `metadata.json` itself
-  goes to S3/MinIO for every catalog, LakeCat included.
-- **LakeCat does more durable bookkeeping per commit** (see *Audit and
-  Idempotency*) — the bulk of its remaining sequential gap to Nessie's leaner
-  version store.
-- **The concurrent column is commit-conflict policy, not speed.** Strict-CAS
-  catalogs (LakeCat 70%, Nessie 82%) both retry most of their 8-writer commits;
-  LakeCat still leads the column because its conflict detection and bounded retry
-  are cheap, so it churns through successful same-table commits faster.
+  backend. Gravitino specifically uses file-backed SQLite JDBC here. The Iceberg
+  `metadata.json` itself goes to S3/MinIO for every accepted commit.
+- **The concurrent column combines policy and speed.** LakeCat's 85.42% median
+  conflict rate is much stricter than Polaris's 4.04% or Gravitino's 1.10%, so
+  successful throughput is not a direct measure of equivalent acceptance policy.
+- **Nessie's raw numbers are diagnostic only.** Its 81.00% median conflict rate is
+  valid to report, but the additional HTTP 500 responses make it rank-ineligible.
 
 ## History: why the first LakeCat run was wrong (303 /s, 0 objects)
 
@@ -407,7 +558,7 @@ AWS_ENDPOINT=http://127.0.0.1:9000 AWS_ACCESS_KEY_ID=admin AWS_SECRET_ACCESS_KEY
 cd ~/src/boat && docker compose up -d minio nessie gravitino polaris
 
 # 2. build LakeCat from source, deploy its image, and bench every reachable catalog
-cd ~/src/catalog-commit-bench && ./bench-stack.sh
+cd ~/src/catalog-bench && ./bench-stack.sh
 ```
 
 `bench-stack.sh` builds `lakecat-service` for Linux (Sail fetched from the
@@ -416,6 +567,11 @@ cd ~/src/catalog-commit-bench && ./bench-stack.sh
 each reachable catalog (LakeCat with `--location s3://warehouse/lakecat`). Polaris
 is auto-bootstrapped via `polaris-bootstrap.sh` (OAuth2 token + an S3 catalog on the
 same `warehouse` bucket); set `POLARIS_TOKEN` to skip the bootstrap.
+
+That command is the one-round smoke path and correctly stops on request errors.
+To reproduce the public table, use the six-round rotated protocol, fresh private
+state, production build profile, and validity rules recorded at the top of this
+file; do not average or retain rows from the older one-shot results.
 
 ## Not measured
 

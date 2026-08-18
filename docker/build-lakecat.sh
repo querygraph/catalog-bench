@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build lakecat-service for Linux and stage the binary for the runtime image.
 #
-# As of LakeCat 0.2.1, the only external source dependency is Sail, consumed as a
+# As of LakeCat 0.3.0, the only external source dependency is Sail, consumed as a
 # Cargo *git* dependency on the querygraph/sail `lakecat` branch (public), so the
 # build needs network access to fetch it — not a ../sail path mount. Grust and
 # TypeSec are now published crates (Grust 0.11.0), so no sibling checkout is
@@ -36,9 +36,19 @@ docker run --rm \
   -v catalog-bench-cargo-registry:/usr/local/cargo/registry \
   -v catalog-bench-cargo-git:/usr/local/cargo/git \
   -w /src/lakecat \
-  rust:1-bookworm \
+  -e CXXFLAGS= \
+  -e RUSTFLAGS=-Ctarget-cpu=native \
+  -e CARGO_PROFILE_RELEASE_OPT_LEVEL=3 \
+  -e CARGO_PROFILE_RELEASE_LTO=fat \
+  -e CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 \
+  -e CARGO_PROFILE_RELEASE_DEBUG=false \
+  -e CARGO_PROFILE_RELEASE_STRIP=symbols \
+  -e CARGO_PROFILE_RELEASE_PANIC=abort \
+  -e CARGO_PROFILE_RELEASE_INCREMENTAL=false \
+  rust:1.96.0-bookworm \
   sh -c "apt-get update >/dev/null && apt-get install -y protobuf-compiler python3-dev libpython3.11-dev >/dev/null && \
-    cargo build -p lakecat-service --release --features '$features' \
+    cargo build --locked --release -p lakecat-service --bin lakecat-service \
+    --features '$features' -j1 \
     --target-dir /src/$(basename "$bench_repo")/.linux-target"
 
 bin="$target_dir/release/lakecat-service"

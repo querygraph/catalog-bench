@@ -6,24 +6,24 @@ every catalog writes to one bucket), see **[README.md](README.md) → "Docker se
 for impartial runs with MinIO"**. This file covers the LakeCat-from-source build
 and day-to-day operation.
 
-**LakeCat is fully wired and verified here.** Polaris and Gravitino are included
-behind compose profiles with best-effort upstream images; each needs a
-bootstrap/auth step that is not hands-off (see *Bootstrap caveats*). Unity OSS has a
+**LakeCat is fully wired and verified here.** Nessie, Polaris, and Gravitino are
+included behind compose profiles with best-effort upstream images; some require
+upstream-specific bootstrap or auth (see *Bootstrap caveats*). Unity OSS has a
 profile too but is **not benchmarkable on the commit path** until its write
 endpoints ship (read-only until PR #1618 / 0.6.0 — see *Bootstrap caveats*).
 
 ## Layout assumption
 
-The harness lives in `~/src/catalog-commit-bench` next to the one sibling repo it
+The harness lives in `~/src/catalog-bench` next to the one sibling repo it
 builds:
 
 ```
 ~/src/
-  catalog-commit-bench/   <- this repo
+  catalog-bench/          <- this repo
   lakecat/                <- built from source
 ```
 
-As of LakeCat 0.2.1 the only sibling checkout needed is `lakecat` itself. Sail is
+As of LakeCat 0.3.0 the only sibling checkout needed is `lakecat` itself. Sail is
 a Cargo **git** dependency on `querygraph/sail#lakecat`, fetched during the build;
 Grust (0.11.0) and TypeSec are now **published crates**, so neither needs a local
 path checkout.
@@ -45,7 +45,8 @@ docker compose up -d lakecat       # run it on the shared network, pointed at Mi
 `docker/build-lakecat.sh` details:
 - runs `cargo build -p lakecat-service --release --features "$FEATURES"` (default
   `FEATURES=turso-local,sail-local`; `sail-local` makes each commit write a real
-  `metadata.json`) in a `rust:1-bookworm` container;
+  `metadata.json`) in a pinned `rust:1.96.0-bookworm` container with fat LTO,
+  one codegen unit, `target-cpu=native`, stripped symbols, and panic abort;
 - mounts `~/src` read-write at `/src`, plus two named volumes —
   `catalog-bench-cargo-registry` (crates.io cache, incl. Grust/TypeSec) and
   `catalog-bench-cargo-git` (the querygraph/sail git checkout) — so rebuilds are
@@ -71,7 +72,13 @@ Builds LakeCat → image → (re)starts the container → ensures the MinIO `war
 bucket → benchmarks every reachable catalog with identical parameters (LakeCat with
 `--location s3://warehouse/lakecat` + idempotency; Nessie/Gravitino with their
 prefixes; Polaris when `POLARIS_TOKEN` is set). Tunables: `ITER`, `CONC`, `DUR`,
-`SKIP_BUILD=1`, `POLARIS_TOKEN`, `POLARIS_PREFIX`.
+`SKIP_BUILD=1`, `POLARIS_TOKEN`, `POLARIS_CATALOG`.
+
+The driver deliberately exits nonzero if any concurrent request fails. With
+Nessie 0.108.4, the one-shot command therefore stops on its reproduced
+request-context HTTP 500s; this is an integrity gate, not a harness failure. See
+[RESULTS.md](RESULTS.md) for the six-round final protocol that retains Nessie's
+complete report as DQ while continuing the other catalogs.
 
 ### Manual
 
@@ -80,7 +87,7 @@ docker compose up -d lakecat
 ./run-bench.sh                     # benchmarks every reachable catalog
 # or one target, host binary:
 cargo build --release
-./target/release/catalog-commit-bench \
+./target/release/catalog-bench-commit \
   --base-url http://127.0.0.1:8181/catalog --location s3://warehouse/lakecat \
   --create --idempotency --iterations 1000 --concurrency 8 --duration-secs 6
 # or via the bench container on the shared network:
@@ -92,6 +99,7 @@ Enable an external catalog by profile (or run them from `~/src/boat`):
 
 ```sh
 docker compose --profile gravitino up -d gravitino
+docker compose --profile nessie    up -d nessie
 docker compose --profile polaris   up -d polaris
 docker compose --profile unity     up -d unitycatalog
 ```
@@ -103,18 +111,26 @@ docker compose --profile unity     up -d unitycatalog
   catalog `bench` on `s3://warehouse/bench`); `bench-stack.sh` calls it
   automatically, or pass a ready `POLARIS_TOKEN`. Prefix = catalog name.
   Spec-conformant commit path.
-- **Gravitino** uses the `apache/gravitino-iceberg-rest` image with a memory
-  backend. Confirm your tag serves the REST API on the expected port; older tags
-  differ. Spec-conformant.
+- **Gravitino** uses the pinned `apache/gravitino-iceberg-rest:1.1.0` image with
+  its bundled file-backed SQLite JDBC backend. Do not use the image's `memory`
+  backend for this comparison: it acknowledges commits and returns S3 metadata
+  locations without writing `metadata.json` objects. The harness verifies MinIO
+  object growth before accepting a run. Do not use `jdbc:sqlite::memory:` either:
+  each pooled JDBC connection gets an isolated database and concurrent writers
+  fail against missing schema; the compose file uses `/data/gravitino.db`.
+- **Nessie** uses the official `0.108.4-java` image. Its final five measured
+  eight-writer runs all returned Quarkus `ContextNotActiveException` HTTP 500s,
+  so its raw throughput is published as DQ. The compose profile is exact
+  reproduction infrastructure, not evidence of a valid result.
 - **Unity (OSS)** released builds (latest 0.5.0) serve Iceberg REST **read-only** —
   there is no external `updateTable`/`set-properties` commit handler, so Unity is
   *out of the comparison*, not merely un-bootstrapped. Commit support exists only in
   unmerged draft PR #1618 (unreleased 0.6.0); build the image from that branch to
   benchmark it. The `unity` compose profile is kept ready for when it lands.
 
-Polaris and Gravitino are scaffolded honestly: the service definitions and
-run-script hooks are correct, but their first-run bootstrap/auth is upstream-specific
-and must be completed before the commit numbers mean anything. Unity OSS is wired the
+Nessie, Polaris, and Gravitino are scaffolded honestly: the service definitions
+and run-script hooks are correct, but their setup and version-specific behavior
+must be checked before the commit numbers mean anything. Unity OSS is wired the
 same way but blocked upstream (read-only REST). LakeCat is the one path proven
 end-to-end in this harness.
 

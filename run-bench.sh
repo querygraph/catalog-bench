@@ -6,14 +6,19 @@
 # `--create` + commit flow; no per-catalog provisioning or commit-suffix.
 set -uo pipefail
 
-BENCH="${BENCH:-./target/release/catalog-commit-bench}"
+BENCH="${BENCH:-./target/release/catalog-bench-commit}"
 ITER="${ITER:-2000}"
+WARMUP="${WARMUP:-50}"
 CONC="${CONC:-8}"
 DUR="${DUR:-10}"
-NS="${NS:-commit_bench}"
+NS="${NS:-bench$(date +%s)}"
 TABLE="${TABLE:-commits}"
 
 reachable() { curl -fsS -o /dev/null --max-time 2 "$1" 2>/dev/null; }
+reachable_bearer() {
+  curl -fsS -o /dev/null --max-time 2 \
+    -H "Authorization: Bearer $2" "$1" 2>/dev/null
+}
 
 run_one() {
   local name="$1" base="$2"; shift 2
@@ -21,29 +26,41 @@ run_one() {
   echo "  $name  ->  $base"
   echo "============================================================"
   "$BENCH" --base-url "$base" --namespace "$NS" --table "$TABLE" \
-    --iterations "$ITER" --concurrency "$CONC" --duration-secs "$DUR" "$@"
+    --warmup "$WARMUP" --iterations "$ITER" --concurrency "$CONC" \
+    --duration-secs "$DUR" "$@"
   echo
 }
 
 # --- LakeCat (spec-conformant: standard --create + commit) -------------------
 LAKECAT_BASE="${LAKECAT_BASE:-http://127.0.0.1:8181/catalog}"
 if reachable "$LAKECAT_BASE/v1/config"; then
-  run_one "LakeCat" "$LAKECAT_BASE" --create --idempotency
+  run_one "LakeCat" "$LAKECAT_BASE" --create --idempotency \
+    --location "${LAKECAT_LOCATION:-s3://warehouse/lakecat}"
 else
   echo "skip LakeCat: $LAKECAT_BASE not reachable"
 fi
 
+# --- Nessie -----------------------------------------------------------------
+NESSIE_BASE="${NESSIE_BASE:-http://127.0.0.1:19120/iceberg}"
+if reachable "$NESSIE_BASE/v1/config"; then
+  run_one "Nessie" "$NESSIE_BASE" --prefix "${NESSIE_PREFIX:-main}" --create
+else
+  echo "skip Nessie: $NESSIE_BASE not reachable"
+fi
+
 # --- Polaris (needs --token; set POLARIS_TOKEN) ------------------------------
-POLARIS_BASE="${POLARIS_BASE:-http://127.0.0.1:8182/api/catalog}"
-if [[ -n "${POLARIS_TOKEN:-}" ]] && reachable "$POLARIS_BASE/v1/config"; then
-  run_one "Polaris" "$POLARIS_BASE" --prefix "${POLARIS_PREFIX:-my_catalog}" \
+POLARIS_BASE="${POLARIS_BASE:-http://127.0.0.1:8185/api/catalog}"
+POLARIS_PREFIX="${POLARIS_PREFIX:-bench}"
+if [[ -n "${POLARIS_TOKEN:-}" ]] && \
+    reachable_bearer "$POLARIS_BASE/v1/config?warehouse=$POLARIS_PREFIX" "$POLARIS_TOKEN"; then
+  run_one "Polaris" "$POLARIS_BASE" --prefix "$POLARIS_PREFIX" \
     --token "$POLARIS_TOKEN" --create
 else
   echo "skip Polaris: set POLARIS_TOKEN and ensure $POLARIS_BASE is up"
 fi
 
 # --- Gravitino ---------------------------------------------------------------
-GRAVITINO_BASE="${GRAVITINO_BASE:-http://127.0.0.1:9001/iceberg}"
+GRAVITINO_BASE="${GRAVITINO_BASE:-http://127.0.0.1:9002/iceberg}"
 if reachable "$GRAVITINO_BASE/v1/config"; then
   run_one "Gravitino" "$GRAVITINO_BASE" --create
 else
