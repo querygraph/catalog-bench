@@ -91,10 +91,10 @@
       "id": "catalog-bench-conformance",
       "kind": "benchmark-harness",
       "name": "catalog-bench conformance runner",
-      "version": "1f4e640566906ded6aa0589d52351eb1c32788f0",
+      "version": "efbce260259475728c82ff027a5397ed5b6079fb",
       "source": {
         "repository": "https://github.com/querygraph/catalog-bench.git",
-        "revision": "1f4e640566906ded6aa0589d52351eb1c32788f0"
+        "revision": "efbce260259475728c82ff027a5397ed5b6079fb"
       },
       "build": {
         "toolchain": "Rust 1.97.1",

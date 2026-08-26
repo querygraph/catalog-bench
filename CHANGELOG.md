@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C1-05 provenance pin: advanced only the draft conformance-runner component to
+  the independently reviewed table-runner revision `catalog-bench@efbce26`.
+  Its stable Rust 1.97.1, fat-LTO, single-codegen-unit production recipe remains
+  unresolved until the optimized Docker artifact is built and hashed; C1-09
+  still owns conversion of reviewed smoke evidence into immutable results.
+
 - Catalog community C1-05 runner: implemented a strict Iceberg REST table
   lifecycle probe with run-owned namespace preflight, committed two-table
   create/list/load, exact isolated pagination, immutable property update, three
