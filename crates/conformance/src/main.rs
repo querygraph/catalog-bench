@@ -8,8 +8,8 @@ use catalog_bench_common::contract::{
     parse_contract, ComponentId, ContractDocument, Profile, Scenario,
 };
 use catalog_bench_conformance::{
-    encode_evidence, run_config_probe, run_namespace_probe, run_table_probe, sha256_hex,
-    ContractDigests, ProbeClassification,
+    encode_evidence, run_commit_probe, run_config_probe, run_namespace_probe, run_table_probe,
+    sha256_hex, ContractDigests, ProbeClassification,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -31,6 +31,8 @@ enum Command {
     Namespace(NamespaceArgs),
     /// Exercise table lifecycle, pagination, optional operations, and errors.
     Table(TableArgs),
+    /// Exercise commit requirements, stale-state rejection, and idempotency.
+    Commit(CommitArgs),
 }
 
 #[derive(Debug, Args)]
@@ -87,6 +89,25 @@ struct TableArgs {
     output: PathBuf,
 }
 
+#[derive(Debug, Args)]
+struct CommitArgs {
+    /// Validated profile containing the catalog adapter.
+    #[arg(long)]
+    profile: PathBuf,
+    /// Commit-correctness scenario contract.
+    #[arg(long)]
+    scenario: PathBuf,
+    /// Profile component identifier to probe.
+    #[arg(long)]
+    catalog: String,
+    /// Run-owned suffix: 1-24 lowercase ASCII letters, digits, or underscores.
+    #[arg(long)]
+    fixture_id: String,
+    /// New evidence file. Existing files are never overwritten.
+    #[arg(long)]
+    output: PathBuf,
+}
+
 struct LoadedContracts {
     profile: Profile,
     scenario: Scenario,
@@ -110,6 +131,7 @@ async fn run(cli: Cli) -> Result<bool> {
         Command::Config(args) => run_config(args).await,
         Command::Namespace(args) => run_namespace(args).await,
         Command::Table(args) => run_table(args).await,
+        Command::Commit(args) => run_commit(args).await,
     }
 }
 
@@ -161,6 +183,29 @@ async fn run_namespace(args: NamespaceArgs) -> Result<bool> {
 async fn run_table(args: TableArgs) -> Result<bool> {
     let contracts = load_contracts(&args.profile, &args.scenario)?;
     let transcript = run_table_probe(
+        &contracts.profile,
+        &contracts.scenario,
+        &ComponentId::new(args.catalog),
+        &args.fixture_id,
+        contracts.digests,
+        |name| std::env::var(name).ok(),
+    )
+    .await?;
+    let passed = transcript.passed();
+    let classification = classification_name(&transcript.classification);
+    let evidence = encode_evidence(&transcript)?;
+    write_new(&args.output, &evidence)?;
+    println!(
+        "wrote {} (sha256={}, classification={classification})",
+        args.output.display(),
+        sha256_hex(&evidence)
+    );
+    Ok(passed)
+}
+
+async fn run_commit(args: CommitArgs) -> Result<bool> {
+    let contracts = load_contracts(&args.profile, &args.scenario)?;
+    let transcript = run_commit_probe(
         &contracts.profile,
         &contracts.scenario,
         &ComponentId::new(args.catalog),

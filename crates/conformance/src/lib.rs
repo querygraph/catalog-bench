@@ -4,9 +4,11 @@
 //! classify smoke output as publishable benchmark results; immutable result
 //! bundles remain the responsibility of the final execution pipeline.
 
+mod commit;
 mod config;
 mod evidence;
 mod iceberg;
+mod idempotency;
 mod namespace;
 mod operation;
 mod routing;
@@ -21,6 +23,7 @@ use anyhow::Result;
 use serde::Serialize;
 use sha2::{Digest as _, Sha256};
 
+pub use commit::*;
 pub use config::*;
 pub use evidence::*;
 pub use namespace::*;

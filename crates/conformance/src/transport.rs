@@ -13,6 +13,7 @@ use crate::evidence::{
     AuthenticationOutcome, AuthenticationTranscript, HttpResponseTranscript, ProbeFailure,
     ProbeFailureStage, SanitizedResponseBody,
 };
+use crate::idempotency::IdempotencyKey;
 use crate::sanitize::sanitize_json;
 use crate::sha256_hex;
 
@@ -231,6 +232,64 @@ pub(crate) async fn execute_json_request(
     sensitive_values: &[String],
     response_label: &str,
 ) -> CapturedResponse {
+    execute_json_request_with_context(
+        client,
+        method,
+        url,
+        bearer_token,
+        body,
+        RequestCapture {
+            sensitive_values,
+            response_label,
+            idempotency_key: None,
+        },
+    )
+    .await
+}
+
+pub(crate) async fn execute_json_request_with_idempotency(
+    client: &Client,
+    method: Method,
+    url: Url,
+    bearer_token: Option<&str>,
+    body: Option<&Value>,
+    sensitive_values: &[String],
+    request: IdempotentRequest<'_>,
+) -> CapturedResponse {
+    execute_json_request_with_context(
+        client,
+        method,
+        url,
+        bearer_token,
+        body,
+        RequestCapture {
+            sensitive_values,
+            response_label: request.response_label,
+            idempotency_key: Some(request.key),
+        },
+    )
+    .await
+}
+
+pub(crate) struct IdempotentRequest<'a> {
+    pub(crate) response_label: &'a str,
+    pub(crate) key: &'a IdempotencyKey,
+}
+
+struct RequestCapture<'a> {
+    sensitive_values: &'a [String],
+    response_label: &'a str,
+    idempotency_key: Option<&'a IdempotencyKey>,
+}
+
+async fn execute_json_request_with_context(
+    client: &Client,
+    method: Method,
+    url: Url,
+    bearer_token: Option<&str>,
+    body: Option<&Value>,
+    capture: RequestCapture<'_>,
+) -> CapturedResponse {
     let mut request = client
         .request(method, url)
         .header(ACCEPT, "application/json");
@@ -239,6 +298,9 @@ pub(crate) async fn execute_json_request(
     }
     if let Some(body) = body {
         request = request.json(body);
+    }
+    if let Some(key) = capture.idempotency_key {
+        request = request.header("Idempotency-Key", key.as_str());
     }
     let response = match request.send().await {
         Ok(response) => response,
@@ -249,13 +311,13 @@ pub(crate) async fn execute_json_request(
                 redactions: Vec::new(),
                 failure: Some(ProbeFailure {
                     stage: ProbeFailureStage::Request,
-                    explanation: redact_text(&error.to_string(), sensitive_values),
+                    explanation: redact_text(&error.to_string(), capture.sensitive_values),
                 }),
             };
         }
     };
     let status = response.status().as_u16();
-    let headers = allowlisted_response_headers(&response, sensitive_values);
+    let headers = allowlisted_response_headers(&response, capture.sensitive_values);
     let body = match read_limited_body(response, MAXIMUM_RESPONSE_BYTES).await {
         Ok(body) => body,
         Err(error) => {
@@ -265,7 +327,7 @@ pub(crate) async fn execute_json_request(
                 redactions: Vec::new(),
                 failure: Some(ProbeFailure {
                     stage: ProbeFailureStage::Response,
-                    explanation: redact_text(&error.to_string(), sensitive_values),
+                    explanation: redact_text(&error.to_string(), capture.sensitive_values),
                 }),
             };
         }
@@ -287,11 +349,14 @@ pub(crate) async fn execute_json_request(
             redactions: Vec::new(),
             failure: Some(ProbeFailure {
                 stage: ProbeFailureStage::Response,
-                explanation: format!("{response_label} response exceeded the evidence body limit"),
+                explanation: format!(
+                    "{} response exceeded the evidence body limit",
+                    capture.response_label
+                ),
             }),
         },
         CollectedBody::Complete(bytes) => {
-            capture_complete_body(status, headers, bytes, sensitive_values)
+            capture_complete_body(status, headers, bytes, capture.sensitive_values)
         }
     }
 }

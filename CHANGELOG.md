@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Catalog community C1-06 runner: implement a strict Iceberg REST commit
+  correctness probe with matching requirement admission, a deterministic stale
+  schema conflict and atomicity proof, config-gated UUIDv7 exact replay and
+  content-binding checks, full fixture reconciliation, and typed idempotency
+  handling that can send raw keys without serializing them into evidence.
+
 - C1-06 protocol preparation: extract committed-table request construction,
   profile-root location derivation, namespace response validation, and generic
   Iceberg metadata/schema snapshots into one reusable conformance module. The

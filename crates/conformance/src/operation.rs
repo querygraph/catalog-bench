@@ -7,8 +7,11 @@ use serde_json::Value;
 use url::Url;
 
 use crate::evidence::{HttpResponseTranscript, ProbeFailure};
+use crate::idempotency::IdempotencyKey;
 use crate::sanitize::sanitize_json;
-use crate::transport::{execute_json_request, REDACTED};
+use crate::transport::{
+    execute_json_request, execute_json_request_with_idempotency, IdempotentRequest, REDACTED,
+};
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -83,6 +86,32 @@ impl<'a> OperationRecorder<'a> {
         url: Url,
         body: Option<Value>,
     ) -> Observation {
+        self.attempt_with_idempotency(id, capability, method, url, body, None)
+            .await
+    }
+
+    pub(crate) async fn attempt_idempotent(
+        &mut self,
+        id: impl Into<String>,
+        capability: Option<&str>,
+        method: Method,
+        url: Url,
+        body: Option<Value>,
+        idempotency_key: &IdempotencyKey,
+    ) -> Observation {
+        self.attempt_with_idempotency(id, capability, method, url, body, Some(idempotency_key))
+            .await
+    }
+
+    async fn attempt_with_idempotency(
+        &mut self,
+        id: impl Into<String>,
+        capability: Option<&str>,
+        method: Method,
+        url: Url,
+        body: Option<Value>,
+        idempotency_key: Option<&IdempotencyKey>,
+    ) -> Observation {
         let id = id.into();
         let mut headers = BTreeMap::from([("accept".to_owned(), "application/json".to_owned())]);
         if body.is_some() {
@@ -93,8 +122,21 @@ impl<'a> OperationRecorder<'a> {
             self.redactions
                 .push(format!("operations.{id}.request.headers.authorization"));
         }
+        if idempotency_key.is_some() {
+            headers.insert("idempotency-key".to_owned(), REDACTED.to_owned());
+            self.redactions
+                .push(format!("operations.{id}.request.headers.idempotency-key"));
+        }
 
-        let sanitized_url = sanitize_json(Value::String(url.to_string()), self.sensitive_values);
+        let request_sensitive_values = self
+            .sensitive_values
+            .iter()
+            .cloned()
+            .chain(idempotency_key.map(|key| key.as_str().to_owned()))
+            .collect::<Vec<_>>();
+
+        let sanitized_url =
+            sanitize_json(Value::String(url.to_string()), &request_sensitive_values);
         if !sanitized_url.redactions.is_empty() {
             self.redactions.push(format!("operations.{id}.request.url"));
         }
@@ -104,7 +146,7 @@ impl<'a> OperationRecorder<'a> {
             .expect("sanitizing a JSON string preserves its type")
             .to_owned();
         let sanitized_body = body.as_ref().map(|body| {
-            let sanitized = sanitize_json(body.clone(), self.sensitive_values);
+            let sanitized = sanitize_json(body.clone(), &request_sensitive_values);
             self.redactions.extend(
                 sanitized
                     .redactions
@@ -113,16 +155,35 @@ impl<'a> OperationRecorder<'a> {
             );
             sanitized.value
         });
-        let captured = execute_json_request(
-            self.client,
-            method.clone(),
-            url,
-            self.bearer_token,
-            body.as_ref(),
-            self.sensitive_values,
-            &id,
-        )
-        .await;
+        let captured = match idempotency_key {
+            Some(key) => {
+                execute_json_request_with_idempotency(
+                    self.client,
+                    method.clone(),
+                    url,
+                    self.bearer_token,
+                    body.as_ref(),
+                    &request_sensitive_values,
+                    IdempotentRequest {
+                        response_label: &id,
+                        key,
+                    },
+                )
+                .await
+            }
+            None => {
+                execute_json_request(
+                    self.client,
+                    method.clone(),
+                    url,
+                    self.bearer_token,
+                    body.as_ref(),
+                    &request_sensitive_values,
+                    &id,
+                )
+                .await
+            }
+        };
         self.redactions.extend(
             captured
                 .redactions
@@ -245,6 +306,19 @@ pub(crate) fn validate_error_response(
     status: u16,
     error_type: &str,
 ) -> std::result::Result<(), String> {
+    let actual_type = validate_spec_error_response(observation, status)?;
+    if actual_type != error_type {
+        return Err(format!(
+            "error type `{actual_type}` does not match `{error_type}`"
+        ));
+    }
+    Ok(())
+}
+
+pub(crate) fn validate_spec_error_response(
+    observation: &Observation,
+    status: u16,
+) -> std::result::Result<String, String> {
     let response: IcebergErrorResponse = parse_json_response(observation, status)?;
     if response.error.code != status {
         return Err(format!(
@@ -252,16 +326,13 @@ pub(crate) fn validate_error_response(
             response.error.code
         ));
     }
-    if response.error.r#type != error_type {
-        return Err(format!(
-            "error type `{}` does not match `{error_type}`",
-            response.error.r#type
-        ));
+    if response.error.r#type.trim().is_empty() {
+        return Err("error type is empty".to_owned());
     }
     if response.error.message.trim().is_empty() {
         return Err("error message is empty".to_owned());
     }
-    Ok(())
+    Ok(response.error.r#type)
 }
 
 pub(crate) fn all_results<'a, T: 'a>(
