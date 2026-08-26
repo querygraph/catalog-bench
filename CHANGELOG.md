@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C1-05 Gravitino storage correction: aligned the pinned 1.3.0 container's
+  Compose environment with its `GRAVITINO_ICEBERG_REST_*` rewrite contract, so
+  the declared SQLite JDBC backend, S3 warehouse, S3FileIO, MinIO endpoint, and
+  path-style credentials replace the image's `/tmp`/memory defaults. Added a
+  deployment regression test and operator diagnostics for proving the effective
+  rewritten configuration before accepting shared-storage evidence.
+
 - C1-05 final runner provenance: advanced the draft conformance-runner component
   to `catalog-bench@621cc4b`, whose table probe sends and verifies the profile's
   explicit shared-storage root. The production executable remains unresolved in

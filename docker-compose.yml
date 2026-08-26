@@ -305,15 +305,17 @@ services:
     ports: ["9002:9001"]
     profiles: ["gravitino"]
     environment:
-      GRAVITINO_CATALOG_BACKEND: jdbc
-      GRAVITINO_URI: jdbc:sqlite:/data/gravitino.db
-      GRAVITINO_WAREHOUSE: s3://warehouse/
-      GRAVITINO_IO_IMPL: org.apache.iceberg.aws.s3.S3FileIO
-      GRAVITINO_S3_ACCESS_KEY: admin
-      GRAVITINO_S3_SECRET_KEY: password
-      GRAVITINO_S3_ENDPOINT: http://minio:9000
-      GRAVITINO_S3_REGION: us-east-1
-      GRAVITINO_S3_PATH_STYLE_ACCESS: "true"
+      # The 1.3.0 image rewrites only this exact namespace. Shorter historical
+      # GRAVITINO_* names are ignored and silently retain memory + /tmp defaults.
+      GRAVITINO_ICEBERG_REST_CATALOG_BACKEND: jdbc
+      GRAVITINO_ICEBERG_REST_URI: jdbc:sqlite:/data/gravitino.db
+      GRAVITINO_ICEBERG_REST_WAREHOUSE: s3://warehouse/
+      GRAVITINO_ICEBERG_REST_IO_IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      GRAVITINO_ICEBERG_REST_S3_ACCESS_KEY: admin
+      GRAVITINO_ICEBERG_REST_S3_SECRET_KEY: password
+      GRAVITINO_ICEBERG_REST_S3_ENDPOINT: http://minio:9000
+      GRAVITINO_ICEBERG_REST_S3_REGION: us-east-1
+      GRAVITINO_ICEBERG_REST_S3_PATH_STYLE_ACCESS: "true"
     volumes:
       - gravitino-data:/data
     depends_on:

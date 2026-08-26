@@ -308,7 +308,11 @@ catalog-bench-commit --base-url http://127.0.0.1:8080/api/2.1/unity-catalog/iceb
   serves the REST API on the expected port (older tags differ). Use the
   file-backed JDBC backend in this compose file: `memory` acknowledges commits
   without writing objects, while `jdbc:sqlite::memory:` creates a separate schema
-  per pooled connection.
+  per pooled connection. The pinned 1.3.0 image's rewrite script recognizes only
+  the exact `GRAVITINO_ICEBERG_REST_*` environment namespace; shorter historical
+  names are silently ignored and leave the image on its memory catalog and
+  `/tmp` warehouse defaults. The deployment test and live effective-config check
+  in [DOCKER.md](DOCKER.md) protect that boundary.
 - **Nessie 0.108.4** is reproducible through its profile, but its eight-writer
   commit path failed the final integrity gate in all five measured rounds with
   Quarkus request-context HTTP 500s. It remains in the generated matrix as an

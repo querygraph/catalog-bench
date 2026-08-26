@@ -250,6 +250,24 @@ most 90 seconds. `polaris-ready` runs only after the typed catalog reconciler an
 performs OAuth-backed config negotiation. A completed gate is readiness, not a
 conformance outcome; the scenario runner still owns assertions and evidence.
 
+Gravitino 1.3.0 rewrites its server configuration only from the exact
+`GRAVITINO_ICEBERG_REST_*` environment namespace. After recreating that service,
+inspect only the non-secret effective settings before accepting an S3-backed
+run:
+
+```sh
+docker compose --profile gravitino exec --no-TTY gravitino \
+  sed -n '1,240p' \
+  /opt/gravitino-iceberg-rest-server/conf/gravitino-iceberg-rest-server.conf \
+  | rg 'catalog-backend|warehouse|uri =|io-impl|s3-endpoint|s3-region|s3-path-style'
+```
+
+The accepted shape is JDBC at `jdbc:sqlite:/data/gravitino.db`, warehouse
+`s3://warehouse/`, `S3FileIO`, endpoint `http://minio:9000`, region
+`us-east-1`, and path-style access. Seeing `catalog-backend = memory` or
+`warehouse = /tmp` means the container ignored its environment and the run is
+not comparable shared-MinIO evidence.
+
 Released Unity Catalog OSS 0.5.0 is not in this topology because its Iceberg REST
 surface is read-only. It remains an explicit `unsupported` capability outcome,
 not a failed or silently omitted commit benchmark.
