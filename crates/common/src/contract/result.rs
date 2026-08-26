@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 
 use super::{
     child_path, indexed_path, require_finite_non_negative, require_non_empty, require_unique,
-    validate_artifacts, ArtifactReference, AssertionId, ComponentId, ContractVersion, Digest,
-    EvidenceId, Extensions, ProfileId, ResultId, ScenarioId, Validate, ValidationIssue,
+    validate_artifacts, ArtifactReference, AssertionId, CapabilityId, ComponentId, ContractVersion,
+    Digest, EvidenceId, Extensions, ProfileId, ResultId, ScenarioId, Validate, ValidationIssue,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -116,7 +116,7 @@ pub struct Failure {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct UnsupportedCapability {
-    pub capability: String,
+    pub capability: CapabilityId,
     pub explanation: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub upstream_reference: Option<String>,
@@ -627,11 +627,9 @@ fn validate_result_outcome(
             );
         }
         ResultOutcome::Unsupported { limitation } => {
-            require_non_empty(
-                &limitation.capability,
-                child_path(path, "limitation.capability"),
-                issues,
-            );
+            limitation
+                .capability
+                .collect_issues(&child_path(path, "limitation.capability"), issues);
             require_non_empty(
                 &limitation.explanation,
                 child_path(path, "limitation.explanation"),

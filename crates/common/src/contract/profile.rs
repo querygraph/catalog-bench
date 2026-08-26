@@ -5,8 +5,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
-    child_path, indexed_path, require_non_empty, require_unique, Component, ComponentId,
-    ContractVersion, Extensions, ProfileId, RuntimeArtifact, Validate, ValidationIssue,
+    child_path, indexed_path, reject_secret_like_keys, require_non_empty, require_unique,
+    AdapterCapabilityCoverage, CapabilityId, CatalogAdapter, CatalogCapability, Component,
+    ComponentId, ComponentKind, ContractVersion, Extensions, ProfileId, RuntimeArtifact, Validate,
+    ValidationIssue,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -95,6 +97,12 @@ pub struct Profile {
     pub platform: ExecutionPlatform,
     pub components: Vec<Component>,
     pub services: Vec<ServiceBinding>,
+    /// Versioned operation vocabulary shared by all catalog adapters.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub catalog_capabilities: Vec<CatalogCapability>,
+    /// Exact routing, authentication, shim, and capability coverage per catalog.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub catalog_adapters: Vec<CatalogAdapter>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub extensions: Extensions,
 }
@@ -193,19 +201,194 @@ impl Validate for Profile {
                     issues,
                 );
             }
-            for key in service.settings.keys() {
-                let normalized = key.to_ascii_lowercase();
-                if ["password", "secret", "token", "private_key", "access_key"]
-                    .iter()
-                    .any(|needle| normalized.contains(needle))
-                {
-                    issues.push(ValidationIssue::new(
-                        child_path(&service_path, "settings"),
-                        format!("secret-like setting key `{key}` is forbidden"),
-                    ));
-                }
-            }
+            reject_secret_like_keys(
+                service.settings.keys().map(String::as_str),
+                &child_path(&service_path, "settings"),
+                issues,
+            );
         }
+
+        validate_catalog_adapters(self, &component_ids, path, issues);
+    }
+}
+
+fn validate_catalog_adapters(
+    profile: &Profile,
+    component_ids: &BTreeSet<&ComponentId>,
+    path: &str,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let contract_is_present =
+        !profile.catalog_capabilities.is_empty() || !profile.catalog_adapters.is_empty();
+    if matches!(profile.purpose, ProfilePurpose::HistoricalReproduction) && !contract_is_present {
+        return;
+    }
+
+    let capabilities_path = child_path(path, "catalog_capabilities");
+    if profile.catalog_capabilities.is_empty() {
+        issues.push(ValidationIssue::new(
+            &capabilities_path,
+            "must define at least one capability when catalog adapters are required",
+        ));
+    }
+    require_unique(
+        profile
+            .catalog_capabilities
+            .iter()
+            .map(|capability| &capability.id),
+        &capabilities_path,
+        issues,
+    );
+    for (index, capability) in profile.catalog_capabilities.iter().enumerate() {
+        capability.collect_issues(&indexed_path(&capabilities_path, index), issues);
+    }
+
+    let adapters_path = child_path(path, "catalog_adapters");
+    require_unique(
+        profile
+            .catalog_adapters
+            .iter()
+            .map(|adapter| &adapter.catalog),
+        &adapters_path,
+        issues,
+    );
+
+    let catalog_components: BTreeSet<&ComponentId> = profile
+        .components
+        .iter()
+        .filter(|component| component.kind == ComponentKind::Catalog)
+        .map(|component| &component.id)
+        .collect();
+    let adapter_catalogs: BTreeSet<&ComponentId> = profile
+        .catalog_adapters
+        .iter()
+        .map(|adapter| &adapter.catalog)
+        .collect();
+    for missing in catalog_components.difference(&adapter_catalogs) {
+        issues.push(ValidationIssue::new(
+            &adapters_path,
+            format!("catalog component `{missing}` has no adapter"),
+        ));
+    }
+    for extra in adapter_catalogs.difference(&catalog_components) {
+        issues.push(ValidationIssue::new(
+            &adapters_path,
+            format!("adapter references non-catalog component `{extra}`"),
+        ));
+    }
+
+    let defined_capabilities: BTreeSet<&CapabilityId> = profile
+        .catalog_capabilities
+        .iter()
+        .map(|capability| &capability.id)
+        .collect();
+    for (index, adapter) in profile.catalog_adapters.iter().enumerate() {
+        let adapter_path = indexed_path(&adapters_path, index);
+        adapter.collect_issues(&adapter_path, issues);
+        validate_component_reference(
+            &adapter.catalog,
+            component_ids,
+            &child_path(&adapter_path, "catalog"),
+            issues,
+        );
+        validate_adapter_service(profile, adapter, &adapter_path, issues);
+        validate_adapter_shim(profile, adapter, &adapter_path, issues);
+        validate_adapter_capabilities(adapter, &defined_capabilities, &adapter_path, issues);
+    }
+}
+
+fn validate_adapter_service(
+    profile: &Profile,
+    adapter: &CatalogAdapter,
+    path: &str,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let matching = profile
+        .services
+        .iter()
+        .filter(|service| service.component == adapter.catalog)
+        .collect::<Vec<_>>();
+    if matching.len() != 1 {
+        issues.push(ValidationIssue::new(
+            child_path(path, "catalog"),
+            format!(
+                "catalog adapter requires exactly one service binding, found {}",
+                matching.len()
+            ),
+        ));
+        return;
+    }
+
+    let service = matching[0];
+    if service.role != "iceberg-rest-catalog" {
+        issues.push(ValidationIssue::new(
+            child_path(path, "catalog"),
+            "catalog adapter service role must be `iceberg-rest-catalog`",
+        ));
+    }
+    if service.endpoint.as_deref() != Some(adapter.endpoint.base_url.as_str()) {
+        issues.push(ValidationIssue::new(
+            child_path(path, "endpoint.base_url"),
+            "must exactly match the catalog service endpoint",
+        ));
+    }
+}
+
+fn validate_adapter_shim(
+    profile: &Profile,
+    adapter: &CatalogAdapter,
+    path: &str,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let Some(shim) = adapter.request_handling.shim_component() else {
+        return;
+    };
+    match profile
+        .components
+        .iter()
+        .find(|component| component.id == *shim)
+    {
+        Some(component) if component.kind == ComponentKind::Connector => {}
+        Some(_) => issues.push(ValidationIssue::new(
+            child_path(path, "request_handling.component"),
+            format!("behavior-changing shim `{shim}` must be a connector component"),
+        )),
+        None => issues.push(ValidationIssue::new(
+            child_path(path, "request_handling.component"),
+            format!("references unknown shim component `{shim}`"),
+        )),
+    }
+}
+
+fn validate_adapter_capabilities(
+    adapter: &CatalogAdapter,
+    defined: &BTreeSet<&CapabilityId>,
+    path: &str,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let AdapterCapabilityCoverage::Explicit {
+        exercise,
+        unsupported,
+    } = &adapter.capabilities
+    else {
+        return;
+    };
+    let declared: BTreeSet<&CapabilityId> = exercise
+        .iter()
+        .chain(unsupported.iter().map(|limitation| &limitation.capability))
+        .collect();
+    let capabilities_path = child_path(path, "capabilities");
+    for missing in defined.difference(&declared) {
+        issues.push(ValidationIssue::new(
+            &capabilities_path,
+            format!("does not classify capability `{missing}`"),
+        ));
+    }
+    for unknown in declared.difference(defined) {
+        issues.push(ValidationIssue::new(
+            &capabilities_path,
+            format!("classifies undefined capability `{unknown}`"),
+        ));
     }
 }
 

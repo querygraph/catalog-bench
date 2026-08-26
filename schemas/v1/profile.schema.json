@@ -1,5 +1,89 @@
 {
   "$defs": {
+    "AdapterCapabilityCoverage": {
+      "description": "An exhaustive disposition of the profile capability vocabulary.\n\n`exercise-all` is the DRY representation when every capability should run.\n`explicit` partitions the vocabulary when one or more capabilities are known\nto be unsupported. Exercising a capability is not a claim that it will pass.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "mode": {
+              "const": "exercise-all",
+              "type": "string"
+            }
+          },
+          "required": [
+            "mode"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "exercise": {
+              "items": {
+                "$ref": "#/$defs/CapabilityId"
+              },
+              "type": "array"
+            },
+            "mode": {
+              "const": "explicit",
+              "type": "string"
+            },
+            "unsupported": {
+              "items": {
+                "$ref": "#/$defs/UnsupportedAdapterCapability"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "mode",
+            "exercise",
+            "unsupported"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "AdapterRequestHandling": {
+      "description": "Whether an adapter preserves the request and response semantics under test.\n\nA behavior-changing shim remains representable so experimental evidence can\ndisclose it, but it cannot masquerade as a protocol-native adapter.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "protocol-native",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "component": {
+              "$ref": "#/$defs/ComponentId"
+            },
+            "description": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "behavior-changing-shim",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "component",
+            "description"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "ArtifactReference": {
       "additionalProperties": false,
       "description": "A file or URI together with the digest that makes the reference immutable.",
@@ -86,6 +170,224 @@
         "locked"
       ],
       "type": "object"
+    },
+    "CapabilityId": {
+      "description": "Stable identifier for a scenario capability.",
+      "type": "string"
+    },
+    "CapabilityLimitationSource": {
+      "enum": [
+        "catalog",
+        "adapter"
+      ],
+      "type": "string"
+    },
+    "CatalogAdapter": {
+      "additionalProperties": false,
+      "description": "One catalog's complete, profile-pinned harness binding.",
+      "properties": {
+        "authentication": {
+          "$ref": "#/$defs/CatalogAuthentication"
+        },
+        "capabilities": {
+          "$ref": "#/$defs/AdapterCapabilityCoverage"
+        },
+        "catalog": {
+          "$ref": "#/$defs/ComponentId"
+        },
+        "endpoint": {
+          "$ref": "#/$defs/CatalogEndpoint"
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "protocol": {
+          "$ref": "#/$defs/CatalogProtocol"
+        },
+        "request_handling": {
+          "$ref": "#/$defs/AdapterRequestHandling"
+        }
+      },
+      "required": [
+        "catalog",
+        "protocol",
+        "endpoint",
+        "authentication",
+        "request_handling",
+        "capabilities"
+      ],
+      "type": "object"
+    },
+    "CatalogAuthentication": {
+      "description": "Authentication performed by the harness before sending protocol requests.\nSecret values never belong in a profile.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "anonymous",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "oauth2-client-credentials",
+              "type": "string"
+            },
+            "scope": {
+              "type": "string"
+            },
+            "token_path": {
+              "description": "Token route relative to the catalog base URL.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "token_path",
+            "scope"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "CatalogCapability": {
+      "additionalProperties": false,
+      "description": "One capability in the profile's immutable interoperability vocabulary.\n\nDefinitions live once at profile level. Each catalog adapter must exercise\nthe entire vocabulary or explicitly partition it into exercised and\nunsupported capabilities.",
+      "properties": {
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/CapabilityId"
+        },
+        "specification": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "description"
+      ],
+      "type": "object"
+    },
+    "CatalogConfigRequest": {
+      "additionalProperties": false,
+      "description": "The catalog's configuration request relative to its adapter base URL.",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "query": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "description": "Sanitized routing parameters only, such as Lakekeeper's warehouse name.",
+          "type": "object"
+        }
+      },
+      "required": [
+        "path"
+      ],
+      "type": "object"
+    },
+    "CatalogEndpoint": {
+      "additionalProperties": false,
+      "description": "Exact, behaviorally relevant Iceberg REST routing for one catalog.",
+      "properties": {
+        "base_url": {
+          "description": "Docker-network URL through the end of the deployment-specific mount path.",
+          "type": "string"
+        },
+        "config": {
+          "$ref": "#/$defs/CatalogConfigRequest"
+        },
+        "create_table_location": {
+          "description": "A standard optional `createTable.location`, never a rewritten request.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "route_prefix": {
+          "$ref": "#/$defs/CatalogRoutePrefix"
+        }
+      },
+      "required": [
+        "base_url",
+        "config",
+        "route_prefix"
+      ],
+      "type": "object"
+    },
+    "CatalogProtocol": {
+      "enum": [
+        "iceberg-rest-v1"
+      ],
+      "type": "string"
+    },
+    "CatalogRoutePrefix": {
+      "description": "How the standard `{prefix}` path segment is resolved for catalog requests.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "unprefixed",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "static",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "config_json_pointer": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "negotiated",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "config_json_pointer"
+          ],
+          "type": "object"
+        }
+      ]
     },
     "Component": {
       "additionalProperties": false,
@@ -492,6 +794,33 @@
         "revision"
       ],
       "type": "object"
+    },
+    "UnsupportedAdapterCapability": {
+      "additionalProperties": false,
+      "description": "A capability deliberately not exercised for one catalog.",
+      "properties": {
+        "attributed_to": {
+          "$ref": "#/$defs/CapabilityLimitationSource"
+        },
+        "capability": {
+          "$ref": "#/$defs/CapabilityId"
+        },
+        "explanation": {
+          "type": "string"
+        },
+        "upstream_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "capability",
+        "attributed_to",
+        "explanation"
+      ],
+      "type": "object"
     }
   },
   "$id": "https://adversari.al/catalog-bench/schemas/v1/profile.schema.json",
@@ -499,6 +828,20 @@
   "additionalProperties": false,
   "description": "A version-pinned environment recipe shared by scenarios and result records.",
   "properties": {
+    "catalog_adapters": {
+      "description": "Exact routing, authentication, shim, and capability coverage per catalog.",
+      "items": {
+        "$ref": "#/$defs/CatalogAdapter"
+      },
+      "type": "array"
+    },
+    "catalog_capabilities": {
+      "description": "Versioned operation vocabulary shared by all catalog adapters.",
+      "items": {
+        "$ref": "#/$defs/CatalogCapability"
+      },
+      "type": "array"
+    },
     "components": {
       "items": {
         "$ref": "#/$defs/Component"

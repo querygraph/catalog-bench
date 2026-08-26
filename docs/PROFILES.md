@@ -1,9 +1,9 @@
-# Phase 0 profiles and version policy
+# Versioned profiles and adapter policy
 
 Profiles separate environment selection from benchmark results. A profile says
 what would run; only a result plus its immutable manifest says what did run.
 
-Two v1 profiles establish the Phase 0 boundary:
+Two v1 profiles preserve the Phase 0 boundary and carry Phase 1 forward:
 
 - [`reproduction-2026-08-08.json`](../profiles/v1/reproduction-2026-08-08.json)
   reconstructs the exact production artifacts used by the published commit sweep.
@@ -91,6 +91,13 @@ materialization process must:
 4. record image index/local-image and platform identities without conflating
    their digest scopes;
 5. emit a new `runnable` profile and hash its exact bytes before any measured run.
+
+The candidate also carries the Phase 1 adapter contract: 27 capability
+definitions and exhaustive bindings for LakeCat, Polaris, Gravitino, Lakekeeper,
+and Nessie. Every binding is protocol-native and cross-checked against its service
+endpoint. `exercise` schedules a standard operation; it does not predict a pass.
+See [ADAPTERS.md](ADAPTERS.md) for routing, authentication, capability, shim, and
+historical-compatibility semantics.
 
 Primary release sources: [Polaris](https://polaris.apache.org/downloads/),
 [Gravitino](https://gravitino.apache.org/downloads/),

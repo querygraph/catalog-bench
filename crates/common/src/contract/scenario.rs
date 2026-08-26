@@ -5,8 +5,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 use super::{
-    child_path, indexed_path, require_non_empty, require_unique, AssertionId, ContractVersion,
-    Extensions, ScenarioId, StepId, Validate, ValidationIssue,
+    child_path, indexed_path, require_non_empty, require_unique, AssertionId, CapabilityId,
+    ContractVersion, Extensions, ScenarioId, StepId, Validate, ValidationIssue,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -39,7 +39,7 @@ pub enum RequirementLevel {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct CapabilityRequirement {
-    pub capability: String,
+    pub capability: CapabilityId,
     pub level: RequirementLevel,
     pub description: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -243,11 +243,9 @@ impl Validate for Scenario {
 
         for (index, requirement) in self.capabilities.iter().enumerate() {
             let capability_path = indexed_path(&child_path(path, "capabilities"), index);
-            require_non_empty(
-                &requirement.capability,
-                child_path(&capability_path, "capability"),
-                issues,
-            );
+            requirement
+                .capability
+                .collect_issues(&child_path(&capability_path, "capability"), issues);
             require_non_empty(
                 &requirement.description,
                 child_path(&capability_path, "description"),

@@ -189,12 +189,16 @@
       ],
       "type": "object"
     },
+    "CapabilityId": {
+      "description": "Stable identifier for a scenario capability.",
+      "type": "string"
+    },
     "CapabilityRequirement": {
       "additionalProperties": false,
       "description": "Capability prerequisite used to classify an unattempted operation as\n`unsupported`, rather than as a failed assertion.",
       "properties": {
         "capability": {
-          "type": "string"
+          "$ref": "#/$defs/CapabilityId"
         },
         "description": {
           "type": "string"

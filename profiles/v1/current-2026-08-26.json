@@ -561,7 +561,264 @@
       "role": "stock-engine"
     }
   ],
+  "catalog_capabilities": [
+    {
+      "id": "iceberg-rest.config.read",
+      "description": "Negotiate catalog configuration through the standard config route.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.config.endpoint-advertisement",
+      "description": "Interpret the optional standard endpoint advertisement without inventing routes.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.config.warehouse-routing",
+      "description": "Resolve the configured warehouse and resulting protocol route prefix.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.create",
+      "description": "Create a namespace through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.list",
+      "description": "List namespaces through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.load",
+      "description": "Load namespace metadata through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.update-properties",
+      "description": "Set and remove namespace properties through the standard optional operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.drop",
+      "description": "Drop an empty namespace through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.hierarchy",
+      "description": "Create and list multipart namespace hierarchy without flattening identifiers.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.pagination",
+      "description": "Traverse namespace pages using page-size and page-token.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.error.duplicate",
+      "description": "Return a spec-shaped conflict when a namespace already exists.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.error.missing-parent",
+      "description": "Return a spec-shaped not-found response for a missing parent namespace.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.create",
+      "description": "Create an Iceberg table through the standard REST operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.list",
+      "description": "List table identifiers through Iceberg REST with pagination where available.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.load",
+      "description": "Load current table metadata through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.register",
+      "description": "Register an existing metadata file through the standard optional operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.rename",
+      "description": "Rename a table through the standard optional operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.update",
+      "description": "Apply requirements and updates through the standard updateTable route.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.drop",
+      "description": "Drop a table through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.error.spec-shape",
+      "description": "Preserve Iceberg error status, type, message, and code semantics.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.commit.set-properties",
+      "description": "Commit a standard set-properties update with explicit requirements.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.commit.requirements",
+      "description": "Enforce standard commit requirements rather than accepting stale state.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.commit.stale-pointer-rejection",
+      "description": "Reject a commit based on a stale metadata pointer or requirement.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.commit.exact-retry",
+      "description": "Resolve an exact retried commit without inventing a second semantic update.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.idempotency-key.content-binding",
+      "description": "Bind reuse of an Idempotency-Key to identical request content and reject drift.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "client.pyiceberg.round-trip",
+      "description": "Run the largest common no-shim PyIceberg create, append, load, scan, and cleanup workflow."
+    },
+    {
+      "id": "iceberg-rest.concurrency.same-table-contention",
+      "description": "Run concurrent writers against one table while preserving conflicts and request errors."
+    }
+  ],
+  "catalog_adapters": [
+    {
+      "catalog": "lakecat",
+      "protocol": "iceberg-rest-v1",
+      "endpoint": {
+        "base_url": "http://lakecat:8181/catalog",
+        "config": {
+          "path": "/v1/config"
+        },
+        "route_prefix": {
+          "kind": "unprefixed"
+        },
+        "create_table_location": "s3://warehouse/lakecat"
+      },
+      "authentication": {
+        "kind": "anonymous"
+      },
+      "request_handling": {
+        "kind": "protocol-native"
+      },
+      "capabilities": {
+        "mode": "exercise-all"
+      }
+    },
+    {
+      "catalog": "polaris",
+      "protocol": "iceberg-rest-v1",
+      "endpoint": {
+        "base_url": "http://polaris:8181/api/catalog",
+        "config": {
+          "path": "/v1/config"
+        },
+        "route_prefix": {
+          "kind": "static",
+          "value": "bench"
+        }
+      },
+      "authentication": {
+        "kind": "oauth2-client-credentials",
+        "token_path": "/v1/oauth/tokens",
+        "scope": "PRINCIPAL_ROLE:ALL"
+      },
+      "request_handling": {
+        "kind": "protocol-native"
+      },
+      "capabilities": {
+        "mode": "exercise-all"
+      }
+    },
+    {
+      "catalog": "gravitino",
+      "protocol": "iceberg-rest-v1",
+      "endpoint": {
+        "base_url": "http://gravitino:9001/iceberg",
+        "config": {
+          "path": "/v1/config"
+        },
+        "route_prefix": {
+          "kind": "unprefixed"
+        }
+      },
+      "authentication": {
+        "kind": "anonymous"
+      },
+      "request_handling": {
+        "kind": "protocol-native"
+      },
+      "capabilities": {
+        "mode": "exercise-all"
+      }
+    },
+    {
+      "catalog": "lakekeeper",
+      "protocol": "iceberg-rest-v1",
+      "endpoint": {
+        "base_url": "http://lakekeeper:8181/catalog",
+        "config": {
+          "path": "/v1/config",
+          "query": {
+            "warehouse": "bench"
+          }
+        },
+        "route_prefix": {
+          "kind": "negotiated",
+          "config_json_pointer": "/defaults/prefix"
+        }
+      },
+      "authentication": {
+        "kind": "anonymous"
+      },
+      "request_handling": {
+        "kind": "protocol-native"
+      },
+      "capabilities": {
+        "mode": "exercise-all"
+      }
+    },
+    {
+      "catalog": "nessie",
+      "protocol": "iceberg-rest-v1",
+      "endpoint": {
+        "base_url": "http://nessie:19120/iceberg",
+        "config": {
+          "path": "/v1/config"
+        },
+        "route_prefix": {
+          "kind": "static",
+          "value": "main"
+        }
+      },
+      "authentication": {
+        "kind": "anonymous"
+      },
+      "request_handling": {
+        "kind": "protocol-native"
+      },
+      "capabilities": {
+        "mode": "exercise-all"
+      }
+    }
+  ],
   "extensions": {
+    "querygraph/iceberg-rest-spec": "Apache Iceberg 1.11.0 OpenAPI at source revision 6976e020b894f6a6777704df2b8c4458cb291ae9",
     "querygraph/profile-state": "Version selection only. A run must materialize every unresolved artifact, replace draft with runnable, and hash the resulting profile bytes before execution."
   }
 }

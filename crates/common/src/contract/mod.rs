@@ -5,6 +5,7 @@
 //! scenario and environment, preserve evidence, and classify every attempted or
 //! unattempted result without conflating unsupported behavior with failure.
 
+mod adapter;
 mod manifest;
 mod profile;
 mod result;
@@ -17,6 +18,7 @@ use std::fmt::{Display, Formatter};
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+pub use adapter::*;
 pub use manifest::*;
 pub use profile::*;
 pub use result::*;

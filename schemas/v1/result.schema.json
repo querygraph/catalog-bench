@@ -122,6 +122,10 @@
         }
       ]
     },
+    "CapabilityId": {
+      "description": "Stable identifier for a scenario capability.",
+      "type": "string"
+    },
     "Captured": {
       "description": "A captured environment value with explicit precision. Historical imports can\npreserve rounded or missing metadata without fabricating exact values.",
       "oneOf": [
@@ -952,7 +956,7 @@
       "additionalProperties": false,
       "properties": {
         "capability": {
-          "type": "string"
+          "$ref": "#/$defs/CapabilityId"
         },
         "explanation": {
           "type": "string"

@@ -62,6 +62,7 @@ string_id!(ProfileId, "Stable identifier for an execution profile.");
 string_id!(ResultId, "Unique identifier for one result record.");
 string_id!(BundleId, "Unique identifier for one result bundle.");
 string_id!(ComponentId, "Identifier for a component within a profile.");
+string_id!(CapabilityId, "Stable identifier for a scenario capability.");
 string_id!(StepId, "Identifier for a step within a scenario.");
 string_id!(
     AssertionId,
@@ -341,6 +342,25 @@ pub(crate) fn require_unique<T: Ord + Display>(
             issues.push(ValidationIssue::new(
                 path,
                 format!("contains duplicate identifier `{value}`"),
+            ));
+        }
+    }
+}
+
+pub(crate) fn reject_secret_like_keys<'a>(
+    keys: impl IntoIterator<Item = &'a str>,
+    path: &str,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    for key in keys {
+        let normalized = key.to_ascii_lowercase();
+        if ["password", "secret", "token", "private_key", "access_key"]
+            .iter()
+            .any(|needle| normalized.contains(needle))
+        {
+            issues.push(ValidationIssue::new(
+                path,
+                format!("secret-like setting key `{key}` is forbidden"),
             ));
         }
     }

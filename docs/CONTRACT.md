@@ -10,7 +10,7 @@ The contract has four independently versioned document kinds:
 | Kind | Checked-in schema | Purpose |
 |---|---|---|
 | `scenario` | [`scenario.schema.json`](../schemas/v1/scenario.schema.json) | Neutral steps, prerequisites, assertions, and classification policy. |
-| `profile` | [`profile.schema.json`](../schemas/v1/profile.schema.json) | Exact component/source/image pins and sanitized topology. |
+| `profile` | [`profile.schema.json`](../schemas/v1/profile.schema.json) | Exact component/source/image pins, sanitized topology, and catalog adapter bindings. |
 | `result` | [`result.schema.json`](../schemas/v1/result.schema.json) | One catalog/client/scenario execution, its outcome, assertions, measurements, environment, and evidence. |
 | `manifest` | [`manifest.schema.json`](../schemas/v1/manifest.schema.json) | Immutable index and provenance for a published result bundle. |
 
@@ -40,6 +40,32 @@ The scenario's `strict-v1` policy is deliberately simple: unsupported is decided
 from a declared prerequisite, while an attempted requirement that behaves
 incorrectly is a failure. An adapter cannot relabel an observed failure as
 unsupported after execution.
+
+## Adapter completeness and no-shim semantics
+
+Current and executable profiles define one catalog capability vocabulary and one
+adapter for every catalog component. Each adapter records its exact Iceberg REST
+base URL, config request, route-prefix resolution, authentication mode, optional
+standard create location, and request-handling mode. The adapter's capability
+coverage is an exhaustive partition: every profile capability is either scheduled
+for standard-protocol exercise or declared unsupported before execution with
+attribution and explanation.
+
+`exercise-all` is the compact algebraic variant when every vocabulary entry is
+scheduled. The `explicit` variant carries the exhaustive exercise/unsupported
+partition only when exceptions exist, avoiding duplicated capability lists while
+preserving immutable semantics.
+
+`exercise` is not a support claim. It means evidence, rather than profile prose,
+will decide whether the operation passes. An attempted failure cannot be moved to
+`unsupported` afterward. The complete field semantics and current five bindings
+are documented in [ADAPTERS.md](ADAPTERS.md).
+
+All current adapters are `protocol-native`. A behavior-changing shim can be
+represented only as a separately pinned connector component with an explicit
+description. This disclosure prevents an experimental shim from masquerading as
+a stock compatibility path; it does not make shimmed evidence comparable to the
+no-shim matrix.
 
 ## Evidence and reproducibility rules
 
@@ -77,9 +103,10 @@ newlines are significant. Manifests identify whether evidence is a `live-run`,
 new execution.
 
 Evidence entering a publishable result must set `sanitized: true`. The manifest
-also requires a completed redaction review. Profile settings reject secret-shaped
-keys; this is a guardrail, not a substitute for the repository's artifact secret
-scan.
+also requires a completed redaction review. Profile settings and adapter config
+queries reject secret-shaped keys. Adapter URLs reject embedded credentials,
+queries, and fragments. These are guardrails, not substitutes for the repository's
+artifact secret scan.
 
 ## Closed fields and extensions
 

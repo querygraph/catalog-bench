@@ -9,3 +9,4 @@ description = "Shared types, config, and stats helpers for the catalog-bench sui
 schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+url = { workspace = true }

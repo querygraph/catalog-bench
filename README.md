@@ -62,6 +62,13 @@ cargo run -p catalog-bench-contract -- matrix check \
 
 See **[RESULTS.md](RESULTS.md)** for measured results.
 
+Phase 1 catalog routing is profile data rather than hidden launcher branches.
+[The adapter contract](docs/ADAPTERS.md) records exact config/prefix/auth bindings,
+requires complete capability coverage for all five catalogs, and distinguishes a
+standard request path from any behavior-changing shim. Static adapter validation
+does not claim that an operation passed; behavioral evidence begins with the
+versioned scenarios.
+
 ## The commit benchmark
 
 A catalog-agnostic benchmark for the **commit path** of Iceberg REST catalogs —

@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use catalog_bench_common::contract::*;
 
@@ -50,7 +50,7 @@ fn scenario() -> Scenario {
         classification: ClassificationPolicy::StrictV1,
         tags: vec!["fixture".to_owned()],
         capabilities: vec![CapabilityRequirement {
-            capability: "iceberg-rest".to_owned(),
+            capability: "iceberg-rest".into(),
             level: RequirementLevel::Required,
             description: "Iceberg REST is required.".to_owned(),
             specification: Some("https://iceberg.apache.org/".to_owned()),
@@ -102,10 +102,32 @@ fn profile() -> Profile {
         ],
         services: vec![ServiceBinding {
             component: "catalog".into(),
-            role: "catalog".to_owned(),
+            role: "iceberg-rest-catalog".to_owned(),
             endpoint: Some("http://catalog:8181".to_owned()),
             private_state: None,
             settings: BTreeMap::new(),
+            extensions: BTreeMap::new(),
+        }],
+        catalog_capabilities: vec![CatalogCapability {
+            id: "iceberg-rest".into(),
+            description: "Exercise the fixture Iceberg REST operation.".to_owned(),
+            specification: Some("https://iceberg.apache.org/".to_owned()),
+        }],
+        catalog_adapters: vec![CatalogAdapter {
+            catalog: "catalog".into(),
+            protocol: CatalogProtocol::IcebergRestV1,
+            endpoint: CatalogEndpoint {
+                base_url: "http://catalog:8181".to_owned(),
+                config: CatalogConfigRequest {
+                    path: "/v1/config".to_owned(),
+                    query: BTreeMap::new(),
+                },
+                route_prefix: CatalogRoutePrefix::Unprefixed,
+                create_table_location: None,
+            },
+            authentication: CatalogAuthentication::Anonymous,
+            request_handling: AdapterRequestHandling::ProtocolNative,
+            capabilities: AdapterCapabilityCoverage::ExerciseAll,
             extensions: BTreeMap::new(),
         }],
         extensions: BTreeMap::new(),
@@ -257,7 +279,7 @@ fn checked_in_schemas_exactly_match_rust_types() {
 }
 
 #[test]
-fn checked_in_phase_zero_profiles_and_scenario_validate() {
+fn checked_in_profiles_scenario_and_phase_one_adapters_validate() {
     let bytes = [
         include_bytes!("../../../profiles/v1/reproduction-2026-08-08.json").as_slice(),
         include_bytes!("../../../profiles/v1/current-2026-08-26.json").as_slice(),
@@ -282,6 +304,42 @@ fn checked_in_phase_zero_profiles_and_scenario_validate() {
         panic!("current profile must stay draft until artifacts are built");
     };
     assert_eq!(unresolved_artifacts.len(), 5);
+    assert_eq!(current.catalog_adapters.len(), 5);
+    assert_eq!(current.catalog_capabilities.len(), 27);
+
+    let catalog_ids = current
+        .catalog_adapters
+        .iter()
+        .map(|adapter| adapter.catalog.as_str())
+        .collect::<BTreeSet<_>>();
+    assert_eq!(
+        catalog_ids,
+        BTreeSet::from(["gravitino", "lakecat", "lakekeeper", "nessie", "polaris"])
+    );
+    assert!(current.catalog_adapters.iter().all(|adapter| matches!(
+        adapter.request_handling,
+        AdapterRequestHandling::ProtocolNative
+    )));
+    assert!(current
+        .catalog_adapters
+        .iter()
+        .all(|adapter| matches!(adapter.capabilities, AdapterCapabilityCoverage::ExerciseAll)));
+
+    let endpoints = current
+        .catalog_adapters
+        .iter()
+        .map(|adapter| (adapter.catalog.as_str(), adapter.endpoint.base_url.as_str()))
+        .collect::<BTreeMap<_, _>>();
+    assert_eq!(
+        endpoints,
+        BTreeMap::from([
+            ("gravitino", "http://gravitino:9001/iceberg"),
+            ("lakecat", "http://lakecat:8181/catalog"),
+            ("lakekeeper", "http://lakekeeper:8181/catalog"),
+            ("nessie", "http://nessie:19120/iceberg"),
+            ("polaris", "http://polaris:8181/api/catalog"),
+        ])
+    );
 
     assert!(matches!(&documents[2], ContractDocument::Scenario(_)));
 }
@@ -382,6 +440,91 @@ fn profile_rejects_secret_shaped_settings() {
     let error = profile.validate().unwrap_err();
 
     assert!(error.to_string().contains("secret-like setting key"));
+}
+
+#[test]
+fn non_historical_profiles_require_one_adapter_per_catalog() {
+    let mut profile = profile();
+    profile.catalog_adapters.clear();
+
+    let error = profile.validate().unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("catalog component `catalog` has no adapter"));
+}
+
+#[test]
+fn adapters_reject_service_endpoint_drift_and_incomplete_capabilities() {
+    let mut profile = profile();
+    profile.catalog_adapters[0].endpoint.base_url = "http://other:8181".to_owned();
+    profile.catalog_adapters[0].capabilities = AdapterCapabilityCoverage::Explicit {
+        exercise: Vec::new(),
+        unsupported: Vec::new(),
+    };
+
+    let error = profile.validate().unwrap_err().to_string();
+
+    assert!(error.contains("must exactly match the catalog service endpoint"));
+    assert!(error.contains("does not classify capability `iceberg-rest`"));
+}
+
+#[test]
+fn adapters_reject_undefined_or_overlapping_capabilities() {
+    let mut profile = profile();
+    profile.catalog_adapters[0].capabilities = AdapterCapabilityCoverage::Explicit {
+        exercise: vec!["iceberg-rest".into(), "fixture.undefined".into()],
+        unsupported: vec![UnsupportedAdapterCapability {
+            capability: "iceberg-rest".into(),
+            attributed_to: CapabilityLimitationSource::Catalog,
+            explanation: "Fixture limitation.".to_owned(),
+            upstream_reference: None,
+        }],
+    };
+
+    let error = profile.validate().unwrap_err().to_string();
+
+    assert!(error.contains("classifies undefined capability `fixture.undefined`"));
+    assert!(error.contains("cannot be both exercised and unsupported"));
+}
+
+#[test]
+fn adapter_routes_reject_credentials_and_secret_query_keys() {
+    let mut profile = profile();
+    profile.catalog_adapters[0].endpoint.base_url = "http://user:password@catalog:8181".to_owned();
+    profile.catalog_adapters[0]
+        .endpoint
+        .config
+        .query
+        .insert("access_token".to_owned(), "redacted".to_owned());
+
+    let error = profile.validate().unwrap_err().to_string();
+
+    assert!(error.contains("without credentials"));
+    assert!(error.contains("secret-like setting key `access_token` is forbidden"));
+}
+
+#[test]
+fn behavior_changing_shims_require_a_disclosed_connector_component() {
+    let mut profile = profile();
+    profile.catalog_adapters[0].request_handling = AdapterRequestHandling::BehaviorChangingShim {
+        component: "minio".into(),
+        description: "Fixture response rewrite.".to_owned(),
+    };
+
+    let error = profile.validate().unwrap_err().to_string();
+    assert!(error.contains("must be a connector component"));
+
+    profile.components.push(package_component(
+        "shim",
+        ComponentKind::Connector,
+        "Fixture shim",
+    ));
+    profile.catalog_adapters[0].request_handling = AdapterRequestHandling::BehaviorChangingShim {
+        component: "shim".into(),
+        description: "Fixture response rewrite.".to_owned(),
+    };
+    profile.validate().unwrap();
 }
 
 #[test]

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Catalog community C1-02: added a typed, schema-backed catalog adapter contract
+  with exact Iceberg REST config/prefix/auth routing, exhaustive 27-capability
+  coverage, protocol-native versus behavior-changing-shim disclosure, secret and
+  endpoint drift rejection, and complete current-profile bindings for LakeCat,
+  Polaris, Gravitino, Lakekeeper, and Nessie; preserved historical profile bytes,
+  regenerated affected schemas, and documented the no-shim semantics and gates.
+
 - Phase 1 infrastructure: made the benchmark Compose project own its Docker
   network, exact source-built MinIO release, idempotently initialized warehouse
   bucket, and state volumes. Added digest-pinned Lakekeeper 0.13.3 and PostgreSQL
