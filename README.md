@@ -69,14 +69,19 @@ standard request path from any behavior-changing shim. Static adapter validation
 does not claim that an operation passed; behavioral evidence begins with the
 versioned scenarios.
 
-The first executable behavioral scenario is
-[`iceberg-rest.config.negotiation`](scenarios/v1/iceberg-rest.config.negotiation.json).
-Its typed runner negotiates anonymous or OAuth2 client-credentials access, reads
-`GET /v1/config`, validates map shape, prefix resolution, and explicit or
-implicit endpoint advertisement, and writes a sanitized transcript even when a
-required assertion fails. Run it inside the Compose network; [DOCKER.md](DOCKER.md)
-contains the exact command and explains why files under `target/` are smoke
-evidence rather than publishable result records.
+The executable behavioral scenarios now cover both
+[`iceberg-rest.config.negotiation`](scenarios/v1/iceberg-rest.config.negotiation.json)
+and
+[`iceberg-rest.namespace.behavior`](scenarios/v1/iceberg-rest.namespace.behavior.json).
+Their typed runners negotiate anonymous or OAuth2 client-credentials access,
+validate config and prefix resolution, then exercise an isolated namespace
+lifecycle with multipart hierarchy, errors, pagination, optional properties,
+and guaranteed cleanup. Both write sanitized transcripts even when a required
+assertion fails. Run them inside the Compose network; [DOCKER.md](DOCKER.md)
+contains the exact commands and explains why files under `target/` are smoke
+evidence rather than publishable result records. The optimized five-catalog
+C1-04 outcome is recorded in
+[Iceberg REST Namespace Conformance](docs/NAMESPACE-CONFORMANCE.md).
 
 ## The commit benchmark
 

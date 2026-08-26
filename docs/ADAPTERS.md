@@ -116,8 +116,9 @@ cargo run -p catalog-bench-contract --locked -- validate profiles/v1
 cargo test -p catalog-bench-common --test contract --locked
 ```
 
-Static adapter validation is not behavioral conformance. The C1-03 config probe
-consumes this data without catalog-specific request branches. It exits `0` only
-for `pass`, exits `2` after persisting an attempted `fail` or predeclared
-`unsupported` transcript, and reserves exit `1` for invalid contracts,
-invocations, or evidence-write failures. It never overwrites an evidence file.
+Static adapter validation is not behavioral conformance. The C1-03 config and
+C1-04 namespace probes consume this data without catalog-specific request
+branches. Each exits `0` only for `pass`, exits `2` after persisting an attempted
+`fail` or predeclared `unsupported` transcript, and reserves exit `1` for invalid
+contracts, invocations, or evidence-write failures. Neither overwrites an
+evidence file.

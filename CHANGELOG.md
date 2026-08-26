@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Catalog community C1-04 acceptance: documented the exact optimized
+  same-Docker runner and LakeCat artifacts, profile/scenario/transcript hashes,
+  five-catalog required/optional matrix, repaired LakeCat defects, Nessie's
+  missing-parent HTTP 200, Polaris's optional property-update HTTP 409,
+  cleanup/sanitization guarantees, reproduction workflow, and the explicit
+  C1-09 publication boundary.
+
 - C1-04 provenance pin: advanced the draft current profile to the independently
   verified namespace-runner revision `catalog-bench@1f4e640` and corrected
   LakeCat namespace implementation `lakecat@42b2f34b`. Both source builds retain

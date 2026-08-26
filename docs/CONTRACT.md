@@ -126,6 +126,26 @@ they become publishable only through the later result/manifest pipeline, which
 must copy reviewed sanitized evidence into an immutable bundle, hash exact bytes,
 record the execution environment, and pass bundle validation and secret review.
 
+### Namespace-probe transcripts
+
+The C1-04 namespace runner produces the intermediate
+`catalog-bench/namespace-transcript/v1` evidence shape. Its typed fixture owns
+two top-level namespaces and one multipart child, and the transcript records the
+exact operation sequence, sanitized request and response metadata, bounded
+pagination observations, cleanup outcome, and every required or optional
+assertion. Fixture preflight prevents collisions with existing state, while
+child-first cleanup and post-drop verification run even after an assertion
+fails.
+
+Opaque pagination tokens are treated as sensitive protocol data. Request URLs
+retain only a redacted token marker, while the pagination summary retains page
+and unique-namespace counts. Recursive sanitization removes secret-shaped fields
+and runtime credentials, and raw response bodies are never serialized. The
+summary and assertions still prove bounded traversal, uniqueness, completeness,
+and loop freedom without retaining reusable opaque tokens. See the exact
+five-catalog acceptance matrix and artifact identities in
+[`NAMESPACE-CONFORMANCE.md`](NAMESPACE-CONFORMANCE.md).
+
 ## Closed fields and extensions
 
 All ordinary records and enum variants deny unknown fields. This turns misspelled

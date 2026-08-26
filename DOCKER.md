@@ -168,7 +168,7 @@ owns artifact materialization: hash the resulting executables and images, create
 a runnable profile containing those identities, and accept measurements only
 from that same Docker environment.
 
-## Config-negotiation smoke evidence
+## Behavioral conformance smoke evidence
 
 Build the optimized runner and LakeCat, start LakeCat on the shared network, then
 execute the checked-in profile and scenario from the conformance container:
@@ -183,7 +183,26 @@ docker compose --profile conformance run --rm conformance config \
   --output /evidence/lakecat-config.json
 ```
 
-Choose a new output name for every run: the CLI refuses to overwrite evidence.
+Run the namespace lifecycle with a fresh portable fixture ID:
+
+```sh
+docker compose --profile conformance run --rm conformance namespace \
+  --profile /contracts/profiles/v1/current-2026-08-26.json \
+  --scenario /contracts/scenarios/v1/iceberg-rest.namespace.behavior.json \
+  --catalog lakecat \
+  --fixture-id review_lakecat_01 \
+  --output /evidence/lakecat-namespace.json
+```
+
+Fixture IDs use a conservative cross-catalog grammar. The runner derives
+run-owned top-level and multipart namespace names, rejects collisions before
+mutation, and performs child-first cleanup plus post-drop verification after
+both passing and failing assertions. The exact optimized five-catalog C1-04
+matrix is documented in
+[`docs/NAMESPACE-CONFORMANCE.md`](docs/NAMESPACE-CONFORMANCE.md).
+
+Choose a new output name and namespace fixture ID for every run: the CLI refuses
+to overwrite evidence or mutate a colliding fixture.
 Exit `0` means all required assertions passed, `2` means a `fail` or declared
 `unsupported` transcript was written, and `1` means invocation, contract, or I/O
 failure. The default host destination is the ignored
