@@ -1,0 +1,193 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "iceberg-rest.config.negotiation",
+  "version": 1,
+  "title": "Iceberg REST config negotiation and endpoint advertisement",
+  "description": "Negotiates authentication and catalog configuration, resolves warehouse routing, validates explicit endpoint advertisement or records its omission, and emits one sanitized HTTP transcript without changing protocol behavior.",
+  "family": "iceberg-rest",
+  "classification": "strict-v1",
+  "tags": [
+    "iceberg-rest",
+    "config",
+    "endpoint-advertisement",
+    "no-shim"
+  ],
+  "capabilities": [
+    {
+      "capability": "iceberg-rest.config.read",
+      "level": "required",
+      "description": "Read standard catalog configuration through GET /v1/config.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.config.endpoint-advertisement",
+      "level": "required",
+      "description": "Interpret and validate an explicit endpoints array, or record its omission for client-defined legacy defaults.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.config.warehouse-routing",
+      "level": "required",
+      "description": "Resolve unprefixed, static, or config-negotiated warehouse routing without rewriting the response.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    }
+  ],
+  "parameters": {
+    "maximum_response_bytes": 1048576,
+    "response_media_type": "application/json",
+    "transcript_format": "catalog-bench/config-transcript/v1",
+    "iceberg_openapi_source": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml",
+    "iceberg_openapi_sha256": "80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a"
+  },
+  "steps": [
+    {
+      "id": "negotiate-authentication",
+      "actor": "harness",
+      "operation": "authentication.negotiate",
+      "description": "Use the profile-declared anonymous or OAuth2 client-credentials path while retaining no secret value in evidence."
+    },
+    {
+      "id": "request-config",
+      "actor": "client",
+      "operation": "config.get",
+      "description": "Send GET /v1/config at the profile-declared Docker-network base URL and sanitized warehouse query.",
+      "depends_on": [
+        "negotiate-authentication"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "resolve-prefix",
+      "actor": "harness",
+      "operation": "config.resolve-prefix",
+      "description": "Resolve the route prefix exactly as the adapter declares: absent, static, or from the standard config prefix property.",
+      "depends_on": [
+        "request-config"
+      ]
+    },
+    {
+      "id": "validate-endpoints",
+      "actor": "harness",
+      "operation": "config.validate-endpoints",
+      "description": "Validate every explicit endpoint entry or record omission without imposing one client implementation's legacy defaults.",
+      "depends_on": [
+        "request-config"
+      ]
+    },
+    {
+      "id": "sanitize-transcript",
+      "actor": "harness",
+      "operation": "evidence.sanitize-http-transcript",
+      "description": "Persist only allowlisted headers and recursively redact secret-shaped response fields before writing evidence.",
+      "depends_on": [
+        "resolve-prefix",
+        "validate-endpoints"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "authentication-ready",
+      "step": "negotiate-authentication",
+      "required": true,
+      "description": "Anonymous access requires no credential, or OAuth2 returns a bearer token without persisting it.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/authentication-ready-v1",
+        "configuration": {
+          "persist_token": false
+        }
+      }
+    },
+    {
+      "id": "config-http-success",
+      "step": "request-config",
+      "required": true,
+      "description": "The config request returns HTTP 200.",
+      "check": {
+        "kind": "http-status",
+        "allowed": [
+          200
+        ]
+      }
+    },
+    {
+      "id": "config-media-type",
+      "step": "request-config",
+      "required": true,
+      "description": "The config response declares the standard application/json media type, with optional parameters.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/config-media-type-v1",
+        "configuration": {
+          "allowed": [
+            "application/json"
+          ]
+        }
+      }
+    },
+    {
+      "id": "config-map-shape",
+      "step": "request-config",
+      "required": true,
+      "description": "Config includes the required defaults and overrides JSON string maps, never array-shaped map surrogates.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/config-map-shape-v1",
+        "configuration": {
+          "map_fields": [
+            "defaults",
+            "overrides"
+          ]
+        }
+      }
+    },
+    {
+      "id": "route-prefix-resolved",
+      "step": "resolve-prefix",
+      "required": true,
+      "description": "The adapter produces an unambiguous standard route prefix without modifying config content.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/route-prefix-resolution-v1",
+        "configuration": {
+          "allowed_modes": [
+            "unprefixed",
+            "static",
+            "negotiated"
+          ]
+        }
+      }
+    },
+    {
+      "id": "endpoint-advertisement-valid",
+      "step": "validate-endpoints",
+      "required": true,
+      "description": "Every explicit endpoint is an exact standard method/path entry, or omission is recorded without inventing one universal client default set.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/endpoint-advertisement-v1",
+        "configuration": {
+          "absence_semantics": "client-defined-legacy-defaults",
+          "path_prefix": "/v1/"
+        }
+      }
+    },
+    {
+      "id": "transcript-sanitized",
+      "step": "sanitize-transcript",
+      "required": true,
+      "description": "The transcript contains no bearer token, OAuth client credential, cookie, or secret-shaped response value.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/sanitized-http-transcript-v1",
+        "configuration": {
+          "request_header_policy": "allowlist-and-redact-authorization",
+          "response_header_policy": "allowlist",
+          "response_json_policy": "recursive-secret-key-redaction"
+        }
+      }
+    }
+  ]
+}

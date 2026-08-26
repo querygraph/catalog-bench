@@ -108,6 +108,24 @@ queries reject secret-shaped keys. Adapter URLs reject embedded credentials,
 queries, and fragments. These are guardrails, not substitutes for the repository's
 artifact secret scan.
 
+### Config-probe transcripts
+
+The C1-03 config runner produces the intermediate
+`catalog-bench/config-transcript/v1` evidence shape. It records the exact profile
+and scenario byte digests, selected adapter, sanitized request, allowlisted
+response headers, a sanitized JSON body, raw-body byte count and—only for valid
+JSON requiring no redaction—SHA-256, prefix resolution, endpoint interpretation,
+every assertion, and the final probe classification. It never stores the raw
+response body, OAuth client credentials, or bearer token. Secret-shaped JSON
+keys and runtime credential values are recursively redacted before serialization,
+and response capture is bounded to 1 MiB.
+
+These transcripts deliberately are not `catalog-bench/v1` result documents.
+Files emitted under `target/conformance-evidence` are mutable smoke diagnostics;
+they become publishable only through the later result/manifest pipeline, which
+must copy reviewed sanitized evidence into an immutable bundle, hash exact bytes,
+record the execution environment, and pass bundle validation and secret review.
+
 ## Closed fields and extensions
 
 All ordinary records and enum variants deny unknown fields. This turns misspelled

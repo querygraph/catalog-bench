@@ -15,7 +15,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
     && CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
     go build -trimpath -ldflags="-s -w" -o /out/healthcheck ./cmd/healthcheck \
     && CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
-    go build -trimpath -ldflags="-s -w" -o /out/lakekeeper-setup ./cmd/lakekeeper-setup
+    go build -trimpath -ldflags="-s -w" -o /out/lakekeeper-setup ./cmd/lakekeeper-setup \
+    && CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
+    go build -trimpath -ldflags="-s -w" -o /out/polaris-setup ./cmd/polaris-setup \
+    && CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
+    go build -trimpath -ldflags="-s -w" -o /out/wait-http ./cmd/wait-http
 
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS minio-build
 ARG TARGETARCH
@@ -48,6 +52,8 @@ COPY --from=minio-build /out/minio /usr/local/bin/minio
 COPY --from=tool-build /out/ensure-bucket /usr/local/bin/ensure-bucket
 COPY --from=tool-build /out/healthcheck /usr/local/bin/healthcheck
 COPY --from=tool-build /out/lakekeeper-setup /usr/local/bin/lakekeeper-setup
+COPY --from=tool-build /out/polaris-setup /usr/local/bin/polaris-setup
+COPY --from=tool-build /out/wait-http /usr/local/bin/wait-http
 ENV MINIO_HEALTHCHECK_URL=http://127.0.0.1:9000/minio/health/ready \
     TMPDIR=/data/.tmp
 WORKDIR /data

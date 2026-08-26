@@ -1339,6 +1339,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "catalog-bench-conformance"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "catalog-bench-common",
+ "clap",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "tokio",
+ "url",
+]
+
+[[package]]
 name = "catalog-bench-contract"
 version = "0.1.0"
 dependencies = [

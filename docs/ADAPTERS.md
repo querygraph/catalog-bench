@@ -40,13 +40,20 @@ result record.
 | Catalog | Base URL | Config selection | Route prefix | Authentication | Standard create location | Handling |
 | --- | --- | --- | --- | --- | --- | --- |
 | LakeCat | `http://lakecat:8181/catalog` | `/v1/config` | unprefixed | anonymous | `s3://warehouse/lakecat` | protocol-native |
-| Apache Polaris | `http://polaris:8181/api/catalog` | `/v1/config` | static `bench` | OAuth2 client credentials at `/v1/oauth/tokens`, scope `PRINCIPAL_ROLE:ALL` | catalog-managed | protocol-native |
+| Apache Polaris | `http://polaris:8181/api/catalog` | `/v1/config?warehouse=bench` | static `bench` | OAuth2 client credentials at `/v1/oauth/tokens`, scope `PRINCIPAL_ROLE:ALL` | catalog-managed | protocol-native |
 | Apache Gravitino | `http://gravitino:9001/iceberg` | `/v1/config` | unprefixed | anonymous | catalog-managed | protocol-native |
 | Lakekeeper | `http://lakekeeper:8181/catalog` | `/v1/config?warehouse=bench` | negotiated from `/defaults/prefix` | anonymous under the pinned allow-all fixture | catalog-managed | protocol-native |
 | Apache Nessie | `http://nessie:19120/iceberg` | `/v1/config` | static `main` | anonymous | catalog-managed | protocol-native |
 
 These are container-network addresses. Host port mappings are diagnostic access,
 not benchmark adapter endpoints.
+
+OAuth2 adapters name two portable environment variables rather than carrying
+credential values in the profile. The current Polaris binding uses
+`CATALOG_BENCH_POLARIS_CLIENT_ID` and
+`CATALOG_BENCH_POLARIS_CLIENT_SECRET`; Compose supplies fixture-only values to
+the conformance container. Validation rejects malformed or identical variable
+names, and the transcript records neither value.
 
 ## Capability semantics
 
@@ -109,5 +116,8 @@ cargo run -p catalog-bench-contract --locked -- validate profiles/v1
 cargo test -p catalog-bench-common --test contract --locked
 ```
 
-Static adapter validation is not behavioral conformance. Live config transcripts,
-operation assertions, classification, and sanitized evidence begin in C1-03.
+Static adapter validation is not behavioral conformance. The C1-03 config probe
+consumes this data without catalog-specific request branches. It exits `0` only
+for `pass`, exits `2` after persisting an attempted `fail` or predeclared
+`unsupported` transcript, and reserves exit `1` for invalid contracts,
+invocations, or evidence-write failures. It never overwrites an evidence file.

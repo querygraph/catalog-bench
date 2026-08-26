@@ -238,6 +238,13 @@
         {
           "additionalProperties": false,
           "properties": {
+            "client_id_env": {
+              "description": "Environment variable names only; secret values never enter profiles.",
+              "type": "string"
+            },
+            "client_secret_env": {
+              "type": "string"
+            },
             "kind": {
               "const": "oauth2-client-credentials",
               "type": "string"
@@ -253,7 +260,9 @@
           "required": [
             "kind",
             "token_path",
-            "scope"
+            "scope",
+            "client_id_env",
+            "client_secret_env"
           ],
           "type": "object"
         }

@@ -1,19 +1,15 @@
 package infra
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"slices"
 	"strings"
 )
-
-const maxLakekeeperResponseBytes = 1 << 20
 
 // LakekeeperSettings is the validated environment boundary for management and
 // catalog readiness operations.
@@ -46,13 +42,14 @@ func LoadLakekeeperSettings(getenv func(string) string) (LakekeeperSettings, err
 // LakekeeperClient reconciles typed management state and verifies the public
 // Iceberg REST boundary. It intentionally does not expose a behavior shim.
 type LakekeeperClient struct {
-	httpClient *http.Client
-	baseURL    *url.URL
+	transport JSONHTTPClient
 }
 
 // NewLakekeeperClient constructs a client from validated settings.
 func NewLakekeeperClient(httpClient *http.Client, baseURL *url.URL) LakekeeperClient {
-	return LakekeeperClient{httpClient: httpClient, baseURL: baseURL}
+	return LakekeeperClient{
+		transport: NewJSONHTTPClient(httpClient, baseURL, "Lakekeeper"),
+	}
 }
 
 type lakekeeperInfo struct {
@@ -298,72 +295,15 @@ func (client LakekeeperClient) CheckCatalogReady(ctx context.Context, warehouse 
 	return nil
 }
 
-// HTTPStatusError preserves machine-checkable status without copying response
-// bodies—which may contain deployment details—into logs.
-type HTTPStatusError struct {
-	Method string
-	Path   string
-	Code   int
-}
-
-func (err HTTPStatusError) Error() string {
-	return fmt.Sprintf("%s %s returned HTTP %d", err.Method, err.Path, err.Code)
-}
-
 func (client LakekeeperClient) get(
 	ctx context.Context,
 	path string,
 	query url.Values,
 	output any,
 ) error {
-	return client.do(ctx, http.MethodGet, path, query, nil, output)
+	return client.transport.Do(ctx, http.MethodGet, path, query, nil, nil, output)
 }
 
 func (client LakekeeperClient) post(ctx context.Context, path string, payload []byte) error {
-	return client.do(ctx, http.MethodPost, path, nil, payload, nil)
-}
-
-func (client LakekeeperClient) do(
-	ctx context.Context,
-	method string,
-	path string,
-	query url.Values,
-	payload []byte,
-	output any,
-) error {
-	endpoint := *client.baseURL
-	endpoint.Path = strings.TrimSuffix(endpoint.Path, "/") + path
-	endpoint.RawQuery = query.Encode()
-
-	request, err := http.NewRequestWithContext(ctx, method, endpoint.String(), bytes.NewReader(payload))
-	if err != nil {
-		return fmt.Errorf("construct Lakekeeper request: %w", err)
-	}
-	if payload != nil {
-		request.Header.Set("Content-Type", "application/json")
-	}
-	response, err := client.httpClient.Do(request)
-	if err != nil {
-		return fmt.Errorf("request Lakekeeper: %w", err)
-	}
-	defer response.Body.Close()
-
-	limited := io.LimitReader(response.Body, maxLakekeeperResponseBytes+1)
-	body, err := io.ReadAll(limited)
-	if err != nil {
-		return fmt.Errorf("read Lakekeeper response: %w", err)
-	}
-	if len(body) > maxLakekeeperResponseBytes {
-		return fmt.Errorf("Lakekeeper response exceeded %d bytes", maxLakekeeperResponseBytes)
-	}
-	if response.StatusCode < http.StatusOK || response.StatusCode >= http.StatusMultipleChoices {
-		return HTTPStatusError{Method: method, Path: path, Code: response.StatusCode}
-	}
-	if output == nil || len(bytes.TrimSpace(body)) == 0 {
-		return nil
-	}
-	if err := json.Unmarshal(body, output); err != nil {
-		return fmt.Errorf("decode Lakekeeper response: %w", err)
-	}
-	return nil
+	return client.transport.Do(ctx, http.MethodPost, path, nil, payload, nil, nil)
 }

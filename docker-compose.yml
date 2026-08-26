@@ -19,6 +19,16 @@ x-lakekeeper-environment: &lakekeeper-environment
   LAKEKEEPER__PG_DATABASE_URL_WRITE: postgresql://lakekeeper:lakekeeper-local-only@postgresql:5432/lakekeeper
   LAKEKEEPER__PG_ENCRYPTION_KEY: catalog-bench-local-only-encryption-key
   RUST_LOG: info
+x-polaris-setup-environment: &polaris-setup-environment
+  POLARIS_URL: http://polaris:8181
+  POLARIS_REALM: POLARIS
+  POLARIS_CLIENT_ID: root
+  POLARIS_CLIENT_SECRET: secret
+  POLARIS_SCOPE: PRINCIPAL_ROLE:ALL
+  POLARIS_CATALOG: bench
+  POLARIS_BASE_LOCATION: s3://warehouse/bench
+  POLARIS_S3_ENDPOINT: http://minio:9000
+  POLARIS_S3_REGION: us-east-1
 
 services:
   # Exact source-built community MinIO. Host ports are intentionally omitted:
@@ -175,11 +185,13 @@ services:
     healthcheck:
       disable: true
 
-  # LakeCat remains source-built. C1-09 will replace the staged-binary packaging
-  # path with the final one-Docker optimized production artifact pipeline.
+  # Build the adjacent LakeCat checkout directly in Docker with the production
+  # feature set and optimization recipe; no host-staged executable is accepted.
   lakecat:
     build:
       context: ./docker/lakecat
+      additional_contexts:
+        lakecat-source: ../lakecat
     image: lakecat-service:bench
     networks: [lakehouse-net]
     ports: ["8181:8181"]
@@ -221,6 +233,21 @@ services:
       minio-init:
         condition: service_completed_successfully
 
+  nessie-ready:
+    image: *minio-image
+    profiles: ["nessie"]
+    networks: [lakehouse-net]
+    restart: "no"
+    entrypoint: ["/usr/local/bin/wait-http"]
+    command: []
+    environment:
+      READY_URL: http://nessie:19120/iceberg/v1/config
+    depends_on:
+      nessie:
+        condition: service_started
+    healthcheck:
+      disable: true
+
   polaris:
     image: apache/polaris:1.7.0@sha256:3495f67f38cca33892a045f7dd3f46eb52387f0fd52d4145538a772fd8aedad7
     platform: linux/arm64
@@ -236,6 +263,40 @@ services:
     depends_on:
       minio-init:
         condition: service_completed_successfully
+
+  # Polaris does not auto-provision an Iceberg catalog. Reconcile the exact
+  # management object in Docker and reject a same-name catalog with drift.
+  polaris-bootstrap:
+    image: *minio-image
+    profiles: ["polaris"]
+    networks: [lakehouse-net]
+    restart: "no"
+    entrypoint: ["/usr/local/bin/polaris-setup"]
+    command: ["ensure"]
+    environment: *polaris-setup-environment
+    depends_on:
+      polaris:
+        condition: service_started
+      minio-init:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
+
+  # Management creation is not enough: require authenticated config negotiation
+  # for the same warehouse before a conformance probe starts.
+  polaris-ready:
+    image: *minio-image
+    profiles: ["polaris"]
+    networks: [lakehouse-net]
+    restart: "no"
+    entrypoint: ["/usr/local/bin/polaris-setup"]
+    command: ["ready"]
+    environment: *polaris-setup-environment
+    depends_on:
+      polaris-bootstrap:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
 
   gravitino:
     image: apache/gravitino-iceberg-rest:1.3.0@sha256:80136ae753ee77735153fc1482a389018f8c2638a54f453cb96967c7194584c7
@@ -259,6 +320,21 @@ services:
       minio-init:
         condition: service_completed_successfully
 
+  gravitino-ready:
+    image: *minio-image
+    profiles: ["gravitino"]
+    networks: [lakehouse-net]
+    restart: "no"
+    entrypoint: ["/usr/local/bin/wait-http"]
+    command: []
+    environment:
+      READY_URL: http://gravitino:9001/iceberg/v1/config
+    depends_on:
+      gravitino:
+        condition: service_started
+    healthcheck:
+      disable: true
+
   bench:
     build:
       context: .
@@ -267,6 +343,28 @@ services:
     networks: [lakehouse-net]
     profiles: ["bench"]
     entrypoint: ["/usr/local/bin/catalog-bench-commit"]
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+
+  # Runs the exact profile/scenario contracts from the same Docker network as
+  # every catalog. Smoke transcripts land under target/ by default and cannot
+  # be confused with a manifest-backed publishable result bundle.
+  conformance:
+    build:
+      context: .
+      dockerfile: docker/bench.Dockerfile
+    image: catalog-bench-commit:latest
+    networks: [lakehouse-net]
+    profiles: ["conformance"]
+    entrypoint: ["/usr/local/bin/catalog-bench-conformance"]
+    environment:
+      CATALOG_BENCH_POLARIS_CLIENT_ID: root
+      CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret
+    volumes:
+      - ./profiles:/contracts/profiles:ro
+      - ./scenarios:/contracts/scenarios:ro
+      - ${CATALOG_BENCH_EVIDENCE_DIR:-./target/conformance-evidence}:/evidence
     depends_on:
       minio-init:
         condition: service_completed_successfully

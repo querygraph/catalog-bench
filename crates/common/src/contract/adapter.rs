@@ -82,6 +82,9 @@ pub enum CatalogAuthentication {
         /// Token route relative to the catalog base URL.
         token_path: String,
         scope: String,
+        /// Environment variable names only; secret values never enter profiles.
+        client_id_env: String,
+        client_secret_env: String,
     },
 }
 
@@ -141,6 +144,29 @@ pub enum AdapterCapabilityCoverage {
     },
 }
 
+impl AdapterCapabilityCoverage {
+    /// Whether the adapter should execute this capability and classify observed
+    /// behavior with scenario assertions.
+    #[must_use]
+    pub fn exercises(&self, capability: &CapabilityId) -> bool {
+        match self {
+            Self::ExerciseAll => true,
+            Self::Explicit { exercise, .. } => exercise.contains(capability),
+        }
+    }
+
+    /// The pre-execution limitation for a capability, when one is declared.
+    #[must_use]
+    pub fn limitation(&self, capability: &CapabilityId) -> Option<&UnsupportedAdapterCapability> {
+        match self {
+            Self::ExerciseAll => None,
+            Self::Explicit { unsupported, .. } => unsupported
+                .iter()
+                .find(|limitation| limitation.capability == *capability),
+        }
+    }
+}
+
 /// One catalog's complete, profile-pinned harness binding.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -197,8 +223,12 @@ impl Validate for CatalogAdapter {
             );
         }
 
-        if let CatalogAuthentication::OAuth2ClientCredentials { token_path, scope } =
-            &self.authentication
+        if let CatalogAuthentication::OAuth2ClientCredentials {
+            token_path,
+            scope,
+            client_id_env,
+            client_secret_env,
+        } = &self.authentication
         {
             validate_relative_path(
                 token_path,
@@ -206,6 +236,22 @@ impl Validate for CatalogAdapter {
                 issues,
             );
             require_non_empty(scope, child_path(path, "authentication.scope"), issues);
+            validate_environment_variable(
+                client_id_env,
+                &child_path(path, "authentication.client_id_env"),
+                issues,
+            );
+            validate_environment_variable(
+                client_secret_env,
+                &child_path(path, "authentication.client_secret_env"),
+                issues,
+            );
+            if client_id_env == client_secret_env {
+                issues.push(ValidationIssue::new(
+                    child_path(path, "authentication.client_secret_env"),
+                    "must differ from the client-id environment variable",
+                ));
+            }
         }
 
         if let AdapterRequestHandling::BehaviorChangingShim {
@@ -340,7 +386,7 @@ fn validate_http_base_url(value: &str, path: &str, issues: &mut Vec<ValidationIs
                 && url.password().is_none()
                 && url.query().is_none()
                 && url.fragment().is_none()
-                && !(url.path().len() > 1 && url.path().ends_with('/')) => {}
+                && !value.ends_with('/') => {}
         Ok(_) => issues.push(ValidationIssue::new(
             path,
             "must be an absolute HTTP(S) base URL without credentials, query, fragment, or trailing slash",
@@ -368,5 +414,21 @@ fn validate_warehouse_uri(value: &str, path: &str, issues: &mut Vec<ValidationIs
             path,
             format!("must be a valid absolute warehouse URI: {error}"),
         )),
+    }
+}
+
+fn validate_environment_variable(value: &str, path: &str, issues: &mut Vec<ValidationIssue>) {
+    require_non_empty(value, path, issues);
+    let mut characters = value.chars();
+    let valid_start = characters
+        .next()
+        .is_some_and(|character| character == '_' || character.is_ascii_alphabetic());
+    if !valid_start
+        || !characters.all(|character| character == '_' || character.is_ascii_alphanumeric())
+    {
+        issues.push(ValidationIssue::new(
+            path,
+            "must be a portable environment-variable name",
+        ));
     }
 }

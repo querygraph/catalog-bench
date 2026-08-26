@@ -1,18 +1,45 @@
-# Runtime image for lakecat-service.
-#
-# LakeCat depends on Sail as a Cargo *git* dependency (querygraph/sail#lakecat),
-# fetched at build time rather than published to crates.io, so we build the
-# binary for Linux via docker/build-lakecat.sh (which has network access to fetch
-# the git dep) and package the staged ELF here.
-FROM debian:bookworm-slim
+# syntax=docker/dockerfile:1.7
 
-# libpython3.11 is required at runtime when the binary is built with the
-# sail-local feature (Sail links libpython); harmless for deferred builds.
+# Build the current sibling LakeCat checkout into an optimized Linux ARM64
+# executable. The named `lakecat-source` context is declared by Compose, so the
+# image never depends on a mutable, pre-staged host binary.
+FROM rust:1.97.1-bookworm@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 AS build
+
+WORKDIR /src/lakecat
+COPY --from=lakecat-source . .
+
+ENV CARGO_INCREMENTAL=0 \
+    CARGO_PROFILE_RELEASE_OPT_LEVEL=3 \
+    CARGO_PROFILE_RELEASE_LTO=fat \
+    CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1 \
+    CARGO_PROFILE_RELEASE_DEBUG=false \
+    CARGO_PROFILE_RELEASE_STRIP=symbols \
+    CARGO_PROFILE_RELEASE_PANIC=abort
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+      libpython3.11-dev \
+      protobuf-compiler \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN --mount=type=cache,target=/usr/local/cargo/registry \
+    --mount=type=cache,target=/usr/local/cargo/git \
+    --mount=type=cache,target=/src/lakecat/target \
+    RUSTFLAGS="-Dwarnings -Ctarget-cpu=native" \
+    cargo build --locked --release \
+      -p lakecat-service \
+      --bin lakecat-service \
+      --features turso-local,sail-local \
+      -j1 \
+    && install -Dm755 target/release/lakecat-service /out/lakecat-service
+
+FROM debian:bookworm-slim@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171
+
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates curl libpython3.11 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY lakecat-service /usr/local/bin/lakecat-service
+COPY --from=build /out/lakecat-service /usr/local/bin/lakecat-service
 
 ENV LAKECAT_BIND_ADDR=0.0.0.0:8181 \
     LAKECAT_WAREHOUSE=local \

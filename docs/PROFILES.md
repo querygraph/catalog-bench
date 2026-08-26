@@ -99,6 +99,14 @@ endpoint. `exercise` schedules a standard operation; it does not predict a pass.
 See [ADAPTERS.md](ADAPTERS.md) for routing, authentication, capability, shim, and
 historical-compatibility semantics.
 
+The config-negotiation scenario additionally pins the exact Apache Iceberg 1.11.0
+OpenAPI bytes at SHA-256
+`80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a`.
+The runner accepts only endpoint method/path entries defined by those bytes and
+records omission as the specification's implicit default set. OAuth profiles
+name environment-variable bindings only; secret values are runtime inputs and
+never profile data.
+
 Primary release sources: [Polaris](https://polaris.apache.org/downloads/),
 [Gravitino](https://gravitino.apache.org/downloads/),
 [Lakekeeper](https://github.com/lakekeeper/lakekeeper/releases),

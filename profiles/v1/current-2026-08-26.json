@@ -68,6 +68,7 @@
           "jobs=1"
         ],
         "compiler_flags": [
+          "-Dwarnings",
           "-Ctarget-cpu=native"
         ],
         "locked": true,
@@ -146,6 +147,7 @@
           "jobs=1"
         ],
         "compiler_flags": [
+          "-Dwarnings",
           "-Ctarget-cpu=native"
         ],
         "locked": true,
@@ -726,7 +728,10 @@
       "endpoint": {
         "base_url": "http://polaris:8181/api/catalog",
         "config": {
-          "path": "/v1/config"
+          "path": "/v1/config",
+          "query": {
+            "warehouse": "bench"
+          }
         },
         "route_prefix": {
           "kind": "static",
@@ -736,7 +741,9 @@
       "authentication": {
         "kind": "oauth2-client-credentials",
         "token_path": "/v1/oauth/tokens",
-        "scope": "PRINCIPAL_ROLE:ALL"
+        "scope": "PRINCIPAL_ROLE:ALL",
+        "client_id_env": "CATALOG_BENCH_POLARIS_CLIENT_ID",
+        "client_secret_env": "CATALOG_BENCH_POLARIS_CLIENT_SECRET"
       },
       "request_handling": {
         "kind": "protocol-native"
@@ -818,7 +825,7 @@
     }
   ],
   "extensions": {
-    "querygraph/iceberg-rest-spec": "Apache Iceberg 1.11.0 OpenAPI at source revision 6976e020b894f6a6777704df2b8c4458cb291ae9",
+    "querygraph/iceberg-rest-spec": "Apache Iceberg 1.11.0 OpenAPI at source revision 6976e020b894f6a6777704df2b8c4458cb291ae9; exact YAML SHA-256 80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a",
     "querygraph/profile-state": "Version selection only. A run must materialize every unresolved artifact, replace draft with runnable, and hash the resulting profile bytes before execution."
   }
 }

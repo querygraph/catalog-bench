@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Catalog community C1-03: added a strict, catalog-neutral Iceberg REST config
+  negotiation runner with anonymous/OAuth2 authentication, exact profile and
+  scenario projection, bounded and recursively sanitized HTTP evidence, config
+  map/media/prefix/endpoint assertions, predeclared unsupported classification,
+  and overwrite-safe production CLI output. Added exact Apache Iceberg 1.11.0
+  OpenAPI provenance, portable OAuth environment bindings, production-optimized
+  same-Docker Rust builds, typed Polaris reconciliation, generic catalog
+  readiness gates, comprehensive Rust/Go tests, and operator documentation.
+  Live smoke transcripts remain non-publishable until C1-09 wraps reviewed
+  evidence in immutable result bundles.
+
 - Catalog community C1-02: added a typed, schema-backed catalog adapter contract
   with exact Iceberg REST config/prefix/auth routing, exhaustive 27-capability
   coverage, protocol-native versus behavior-changing-shim disclosure, secret and

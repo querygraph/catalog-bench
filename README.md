@@ -69,6 +69,15 @@ standard request path from any behavior-changing shim. Static adapter validation
 does not claim that an operation passed; behavioral evidence begins with the
 versioned scenarios.
 
+The first executable behavioral scenario is
+[`iceberg-rest.config.negotiation`](scenarios/v1/iceberg-rest.config.negotiation.json).
+Its typed runner negotiates anonymous or OAuth2 client-credentials access, reads
+`GET /v1/config`, validates map shape, prefix resolution, and explicit or
+implicit endpoint advertisement, and writes a sanitized transcript even when a
+required assertion fails. Run it inside the Compose network; [DOCKER.md](DOCKER.md)
+contains the exact command and explains why files under `target/` are smoke
+evidence rather than publishable result records.
+
 ## The commit benchmark
 
 A catalog-agnostic benchmark for the **commit path** of Iceberg REST catalogs —
@@ -203,9 +212,9 @@ excerpt—is the authority while C1-02 validates every current adapter. For loca
 diagnostics, start only the profile under inspection:
 
 ```sh
-docker compose --profile nessie up --detach nessie
-docker compose --profile polaris up --detach polaris
-docker compose --profile gravitino up --detach gravitino
+docker compose --profile nessie up --detach nessie-ready
+docker compose --profile polaris up --detach polaris-ready
+docker compose --profile gravitino up --detach gravitino-ready
 ```
 
 Starting an image is not a conformance result. New public measurements wait for
@@ -213,11 +222,11 @@ C1-03 through C1-09 to provide operation assertions, generated evidence, and the
 fully optimized same-Docker artifact pipeline.
 
 **Why LakeCat is built from source.** LakeCat depends on Sail as a Cargo *git*
-dependency on `querygraph/sail#lakecat` (fetched at build time); Grust (0.11.0) and
-TypeSec are published crates. `docker/build-lakecat.sh` compiles `lakecat-service`
-for Linux inside a Rust container with `~/src` mounted (so `../lakecat` is the build
-root and Sail is fetched over the network), stages the ELF, and
-`docker compose build lakecat` packages it into the slim runtime image.
+dependency on `querygraph/sail#lakecat` (fetched at build time); Grust and TypeSec
+are published crates. Compose passes the adjacent LakeCat checkout as a named
+build context, then the pinned Rust image compiles the locked `turso-local` +
+`sail-local` production service with fat LTO and fatal warnings. The slim runtime
+receives only the resulting executable—never a mutable host-staged ELF.
 
 ### 4. Benchmark launcher status
 
@@ -225,8 +234,8 @@ root and Sail is fetched over the network), stages the ELF, and
 development workflow. They are retained for historical diagnostics, but they
 still build or execute part of the workload on the host and therefore cannot
 produce new public Phase 1 evidence. C1-09 replaces them with smoke and full
-commands that build optimized production artifacts and run every measured
-process inside the same Docker environment.
+commands that materialize and hash optimized production artifacts, then run every
+measured process inside the same Docker environment.
 
 ## Build the driver alone
 
@@ -282,10 +291,12 @@ catalog-bench-commit --base-url http://127.0.0.1:8080/api/2.1/unity-catalog/iceb
 ## Bootstrap caveats (the externals are not turnkey)
 
 - **Polaris** needs an OAuth2 token + an S3 catalog (it does not auto-serve a
-  warehouse). `polaris-bootstrap.sh` automates both — client creds `root`/`secret`,
-  catalog `bench` on `s3://warehouse/bench`, `stsUnavailable`+`pathStyle` for MinIO
-  — and `bench-stack.sh` calls it automatically. Override creds via
-  `POLARIS_CLIENT_ID`/`POLARIS_CLIENT_SECRET`, or pass a ready `POLARIS_TOKEN`.
+  warehouse). The Compose `polaris-bootstrap` and `polaris-ready` one-shots use a
+  typed in-Docker reconciler to create catalog `bench` on
+  `s3://warehouse/bench`, verify its MinIO endpoint, region,
+  `stsUnavailable`/path-style settings, and then prove authenticated
+  `/v1/config?warehouse=bench`. Existing same-name configuration drift is an
+  error, not an accepted 409.
 - **Gravitino** uses the `apache/gravitino-iceberg-rest` image; confirm your tag
   serves the REST API on the expected port (older tags differ). Use the
   file-backed JDBC backend in this compose file: `memory` acknowledges commits

@@ -56,6 +56,12 @@ unrelated local MinIO from accidentally entering a run.
   creates the nil-ID default project, then creates warehouse `bench` at
   `s3://warehouse/lakekeeper`. The warehouse uses MinIO's S3-compatible endpoint,
   path-style requests, and STS credential vending.
+- **Polaris setup** uses another typed helper in that same source-built image.
+  It obtains OAuth client credentials without logging the token, reads before it
+  writes, creates only a missing `bench` catalog, and then compares catalog type,
+  base location, allowed locations, internal/external MinIO endpoints, region,
+  path-style mode, and disabled STS vending. A separate gate proves authenticated
+  config negotiation with `warehouse=bench`.
 
 The fixture credentials in Compose are intentionally obvious and local-only.
 They are part of a reproducible benchmark topology, not production deployment
@@ -145,19 +151,45 @@ project. Concurrent isolated projects therefore need a future per-run network
 override; C1-09 owns that full orchestration. Do not run two ordinary projects
 with this Compose file concurrently until that unit lands.
 
-## LakeCat build status
+## Production-optimized Rust images
 
-`docker/build-lakecat.sh` is still the earlier development packaging path: it
-compiles a Linux binary in a Rust container, stages the ignored ELF under
-`docker/lakecat/`, and packages it in a runtime image. It is retained so existing
-LakeCat smoke work remains usable, but it is not sufficient provenance for new
-public evidence.
+Compose builds LakeCat directly from the adjacent source checkout through a
+named Docker build context; no host-built or pre-staged ELF enters the image.
+`docker/lakecat/Dockerfile` and `docker/bench.Dockerfile` use the profile-pinned
+Rust 1.97.1 image, locked dependencies, optimization level 3, fat LTO, one
+codegen unit, stripped symbols, aborting panics, disabled incremental builds,
+and the container CPU's native target features. Warnings are fatal. Persistent
+BuildKit Cargo caches shorten source-only rebuilds, while the shipped executables
+are copied through an ordinary `/out` layer and remain independent of cache
+lifetime.
 
-C1-09 replaces that path and `docker/bench.Dockerfile` with one common,
-production-optimized Docker build pipeline. The final protocol must build and
-execute LakeCat, catalog-bench, clients, engines, and support tools inside the
-same Docker environment and record the executable/image hashes before accepting
-measurements.
+This is the production build recipe required for final runs, but C1-09 still
+owns artifact materialization: hash the resulting executables and images, create
+a runnable profile containing those identities, and accept measurements only
+from that same Docker environment.
+
+## Config-negotiation smoke evidence
+
+Build the optimized runner and LakeCat, start LakeCat on the shared network, then
+execute the checked-in profile and scenario from the conformance container:
+
+```sh
+docker compose --profile conformance build lakecat conformance
+docker compose --profile conformance up --detach --force-recreate lakecat
+docker compose --profile conformance run --rm conformance config \
+  --profile /contracts/profiles/v1/current-2026-08-26.json \
+  --scenario /contracts/scenarios/v1/iceberg-rest.config.negotiation.json \
+  --catalog lakecat \
+  --output /evidence/lakecat-config.json
+```
+
+Choose a new output name for every run: the CLI refuses to overwrite evidence.
+Exit `0` means all required assertions passed, `2` means a `fail` or declared
+`unsupported` transcript was written, and `1` means invocation, contract, or I/O
+failure. The default host destination is the ignored
+`target/conformance-evidence` directory. Those files are smoke diagnostics, not
+publishable results; publication requires immutable result/manifest wrapping,
+environment capture, redaction review, and exact-byte hashes.
 
 ## Optional catalog profiles
 
@@ -167,10 +199,24 @@ declared behaviorally ready merely because Compose can start them: C1-02 validat
 each adapter binding and C1-03 through C1-07 establish operation-level outcomes.
 
 ```sh
-docker compose --profile nessie up --wait nessie
-docker compose --profile polaris up --wait polaris
-docker compose --profile gravitino up --wait gravitino
+docker compose --profile nessie up --detach nessie-ready
+docker compose --profile polaris up --detach polaris-ready
+docker compose --profile gravitino up --detach gravitino-ready
 ```
+
+For the selected gate, resolve its container and require a zero exit before
+running the conformance container, just as for `lakekeeper-ready`:
+
+```sh
+gate=polaris-ready
+gate_id="$(docker compose --profile polaris ps --all --quiet "$gate")"
+test "$(docker wait "$gate_id")" = 0
+```
+
+`nessie-ready` and `gravitino-ready` retry their anonymous config route for at
+most 90 seconds. `polaris-ready` runs only after the typed catalog reconciler and
+performs OAuth-backed config negotiation. A completed gate is readiness, not a
+conformance outcome; the scenario runner still owns assertions and evidence.
 
 Released Unity Catalog OSS 0.5.0 is not in this topology because its Iceberg REST
 surface is read-only. It remains an explicit `unsupported` capability outcome,

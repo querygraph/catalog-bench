@@ -285,6 +285,7 @@ fn checked_in_profiles_scenario_and_phase_one_adapters_validate() {
         include_bytes!("../../../profiles/v1/current-2026-08-26.json").as_slice(),
         include_bytes!("../../../scenarios/v1/iceberg-rest.commit.same-table-contention.json")
             .as_slice(),
+        include_bytes!("../../../scenarios/v1/iceberg-rest.config.negotiation.json").as_slice(),
     ];
     let documents = bytes.map(|document| parse_contract(document).unwrap());
 
@@ -341,7 +342,9 @@ fn checked_in_profiles_scenario_and_phase_one_adapters_validate() {
         ])
     );
 
-    assert!(matches!(&documents[2], ContractDocument::Scenario(_)));
+    assert!(documents[2..]
+        .iter()
+        .all(|document| matches!(document, ContractDocument::Scenario(_))));
 }
 
 #[test]
@@ -502,6 +505,33 @@ fn adapter_routes_reject_credentials_and_secret_query_keys() {
 
     assert!(error.contains("without credentials"));
     assert!(error.contains("secret-like setting key `access_token` is forbidden"));
+}
+
+#[test]
+fn adapter_base_url_rejects_a_root_trailing_slash() {
+    let mut profile = profile();
+    profile.catalog_adapters[0].endpoint.base_url = "http://catalog/".to_owned();
+    profile.services[0].endpoint = Some("http://catalog/".to_owned());
+
+    let error = profile.validate().unwrap_err().to_string();
+
+    assert!(error.contains("without credentials, query, fragment, or trailing slash"));
+}
+
+#[test]
+fn oauth_adapter_rejects_nonportable_or_reused_environment_names() {
+    let mut profile = profile();
+    profile.catalog_adapters[0].authentication = CatalogAuthentication::OAuth2ClientCredentials {
+        token_path: "/v1/oauth/tokens".to_owned(),
+        scope: "fixture:all".to_owned(),
+        client_id_env: "9INVALID".to_owned(),
+        client_secret_env: "9INVALID".to_owned(),
+    };
+
+    let error = profile.validate().unwrap_err().to_string();
+
+    assert!(error.contains("must be a portable environment-variable name"));
+    assert!(error.contains("must differ from the client-id environment variable"));
 }
 
 #[test]
