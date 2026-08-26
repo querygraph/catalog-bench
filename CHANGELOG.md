@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- C1-05 final runner provenance: advanced the draft conformance-runner component
+  to `catalog-bench@621cc4b`, whose table probe sends and verifies the profile's
+  explicit shared-storage root. The production executable remains unresolved in
+  the draft profile until C1-09 materializes immutable artifacts.
+
 - C1-05 shared-storage correction: the table runner now consumes an adapter's
   validated `create_table_location` as a fixture root, derives unique
   namespace/table child locations, sends them on every create attempt, and
