@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C1-06 protocol preparation: extract committed-table request construction,
+  profile-root location derivation, namespace response validation, and generic
+  Iceberg metadata/schema snapshots into one reusable conformance module. The
+  C1-05 runner retains its exact scenario and evidence shape while commit
+  correctness can reuse the same protocol parser instead of cloning it.
+
 - Catalog community C1-06 contract: define a neutral Iceberg REST commit
   correctness scenario that proves valid requirement admission, a deterministic
   stale-schema 409 with no mutation, UUIDv7 exact-retry behavior when advertised,

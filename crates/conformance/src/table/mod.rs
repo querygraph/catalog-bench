@@ -158,7 +158,7 @@ where
                 )
             }),
     };
-    let create_locations = workflow::TableCreateLocations::new(
+    let create_locations = crate::table_protocol::TableCreateLocations::new(
         target.adapter.endpoint.create_table_location.as_deref(),
     )?;
 

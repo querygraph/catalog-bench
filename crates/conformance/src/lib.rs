@@ -13,6 +13,7 @@ mod routing;
 mod sanitize;
 mod spec;
 mod table;
+mod table_protocol;
 mod target;
 mod transport;
 

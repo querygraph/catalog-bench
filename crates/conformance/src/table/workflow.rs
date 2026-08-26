@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::Result;
 use reqwest::Method;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -16,6 +16,10 @@ use crate::operation::{
     all_results, parse_json_response, validate_error_response, validate_status, Fact, Observation,
     OperationRecorder,
 };
+use crate::table_protocol::{
+    committed_table_request, parse_table_snapshot, validate_namespace_response,
+    validate_same_table_snapshot, TableCreateLocations, TableSchema, TableSnapshot,
+};
 
 const NAMESPACE_CREATE_CAPABILITY: &str = "iceberg-rest.namespace.create";
 const NAMESPACE_LOAD_CAPABILITY: &str = "iceberg-rest.namespace.load";
@@ -27,41 +31,6 @@ const MAXIMUM_PAGES: usize = 64;
 const OWNER_PROPERTY: &str = "catalog-bench.owner";
 const REMOVE_PROPERTY: &str = "c1-05.remove";
 const STATE_PROPERTY: &str = "c1-05.state";
-
-pub(super) struct TableCreateLocations(Option<Url>);
-
-impl TableCreateLocations {
-    pub(super) fn new(root: Option<&str>) -> Result<Self> {
-        let root = root
-            .map(Url::parse)
-            .transpose()
-            .context("parse adapter create-table location root")?;
-        if root.as_ref().is_some_and(Url::cannot_be_a_base) {
-            return Err(anyhow!(
-                "adapter create-table location root cannot contain child table locations"
-            ));
-        }
-        Ok(Self(root))
-    }
-
-    fn for_table(&self, identifier: &TableIdentifier) -> Result<Option<String>> {
-        let Some(root) = &self.0 else {
-            return Ok(None);
-        };
-        let mut location = root.clone();
-        {
-            let mut segments = location.path_segments_mut().map_err(|()| {
-                anyhow!("adapter create-table location root cannot contain path segments")
-            })?;
-            segments.pop_if_empty();
-            for part in identifier.namespace.parts() {
-                segments.push(part);
-            }
-            segments.push(&identifier.name);
-        }
-        Ok(Some(location.to_string()))
-    }
-}
 
 pub(super) async fn execute_table_workflow(
     recorder: &mut OperationRecorder<'_>,
@@ -378,16 +347,28 @@ async fn create_table(
     identifier: &TableIdentifier,
     operation_id: &str,
 ) -> Result<CreateTableAttempt> {
-    let requested_location = create_locations.for_table(identifier)?;
+    let requested_location = create_locations.for_table(&identifier.namespace, &identifier.name)?;
     let observation = recorder
         .attempt(
             operation_id,
             Some(CREATE_CAPABILITY),
             Method::POST,
             routes.table_collection(&identifier.namespace)?,
-            Some(create_table_request(
+            Some(committed_table_request(
                 &identifier.name,
                 requested_location.as_deref(),
+                json!({
+                    "type": "struct",
+                    "schema-id": 0,
+                    "fields": [
+                        {"id": 1, "name": "value", "required": false, "type": "long"}
+                    ]
+                }),
+                BTreeMap::from([
+                    (OWNER_PROPERTY.to_owned(), "catalog-bench".to_owned()),
+                    (REMOVE_PROPERTY.to_owned(), "before".to_owned()),
+                    (STATE_PROPERTY.to_owned(), "before".to_owned()),
+                ]),
             )),
         )
         .await;
@@ -395,29 +376,6 @@ async fn create_table(
         observation,
         requested_location,
     })
-}
-
-fn create_table_request(name: &str, location: Option<&str>) -> Value {
-    let mut request = json!({
-        "name": name,
-        "schema": {
-            "type": "struct",
-            "schema-id": 0,
-            "fields": [
-                {"id": 1, "name": "value", "required": false, "type": "long"}
-            ]
-        },
-        "stage-create": false,
-        "properties": {
-            (OWNER_PROPERTY): "catalog-bench",
-            (REMOVE_PROPERTY): "before",
-            (STATE_PROPERTY): "before"
-        }
-    });
-    if let Some(location) = location {
-        request["location"] = Value::String(location.to_owned());
-    }
-    request
 }
 
 async fn load_created_table(
@@ -441,7 +399,7 @@ async fn load_created_table(
             None,
         )
         .await;
-    Ok(parse_snapshot(&observation, 200)
+    Ok(parse_table_snapshot(&observation, 200)
         .and_then(|loaded| validate_same_snapshot(created, &loaded).map(|()| loaded)))
 }
 
@@ -526,7 +484,7 @@ async fn attempt_rename(
 
     Ok(validate_status(&rename, &[204])
         .and_then(|()| validate_error_response(&source, 404, "NoSuchTableException"))
-        .and_then(|()| parse_snapshot(&destination, 200))
+        .and_then(|()| parse_table_snapshot(&destination, 200))
         .and_then(|renamed| validate_same_snapshot(before, &renamed)))
 }
 
@@ -585,9 +543,9 @@ async fn attempt_register(
             None,
         )
         .await;
-    Ok(parse_snapshot(&register, 200)
+    Ok(parse_table_snapshot(&register, 200)
         .and_then(|snapshot| validate_same_snapshot(source, &snapshot))
-        .and_then(|()| parse_snapshot(&load, 200))
+        .and_then(|()| parse_table_snapshot(&load, 200))
         .and_then(|snapshot| validate_same_snapshot(source, &snapshot)))
 }
 
@@ -753,29 +711,12 @@ fn pagination_failure(
     )
 }
 
-fn validate_namespace_response(
-    observation: &Observation,
-    expected: &NamespaceIdentifier,
-) -> std::result::Result<(), String> {
-    let response: NamespaceResponse = parse_json_response(observation, 200)?;
-    let actual =
-        NamespaceIdentifier::from_parts(response.namespace).map_err(|error| error.to_string())?;
-    if actual == *expected {
-        Ok(())
-    } else {
-        Err(format!(
-            "response namespace {:?} does not match {:?}",
-            actual.parts(),
-            expected.parts()
-        ))
-    }
-}
-
 fn validate_initial_snapshot(
     observation: &Observation,
     requested_location: Option<&str>,
 ) -> std::result::Result<TableSnapshot, String> {
-    let snapshot = parse_snapshot(observation, 200)?;
+    let snapshot = parse_table_snapshot(observation, 200)?;
+    validate_requested_schema(&snapshot.schema)?;
     if let Some(requested_location) = requested_location {
         if snapshot.location != requested_location {
             return Err(format!(
@@ -803,7 +744,7 @@ fn validate_update(
     update: &Observation,
     reload: &Observation,
 ) -> std::result::Result<TableSnapshot, String> {
-    let committed = parse_snapshot(update, 200)?;
+    let committed = parse_table_snapshot(update, 200)?;
     if committed.uuid != before.uuid {
         return Err("table update changed the table UUID".to_owned());
     }
@@ -828,7 +769,7 @@ fn validate_update(
             "update did not remove property `{REMOVE_PROPERTY}`"
         ));
     }
-    let loaded = parse_snapshot(reload, 200)?;
+    let loaded = parse_table_snapshot(reload, 200)?;
     validate_same_snapshot(&committed, &loaded)?;
     if loaded.properties != committed.properties {
         return Err("reload property map differs from commit response".to_owned());
@@ -840,75 +781,7 @@ fn validate_same_snapshot(
     expected: &TableSnapshot,
     actual: &TableSnapshot,
 ) -> std::result::Result<(), String> {
-    if actual.uuid != expected.uuid {
-        return Err(format!(
-            "table UUID `{}` does not match `{}`",
-            actual.uuid, expected.uuid
-        ));
-    }
-    if actual.metadata_location != expected.metadata_location {
-        return Err(format!(
-            "metadata location `{}` does not match `{}`",
-            actual.metadata_location, expected.metadata_location
-        ));
-    }
-    if actual.location != expected.location {
-        return Err(format!(
-            "table location `{}` does not match `{}`",
-            actual.location, expected.location
-        ));
-    }
-    if actual.schema != expected.schema {
-        return Err("current table schema changed unexpectedly".to_owned());
-    }
-    Ok(())
-}
-
-fn parse_snapshot(
-    observation: &Observation,
-    status: u16,
-) -> std::result::Result<TableSnapshot, String> {
-    let response: LoadTableResult = parse_json_response(observation, status)?;
-    let metadata_location = response
-        .metadata_location
-        .filter(|location| !location.trim().is_empty())
-        .ok_or_else(|| {
-            "committed table response omitted a nonempty metadata-location".to_owned()
-        })?;
-    if !(1..=3).contains(&response.metadata.format_version) {
-        return Err(format!(
-            "table format version {} is outside 1..=3",
-            response.metadata.format_version
-        ));
-    }
-    if response.metadata.table_uuid.trim().is_empty() {
-        return Err("table metadata returned an empty table-uuid".to_owned());
-    }
-    if response.metadata.location.trim().is_empty() {
-        return Err("table metadata returned an empty location".to_owned());
-    }
-    let schema = current_schema(&response.metadata)?;
-    validate_requested_schema(&schema)?;
-    Ok(TableSnapshot {
-        metadata_location,
-        location: response.metadata.location,
-        uuid: response.metadata.table_uuid,
-        schema,
-        properties: response.metadata.properties,
-    })
-}
-
-fn current_schema(metadata: &TableMetadata) -> std::result::Result<TableSchema, String> {
-    match metadata.current_schema_id {
-        Some(current) => metadata
-            .schemas
-            .iter()
-            .find(|schema| schema.schema_id == Some(current))
-            .cloned()
-            .ok_or_else(|| format!("current-schema-id {current} has no matching schema")),
-        None if metadata.schemas.len() == 1 => Ok(metadata.schemas[0].clone()),
-        None => Err("table metadata omitted an unambiguous current schema".to_owned()),
-    }
+    validate_same_table_snapshot(expected, actual)
 }
 
 fn validate_requested_schema(schema: &TableSchema) -> std::result::Result<(), String> {
@@ -1037,59 +910,6 @@ fn skip_table_operations(recorder: &mut OperationRecorder<'_>, reason: &str) {
     ] {
         recorder.skip(id, Some(capability), reason);
     }
-}
-
-#[derive(Debug, Deserialize)]
-struct NamespaceResponse {
-    namespace: Vec<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct LoadTableResult {
-    #[serde(rename = "metadata-location")]
-    metadata_location: Option<String>,
-    metadata: TableMetadata,
-}
-
-#[derive(Debug, Deserialize)]
-struct TableMetadata {
-    #[serde(rename = "format-version")]
-    format_version: u8,
-    #[serde(rename = "table-uuid")]
-    table_uuid: String,
-    location: String,
-    #[serde(default)]
-    properties: BTreeMap<String, String>,
-    #[serde(default)]
-    schemas: Vec<TableSchema>,
-    #[serde(rename = "current-schema-id", default)]
-    current_schema_id: Option<i32>,
-}
-
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-struct TableSchema {
-    r#type: String,
-    #[serde(rename = "schema-id", default)]
-    schema_id: Option<i32>,
-    fields: Vec<TableField>,
-}
-
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-struct TableField {
-    id: i32,
-    name: String,
-    required: bool,
-    #[serde(rename = "type")]
-    field_type: Value,
-}
-
-#[derive(Clone)]
-struct TableSnapshot {
-    metadata_location: String,
-    location: String,
-    uuid: String,
-    schema: TableSchema,
-    properties: BTreeMap<String, String>,
 }
 
 struct CreateTableAttempt {
