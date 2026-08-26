@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Result provenance: modeled single executions and multi-round aggregates as
+  distinct run variants with explicit included/excluded repetitions and rules.
 - Phase 0 pinsets: added a runnable reconstruction of the 2026-08-08 Linux ARM64
   commit environment, an explicitly draft 2026-08-26 catalog/client/engine
   profile, and a neutral versioned same-table contention scenario.

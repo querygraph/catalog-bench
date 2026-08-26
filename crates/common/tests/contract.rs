@@ -135,7 +135,7 @@ fn result_record() -> ResultRecord {
         },
         client: None,
         adapters: Vec::new(),
-        run: RunIdentity {
+        run: RunIdentity::Single {
             id: "fixture-run".to_owned(),
             started_at: "2026-08-26T00:00:00Z".to_owned(),
             finished_at: "2026-08-26T00:00:01Z".to_owned(),
@@ -336,6 +336,35 @@ fn historical_environment_uncertainty_is_explicit() {
         .unwrap_err()
         .to_string()
         .contains("container_runtime.explanation: must not be empty"));
+}
+
+#[test]
+fn aggregate_results_disclose_round_selection() {
+    let mut result = result_record();
+    result.run = RunIdentity::Aggregate {
+        id: "five-round-median".to_owned(),
+        period: "2026-08-08".to_owned(),
+        included_repetitions: vec![2, 3, 4, 5, 6],
+        excluded_repetitions: vec![1],
+        aggregation: "median, with min-max range retained".to_owned(),
+    };
+
+    result.validate().unwrap();
+
+    let RunIdentity::Aggregate {
+        included_repetitions,
+        excluded_repetitions,
+        ..
+    } = &mut result.run
+    else {
+        unreachable!();
+    };
+    excluded_repetitions.push(included_repetitions[0]);
+    assert!(result
+        .validate()
+        .unwrap_err()
+        .to_string()
+        .contains("cannot be both included and excluded"));
 }
 
 #[test]

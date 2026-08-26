@@ -65,6 +65,11 @@ Environment values that are commonly absent from legacy reports carry explicit
 require an explanation; migration code must preserve uncertainty instead of
 inventing an exact CPU model, byte count, runtime version, or limit.
 
+A result's `run` is either one execution with timestamps and a repetition number,
+or an aggregate that names its period, included and excluded repetitions, and
+aggregation rule. Aggregate rows therefore cannot masquerade as individual runs,
+and discarded conditioning rounds remain visible.
+
 Artifacts are addressed by an explicit digest object. The digest covers the
 artifact's exact bytes—not a reserialized JSON value—so whitespace and final
 newlines are significant. Manifests identify whether evidence is a `live-run`,

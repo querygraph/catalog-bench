@@ -41,14 +41,24 @@ pub struct ExecutedComponent {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
-#[serde(deny_unknown_fields)]
-pub struct RunIdentity {
-    pub id: String,
-    pub started_at: String,
-    pub finished_at: String,
-    pub repetition: u32,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub random_seed: Option<u64>,
+#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum RunIdentity {
+    Single {
+        id: String,
+        started_at: String,
+        finished_at: String,
+        repetition: u32,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        random_seed: Option<u64>,
+    },
+    Aggregate {
+        id: String,
+        period: String,
+        included_repetitions: Vec<u32>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        excluded_repetitions: Vec<u32>,
+        aggregation: String,
+    },
 }
 
 /// A captured environment value with explicit precision. Historical imports can
@@ -392,14 +402,70 @@ fn validate_executed_component(
 }
 
 fn validate_run(run: &RunIdentity, path: &str, issues: &mut Vec<ValidationIssue>) {
-    require_non_empty(&run.id, child_path(path, "id"), issues);
-    require_non_empty(&run.started_at, child_path(path, "started_at"), issues);
-    require_non_empty(&run.finished_at, child_path(path, "finished_at"), issues);
-    if run.repetition == 0 {
-        issues.push(ValidationIssue::new(
-            child_path(path, "repetition"),
-            "must be greater than zero",
-        ));
+    match run {
+        RunIdentity::Single {
+            id,
+            started_at,
+            finished_at,
+            repetition,
+            ..
+        } => {
+            require_non_empty(id, child_path(path, "id"), issues);
+            require_non_empty(started_at, child_path(path, "started_at"), issues);
+            require_non_empty(finished_at, child_path(path, "finished_at"), issues);
+            if *repetition == 0 {
+                issues.push(ValidationIssue::new(
+                    child_path(path, "repetition"),
+                    "must be greater than zero",
+                ));
+            }
+        }
+        RunIdentity::Aggregate {
+            id,
+            period,
+            included_repetitions,
+            excluded_repetitions,
+            aggregation,
+        } => {
+            require_non_empty(id, child_path(path, "id"), issues);
+            require_non_empty(period, child_path(path, "period"), issues);
+            require_non_empty(aggregation, child_path(path, "aggregation"), issues);
+            if included_repetitions.is_empty() {
+                issues.push(ValidationIssue::new(
+                    child_path(path, "included_repetitions"),
+                    "must contain at least one repetition",
+                ));
+            }
+            require_unique(
+                included_repetitions.iter(),
+                &child_path(path, "included_repetitions"),
+                issues,
+            );
+            require_unique(
+                excluded_repetitions.iter(),
+                &child_path(path, "excluded_repetitions"),
+                issues,
+            );
+            for repetition in included_repetitions
+                .iter()
+                .chain(excluded_repetitions.iter())
+            {
+                if *repetition == 0 {
+                    issues.push(ValidationIssue::new(
+                        path,
+                        "repetition numbers must be greater than zero",
+                    ));
+                }
+            }
+            for repetition in included_repetitions {
+                if excluded_repetitions.contains(repetition) {
+                    issues.push(ValidationIssue::new(
+                        path,
+                        format!("repetition {repetition} cannot be both included and excluded"),
+                    ));
+                }
+            }
+        }
     }
 }
 

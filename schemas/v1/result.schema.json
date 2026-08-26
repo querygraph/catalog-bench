@@ -838,38 +838,89 @@
       ]
     },
     "RunIdentity": {
-      "additionalProperties": false,
-      "properties": {
-        "finished_at": {
-          "type": "string"
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "finished_at": {
+              "type": "string"
+            },
+            "id": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "single",
+              "type": "string"
+            },
+            "random_seed": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": [
+                "integer",
+                "null"
+              ]
+            },
+            "repetition": {
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "started_at": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "started_at",
+            "finished_at",
+            "repetition"
+          ],
+          "type": "object"
         },
-        "id": {
-          "type": "string"
-        },
-        "random_seed": {
-          "format": "uint64",
-          "minimum": 0,
-          "type": [
-            "integer",
-            "null"
-          ]
-        },
-        "repetition": {
-          "format": "uint32",
-          "minimum": 0,
-          "type": "integer"
-        },
-        "started_at": {
-          "type": "string"
+        {
+          "additionalProperties": false,
+          "properties": {
+            "aggregation": {
+              "type": "string"
+            },
+            "excluded_repetitions": {
+              "items": {
+                "format": "uint32",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "id": {
+              "type": "string"
+            },
+            "included_repetitions": {
+              "items": {
+                "format": "uint32",
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "aggregate",
+              "type": "string"
+            },
+            "period": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "id",
+            "period",
+            "included_repetitions",
+            "aggregation"
+          ],
+          "type": "object"
         }
-      },
-      "required": [
-        "id",
-        "started_at",
-        "finished_at",
-        "repetition"
-      ],
-      "type": "object"
+      ]
     },
     "ScenarioId": {
       "description": "Stable identifier for a versioned scenario.",
