@@ -52,7 +52,7 @@ fn validate_scenario_policy(scenario: &Scenario) -> Result<()> {
         ),
         (
             "namespace_separator_default".to_owned(),
-            Value::from(super::routes::DEFAULT_SEPARATOR),
+            Value::from(crate::iceberg::DEFAULT_NAMESPACE_SEPARATOR),
         ),
         ("page_size".to_owned(), Value::from(1)),
         ("request_timeout_ms".to_owned(), Value::from(30_000)),

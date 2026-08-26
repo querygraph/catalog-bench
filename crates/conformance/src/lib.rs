@@ -6,6 +6,7 @@
 
 mod config;
 mod evidence;
+mod iceberg;
 mod namespace;
 mod sanitize;
 mod spec;

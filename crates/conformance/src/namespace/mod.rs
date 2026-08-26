@@ -27,9 +27,10 @@ use crate::transport::{
     CapturedResponse, REDACTED,
 };
 
-pub use routes::{NamespaceFixture, NamespaceIdentifier, NamespaceSeparatorResolution};
+pub use crate::iceberg::{NamespaceIdentifier, NamespaceSeparatorResolution};
+pub use routes::NamespaceFixture;
 
-use routes::{CatalogRoutes, NamespaceCodec};
+use crate::iceberg::{CatalogRoutes, NamespaceCodec};
 
 pub const NAMESPACE_TRANSCRIPT_FORMAT: &str = "catalog-bench/namespace-transcript/v1";
 pub const NAMESPACE_SCENARIO_ID: &str = "iceberg-rest.namespace.behavior";
@@ -282,7 +283,7 @@ where
 
     let routes = codec
         .ok_or_else(|| anyhow::anyhow!("namespace routing unavailable after config negotiation"))
-        .and_then(|codec| CatalogRoutes::new(target.adapter, &prefix, codec));
+        .and_then(|codec| CatalogRoutes::new(target.adapter, &prefix, codec, "namespace"));
     let pagination = match (routes, &facts.config_routing) {
         (Ok(routes), Fact::Pass) => {
             execute_namespace_workflow(&mut recorder, &routes, &fixture, &mut facts).await?
@@ -423,7 +424,7 @@ async fn execute_namespace_workflow(
             "create-primary",
             Some(CREATE_CAPABILITY),
             Method::POST,
-            routes.collection()?,
+            routes.namespace_collection()?,
             Some(json!({
                 "namespace": fixture.primary.parts(),
                 "properties": {
@@ -438,7 +439,7 @@ async fn execute_namespace_workflow(
             "create-sibling",
             Some(CREATE_CAPABILITY),
             Method::POST,
-            routes.collection()?,
+            routes.namespace_collection()?,
             Some(json!({"namespace": fixture.sibling.parts(), "properties": {}})),
         )
         .await;
@@ -452,7 +453,7 @@ async fn execute_namespace_workflow(
                     "create-child",
                     Some(CREATE_CAPABILITY),
                     Method::POST,
-                    routes.collection()?,
+                    routes.namespace_collection()?,
                     Some(json!({"namespace": fixture.child.parts(), "properties": {}})),
                 )
                 .await,
@@ -481,7 +482,7 @@ async fn execute_namespace_workflow(
                 "list-top-level",
                 Some(LIST_CAPABILITY),
                 Method::GET,
-                routes.collection()?,
+                routes.namespace_collection()?,
                 None,
             )
             .await;
@@ -514,7 +515,7 @@ async fn execute_namespace_workflow(
                 "update-primary-properties",
                 Some(UPDATE_CAPABILITY),
                 Method::POST,
-                routes.properties(&fixture.primary)?,
+                routes.namespace_properties(&fixture.primary)?,
                 Some(json!({
                     "removals": [REMOVE_PROPERTY],
                     "updates": {(STATE_PROPERTY): "after"}
@@ -537,7 +538,7 @@ async fn execute_namespace_workflow(
                 "create-primary-duplicate",
                 Some(DUPLICATE_CAPABILITY),
                 Method::POST,
-                routes.collection()?,
+                routes.namespace_collection()?,
                 Some(json!({
                     "namespace": fixture.primary.parts(),
                     "properties": {
@@ -573,7 +574,7 @@ async fn execute_namespace_workflow(
                 "list-primary-children",
                 Some(HIERARCHY_CAPABILITY),
                 Method::GET,
-                routes.under_parent(&fixture.primary)?,
+                routes.namespaces_under(&fixture.primary)?,
                 None,
             )
             .await;
@@ -640,7 +641,7 @@ async fn probe_missing_parent(
             "list-missing-parent",
             Some(MISSING_PARENT_CAPABILITY),
             Method::GET,
-            routes.under_parent(missing_parent)?,
+            routes.namespaces_under(missing_parent)?,
             None,
         )
         .await;
@@ -707,7 +708,7 @@ async fn traverse_pages(
                 format!("list-page-{page_index:03}"),
                 Some(PAGINATION_CAPABILITY),
                 Method::GET,
-                routes.page(&token, PAGE_SIZE)?,
+                routes.namespace_page(&token, PAGE_SIZE)?,
                 None,
             )
             .await;

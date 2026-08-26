@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Catalog community C1-05 preparation: extracted the Iceberg REST namespace
+  identifier, separator negotiation, fixture validation, and prefix-aware route
+  construction into shared conformance primitives. The namespace probe retains
+  its exact scenario and transcript contract while the table lifecycle probe can
+  reuse one routing implementation instead of cloning protocol-sensitive code.
+
 - Catalog community C1-04 acceptance: documented the exact optimized
   same-Docker runner and LakeCat artifacts, profile/scenario/transcript hashes,
   five-catalog required/optional matrix, repaired LakeCat defects, Nessie's
