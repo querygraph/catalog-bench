@@ -4,7 +4,7 @@
   "id": "catalog-community-current-2026-08-26-linux-arm64",
   "title": "Catalog community current candidate pinset",
   "description": "Versions selected from primary release sources on 2026-08-26 for the next Linux ARM64 same-Docker interoperability run. This is a draft input profile, not benchmark evidence.",
-  "resolved_at": "2026-08-26T06:29:17-04:00",
+  "resolved_at": "2026-08-26T12:39:50Z",
   "purpose": "current-candidate",
   "readiness": {
     "status": "draft",
@@ -54,10 +54,10 @@
       "id": "catalog-bench-commit",
       "kind": "benchmark-harness",
       "name": "catalog-bench commit driver",
-      "version": "feb803f83135fc2814a56a1859fafd20af6561d0",
+      "version": "1f4e640566906ded6aa0589d52351eb1c32788f0",
       "source": {
         "repository": "https://github.com/querygraph/catalog-bench.git",
-        "revision": "feb803f83135fc2814a56a1859fafd20af6561d0"
+        "revision": "1f4e640566906ded6aa0589d52351eb1c32788f0"
       },
       "build": {
         "toolchain": "Rust 1.97.1",
@@ -91,10 +91,10 @@
       "id": "catalog-bench-conformance",
       "kind": "benchmark-harness",
       "name": "catalog-bench conformance runner",
-      "version": "feb803f83135fc2814a56a1859fafd20af6561d0",
+      "version": "1f4e640566906ded6aa0589d52351eb1c32788f0",
       "source": {
         "repository": "https://github.com/querygraph/catalog-bench.git",
-        "revision": "feb803f83135fc2814a56a1859fafd20af6561d0"
+        "revision": "1f4e640566906ded6aa0589d52351eb1c32788f0"
       },
       "build": {
         "toolchain": "Rust 1.97.1",
@@ -169,10 +169,10 @@
       "id": "lakecat",
       "kind": "catalog",
       "name": "LakeCat",
-      "version": "0.3.0-20-g09dd7ee3",
+      "version": "0.3.0-22-g42b2f34b",
       "source": {
         "repository": "https://github.com/querygraph/lakecat.git",
-        "revision": "09dd7ee358e79d4acd04b5732e61e0330b7c1c97"
+        "revision": "42b2f34b85d7cbcce1b36d4008211075b6c51593"
       },
       "build": {
         "toolchain": "Rust 1.97.1",

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C1-04 provenance pin: advanced the draft current profile to the independently
+  verified namespace-runner revision `catalog-bench@1f4e640` and corrected
+  LakeCat namespace implementation `lakecat@42b2f34b`. Both source builds retain
+  the exact stable Rust 1.97.1 production recipe; C1-09 still owns resolved
+  executable/image artifacts and conversion of smoke transcripts into a
+  publishable immutable bundle.
+
 - Catalog community C1-04 runner: added a strict Iceberg REST namespace
   lifecycle probe covering isolated create/list/load, multipart hierarchy,
   property update, duplicate and missing-parent errors, bounded pagination, and
