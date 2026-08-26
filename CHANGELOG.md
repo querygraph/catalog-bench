@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Profiles: distinguished runnable profiles from draft pinsets. Runnable profiles
+  now reject unresolved source-build or package artifacts; drafts must enumerate
+  every unresolved component and cannot silently look executable.
 - Provenance: normalized source and build identity at the component boundary so
   source-built container images retain both their revision/build recipe and their
   scoped image plus embedded-executable digests.

@@ -92,6 +92,12 @@ or their meaning changes; editorial text alone need not change it. Profiles are
 immutable evidence recipes: resolving a new tag, commit, image digest, build flag,
 or service setting produces a new profile artifact and digest.
 
+A profile is either `runnable` or `draft`. Runnable profiles reject a source build
+without an executable digest and a package without an artifact digest. Draft
+profiles must enumerate every unresolved component and explain the gap; they are
+planning inputs and cannot back a result bundle. Materializing an artifact creates
+a new profile document and digest.
+
 Writers should serialize deterministically, append one newline, hash those bytes,
 then create references. A bundle-level validator must additionally verify
 referenced bytes, profile component bindings, scenario assertion IDs, and copied

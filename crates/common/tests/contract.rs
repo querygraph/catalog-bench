@@ -87,6 +87,7 @@ fn profile() -> Profile {
         description: "Pins a catalog and shared object store.".to_owned(),
         resolved_at: "2026-08-26T00:00:00Z".to_owned(),
         purpose: ProfilePurpose::Conformance,
+        readiness: ProfileReadiness::Runnable,
         platform: ExecutionPlatform {
             operating_system: "Linux".to_owned(),
             architecture: "aarch64".to_owned(),
@@ -284,6 +285,36 @@ fn profile_rejects_secret_shaped_settings() {
     let error = profile.validate().unwrap_err();
 
     assert!(error.to_string().contains("secret-like setting key"));
+}
+
+#[test]
+fn runnable_profiles_reject_unresolved_artifacts() {
+    let mut profile = profile();
+    let RuntimeArtifact::Package { digest, .. } = &mut profile.components[0].artifact else {
+        unreachable!();
+    };
+    *digest = None;
+
+    let error = profile.validate().unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("runnable profile has unresolved artifacts: catalog"));
+}
+
+#[test]
+fn draft_profiles_name_every_unresolved_artifact() {
+    let mut profile = profile();
+    let RuntimeArtifact::Package { digest, .. } = &mut profile.components[0].artifact else {
+        unreachable!();
+    };
+    *digest = None;
+    profile.readiness = ProfileReadiness::Draft {
+        unresolved_artifacts: vec!["catalog".into()],
+        explanation: "The production package has not been built yet.".to_owned(),
+    };
+
+    profile.validate().unwrap();
 }
 
 #[test]

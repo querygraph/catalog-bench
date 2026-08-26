@@ -277,6 +277,48 @@
       ],
       "type": "string"
     },
+    "ProfileReadiness": {
+      "description": "Whether all artifacts needed to execute the profile have immutable identities.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "runnable",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "status": {
+              "const": "draft",
+              "type": "string"
+            },
+            "unresolved_artifacts": {
+              "items": {
+                "$ref": "#/$defs/ComponentId"
+              },
+              "type": "array"
+            }
+          },
+          "required": [
+            "status",
+            "unresolved_artifacts",
+            "explanation"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "RuntimeArtifact": {
       "description": "The deployable artifact used for a component.",
       "oneOf": [
@@ -484,6 +526,9 @@
     "purpose": {
       "$ref": "#/$defs/ProfilePurpose"
     },
+    "readiness": {
+      "$ref": "#/$defs/ProfileReadiness"
+    },
     "resolved_at": {
       "description": "RFC 3339 date or timestamp at which moving dependencies were resolved.",
       "type": "string"
@@ -506,6 +551,7 @@
     "description",
     "resolved_at",
     "purpose",
+    "readiness",
     "platform",
     "components",
     "services"

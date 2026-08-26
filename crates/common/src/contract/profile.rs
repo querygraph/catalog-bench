@@ -6,7 +6,7 @@ use serde_json::Value;
 
 use super::{
     child_path, indexed_path, require_non_empty, require_unique, Component, ComponentId,
-    ContractVersion, Extensions, ProfileId, Validate, ValidationIssue,
+    ContractVersion, Extensions, ProfileId, RuntimeArtifact, Validate, ValidationIssue,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -23,6 +23,17 @@ pub enum ProfilePurpose {
     Conformance,
     Performance,
     FaultInjection,
+}
+
+/// Whether all artifacts needed to execute the profile have immutable identities.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "status", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum ProfileReadiness {
+    Runnable,
+    Draft {
+        unresolved_artifacts: Vec<ComponentId>,
+        explanation: String,
+    },
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -80,6 +91,7 @@ pub struct Profile {
     /// RFC 3339 date or timestamp at which moving dependencies were resolved.
     pub resolved_at: String,
     pub purpose: ProfilePurpose,
+    pub readiness: ProfileReadiness,
     pub platform: ExecutionPlatform,
     pub components: Vec<Component>,
     pub services: Vec<ServiceBinding>,
@@ -117,6 +129,13 @@ impl Validate for Profile {
                 issues,
             );
         }
+        validate_readiness(
+            &self.readiness,
+            &self.components,
+            &component_ids,
+            &child_path(path, "readiness"),
+            issues,
+        );
 
         let platform_path = child_path(path, "platform");
         require_non_empty(
@@ -185,6 +204,77 @@ impl Validate for Profile {
                         format!("secret-like setting key `{key}` is forbidden"),
                     ));
                 }
+            }
+        }
+    }
+}
+
+fn validate_readiness(
+    readiness: &ProfileReadiness,
+    components: &[Component],
+    component_ids: &BTreeSet<&ComponentId>,
+    path: &str,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let unresolved: BTreeSet<&ComponentId> = components
+        .iter()
+        .filter(|component| match &component.artifact {
+            RuntimeArtifact::SourceBuild { executable } => executable.is_none(),
+            RuntimeArtifact::Package { digest, .. } => digest.is_none(),
+            RuntimeArtifact::ContainerImage { .. } => false,
+        })
+        .map(|component| &component.id)
+        .collect();
+
+    match readiness {
+        ProfileReadiness::Runnable if !unresolved.is_empty() => {
+            let names = unresolved
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(", ");
+            issues.push(ValidationIssue::new(
+                path,
+                format!("runnable profile has unresolved artifacts: {names}"),
+            ));
+        }
+        ProfileReadiness::Runnable => {}
+        ProfileReadiness::Draft {
+            unresolved_artifacts,
+            explanation,
+        } => {
+            require_non_empty(explanation, child_path(path, "explanation"), issues);
+            require_unique(
+                unresolved_artifacts.iter(),
+                &child_path(path, "unresolved_artifacts"),
+                issues,
+            );
+            let declared: BTreeSet<&ComponentId> = unresolved_artifacts.iter().collect();
+            for component in unresolved_artifacts {
+                validate_component_reference(
+                    component,
+                    component_ids,
+                    &child_path(path, "unresolved_artifacts"),
+                    issues,
+                );
+            }
+            for missing in unresolved.difference(&declared) {
+                issues.push(ValidationIssue::new(
+                    child_path(path, "unresolved_artifacts"),
+                    format!("must declare unresolved component `{missing}`"),
+                ));
+            }
+            for resolved in declared.difference(&unresolved) {
+                issues.push(ValidationIssue::new(
+                    child_path(path, "unresolved_artifacts"),
+                    format!("component `{resolved}` already has an immutable artifact"),
+                ));
+            }
+            if unresolved.is_empty() {
+                issues.push(ValidationIssue::new(
+                    path,
+                    "draft profile must have at least one unresolved artifact",
+                ));
             }
         }
     }
