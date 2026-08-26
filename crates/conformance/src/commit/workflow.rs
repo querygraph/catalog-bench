@@ -280,8 +280,8 @@ async fn commit_schema_transition(
     Ok(parse_table_snapshot(&commit, 200).and_then(|committed| {
         validate_identity_and_pointer_transition(before, &committed)?;
         validate_schema_one(&committed)?;
-        if committed.properties != before.properties {
-            return Err("schema transition changed table properties".to_owned());
+        if scenario_properties(&committed.properties) != scenario_properties(&before.properties) {
+            return Err("schema transition changed scenario-owned table properties".to_owned());
         }
         parse_table_snapshot(&reload, 200).and_then(|loaded| {
             validate_exact_snapshot(&committed, &loaded)?;
@@ -485,11 +485,11 @@ async fn attempt_exact_replay(
 
     Ok(parse_table_snapshot(&first, 200).and_then(|committed| {
         validate_identity_and_pointer_transition(before, &committed)?;
-        let mut expected_properties = before.properties.clone();
+        let mut expected_properties = scenario_properties(&before.properties);
         expected_properties.insert(RETRY_PROPERTY.to_owned(), "accepted-once".to_owned());
         if committed.schema != before.schema
             || committed.last_column_id != before.last_column_id
-            || committed.properties != expected_properties
+            || scenario_properties(&committed.properties) != expected_properties
         {
             return Err(
                 "first idempotent commit did not apply exactly one property update".to_owned(),
@@ -639,9 +639,9 @@ fn validate_property_transition(
     if committed.schema != before.schema || committed.last_column_id != before.last_column_id {
         return Err("property commit changed schema metadata".to_owned());
     }
-    let mut expected_properties = before.properties.clone();
+    let mut expected_properties = scenario_properties(&before.properties);
     expected_properties.insert(property.to_owned(), value.to_owned());
-    if committed.properties != expected_properties {
+    if scenario_properties(&committed.properties) != expected_properties {
         return Err(format!(
             "property commit did not produce the exact `{property}` transition"
         ));
@@ -649,6 +649,14 @@ fn validate_property_transition(
     let loaded = parse_table_snapshot(reload, 200)?;
     validate_exact_snapshot(&committed, &loaded)?;
     Ok(loaded)
+}
+
+fn scenario_properties(properties: &BTreeMap<String, String>) -> BTreeMap<String, String> {
+    properties
+        .iter()
+        .filter(|(key, _)| key.starts_with("catalog-bench.") || key.starts_with("c1-06."))
+        .map(|(key, value)| (key.clone(), value.clone()))
+        .collect()
 }
 
 fn validate_identity_and_pointer_transition(

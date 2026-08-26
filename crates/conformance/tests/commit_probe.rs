@@ -869,7 +869,8 @@ fn initial_table_response(table_location: &str) -> MockResponse {
         1,
         json!({
             "catalog-bench.owner": "catalog-bench",
-            "c1-06.state": "initial"
+            "c1-06.state": "initial",
+            "catalog.internal.revision": "0"
         }),
         None,
     )
@@ -883,7 +884,8 @@ fn current_table_response(names: &FixtureNames, metadata_location: &str) -> Mock
         1,
         json!({
             "catalog-bench.owner": "catalog-bench",
-            "c1-06.state": "requirement-accepted"
+            "c1-06.state": "requirement-accepted",
+            "catalog.internal.revision": "1"
         }),
         None,
     )
@@ -897,7 +899,8 @@ fn schema_table_response(names: &FixtureNames, metadata_location: &str) -> MockR
         2,
         json!({
             "catalog-bench.owner": "catalog-bench",
-            "c1-06.state": "requirement-accepted"
+            "c1-06.state": "requirement-accepted",
+            "catalog.internal.revision": "2"
         }),
         None,
     )
@@ -912,7 +915,8 @@ fn stale_mutated_table_response(names: &FixtureNames, metadata_location: &str) -
         json!({
             "catalog-bench.owner": "catalog-bench",
             "c1-06.state": "requirement-accepted",
-            "c1-06.stale": "must-not-apply"
+            "c1-06.stale": "must-not-apply",
+            "catalog.internal.revision": "3"
         }),
         None,
     )
@@ -941,10 +945,15 @@ fn retry_table_response_with_extra(
     retry_value: &str,
     echo: Option<&str>,
 ) -> MockResponse {
+    let revision = metadata_location
+        .rsplit_once("0000")
+        .and_then(|(_, suffix)| suffix.strip_suffix(".json"))
+        .unwrap_or("unknown");
     let properties = json!({
         "catalog-bench.owner": "catalog-bench",
         "c1-06.state": "requirement-accepted",
-        "c1-06.retry": retry_value
+        "c1-06.retry": retry_value,
+        "catalog.internal.revision": revision
     });
     table_response(
         metadata_location,

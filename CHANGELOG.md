@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C1-06 successful-transition projection: compare the scenario-owned
+  `catalog-bench.*` and `c1-06.*` properties exactly while treating unrelated
+  catalog-managed metadata properties as opaque across admitted commits. Exact
+  replay and rejected stale/content-drift checks still compare the complete
+  property map, so this permits legitimate values such as Nessie's changing
+  commit ID without weakening atomicity.
+
 - C1-06 operator guidance: document the optimized Docker invocation for commit
   correctness, its deterministic required branch, config-gated optional UUIDv7
   replay checks, collision and cleanup guarantees, and the distinction between
