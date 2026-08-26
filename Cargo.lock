@@ -1344,7 +1344,11 @@ dependencies = [
  "anyhow",
  "catalog-bench-common",
  "clap",
+ "csv",
+ "serde",
  "serde_json",
+ "sha2",
+ "tempfile",
 ]
 
 [[package]]

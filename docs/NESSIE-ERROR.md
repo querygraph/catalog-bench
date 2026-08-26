@@ -1,12 +1,12 @@
-# Why Nessie's row is marked Err
+# Why Nessie's result is an unranked `fail`
 
 Apache Nessie posts the fastest raw successful concurrent throughput in the
-final sweep — and its row carries no rank. It is listed last, marked **Err**,
-because in every measured round the server returned HTTP 500 responses, and a
-round with request errors is not rank-eligible. This document is the complete
-account: what failed, how we know it is the server and not the harness, why
-the row is *Err* rather than "disqualified", why an earlier public row looked
-healthy, and what would restore a numeric rank.
+final sweep — and its row carries no rank. Its outcome is `fail` because in every
+measured round the server returned HTTP 500 responses, and a round with request
+errors is not rank-eligible. This document is the complete account: what failed,
+how we know it is the server and not the harness, why the result is `fail` rather
+than "disqualified", why an earlier public row looked healthy, and what would
+restore a numeric rank.
 
 ## What happened
 
@@ -52,7 +52,7 @@ This is not a version artifact or a tuning artifact of our stack:
 No patched or unreleased Nessie build is substituted in the public table; the
 row reflects the latest official release at the time of the run.
 
-## Why "Err", not "DQ"
+## Why `fail`, not the legacy "DQ"
 
 "Disqualified" implies a rules violation by the contestant. That framing is
 wrong twice. First, Nessie did not break a benchmark rule — its *server
@@ -60,9 +60,14 @@ errored under load*, which is a measured result like any other, and arguably
 the most operationally important one in the table. Second, "DQ" invites the
 misreading that the row was excluded by judgment call. It was not: the
 exclusion is mechanical (errors > 0 in a measured round), declared before the
-sweep, and applied uniformly. **Err** states the fact: this row's numbers are
-real, its speed is real, and it errored — so its speed cannot be ranked
-against rows that did not.
+sweep, and applied uniformly. The v1 contract uses a closed four-way outcome:
+`pass`, `fail`, `unsupported`, or `not-tested`. `Fail` states the fact: this
+scenario was attempted and a required assertion failed. The row's numbers and
+speed remain real, but its speed cannot be ranked against passing rows.
+
+The preserved legacy summary says `DQ`; the historical importer verifies that
+field but does not perpetuate its ambiguous presentation label. The generated
+matrix derives the stricter `fail` classification from the assertion evidence.
 
 The row sits at the **bottom** of the table for the same reason. Sorting it
 first by raw throughput — even flagged — rewards the failure mode: a reader
@@ -106,8 +111,8 @@ silently dropped are now counted, and they void a round.
 
 Nessie *entered and errored*. Unity Catalog OSS could not enter: there is a
 difference between a contender that failed and a system with no way onto the
-track, and the table renders it as the difference between an **Err** row and
-no row.
+track. The contract renders that difference as an attempted `fail` result versus
+an `unsupported` or `not-tested` result when there is no valid operation to run.
 
 This benchmark measures exactly one axis: the **commit path** — an external
 client asking the catalog to advance a table pointer over Iceberg REST.
@@ -137,6 +142,8 @@ Two clarifications to head off misreadings:
 
 The full protocol, immutable image digests, binary hashes, build commands, and
 per-run evidence (including the error counts) are in
-[RESULTS.md](../RESULTS.md); the raw evidence files are under
-[results/](../results/). The stack is Docker-composed; one command reruns the
-sweep against the official Nessie image.
+[RESULTS.md](../RESULTS.md); the canonical generated ranking, typed result
+records, and immutable manifest are under
+[`results/v1/2026-08-08/`](../results/v1/2026-08-08/), while the preserved raw
+TSVs remain directly under [`results/`](../results/). The stack is
+Docker-composed; one command reruns the sweep against the official Nessie image.

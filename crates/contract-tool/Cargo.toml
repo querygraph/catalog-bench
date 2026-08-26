@@ -13,4 +13,10 @@ path = "src/main.rs"
 anyhow = { workspace = true }
 catalog-bench-common = { workspace = true }
 clap = { workspace = true }
+csv = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
+sha2 = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

@@ -1,0 +1,338 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "result",
+  "id": "commit-2026-08-08-lakecat",
+  "scenario": {
+    "id": "iceberg-rest.commit.same-table-contention",
+    "version": 1,
+    "digest": {
+      "algorithm": "sha256",
+      "value": "9dc9806ed8d440eff2a852e9ed103430043352e78e5d54ee2981f8e070eade75"
+    }
+  },
+  "profile": {
+    "id": "commit-2026-08-08-linux-arm64",
+    "digest": {
+      "algorithm": "sha256",
+      "value": "5e802ef359fb86335e717ddd04f2dae10fec241113024a5ff1b9ce4504cbde4b"
+    }
+  },
+  "catalog": {
+    "profile_component": "lakecat",
+    "name": "LakeCat",
+    "version": "3cca8d1c749fcf1c7cbd30661ba2bd4805b256d3"
+  },
+  "run": {
+    "kind": "aggregate",
+    "id": "commit-2026-08-08-lakecat-rounds-2-6",
+    "period": "2026-08-08 (America/Los_Angeles)",
+    "included_repetitions": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "excluded_repetitions": [
+      1
+    ],
+    "aggregation": "Median of rounds 2 through 6; minimum and maximum retained. Round 1 was conditioning."
+  },
+  "outcome": {
+    "status": "pass",
+    "summary": "All five measured rounds passed strict request and object-growth validity checks."
+  },
+  "environment": {
+    "operating_system": "Linux",
+    "architecture": "aarch64",
+    "cpu_model": {
+      "precision": "unknown",
+      "explanation": "The historical report recorded CPU count but not the model."
+    },
+    "logical_cpus": {
+      "precision": "exact",
+      "value": 10
+    },
+    "memory_bytes": {
+      "precision": "approximate",
+      "value": 8375186227,
+      "explanation": "Converted from the rounded historical value 7.8 GiB; exact bytes were not retained."
+    },
+    "network": "iceberg_lakehouse-net",
+    "container_runtime": {
+      "precision": "unknown",
+      "explanation": "The run used Docker on one Apple Silicon host, but the Docker version was not retained."
+    },
+    "runtime_flags": {
+      "concurrent_duration_seconds": "6",
+      "concurrent_writers": "8",
+      "conditioning_rounds": "1",
+      "measured_rounds": "5",
+      "sequential_commits": "1000",
+      "warmup_commits": "50"
+    }
+  },
+  "assertions": [
+    {
+      "assertion": "setup-succeeded",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "runs-tsv"
+      ]
+    },
+    {
+      "assertion": "all-requests-accounted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "runs-tsv"
+      ]
+    },
+    {
+      "assertion": "zero-request-errors",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "runs-tsv"
+      ]
+    },
+    {
+      "assertion": "metadata-persisted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "object-audit-tsv"
+      ]
+    }
+  ],
+  "measurements": [
+    {
+      "name": "sequential",
+      "elapsed_ms": 2980.8969179963256,
+      "operations": 1000,
+      "metrics": [
+        {
+          "name": "successful-throughput",
+          "unit": "operations/s",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 285.222449996,
+              "maximum": 342.629113236,
+              "mean": 318.51450760399996,
+              "standard_deviation": 26.336353895807548,
+              "quantiles": {
+                "p50": 335.469500459
+              }
+            }
+          }
+        },
+        {
+          "name": "p50-latency",
+          "unit": "ms",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 2.62775,
+              "maximum": 3.156167,
+              "mean": 2.8545248,
+              "standard_deviation": 0.2334018614110864,
+              "quantiles": {
+                "p50": 2.696625
+              }
+            }
+          }
+        },
+        {
+          "name": "p99-latency",
+          "unit": "ms",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 5.257291,
+              "maximum": 6.062583,
+              "mean": 5.621991599999999,
+              "standard_deviation": 0.26713026093020603,
+              "quantiles": {
+                "p50": 5.640875
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "concurrent",
+      "elapsed_ms": 6005.613002986491,
+      "metrics": [
+        {
+          "name": "successful-throughput",
+          "unit": "operations/s",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 130.008921555,
+              "maximum": 166.535872335,
+              "mean": 149.2264969708,
+              "standard_deviation": 16.064454302997405,
+              "quantiles": {
+                "p50": 153.023513094
+              }
+            }
+          }
+        },
+        {
+          "name": "successful-commits",
+          "unit": "commits/round",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 781.0,
+              "maximum": 1000.0,
+              "mean": 896.2,
+              "standard_deviation": 96.40622386547457,
+              "quantiles": {
+                "p50": 919.0
+              }
+            }
+          }
+        },
+        {
+          "name": "conflict-rate",
+          "unit": "percent",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 85.346756152,
+              "maximum": 85.513544836,
+              "mean": 85.4214350354,
+              "standard_deviation": 0.06540915517254635,
+              "quantiles": {
+                "p50": 85.421954315
+              }
+            }
+          }
+        },
+        {
+          "name": "error-rate",
+          "unit": "percent",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 0.0,
+              "maximum": 0.0,
+              "mean": 0.0,
+              "standard_deviation": 0.0,
+              "quantiles": {
+                "p50": 0.0
+              }
+            }
+          }
+        },
+        {
+          "name": "request-errors",
+          "unit": "count",
+          "value": {
+            "kind": "counter",
+            "value": 0
+          }
+        },
+        {
+          "name": "valid-rounds",
+          "unit": "count",
+          "value": {
+            "kind": "counter",
+            "value": 5
+          }
+        },
+        {
+          "name": "measured-rounds",
+          "unit": "count",
+          "value": {
+            "kind": "counter",
+            "value": 5
+          }
+        }
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "summary-tsv",
+      "kind": "catalog-state",
+      "artifact": {
+        "location": "../../commit-2026-08-08-summary.tsv",
+        "media_type": "text/tab-separated-values",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "ce0730e6212c087d72fde2983830736e4989b29d3c361f1a00f32ea586b3bdd9"
+        },
+        "bytes": 718,
+        "description": "Published five-round aggregate summary."
+      },
+      "sanitized": true,
+      "redactions": [
+        "Numeric TSV reviewed; no secret-bearing fields are present."
+      ]
+    },
+    {
+      "id": "runs-tsv",
+      "kind": "log",
+      "artifact": {
+        "location": "../../commit-2026-08-08-runs.tsv",
+        "media_type": "text/tab-separated-values",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "6aa5cd519aaa2e4c776be360394ea10d5be33ee130d8c7f3cd8b34eec2772819"
+        },
+        "bytes": 3474,
+        "description": "All 24 runs, including conditioning round 1."
+      },
+      "sanitized": true,
+      "redactions": [
+        "Numeric TSV reviewed; no secret-bearing fields are present."
+      ]
+    },
+    {
+      "id": "object-audit-tsv",
+      "kind": "object-audit",
+      "artifact": {
+        "location": "../../commit-2026-08-08-object-audit.tsv",
+        "media_type": "text/tab-separated-values",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "9cdfb8bbbfef079cd0c934c81308aef1e7bf71bf10dd1e488fba1fd7e494a8c3"
+        },
+        "bytes": 855,
+        "description": "Per-run MinIO object-growth audit."
+      },
+      "sanitized": true,
+      "redactions": [
+        "Numeric TSV reviewed; no secret-bearing fields are present."
+      ]
+    }
+  ],
+  "extensions": {
+    "querygraph/legacy-summary": {
+      "eligible": "yes",
+      "legacy_rank": "1",
+      "source": "results/commit-2026-08-08-summary.tsv"
+    }
+  }
+}

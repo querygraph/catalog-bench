@@ -45,6 +45,12 @@ passes a locked source check. A new Docker timing run was not performed during t
 No images or volumes were deleted without authorization. This limitation belongs
 in the imported bundle provenance and must not be rewritten as a live run.
 
+The preserved TSVs have been migrated into an immutable
+[`catalog-bench/v1` result bundle](../results/v1/2026-08-08/manifest.json). Its
+[generated matrix](../results/v1/2026-08-08/MATRIX.md) ranks only passing results
+by concurrent median and records Nessie's assertion failure separately. Both the
+JSON records and matrix are reproducibly checked from their source evidence.
+
 ## Current candidate profile
 
 Versions were selected from official release records and registry metadata on

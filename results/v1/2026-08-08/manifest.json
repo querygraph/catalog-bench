@@ -1,0 +1,120 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "manifest",
+  "id": "commit-2026-08-08",
+  "title": "2026-08-08 same-table commit ranking",
+  "created_at": "2026-08-26T18:00:00-04:00",
+  "provenance": {
+    "kind": "historical-import",
+    "source_date": "2026-08-08 (America/Los_Angeles)",
+    "imported_at": "2026-08-26T18:00:00-04:00",
+    "explanation": "Recomputed from the three preserved TSV artifacts. Docker timing was not rerun during import because the local Docker VM reported no space left on device; no images or volumes were deleted."
+  },
+  "profile": {
+    "location": "../../../profiles/v1/reproduction-2026-08-08.json",
+    "media_type": "application/json",
+    "digest": {
+      "algorithm": "sha256",
+      "value": "5e802ef359fb86335e717ddd04f2dae10fec241113024a5ff1b9ce4504cbde4b"
+    },
+    "bytes": 10137,
+    "description": "Runnable historical reproduction profile."
+  },
+  "scenarios": [
+    {
+      "location": "../../../scenarios/v1/iceberg-rest.commit.same-table-contention.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "9dc9806ed8d440eff2a852e9ed103430043352e78e5d54ee2981f8e070eade75"
+      },
+      "bytes": 5488,
+      "description": "Versioned neutral same-table contention scenario."
+    }
+  ],
+  "results": [
+    {
+      "location": "lakecat.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "a978b1278e48a0aa3216b3a19048a8527be5db6aba578425fe3788cb1e163f4c"
+      },
+      "bytes": 8818,
+      "description": "Historical aggregate result for LakeCat."
+    },
+    {
+      "location": "polaris.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "9062e02c747ed2859012f322835f1732f04a32e7ac6e157d9c1622817c74b6ab"
+      },
+      "bytes": 8783,
+      "description": "Historical aggregate result for Apache Polaris."
+    },
+    {
+      "location": "gravitino.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "cc34f04ce2a22b047526762e19f3cee1edbc4eaa14480f48b0552dcc53753179"
+      },
+      "bytes": 8790,
+      "description": "Historical aggregate result for Apache Gravitino."
+    },
+    {
+      "location": "nessie.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "ff4d4a01c0097551c478e29b4fb4a9a16b9f2fccd5a5da6c79d036e6918cb541"
+      },
+      "bytes": 9368,
+      "description": "Historical aggregate result for Apache Nessie."
+    }
+  ],
+  "source_evidence": [
+    {
+      "location": "../../commit-2026-08-08-summary.tsv",
+      "media_type": "text/tab-separated-values",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "ce0730e6212c087d72fde2983830736e4989b29d3c361f1a00f32ea586b3bdd9"
+      },
+      "bytes": 718,
+      "description": "Published five-round aggregate summary."
+    },
+    {
+      "location": "../../commit-2026-08-08-runs.tsv",
+      "media_type": "text/tab-separated-values",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "6aa5cd519aaa2e4c776be360394ea10d5be33ee130d8c7f3cd8b34eec2772819"
+      },
+      "bytes": 3474,
+      "description": "All 24 runs, including conditioning round 1."
+    },
+    {
+      "location": "../../commit-2026-08-08-object-audit.tsv",
+      "media_type": "text/tab-separated-values",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "9cdfb8bbbfef079cd0c934c81308aef1e7bf71bf10dd1e488fba1fd7e494a8c3"
+      },
+      "bytes": 855,
+      "description": "Per-run MinIO object-growth audit."
+    }
+  ],
+  "redaction": {
+    "reviewed": true,
+    "policy": "The source TSVs and generated records contain numeric measurements, public component identities, and sanitized namespace names; no credentials, authorization headers, or secrets are present."
+  },
+  "extensions": {
+    "querygraph/reproduction-status": {
+      "arithmetic": "recomputed",
+      "artifact_hashes": "verified",
+      "live_timing": "not rerun: Docker VM no space left on device"
+    }
+  }
+}

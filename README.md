@@ -17,7 +17,7 @@ must be generated from these records rather than maintained independently.
 
 | Name | Status | What it measures |
 | --- | --- | --- |
-| `commit` | **ready** | Iceberg REST **commit-path** latency + throughput across catalogs — the impartial, catalog-only comparison (detailed below). LakeCat ranks **#1 among error-free catalogs** in the 2026-08-08 concurrent sweep; the Nessie row is faster raw but errored and is unranked (**Err**). |
+| `commit` | **ready** | Iceberg REST **commit-path** latency + throughput across catalogs — the impartial, catalog-only comparison (detailed below). LakeCat ranks **#1 among passing catalogs** in the 2026-08-08 concurrent sweep; Nessie is faster raw but failed the zero-request-errors assertion and is unranked. |
 | `write-data` | **ready** | Realistic **writes**: a real Parquet data file → the same MinIO bucket, then a LakeCat commit. Write throughput under realistic payloads. |
 | `cache-scan` | **ready** | **Cold vs warm Parquet scan** via Sail's [Foyer object-store cache](https://github.com/lakehq/sail/issues/1015): measured **~26×** warm-vs-cold (per-file p50 warm 1.81 ms vs cold/no-cache ~47.5 ms; 87 MB dataset). |
 | `rust-vs-jvm` | **ready** | **Sail/DataFusion (Rust) vs Apache Spark 3.5.3 (JVM)**, same query/files/MinIO: **1.63×** engine edge with no local cache (Rust 446 ms vs Spark-warm 729 ms p50), **57.5×** with the warm Foyer cache. |
@@ -53,6 +53,11 @@ Contract maintenance and validation use the companion CLI:
 ```sh
 cargo run -p catalog-bench-contract -- schemas check
 cargo run -p catalog-bench-contract -- validate profiles/v1 scenarios/v1 results/v1
+cargo run -p catalog-bench-contract -- bundle validate \
+  --manifest results/v1/2026-08-08/manifest.json
+cargo run -p catalog-bench-contract -- matrix check \
+  --manifest results/v1/2026-08-08/manifest.json \
+  --output results/v1/2026-08-08/MATRIX.md
 ```
 
 See **[RESULTS.md](RESULTS.md)** for measured results.
@@ -76,18 +81,12 @@ the base URL, prefix, and auth differ.
 
 ### Latest concurrent ranking (2026-08-08)
 
-Ranked by median successful throughput with eight writers among error-free rows.
-A numeric rank requires zero request errors in all five measured rounds; round 1
-of six was discarded. The Nessie row is the fastest by raw successful throughput,
-but it errored in every measured round, so it sits last, marked **Err**, with its
-raw numbers preserved.
-
-| Rank | Catalog | Concurrent median | Valid rounds | Errors |
-|:---:|---|---:|:---:|---:|
-| **1** | **LakeCat** `3cca8d1c` | **153.0/s** | **5 / 5** | **0** |
-| **2** | Apache Polaris 1.5.0 | 129.1/s | **5 / 5** | **0** |
-| **3** | Apache Gravitino 1.1.0 | 116.9/s | **5 / 5** | **0** |
-| **Err** | Apache Nessie 0.108.4 | 190.0/s | 0 / 5 | 97 |
+The canonical [generated concurrent matrix](results/v1/2026-08-08/MATRIX.md)
+ranks only `pass` outcomes by median successful throughput with eight writers.
+It is rendered from the immutable result records and checked against them in
+tests; it is not a separately maintained table. Round 1 of six is explicitly
+recorded as conditioning. Nessie's faster raw measurements remain visible, but
+its failed zero-request-errors assertion makes the row unranked.
 
 #### Why did Nessie pass the previous benchmark?
 
@@ -99,7 +98,7 @@ driver records them and requires zero request errors in every measured round.
 
 Strict preflights reproduced the same Quarkus request-context failure on Nessie
 0.107.5, 0.107.6, and 0.108.4. The version update therefore does not explain the
-new Err marking: the benchmark's observability and validity rules changed. Nessie
+new failed result: the benchmark's observability and validity rules changed. Nessie
 remains the fastest raw concurrent row at 190.0 successful commits/s, but 97 HTTP 500s
 across the five measured rounds make it ineligible for a numeric rank. The full
 forensic explanation is in [RESULTS.md](RESULTS.md#why-nessie-appeared-to-pass-previously).
@@ -325,7 +324,8 @@ POLARIS_TOKEN=... ./bench-stack.sh            # include Polaris
 This is the one-round smoke harness. It intentionally stops when a target returns
 request errors (Nessie 0.108.4 currently does). The published table instead uses
 the six-round Docker-only protocol and production artifacts documented in
-[RESULTS.md](RESULTS.md); invalid Nessie reports are retained there, marked Err.
+[RESULTS.md](RESULTS.md); invalid Nessie reports are retained there as a `fail`
+outcome with their diagnostic measurements.
 
 ## Build the driver alone
 
@@ -392,7 +392,8 @@ catalog-bench-commit --base-url http://127.0.0.1:8080/api/2.1/unity-catalog/iceb
   per pooled connection.
 - **Nessie 0.108.4** is reproducible through its profile, but its eight-writer
   commit path failed the final integrity gate in all five measured rounds with
-  Quarkus request-context HTTP 500s. It remains in the full table, marked Err.
+  Quarkus request-context HTTP 500s. It remains in the generated matrix as an
+  unranked `fail` outcome.
 - **Unity (OSS)** released builds (≤ 0.5.0) serve Iceberg REST **read-only** — no
   external `updateTable` commit handler exists, so it is left out of the comparison.
   Commit support is in unmerged PR #1618 (unreleased 0.6.0); build from that branch

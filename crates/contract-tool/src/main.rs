@@ -4,6 +4,10 @@ use std::process::ExitCode;
 
 use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{generated_schemas, parse_contract};
+use catalog_bench_contract::{
+    check_historical_commit_bundle, load_bundle, render_commit_matrix,
+    write_historical_commit_bundle,
+};
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -29,6 +33,21 @@ enum Command {
         #[arg(required = true)]
         paths: Vec<PathBuf>,
     },
+    /// Validate immutable artifacts and cross-document links in a result bundle.
+    Bundle {
+        #[command(subcommand)]
+        command: BundleCommand,
+    },
+    /// Generate or check a human-readable matrix from validated result records.
+    Matrix {
+        #[command(subcommand)]
+        command: MatrixCommand,
+    },
+    /// Recompute the canonical 2026-08-08 result bundle from preserved TSVs.
+    HistoricalImport {
+        #[command(subcommand)]
+        command: HistoricalImportCommand,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -42,6 +61,47 @@ enum SchemaCommand {
     Check {
         #[arg(long, default_value = "schemas/v1")]
         directory: PathBuf,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum BundleCommand {
+    /// Verify every document, digest, size, identity, and cross-reference.
+    Validate {
+        #[arg(long)]
+        manifest: PathBuf,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum MatrixCommand {
+    /// Write the matrix rendered from a validated bundle.
+    Write {
+        #[arg(long)]
+        manifest: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+    /// Fail if the checked-in matrix differs from its validated bundle.
+    Check {
+        #[arg(long)]
+        manifest: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+}
+
+#[derive(Debug, Subcommand)]
+enum HistoricalImportCommand {
+    /// Recompute and write records plus their immutable manifest.
+    Write {
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
+    /// Fail if checked-in records differ from a fresh recomputation.
+    Check {
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
     },
 }
 
@@ -62,7 +122,60 @@ fn run(cli: Cli) -> Result<()> {
             SchemaCommand::Check { directory } => check_schemas(&directory),
         },
         Command::Validate { paths } => validate_paths(&paths),
+        Command::Bundle { command } => match command {
+            BundleCommand::Validate { manifest } => validate_bundle(&manifest),
+        },
+        Command::Matrix { command } => match command {
+            MatrixCommand::Write { manifest, output } => write_matrix(&manifest, &output),
+            MatrixCommand::Check { manifest, output } => check_matrix(&manifest, &output),
+        },
+        Command::HistoricalImport { command } => match command {
+            HistoricalImportCommand::Write { root } => {
+                let manifest = write_historical_commit_bundle(&root)?;
+                validate_bundle(&manifest)
+            }
+            HistoricalImportCommand::Check { root } => {
+                let manifest = check_historical_commit_bundle(&root)?;
+                validate_bundle(&manifest)
+            }
+        },
     }
+}
+
+fn validate_bundle(manifest: &Path) -> Result<()> {
+    let bundle = load_bundle(manifest)?;
+    println!(
+        "valid bundle {}: {} scenario(s), {} result(s)",
+        manifest.display(),
+        bundle.scenarios().len(),
+        bundle.results().len()
+    );
+    Ok(())
+}
+
+fn write_matrix(manifest: &Path, output: &Path) -> Result<()> {
+    let rendered = render_commit_matrix(&load_bundle(manifest)?)?;
+    if let Some(parent) = output.parent() {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create {}", parent.display()))?;
+    }
+    fs::write(output, rendered).with_context(|| format!("failed to write {}", output.display()))?;
+    println!("wrote {}", output.display());
+    Ok(())
+}
+
+fn check_matrix(manifest: &Path, output: &Path) -> Result<()> {
+    let expected = render_commit_matrix(&load_bundle(manifest)?)?;
+    let actual = fs::read_to_string(output)
+        .with_context(|| format!("failed to read {}", output.display()))?;
+    if actual != expected {
+        bail!(
+            "{} is stale; rerun `catalog-bench-contract matrix write`",
+            output.display()
+        );
+    }
+    println!("{} matches its validated result bundle", output.display());
+    Ok(())
 }
 
 fn write_schemas(directory: &Path) -> Result<()> {

@@ -108,11 +108,13 @@ profiles must enumerate every unresolved component and explain the gap; they are
 planning inputs and cannot back a result bundle. Materializing an artifact creates
 a new profile document and digest.
 
-Writers should serialize deterministically, append one newline, hash those bytes,
-then create references. A bundle-level validator must additionally verify
-referenced bytes, profile component bindings, scenario assertion IDs, and copied
-required flags; per-document validation cannot prove those cross-file
-relationships by itself.
+Writers serialize deterministically, append one newline, hash those bytes, then
+create references. The bundle validator verifies exact byte lengths and SHA-256
+digests, profile and scenario references, profile component identities, scenario
+assertion IDs and copied required flags, result/evidence artifacts, and complete
+assertion coverage for attempted outcomes. It rejects draft profiles because
+unresolved artifacts cannot support published results. Per-document validation
+cannot prove these cross-file relationships by itself.
 
 ## Commands
 
@@ -127,7 +129,24 @@ cargo run -p catalog-bench-contract --locked -- schemas write
 
 # Deserialize and semantically validate one file or a directory tree.
 cargo run -p catalog-bench-contract --locked -- validate path/to/documents
+
+# Verify exact bytes and every cross-document link in one result bundle.
+cargo run -p catalog-bench-contract --locked -- bundle validate \
+  --manifest results/v1/2026-08-08/manifest.json
+
+# Recompute the historical JSON records from the hash-pinned source TSVs.
+cargo run -p catalog-bench-contract --locked -- historical-import check --root .
+
+# Detect drift in the human matrix generated from the validated records.
+cargo run -p catalog-bench-contract --locked -- matrix check \
+  --manifest results/v1/2026-08-08/manifest.json \
+  --output results/v1/2026-08-08/MATRIX.md
 ```
 
 `validate` recurses through directories and examines `.json` files. Schema files
-themselves are inputs to `schemas check`, not contract documents.
+themselves are inputs to `schemas check`, not contract documents. The historical
+importer also verifies the source hashes, exact round/catalog dimensions, summary
+arithmetic, request-rate arithmetic, expected and observed MinIO growth, and
+legacy rank fields before emitting v1 records. `matrix check` first runs full
+bundle validation and ranks only `pass` outcomes; non-pass measurements remain
+visible but unranked.

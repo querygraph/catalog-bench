@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Historical evidence: added a deterministic importer that hash-checks and
+  recomputes the 2026-08-08 raw TSV evidence into four typed aggregate result
+  records and an immutable bundle manifest. Added bundle-wide digest, identity,
+  scenario, assertion, and evidence validation plus a generated concurrent
+  matrix that ranks only `pass` outcomes and preserves Nessie's diagnostic
+  measurements as an unranked `fail`.
 - Result provenance: modeled single executions and multi-round aggregates as
   distinct run variants with explicit included/excluded repetitions and rules.
 - Phase 0 pinsets: added a runnable reconstruction of the 2026-08-08 Linux ARM64

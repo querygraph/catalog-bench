@@ -8,20 +8,16 @@ the catalog pointer; there are no data files or query-engine work in this test.
 
 ## Concurrent ranking
 
-Ranked by median successful concurrent throughput **among error-free rows**. A
-numeric rank requires **zero request errors in every measured round** — an
-HTTP 500 is neither a success nor a conflict, so a row that errored cannot be
-ranked against rows that did not. Nessie's row is therefore listed last and
-marked **[Err](docs/NESSIE-ERROR.md)**, with its raw numbers preserved rather
-than hidden; the top of a ranking is a claim, and a row with zero valid rounds
-has not earned it.
+The canonical [generated matrix](results/v1/2026-08-08/MATRIX.md) ranks `pass`
+outcomes by median successful concurrent throughput. A numeric rank requires
+zero request errors in every measured round. An HTTP 500 is neither a success
+nor a conflict, so Nessie's failed zero-request-errors assertion is represented
+as an unranked `fail` outcome with all diagnostic measurements preserved.
 
-| Rank | Catalog | Valid rounds | Concurrent, 8 writers | Sequential | p50 | p99 | Conflict rate | Error rate | Errors |
-|:---:|---|:---:|---:|---:|---:|---:|---:|---:|---:|
-| **1** | **LakeCat** `3cca8d1c` | **5 / 5** | **153.0/s** (130.0–166.5) | **335.5/s** (285.2–342.6) | **2.697 ms** | **5.641 ms** | 85.42% | **0%** | **0** |
-| **2** | Apache Polaris 1.5.0 | **5 / 5** | 129.1/s (103.0–135.6) | 135.0/s (103.7–153.4) | 7.115 ms | 11.533 ms | 4.04% | **0%** | **0** |
-| **3** | Apache Gravitino 1.1.0 | **5 / 5** | 116.9/s (105.4–126.2) | 74.2/s (63.9–78.0) | 12.838 ms | 19.225 ms | 1.10% | **0%** | **0** |
-| **[Err](docs/NESSIE-ERROR.md)** | Apache Nessie 0.108.4 | 0 / 5 | 190.0/s (173.3–223.8) | 312.3/s (215.9–328.9) | 2.986 ms | 5.602 ms | 81.00% | 0.366% | 97 |
+The matrix is rendered from the typed result records after validating exact
+artifact sizes and SHA-256 hashes, profile/component identities, scenario
+versions, assertion links, and evidence references. This report deliberately
+does not carry a second hand-edited copy of the ranking.
 
 Values are medians of rounds 2–6; parenthesized values are the measured min–max
 range. Throughput counts only accepted commits and uses the phase's actual elapsed
@@ -59,6 +55,8 @@ separate storage contention from optimistic-concurrency policy.
 
 Tracked evidence:
 
+- [Generated pass-only ranking and non-pass outcomes](results/v1/2026-08-08/MATRIX.md)
+- [Immutable result-bundle manifest](results/v1/2026-08-08/manifest.json)
 - [Median summary](results/commit-2026-08-08-summary.tsv)
 - [All 24 runs, including discarded round 1](results/commit-2026-08-08-runs.tsv)
 - [Per-run MinIO object audit](results/commit-2026-08-08-object-audit.tsv)
@@ -66,9 +64,10 @@ Tracked evidence:
 The source output hashes are respectively `ce0730e6…`, `6aa5cd51…`, and
 `9cdfb8bb…`; the tracked files are byte-for-byte copies.
 
-## The Nessie error row
+## The Nessie failed result
 
-**The full account — the failure, the forensics, why "Err" rather than "DQ",
+**The full account — the failure, the forensics, why `fail` rather than the
+legacy "DQ" label,
 and what would restore a rank — is in
 [docs/NESSIE-ERROR.md](docs/NESSIE-ERROR.md).** Summary below.
 
@@ -122,11 +121,11 @@ but the decisive change in the published result was **observability and validity
 errors that were previously dropped are now counted, and they void the row's rank.
 
 Nessie did not collapse as a throughput engine. Its 190.0/s median counts only
-successful commits and is still the fastest raw concurrent value. It is marked
-**Err** because 97 additional requests returned HTTP 500 across the five
-measured rounds, not because its successful commit path became slow — the
-label states the fact (the server errored under load) without the
-rules-violation framing "disqualified" would imply.
+successful commits and is still the fastest raw concurrent value. Its outcome is
+`fail` because 97 additional requests returned HTTP 500 across the five measured
+rounds, not because its successful commit path became slow. The closed result
+classification records observed behavior without the rules-violation framing
+that "disqualified" would imply.
 
 ## Why the previous public rows were replaced
 
