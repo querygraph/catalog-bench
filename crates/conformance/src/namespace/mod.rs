@@ -4,13 +4,10 @@ mod routes;
 use std::collections::{BTreeMap, BTreeSet};
 
 use anyhow::Result;
-use catalog_bench_common::contract::{
-    AssertionCheck, AssertionOutcome, CapabilityId, ComponentId, Profile, ProfileId, Scenario,
-};
-use reqwest::{Client, Method};
+use catalog_bench_common::contract::{AssertionCheck, ComponentId, Profile, ProfileId, Scenario};
+use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use url::Url;
 
 use crate::config::{resolve_prefix, PrefixResolution};
 use crate::encode_evidence;
@@ -20,7 +17,11 @@ use crate::evidence::{
     HttpResponseTranscript, ProbeAssertion, ProbeClassification, ProbeFailure,
     SanitizationTranscript, TranscriptAdapter, TranscriptScenario,
 };
-use crate::sanitize::{contains_sensitive_value, sanitize_json};
+use crate::operation::{
+    all_results, parse_json_response, validate_error_response, validate_status, Fact, Observation,
+    OperationExecution, OperationHttpRequestTranscript, OperationRecorder, OperationTranscript,
+};
+use crate::sanitize::contains_sensitive_value;
 use crate::target::ProbeTarget;
 use crate::transport::{
     acquire_authentication, authentication_mode, endpoint_url, execute_json_request, http_client,
@@ -29,6 +30,10 @@ use crate::transport::{
 
 pub use crate::iceberg::{NamespaceIdentifier, NamespaceSeparatorResolution};
 pub use routes::NamespaceFixture;
+
+pub type NamespaceHttpRequestTranscript = OperationHttpRequestTranscript;
+pub type NamespaceOperationExecution = OperationExecution;
+pub type NamespaceOperationTranscript = OperationTranscript;
 
 use crate::iceberg::{CatalogRoutes, NamespaceCodec};
 
@@ -63,41 +68,6 @@ pub struct NamespaceConfigTranscript {
     pub namespace_separator: NamespaceSeparatorResolution,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub failure: Option<ProbeFailure>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct NamespaceHttpRequestTranscript {
-    pub method: String,
-    pub url: String,
-    pub headers: BTreeMap<String, String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub body: Option<Value>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "status", rename_all = "kebab-case", deny_unknown_fields)]
-pub enum NamespaceOperationExecution {
-    Attempted {
-        request: Box<NamespaceHttpRequestTranscript>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        response: Option<HttpResponseTranscript>,
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        failure: Option<ProbeFailure>,
-    },
-    NotAttempted {
-        reason: String,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct NamespaceOperationTranscript {
-    pub id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capability: Option<CapabilityId>,
-    #[serde(flatten)]
-    pub execution: NamespaceOperationExecution,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -300,10 +270,10 @@ where
         }
     };
 
-    redactions.extend(recorder.redactions);
+    let (operations, operation_redactions) = recorder.finish();
+    redactions.extend(operation_redactions);
     redactions.sort();
     redactions.dedup();
-    let operations = recorder.operations;
     let serialized = encode_evidence(&(
         &authentication.transcript,
         &config,
@@ -411,7 +381,7 @@ async fn execute_namespace_workflow(
         let reason = facts
             .fixture_isolated
             .explanation("fixture preflight did not pass");
-        recorder.skip_remaining_mutations(&reason);
+        skip_remaining_mutations(recorder, &reason);
         facts.skip_mutating_behavior(&reason);
         facts.missing_parent = Fact::from_result(
             probe_missing_parent(recorder, routes, &fixture.missing_parent).await?,
@@ -907,54 +877,6 @@ fn validate_namespace_response(
     Ok(response)
 }
 
-fn validate_error_response(
-    observation: &Observation,
-    status: u16,
-    error_type: &str,
-) -> std::result::Result<(), String> {
-    let response: IcebergErrorResponse = parse_json_response(observation, status)?;
-    if response.error.code != status {
-        return Err(format!(
-            "error code {} does not match HTTP {status}",
-            response.error.code
-        ));
-    }
-    if response.error.r#type != error_type {
-        return Err(format!(
-            "error type `{}` does not match `{error_type}`",
-            response.error.r#type
-        ));
-    }
-    if response.error.message.trim().is_empty() {
-        return Err("error message is empty".to_owned());
-    }
-    Ok(())
-}
-
-fn validate_status(observation: &Observation, allowed: &[u16]) -> std::result::Result<(), String> {
-    match observation.status {
-        Some(status) if allowed.contains(&status) => Ok(()),
-        Some(status) => Err(format!("HTTP {status} is not in {allowed:?}")),
-        None => Err(observation
-            .failure
-            .as_ref()
-            .map(|failure| failure.explanation.clone())
-            .unwrap_or_else(|| "no response was received".to_owned())),
-    }
-}
-
-fn parse_json_response<T: for<'de> Deserialize<'de>>(
-    observation: &Observation,
-    status: u16,
-) -> std::result::Result<T, String> {
-    validate_status(observation, &[status])?;
-    let value = observation
-        .private_json
-        .clone()
-        .ok_or_else(|| "response did not contain valid JSON".to_owned())?;
-    serde_json::from_value(value).map_err(|error| format!("invalid response shape: {error}"))
-}
-
 fn parse_list_response(
     observation: &Observation,
     status: u16,
@@ -975,15 +897,6 @@ fn parse_namespaces(
         return Err("listing contains duplicate namespace identifiers".to_owned());
     }
     Ok(parsed)
-}
-
-fn all_results<'a, T: 'a>(
-    results: impl IntoIterator<Item = &'a std::result::Result<T, String>>,
-) -> std::result::Result<(), String> {
-    results
-        .into_iter()
-        .find_map(|result| result.as_ref().err().cloned())
-        .map_or(Ok(()), Err)
 }
 
 fn is_json_media_type(content_type: &str) -> bool {
@@ -1013,202 +926,26 @@ struct UpdateNamespacePropertiesResponse {
     removed: Vec<String>,
 }
 
-#[derive(Debug, Deserialize)]
-struct IcebergErrorResponse {
-    error: IcebergError,
-}
-
-#[derive(Debug, Deserialize)]
-struct IcebergError {
-    message: String,
-    r#type: String,
-    code: u16,
-}
-
-#[derive(Clone)]
-struct Observation {
-    status: Option<u16>,
-    private_json: Option<Value>,
-    failure: Option<ProbeFailure>,
-}
-
-struct OperationRecorder<'a> {
-    client: &'a Client,
-    bearer_token: Option<&'a str>,
-    sensitive_values: &'a [String],
-    operations: Vec<NamespaceOperationTranscript>,
-    redactions: Vec<String>,
-}
-
-impl<'a> OperationRecorder<'a> {
-    fn new(
-        client: &'a Client,
-        bearer_token: Option<&'a str>,
-        sensitive_values: &'a [String],
-    ) -> Self {
-        Self {
-            client,
-            bearer_token,
-            sensitive_values,
-            operations: Vec::new(),
-            redactions: Vec::new(),
-        }
-    }
-
-    async fn attempt(
-        &mut self,
-        id: impl Into<String>,
-        capability: Option<&str>,
-        method: Method,
-        url: Url,
-        body: Option<Value>,
-    ) -> Observation {
-        let id = id.into();
-        let mut headers = BTreeMap::from([("accept".to_owned(), "application/json".to_owned())]);
-        if body.is_some() {
-            headers.insert("content-type".to_owned(), "application/json".to_owned());
-        }
-        if self.bearer_token.is_some() {
-            headers.insert("authorization".to_owned(), REDACTED.to_owned());
-            self.redactions
-                .push(format!("operations.{id}.request.headers.authorization"));
-        }
-
-        let sanitized_url = sanitize_json(Value::String(url.to_string()), self.sensitive_values);
-        if !sanitized_url.redactions.is_empty() {
-            self.redactions.push(format!("operations.{id}.request.url"));
-        }
-        let sanitized_url = sanitized_url
-            .value
-            .as_str()
-            .expect("sanitizing a JSON string preserves its type")
-            .to_owned();
-        let sanitized_body = body.as_ref().map(|body| {
-            let sanitized = sanitize_json(body.clone(), self.sensitive_values);
-            self.redactions.extend(
-                sanitized
-                    .redactions
-                    .iter()
-                    .map(|path| format!("operations.{id}.request.body{path}")),
-            );
-            sanitized.value
-        });
-        let captured = execute_json_request(
-            self.client,
-            method.clone(),
-            url,
-            self.bearer_token,
-            body.as_ref(),
-            self.sensitive_values,
-            &id,
-        )
-        .await;
-        self.redactions.extend(
-            captured
-                .redactions
-                .iter()
-                .map(|path| format!("operations.{id}.{path}")),
-        );
-        let observation = Observation {
-            status: captured.response.as_ref().map(|response| response.status),
-            private_json: captured.private_json,
-            failure: captured.failure.clone(),
-        };
-        self.operations.push(NamespaceOperationTranscript {
-            id,
-            capability: capability.map(CapabilityId::new),
-            execution: NamespaceOperationExecution::Attempted {
-                request: Box::new(NamespaceHttpRequestTranscript {
-                    method: method.as_str().to_owned(),
-                    url: sanitized_url,
-                    headers,
-                    body: sanitized_body,
-                }),
-                response: captured.response,
-                failure: captured.failure,
-            },
-        });
-        observation
-    }
-
-    fn skip(&mut self, id: impl Into<String>, capability: Option<&str>, reason: &str) {
-        self.operations.push(NamespaceOperationTranscript {
-            id: id.into(),
-            capability: capability.map(CapabilityId::new),
-            execution: NamespaceOperationExecution::NotAttempted {
-                reason: reason.to_owned(),
-            },
-        });
-    }
-
-    fn skip_remaining_mutations(&mut self, reason: &str) {
-        for (id, capability) in [
-            ("create-primary", CREATE_CAPABILITY),
-            ("create-sibling", CREATE_CAPABILITY),
-            ("create-child", CREATE_CAPABILITY),
-            ("list-top-level", LIST_CAPABILITY),
-            ("load-primary", LOAD_CAPABILITY),
-            ("update-primary-properties", UPDATE_CAPABILITY),
-            ("reload-primary-properties", UPDATE_CAPABILITY),
-            ("create-primary-duplicate", DUPLICATE_CAPABILITY),
-            ("list-primary-children", HIERARCHY_CAPABILITY),
-            ("list-page-001", PAGINATION_CAPABILITY),
-            ("drop-child", DROP_CAPABILITY),
-            ("drop-sibling", DROP_CAPABILITY),
-            ("drop-primary", DROP_CAPABILITY),
-            ("verify-child-absent", DROP_CAPABILITY),
-            ("verify-sibling-absent", DROP_CAPABILITY),
-            ("verify-primary-absent", DROP_CAPABILITY),
-        ] {
-            self.skip(id, Some(capability), reason);
-        }
-    }
-}
-
-#[derive(Clone)]
-pub(super) enum Fact {
-    Pass,
-    Fail(String),
-    NotEvaluated(String),
-}
-
-impl Fact {
-    fn from_result(result: std::result::Result<(), String>) -> Self {
-        match result {
-            Ok(()) => Self::Pass,
-            Err(explanation) => Self::Fail(explanation),
-        }
-    }
-
-    fn from_bool(value: bool, explanation: &str) -> Self {
-        if value {
-            Self::Pass
-        } else {
-            Self::Fail(explanation.to_owned())
-        }
-    }
-
-    fn passed(&self) -> bool {
-        matches!(self, Self::Pass)
-    }
-
-    fn explanation(&self, fallback: &str) -> String {
-        match self {
-            Self::Pass => fallback.to_owned(),
-            Self::Fail(explanation) | Self::NotEvaluated(explanation) => explanation.clone(),
-        }
-    }
-
-    pub(super) fn outcome(&self) -> AssertionOutcome {
-        match self {
-            Self::Pass => AssertionOutcome::Pass,
-            Self::Fail(explanation) => AssertionOutcome::Fail {
-                explanation: explanation.clone(),
-            },
-            Self::NotEvaluated(reason) => AssertionOutcome::NotEvaluated {
-                reason: reason.clone(),
-            },
-        }
+fn skip_remaining_mutations(recorder: &mut OperationRecorder<'_>, reason: &str) {
+    for (id, capability) in [
+        ("create-primary", CREATE_CAPABILITY),
+        ("create-sibling", CREATE_CAPABILITY),
+        ("create-child", CREATE_CAPABILITY),
+        ("list-top-level", LIST_CAPABILITY),
+        ("load-primary", LOAD_CAPABILITY),
+        ("update-primary-properties", UPDATE_CAPABILITY),
+        ("reload-primary-properties", UPDATE_CAPABILITY),
+        ("create-primary-duplicate", DUPLICATE_CAPABILITY),
+        ("list-primary-children", HIERARCHY_CAPABILITY),
+        ("list-page-001", PAGINATION_CAPABILITY),
+        ("drop-child", DROP_CAPABILITY),
+        ("drop-sibling", DROP_CAPABILITY),
+        ("drop-primary", DROP_CAPABILITY),
+        ("verify-child-absent", DROP_CAPABILITY),
+        ("verify-sibling-absent", DROP_CAPABILITY),
+        ("verify-primary-absent", DROP_CAPABILITY),
+    ] {
+        recorder.skip(id, Some(capability), reason);
     }
 }
 

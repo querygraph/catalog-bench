@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Catalog community C1-05 preparation: generalized the namespace probe's HTTP
+  operation recorder, typed observation facts, response-shape checks, and
+  Iceberg error validation into one reusable evidence engine. Existing public
+  namespace type names remain aliases with byte-identical serialization, while
+  subsequent probes inherit the same bounds, sanitization, and failure model.
+
 - Catalog community C1-05 preparation: extracted the Iceberg REST namespace
   identifier, separator negotiation, fixture validation, and prefix-aware route
   construction into shared conformance primitives. The namespace probe retains

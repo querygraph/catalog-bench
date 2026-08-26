@@ -8,6 +8,7 @@ mod config;
 mod evidence;
 mod iceberg;
 mod namespace;
+mod operation;
 mod sanitize;
 mod spec;
 mod target;
