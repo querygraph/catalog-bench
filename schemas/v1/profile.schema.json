@@ -44,6 +44,12 @@
       "additionalProperties": false,
       "description": "Reproducible build settings that materially affect a native executable.",
       "properties": {
+        "compiler_flags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
         "environment": {
           "additionalProperties": {
             "type": "string"
@@ -54,23 +60,17 @@
           "additionalProperties": true,
           "type": "object"
         },
-        "features": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
         "locked": {
           "type": "boolean"
         },
-        "profile": {
-          "type": "string"
-        },
-        "rustflags": {
+        "options": {
           "items": {
             "type": "string"
           },
           "type": "array"
+        },
+        "profile": {
+          "type": "string"
         },
         "target": {
           "type": "string"

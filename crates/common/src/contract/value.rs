@@ -158,9 +158,9 @@ pub struct BuildConfiguration {
     pub target: String,
     pub profile: String,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub features: Vec<String>,
+    pub options: Vec<String>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub rustflags: Vec<String>,
+    pub compiler_flags: Vec<String>,
     pub locked: bool,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub environment: BTreeMap<String, String>,

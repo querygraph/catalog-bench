@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Build provenance: generalized component build options and compiler flags so
+  Rust, Go, C++, Java, and other toolchains share one neutral recipe shape.
 - Profiles: distinguished runnable profiles from draft pinsets. Runnable profiles
   now reject unresolved source-build or package artifacts; drafts must enumerate
   every unresolved component and cannot silently look executable.
