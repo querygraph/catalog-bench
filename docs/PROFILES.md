@@ -64,6 +64,8 @@ Versions were selected from official release records and registry metadata on
 | Catalog | Lakekeeper | 0.13.3 / `12bb82fc…`; index `db2ba616…`, ARM64 `ba942413…` |
 | Optional catalog | Apache Nessie | 0.108.4 / `41d69867…`; index `c0f42874…`, ARM64 `10d75169…` |
 | Client | PyIceberg | 0.11.1 / `8dee48a8…`; CPython 3.13 Linux ARM64 wheel `ddb360da…` |
+| Client runtime | CPython | 3.13.15 / `4061bc4c…`; image index `c45a22ea…`, ARM64 `e424b523…` |
+| Client data plane | PyArrow | 25.0.1 / `beccec0d…`; CPython 3.13 Linux ARM64 wheel `44a9120c…` |
 | Connector | Apache Iceberg Java | 1.11.0 / `6976e020…`; engine JAR hashes unresolved |
 | Engine | Apache Spark | 3.5.9 / `7c14a3c2…`; image index `af02a459…` |
 | Engine | Apache Spark | 4.1.3 / `77bbf77e…`; image index `bf9d035a…` |
@@ -126,6 +128,8 @@ Primary release sources: [Polaris](https://polaris.apache.org/downloads/),
 [Lakekeeper](https://github.com/lakekeeper/lakekeeper/releases),
 [Nessie](https://github.com/projectnessie/nessie/releases),
 [PyIceberg](https://github.com/apache/iceberg-python/releases),
+[CPython](https://www.python.org/downloads/),
+[Apache Arrow](https://arrow.apache.org/release/),
 [Iceberg](https://iceberg.apache.org/releases/),
 [Spark](https://spark.apache.org/news/),
 [Flink](https://flink.apache.org/downloads/),

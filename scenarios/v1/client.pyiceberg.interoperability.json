@@ -1,0 +1,540 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "client.pyiceberg.interoperability",
+  "version": 1,
+  "title": "Stock PyIceberg catalog interoperability",
+  "description": "Runs one pinned, no-shim PyIceberg and PyArrow workflow against a catalog: negotiate authentication and config, prove fixture ownership, create/list/load, append and scan exact rows, classify optional property/schema/delete/conflict/delegation/rename/register behavior, disclose client-level view and pagination limits, reconcile every identifier, and emit value-sanitized evidence.",
+  "family": "client-interoperability",
+  "classification": "strict-v1",
+  "tags": [
+    "pyiceberg",
+    "stock-client",
+    "append",
+    "scan",
+    "schema-evolution",
+    "delete",
+    "conflict-recovery",
+    "no-shim"
+  ],
+  "capabilities": [
+    {
+      "capability": "client.pyiceberg.round-trip",
+      "level": "required",
+      "description": "Complete config/authentication, isolated namespace and table lifecycle, a real snapshot append, exact data scan, and cleanup through the unmodified stock client.",
+      "specification": "https://github.com/apache/iceberg-python/tree/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg"
+    },
+    {
+      "capability": "client.pyiceberg.property-update",
+      "level": "optional",
+      "description": "Set and remove scenario-owned table properties through a stock PyIceberg transaction.",
+      "specification": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/table/__init__.py"
+    },
+    {
+      "capability": "client.pyiceberg.schema-evolution",
+      "level": "optional",
+      "description": "Add one optional field and append rows under the evolved schema through stock PyIceberg.",
+      "specification": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/table/update/schema.py"
+    },
+    {
+      "capability": "client.pyiceberg.row-delete",
+      "level": "optional",
+      "description": "Delete an exact predicate and scan the surviving rows through stock PyIceberg.",
+      "specification": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/table/__init__.py"
+    },
+    {
+      "capability": "client.pyiceberg.conflict-recovery",
+      "level": "optional",
+      "description": "Race two stale table handles, require the stale snapshot update to conflict, refresh, retry once, and prove each batch exactly once.",
+      "specification": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/table/update/snapshot.py"
+    },
+    {
+      "capability": "client.pyiceberg.credential-vending",
+      "level": "optional",
+      "description": "Request vended credentials using the stock access-delegation header and classify whether table response config supplied delegated object-store access.",
+      "specification": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
+    },
+    {
+      "capability": "client.pyiceberg.table-rename",
+      "level": "optional",
+      "description": "Rename the live table through the stock REST catalog and preserve its complete data state.",
+      "specification": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
+    },
+    {
+      "capability": "client.pyiceberg.table-register",
+      "level": "optional",
+      "description": "Drop without purge, register retained metadata under a new identifier, and scan the same complete data state.",
+      "specification": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
+    },
+    {
+      "capability": "client.pyiceberg.view-lifecycle",
+      "level": "optional",
+      "description": "Run a complete view lifecycle only when the pinned stock client exposes create and load APIs.",
+      "specification": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
+    },
+    {
+      "capability": "client.pyiceberg.pagination",
+      "level": "optional",
+      "description": "Traverse explicit page sizes and next-page tokens only when the pinned stock client exposes pagination controls.",
+      "specification": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
+    }
+  ],
+  "parameters": {
+    "arrow_component": "pyarrow",
+    "arrow_version": "25.0.1",
+    "client_component": "pyiceberg",
+    "client_version": "0.11.1",
+    "conflict_rows_per_writer": 4,
+    "delete_filter": "id < 4",
+    "evolved_rows": 8,
+    "fixture_prefix": "cb_c107",
+    "initial_properties": {
+      "c1-07.remove": "before",
+      "c1-07.state": "before",
+      "catalog-bench.owner": "catalog-bench"
+    },
+    "initial_rows": 32,
+    "known_client_limitations": {
+      "client.pyiceberg.pagination": {
+        "explanation": "PyIceberg 0.11.1 parses next-page-token fields but its public list_namespaces and list_tables methods neither accept page controls nor traverse returned tokens.",
+        "upstream_reference": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
+      },
+      "client.pyiceberg.view-lifecycle": {
+        "explanation": "PyIceberg 0.11.1 exposes list/drop/exists helpers but no public create_view or load_view API, so a stock-client lifecycle cannot be sent.",
+        "upstream_reference": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
+      }
+    },
+    "object_store": {
+      "access_key_env": "CATALOG_BENCH_S3_ACCESS_KEY_ID",
+      "endpoint": "http://minio:9000",
+      "region": "us-east-1",
+      "secret_key_env": "CATALOG_BENCH_S3_SECRET_ACCESS_KEY"
+    },
+    "property_removals": [
+      "c1-07.remove"
+    ],
+    "property_updates": {
+      "c1-07.state": "after"
+    },
+    "python_component": "cpython",
+    "python_version": "3.13.15",
+    "schema_evolution": {
+      "field": {
+        "name": "note",
+        "required": false,
+        "type": "string"
+      }
+    },
+    "table_schema": {
+      "fields": [
+        {
+          "id": 1,
+          "name": "id",
+          "required": true,
+          "type": "long"
+        },
+        {
+          "id": 2,
+          "name": "category",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "id": 3,
+          "name": "amount",
+          "required": false,
+          "type": "double"
+        }
+      ],
+      "schema-id": 0,
+      "type": "struct"
+    },
+    "transcript_format": "catalog-bench/pyiceberg-transcript/v1"
+  },
+  "steps": [
+    {
+      "id": "verify-client-runtime",
+      "actor": "harness",
+      "operation": "client.verify-pinned-runtime",
+      "description": "Require the exact profile components and imported CPython, PyIceberg, and PyArrow versions before any network request."
+    },
+    {
+      "id": "initialize-catalog",
+      "actor": "client",
+      "operation": "pyiceberg.rest-catalog.initialize",
+      "description": "Construct the unmodified RestCatalog and let it perform its stock config and anonymous or OAuth2 authentication flow.",
+      "depends_on": [
+        "verify-client-runtime"
+      ],
+      "timeout_ms": 60000
+    },
+    {
+      "id": "preflight-fixture",
+      "actor": "harness",
+      "operation": "pyiceberg.verify-fixture-absence",
+      "description": "Require the exact run-owned namespace to be absent before any mutation.",
+      "depends_on": [
+        "initialize-catalog"
+      ]
+    },
+    {
+      "id": "namespace-round-trip",
+      "actor": "client",
+      "operation": "pyiceberg.namespace.create-list-load",
+      "description": "Create the namespace with properties, list it, and load the same property projection through stock PyIceberg.",
+      "depends_on": [
+        "preflight-fixture"
+      ],
+      "timeout_ms": 60000
+    },
+    {
+      "id": "table-round-trip",
+      "actor": "client",
+      "operation": "pyiceberg.table.create-list-load",
+      "description": "Create a committed table, list its identifier, reload it, and compare UUID, metadata location, schema, and scenario-owned properties.",
+      "depends_on": [
+        "namespace-round-trip"
+      ],
+      "timeout_ms": 60000
+    },
+    {
+      "id": "append-scan",
+      "actor": "client",
+      "operation": "pyiceberg.table.append-scan",
+      "description": "Append the deterministic initial Arrow batch, reload, and scan an exact canonical row digest through the table FileIO.",
+      "depends_on": [
+        "table-round-trip"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "update-properties",
+      "actor": "client",
+      "operation": "pyiceberg.table.update-properties",
+      "description": "Set and remove scenario-owned properties in one stock transaction and reload exact state.",
+      "depends_on": [
+        "append-scan"
+      ],
+      "timeout_ms": 60000
+    },
+    {
+      "id": "evolve-schema",
+      "actor": "client",
+      "operation": "pyiceberg.table.evolve-schema-append",
+      "description": "Add the optional note column, append the evolved batch, and scan old and new rows under the current schema.",
+      "depends_on": [
+        "append-scan"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "delete-rows",
+      "actor": "client",
+      "operation": "pyiceberg.table.delete-scan",
+      "description": "Delete the exact predicate and prove only the expected rows remain.",
+      "depends_on": [
+        "append-scan"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "recover-conflict",
+      "actor": "client",
+      "operation": "pyiceberg.table.stale-append-refresh-retry",
+      "description": "Load two handles, commit one append, require the stale second append to conflict, refresh it, retry, and scan both batches exactly once.",
+      "depends_on": [
+        "append-scan"
+      ],
+      "timeout_ms": 180000
+    },
+    {
+      "id": "observe-delegated-access",
+      "actor": "client",
+      "operation": "pyiceberg.table.classify-delegated-access",
+      "description": "Classify credential categories in table response config without serializing any credential value and correlate the observation with successful object I/O.",
+      "depends_on": [
+        "append-scan"
+      ]
+    },
+    {
+      "id": "rename-table",
+      "actor": "client",
+      "operation": "pyiceberg.table.rename",
+      "description": "Rename the active identifier and scan the same complete row digest.",
+      "depends_on": [
+        "recover-conflict"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "register-table",
+      "actor": "client",
+      "operation": "pyiceberg.table.drop-register-scan",
+      "description": "Drop without purge, register retained metadata under a new name, and scan the same complete row digest.",
+      "depends_on": [
+        "rename-table"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "classify-views",
+      "actor": "harness",
+      "operation": "pyiceberg.client.classify-view-lifecycle",
+      "description": "Record the pinned client's known view-lifecycle limitation without sending a substitute HTTP request."
+    },
+    {
+      "id": "classify-pagination",
+      "actor": "harness",
+      "operation": "pyiceberg.client.classify-pagination",
+      "description": "Record the pinned client's known pagination limitation without replacing stock list behavior."
+    },
+    {
+      "id": "cleanup-fixture",
+      "actor": "harness",
+      "operation": "pyiceberg.reconcile-fixture",
+      "description": "Drop every run-owned table candidate without purge, drop the namespace, and independently prove absence after pass, fail, or unsupported optional outcomes.",
+      "depends_on": [
+        "register-table",
+        "classify-views",
+        "classify-pagination"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "sanitize-transcript",
+      "actor": "harness",
+      "operation": "evidence.sanitize-stock-client-transcript",
+      "description": "Persist only fixed classifications, package identities, value-free credential categories, canonical data digests, and safe exception classes.",
+      "depends_on": [
+        "cleanup-fixture"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "client-runtime-pinned",
+      "step": "verify-client-runtime",
+      "required": true,
+      "description": "The imported runtime and package versions equal the immutable profile components.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-runtime-v1",
+        "configuration": {
+          "pyarrow": "25.0.1",
+          "pyiceberg": "0.11.1",
+          "python": "3.13.15"
+        }
+      }
+    },
+    {
+      "id": "catalog-auth-config-ready",
+      "step": "initialize-catalog",
+      "required": true,
+      "description": "Stock RestCatalog initialization completes with the profile's exact routing and authentication mode.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-init-v1",
+        "configuration": {
+          "request_handling": "protocol-native",
+          "shim": false
+        }
+      }
+    },
+    {
+      "id": "fixture-isolated",
+      "step": "preflight-fixture",
+      "required": true,
+      "description": "The run-owned namespace was absent before mutation.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-fixture-isolation-v1",
+        "configuration": {
+          "collision_policy": "refuse-without-mutation"
+        }
+      }
+    },
+    {
+      "id": "namespace-round-trip",
+      "step": "namespace-round-trip",
+      "required": true,
+      "description": "Create, list, and load preserve the run-owned namespace and property projection.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-namespace-v1",
+        "configuration": {
+          "compare": "identifier-and-scenario-properties"
+        }
+      }
+    },
+    {
+      "id": "table-round-trip",
+      "step": "table-round-trip",
+      "required": true,
+      "description": "Create, list, and load preserve the table UUID, metadata pointer, schema, and property projection.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-table-v1",
+        "configuration": {
+          "stage_create": false
+        }
+      }
+    },
+    {
+      "id": "append-scan-exact",
+      "step": "append-scan",
+      "required": true,
+      "description": "A real snapshot append and independent scan return every deterministic initial row exactly once.",
+      "check": {
+        "kind": "data-read",
+        "expectation": "32 canonical rows with IDs 0 through 31 and the scenario-defined value digest"
+      }
+    },
+    {
+      "id": "property-update-round-trip",
+      "step": "update-properties",
+      "required": false,
+      "description": "Scenario-owned property set/removal state reloads exactly.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-properties-v1",
+        "configuration": {
+          "preserve_unmentioned": true
+        }
+      }
+    },
+    {
+      "id": "schema-evolution-round-trip",
+      "step": "evolve-schema",
+      "required": false,
+      "description": "The optional note field becomes current and old/new rows scan under the evolved schema.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-schema-evolution-v1",
+        "configuration": {
+          "field": "note",
+          "required": false
+        }
+      }
+    },
+    {
+      "id": "row-delete-round-trip",
+      "step": "delete-rows",
+      "required": false,
+      "description": "The exact delete predicate removes IDs 0 through 3 and preserves every other row.",
+      "check": {
+        "kind": "data-read",
+        "expectation": "no ID below 4 and every expected surviving row exactly once"
+      }
+    },
+    {
+      "id": "conflict-recovery-round-trip",
+      "step": "recover-conflict",
+      "required": false,
+      "description": "The stale snapshot append conflicts, refresh-and-retry succeeds, and both writer batches appear exactly once.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-conflict-recovery-v1",
+        "configuration": {
+          "retry_after_refresh": 1,
+          "stale_attempt_must_fail": true
+        }
+      }
+    },
+    {
+      "id": "credential-vending-classified",
+      "step": "observe-delegated-access",
+      "required": false,
+      "description": "Delegated access is classified from value-free response-config categories and correlated with successful append/scan I/O.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-credential-vending-v1",
+        "configuration": {
+          "persist_values": false,
+          "request": "vended-credentials"
+        }
+      }
+    },
+    {
+      "id": "table-rename-round-trip",
+      "step": "rename-table",
+      "required": false,
+      "description": "Rename preserves one active identifier and the complete data digest.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-rename-v1",
+        "configuration": {
+          "scope": "same-namespace"
+        }
+      }
+    },
+    {
+      "id": "table-register-round-trip",
+      "step": "register-table",
+      "required": false,
+      "description": "Registration preserves the retained metadata pointer and complete data digest.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-register-v1",
+        "configuration": {
+          "purge_requested": false
+        }
+      }
+    },
+    {
+      "id": "view-lifecycle-classified",
+      "step": "classify-views",
+      "required": false,
+      "description": "The unavailable lifecycle is explicitly unsupported by the pinned client rather than sent through a shim or counted as a catalog failure.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/client-unsupported-v1",
+        "configuration": {
+          "attributed_to": "client",
+          "capability": "client.pyiceberg.view-lifecycle"
+        }
+      }
+    },
+    {
+      "id": "pagination-classified",
+      "step": "classify-pagination",
+      "required": false,
+      "description": "The unavailable page-token traversal is explicitly unsupported by the pinned client while ordinary stock list calls remain exercised.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/client-unsupported-v1",
+        "configuration": {
+          "attributed_to": "client",
+          "capability": "client.pyiceberg.pagination"
+        }
+      }
+    },
+    {
+      "id": "fixture-clean",
+      "step": "cleanup-fixture",
+      "required": true,
+      "description": "Every run-owned table candidate and namespace is absent after reconciliation without purging shared object evidence.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/pyiceberg-cleanup-v1",
+        "configuration": {
+          "purge_requested": false
+        }
+      }
+    },
+    {
+      "id": "transcript-sanitized",
+      "step": "sanitize-transcript",
+      "required": true,
+      "description": "No token, credential value, raw HTTP body, raw exception message, or row value is persisted.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/sanitized-stock-client-transcript-v1",
+        "configuration": {
+          "credential_policy": "categories-only",
+          "exception_policy": "class-and-fixed-explanation-only",
+          "row_policy": "count-range-and-sha256-only"
+        }
+      }
+    }
+  ]
+}

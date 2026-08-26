@@ -288,6 +288,7 @@ fn checked_in_profiles_scenario_and_phase_one_adapters_validate() {
         include_bytes!("../../../scenarios/v1/iceberg-rest.commit.correctness.json").as_slice(),
         include_bytes!("../../../scenarios/v1/iceberg-rest.config.negotiation.json").as_slice(),
         include_bytes!("../../../scenarios/v1/iceberg-rest.table.behavior.json").as_slice(),
+        include_bytes!("../../../scenarios/v1/client.pyiceberg.interoperability.json").as_slice(),
     ];
     let documents = bytes.map(|document| parse_contract(document).unwrap());
 
@@ -308,7 +309,7 @@ fn checked_in_profiles_scenario_and_phase_one_adapters_validate() {
     };
     assert_eq!(unresolved_artifacts.len(), 6);
     assert_eq!(current.catalog_adapters.len(), 5);
-    assert_eq!(current.catalog_capabilities.len(), 27);
+    assert_eq!(current.catalog_capabilities.len(), 36);
     assert!(current.components.iter().any(|component| {
         component.id.as_str() == "catalog-bench-conformance"
             && component.kind == ComponentKind::BenchmarkHarness

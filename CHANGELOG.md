@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Catalog community C1-07 contract: pin the stock PyIceberg runtime and Arrow
+  data plane, split optional client operations into explicit capabilities, and
+  define a no-shim five-catalog workflow whose evidence distinguishes pass,
+  fail, client/catalog unsupported, and dependency-not-evaluated outcomes.
+
 - LakeCat canonical provenance repair: repin every current-profile and
   conformance milestone to its reachable commit after a privacy-only history
   rewrite. Verified `Cargo.toml`, `Cargo.lock`, and the complete `crates/` tree

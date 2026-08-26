@@ -341,6 +341,30 @@
       }
     },
     {
+      "id": "cpython",
+      "kind": "other",
+      "name": "CPython",
+      "version": "3.13.15",
+      "source": {
+        "repository": "https://github.com/python/cpython.git",
+        "revision": "4061bc4c35f7c26f25264666d4ba083b93d2f6f9",
+        "tag": "v3.13.15"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "python:3.13.15-slim-bookworm",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "c45a22ea000adfd9cda29364bbe7edd23001ce5cc2ad15857cfbf7766943b9ca"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "e424b523c9296fdef9d2533c368facee1dc45be4c1f8e1555f90c4feac439594"
+        }
+      }
+    },
+    {
       "id": "pyiceberg",
       "kind": "client",
       "name": "PyIceberg",
@@ -363,6 +387,31 @@
       "extensions": {
         "querygraph/package-file": "pyiceberg-0.11.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl",
         "querygraph/package-bytes": 722202
+      }
+    },
+    {
+      "id": "pyarrow",
+      "kind": "client",
+      "name": "Apache Arrow Python",
+      "version": "25.0.1",
+      "source": {
+        "repository": "https://github.com/apache/arrow.git",
+        "revision": "beccec0d0c451b7aa3e4530416ac431b3c035c69",
+        "tag": "apache-arrow-25.0.1"
+      },
+      "artifact": {
+        "kind": "package",
+        "ecosystem": "PyPI wheel for CPython 3.13 Linux ARM64",
+        "package": "pyarrow",
+        "version": "25.0.1",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "44a9120ce5bd81936b8ab9a88076e3fd47c2c6838e0e43630fed83626aca81d9"
+        }
+      },
+      "extensions": {
+        "querygraph/package-file": "pyarrow-25.0.1-cp313-cp313-manylinux_2_28_aarch64.whl",
+        "querygraph/package-bytes": 46813813
       }
     },
     {
@@ -577,8 +626,16 @@
       }
     },
     {
+      "component": "cpython",
+      "role": "stock-client-runtime"
+    },
+    {
       "component": "pyiceberg",
       "role": "stock-client"
+    },
+    {
+      "component": "pyarrow",
+      "role": "stock-client-data-plane"
     },
     {
       "component": "iceberg-java",
@@ -734,6 +791,42 @@
     {
       "id": "client.pyiceberg.round-trip",
       "description": "Run the largest common no-shim PyIceberg create, append, load, scan, and cleanup workflow."
+    },
+    {
+      "id": "client.pyiceberg.property-update",
+      "description": "Update and remove table properties through the stock PyIceberg transaction API."
+    },
+    {
+      "id": "client.pyiceberg.schema-evolution",
+      "description": "Add an optional column through stock PyIceberg and append data under the evolved schema."
+    },
+    {
+      "id": "client.pyiceberg.row-delete",
+      "description": "Delete selected rows through stock PyIceberg and verify the rewritten table contents."
+    },
+    {
+      "id": "client.pyiceberg.table-register",
+      "description": "Register retained Iceberg metadata through the stock PyIceberg REST catalog API."
+    },
+    {
+      "id": "client.pyiceberg.table-rename",
+      "description": "Rename a table through the stock PyIceberg REST catalog API."
+    },
+    {
+      "id": "client.pyiceberg.conflict-recovery",
+      "description": "Observe a stale snapshot conflict and complete a refresh-and-retry through stock PyIceberg."
+    },
+    {
+      "id": "client.pyiceberg.credential-vending",
+      "description": "Request delegated access and prove whether returned table credentials drive object-store I/O."
+    },
+    {
+      "id": "client.pyiceberg.view-lifecycle",
+      "description": "Create, load, list, and drop a view through stock PyIceberg when the pinned client exposes that lifecycle."
+    },
+    {
+      "id": "client.pyiceberg.pagination",
+      "description": "Traverse namespace and table page tokens through stock PyIceberg when the pinned client exposes pagination controls."
     },
     {
       "id": "iceberg-rest.concurrency.same-table-contention",
