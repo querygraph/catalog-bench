@@ -205,13 +205,39 @@ docker compose --profile conformance run --rm conformance table \
   --output /evidence/lakecat-table.json
 ```
 
+Run deterministic commit correctness with another fresh fixture ID:
+
+```sh
+docker compose --profile conformance run --rm conformance commit \
+  --profile /contracts/profiles/v1/current-2026-08-26.json \
+  --scenario /contracts/scenarios/v1/iceberg-rest.commit.correctness.json \
+  --catalog lakecat \
+  --fixture-id review_lakecat_commit_01 \
+  --output /evidence/lakecat-commit.json
+```
+
+The required branch admits matching UUID/schema requirements, advances to
+schema 1, submits a deterministically stale schema-0 requirement, and proves the
+HTTP 409 leaves the metadata pointer, schema, and complete property map
+unchanged. It verifies that required final state before any optional mutation.
+The optional branch runs only when config advertises a nonempty standard
+`idempotency-key-lifetime`; otherwise no `Idempotency-Key` header is sent and
+the three idempotency assertions are explicitly `not-evaluated`. Advertised
+catalogs receive one UUIDv7 key for an exact byte-identical replay and a
+same-key content-drift attempt. The raw key can cross the HTTP boundary but is
+redacted from request, response, failure, and serialized transcript evidence.
+
 Fixture IDs use a conservative cross-catalog grammar. The runner derives
 run-owned namespace and table names, rejects collisions before mutation, and
 performs dependency-ordered cleanup plus post-drop verification after both
 passing and failing assertions. Table cleanup reconciles the source, rename
 destination, dropped sibling, and registration destination with
-`purgeRequested=false` before dropping the fixture namespace. The exact
-optimized five-catalog C1-04 namespace matrix is documented in
+`purgeRequested=false` before dropping the fixture namespace. The commit
+runner similarly reconciles its one table without purge and proves both
+table and namespace absent. A failed preflight is the only path that forbids
+cleanup mutation, preventing a colliding pre-existing fixture from being
+deleted. The exact optimized five-catalog C1-04 namespace matrix is documented
+in
 [`docs/NAMESPACE-CONFORMANCE.md`](docs/NAMESPACE-CONFORMANCE.md); the C1-05
 table matrix, shared-MinIO object audit, and rejected-run analysis are in
 [`docs/TABLE-CONFORMANCE.md`](docs/TABLE-CONFORMANCE.md).

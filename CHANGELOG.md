@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- C1-06 operator guidance: document the optimized Docker invocation for commit
+  correctness, its deterministic required branch, config-gated optional UUIDv7
+  replay checks, collision and cleanup guarantees, and the distinction between
+  mutable smoke transcripts and publishable result bundles.
+
 - Catalog community C1-06 runner: implement a strict Iceberg REST commit
   correctness probe with matching requirement admission, a deterministic stale
   schema conflict and atomicity proof, config-gated UUIDv7 exact replay and

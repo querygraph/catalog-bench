@@ -72,14 +72,18 @@ versioned scenarios.
 The executable behavioral scenarios now cover
 [`iceberg-rest.config.negotiation`](scenarios/v1/iceberg-rest.config.negotiation.json),
 [`iceberg-rest.namespace.behavior`](scenarios/v1/iceberg-rest.namespace.behavior.json),
+[`iceberg-rest.table.behavior`](scenarios/v1/iceberg-rest.table.behavior.json),
 and
-[`iceberg-rest.table.behavior`](scenarios/v1/iceberg-rest.table.behavior.json).
+[`iceberg-rest.commit.correctness`](scenarios/v1/iceberg-rest.commit.correctness.json).
 Their typed runners negotiate anonymous or OAuth2 client-credentials access,
 validate config and prefix resolution, then exercise isolated namespace and
 table lifecycles with hierarchy, immutable metadata updates, errors, pagination,
-optional standard operations, and guaranteed cleanup. Every runner writes a
-sanitized transcript even when a required assertion fails. Run them inside the
-Compose network; [DOCKER.md](DOCKER.md)
+optional standard operations, commit requirements, deterministic stale-state
+rejection, config-gated UUIDv7 replay safety, and guaranteed cleanup. The
+commit-correctness scenario is distinct from the throughput benchmark below:
+it proves one transition at a time and never interprets conflict rate as
+correctness. Every runner writes a sanitized transcript even when a required
+assertion fails. Run them inside the Compose network; [DOCKER.md](DOCKER.md)
 contains the exact commands and explains why files under `target/` are smoke
 evidence rather than publishable result records. The optimized five-catalog
 outcomes are recorded in
