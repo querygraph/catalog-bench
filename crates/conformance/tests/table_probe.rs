@@ -57,6 +57,14 @@ async fn anonymous_probe_covers_full_table_lifecycle_and_cleanup() {
     assert!(requests[3].target.ends_with("/tables"));
     assert_eq!(request_json(&requests[3])["name"], "primary");
     assert_eq!(
+        request_json(&requests[3])["location"],
+        table_location(&names, "primary")
+    );
+    assert_eq!(
+        request_json(&requests[4])["location"],
+        table_location(&names, "sibling")
+    );
+    assert_eq!(
         request_json(&requests[3])["schema"]["fields"][0],
         json!({"id": 1, "name": "value", "required": false, "type": "long"})
     );
@@ -86,11 +94,33 @@ async fn anonymous_probe_covers_full_table_lifecycle_and_cleanup() {
 }
 
 #[tokio::test]
+async fn create_omits_location_when_the_adapter_selects_its_catalog_default() {
+    let names = FixtureNames::new("lakecat", FIXTURE_ID);
+    let server = MockServer::start(happy_responses(&names));
+    let (mut profile, scenario) = contracts();
+    let adapter = adapter_mut(&mut profile, "lakecat");
+    adapter.endpoint.base_url = format!("{}/catalog", server.url());
+    adapter.endpoint.create_table_location = None;
+
+    let transcript = probe(&profile, &scenario, "lakecat", FIXTURE_ID, |_| None).await;
+
+    assert!(transcript.passed());
+    let requests = server.finish();
+    for index in [3, 4, 12] {
+        assert!(request_json(&requests[index]).get("location").is_none());
+    }
+}
+
+#[tokio::test]
 async fn optional_rename_and_register_failures_remain_visible_without_failing_required_behavior() {
     let names = FixtureNames::new("lakecat", FIXTURE_ID);
     let mut responses = happy_responses(&names);
     responses[15] = error_response(406, "UnsupportedOperationException");
-    responses[16] = updated_table_response(primary_updated_location(), "primary-uuid");
+    responses[16] = updated_table_response(
+        primary_updated_location(),
+        &table_location(&names, "primary"),
+        "primary-uuid",
+    );
     responses[17] = error_response(404, "NoSuchTableException");
     responses[20] = error_response(406, "UnsupportedOperationException");
     responses[21] = error_response(404, "NoSuchTableException");
@@ -287,8 +317,16 @@ async fn unpaginated_fallback_is_explicit_and_permitted() {
 async fn metadata_location_must_advance_and_cleanup_still_runs() {
     let names = FixtureNames::new("lakecat", FIXTURE_ID);
     let mut responses = happy_responses(&names);
-    responses[10] = updated_table_response(primary_location(), "primary-uuid");
-    responses[11] = updated_table_response(primary_location(), "primary-uuid");
+    responses[10] = updated_table_response(
+        primary_location(),
+        &table_location(&names, "primary"),
+        "primary-uuid",
+    );
+    responses[11] = updated_table_response(
+        primary_location(),
+        &table_location(&names, "primary"),
+        "primary-uuid",
+    );
     responses.drain(15..18);
     responses[19] = MockResponse::empty(204);
     responses[20] = error_response(404, "NoSuchTableException");
@@ -312,6 +350,57 @@ async fn metadata_location_must_advance_and_cleanup_still_runs() {
         AssertionOutcome::Pass
     ));
     assert_eq!(server.finish().len(), 29);
+}
+
+#[tokio::test]
+async fn requested_table_location_must_be_preserved_and_cleanup_still_runs() {
+    let names = FixtureNames::new("lakecat", FIXTURE_ID);
+    let server = MockServer::start(vec![
+        config_response(),
+        error_response(404, "NoSuchNamespaceException"),
+        namespace_response(&names.namespace),
+        initial_table_response(
+            primary_location(),
+            "s3://warehouse/not-the-requested-location",
+            "primary-uuid",
+        ),
+        initial_table_response(
+            sibling_location(),
+            &table_location(&names, "sibling"),
+            "sibling-uuid",
+        ),
+        initial_table_response(
+            sibling_location(),
+            &table_location(&names, "sibling"),
+            "sibling-uuid",
+        ),
+        error_response(404, "NoSuchTableException"),
+        error_response(404, "NoSuchNamespaceException"),
+        MockResponse::empty(204),
+        error_response(404, "NoSuchTableException"),
+        MockResponse::empty(204),
+        error_response(404, "NoSuchTableException"),
+        error_response(404, "NoSuchTableException"),
+        error_response(404, "NoSuchTableException"),
+        error_response(404, "NoSuchTableException"),
+        error_response(404, "NoSuchTableException"),
+        MockResponse::empty(204),
+        error_response(404, "NoSuchNamespaceException"),
+    ]);
+    let (mut profile, scenario) = contracts();
+    adapter_mut(&mut profile, "lakecat").endpoint.base_url = format!("{}/catalog", server.url());
+
+    let transcript = probe(&profile, &scenario, "lakecat", FIXTURE_ID, |_| None).await;
+
+    assert!(matches!(
+        assertion(&transcript, "table-create-round-trip").outcome,
+        AssertionOutcome::Fail { ref explanation }
+            if explanation.contains("does not preserve requested table location")
+    ));
+    assert!(matches!(
+        assertion(&transcript, "table-fixture-clean").outcome,
+        AssertionOutcome::Pass
+    ));
 }
 
 #[tokio::test]
@@ -638,31 +727,67 @@ fn happy_responses(names: &FixtureNames) -> Vec<MockResponse> {
         config_response(),
         error_response(404, "NoSuchNamespaceException"),
         namespace_response(&names.namespace),
-        initial_table_response(primary_location(), "primary-uuid"),
-        initial_table_response(sibling_location(), "sibling-uuid"),
+        initial_table_response(
+            primary_location(),
+            &table_location(names, "primary"),
+            "primary-uuid",
+        ),
+        initial_table_response(
+            sibling_location(),
+            &table_location(names, "sibling"),
+            "sibling-uuid",
+        ),
         list_response(
             vec![names.identifier("primary"), names.identifier("sibling")],
             None,
         ),
-        initial_table_response(primary_location(), "primary-uuid"),
-        initial_table_response(sibling_location(), "sibling-uuid"),
+        initial_table_response(
+            primary_location(),
+            &table_location(names, "primary"),
+            "primary-uuid",
+        ),
+        initial_table_response(
+            sibling_location(),
+            &table_location(names, "sibling"),
+            "sibling-uuid",
+        ),
         list_response(
             vec![names.identifier("primary")],
             Some("page-two-secret-token"),
         ),
         list_response(vec![names.identifier("sibling")], None),
-        updated_table_response(primary_updated_location(), "primary-uuid"),
-        updated_table_response(primary_updated_location(), "primary-uuid"),
+        updated_table_response(
+            primary_updated_location(),
+            &table_location(names, "primary"),
+            "primary-uuid",
+        ),
+        updated_table_response(
+            primary_updated_location(),
+            &table_location(names, "primary"),
+            "primary-uuid",
+        ),
         error_response(409, "AlreadyExistsException"),
         error_response(404, "NoSuchTableException"),
         error_response(404, "NoSuchNamespaceException"),
         MockResponse::empty(204),
         error_response(404, "NoSuchTableException"),
-        updated_table_response(primary_updated_location(), "primary-uuid"),
+        updated_table_response(
+            primary_updated_location(),
+            &table_location(names, "primary"),
+            "primary-uuid",
+        ),
         MockResponse::empty(204),
         error_response(404, "NoSuchTableException"),
-        initial_table_response(sibling_location(), "sibling-uuid"),
-        initial_table_response(sibling_location(), "sibling-uuid"),
+        initial_table_response(
+            sibling_location(),
+            &table_location(names, "sibling"),
+            "sibling-uuid",
+        ),
+        initial_table_response(
+            sibling_location(),
+            &table_location(names, "sibling"),
+            "sibling-uuid",
+        ),
         error_response(404, "NoSuchTableException"),
         MockResponse::empty(204),
         error_response(404, "NoSuchTableException"),
@@ -690,9 +815,14 @@ fn namespace_response(namespace: &str) -> MockResponse {
     }))
 }
 
-fn initial_table_response(location: &str, uuid: &str) -> MockResponse {
+fn initial_table_response(
+    metadata_location: &str,
+    table_location: &str,
+    uuid: &str,
+) -> MockResponse {
     table_response(
-        location,
+        metadata_location,
+        table_location,
         uuid,
         json!({
             "catalog-bench.owner": "catalog-bench",
@@ -702,9 +832,14 @@ fn initial_table_response(location: &str, uuid: &str) -> MockResponse {
     )
 }
 
-fn updated_table_response(location: &str, uuid: &str) -> MockResponse {
+fn updated_table_response(
+    metadata_location: &str,
+    table_location: &str,
+    uuid: &str,
+) -> MockResponse {
     table_response(
-        location,
+        metadata_location,
+        table_location,
         uuid,
         json!({
             "catalog-bench.owner": "catalog-bench",
@@ -713,13 +848,18 @@ fn updated_table_response(location: &str, uuid: &str) -> MockResponse {
     )
 }
 
-fn table_response(location: &str, uuid: &str, properties: Value) -> MockResponse {
+fn table_response(
+    metadata_location: &str,
+    table_location: &str,
+    uuid: &str,
+    properties: Value,
+) -> MockResponse {
     MockResponse::json(json!({
-        "metadata-location": location,
+        "metadata-location": metadata_location,
         "metadata": {
             "format-version": 2,
             "table-uuid": uuid,
-            "location": "s3://warehouse/test",
+            "location": table_location,
             "current-schema-id": 0,
             "schemas": [{
                 "type": "struct",
@@ -765,4 +905,8 @@ fn primary_updated_location() -> &'static str {
 
 fn sibling_location() -> &'static str {
     "s3://warehouse/sibling/metadata/00000.json"
+}
+
+fn table_location(names: &FixtureNames, table: &str) -> String {
+    format!("s3://warehouse/lakecat/{}/{table}", names.namespace)
 }

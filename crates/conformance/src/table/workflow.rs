@@ -1,6 +1,6 @@
 use std::collections::{BTreeMap, BTreeSet};
 
-use anyhow::Result;
+use anyhow::{anyhow, Context, Result};
 use reqwest::Method;
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -28,10 +28,46 @@ const OWNER_PROPERTY: &str = "catalog-bench.owner";
 const REMOVE_PROPERTY: &str = "c1-05.remove";
 const STATE_PROPERTY: &str = "c1-05.state";
 
+pub(super) struct TableCreateLocations(Option<Url>);
+
+impl TableCreateLocations {
+    pub(super) fn new(root: Option<&str>) -> Result<Self> {
+        let root = root
+            .map(Url::parse)
+            .transpose()
+            .context("parse adapter create-table location root")?;
+        if root.as_ref().is_some_and(Url::cannot_be_a_base) {
+            return Err(anyhow!(
+                "adapter create-table location root cannot contain child table locations"
+            ));
+        }
+        Ok(Self(root))
+    }
+
+    fn for_table(&self, identifier: &TableIdentifier) -> Result<Option<String>> {
+        let Some(root) = &self.0 else {
+            return Ok(None);
+        };
+        let mut location = root.clone();
+        {
+            let mut segments = location.path_segments_mut().map_err(|()| {
+                anyhow!("adapter create-table location root cannot contain path segments")
+            })?;
+            segments.pop_if_empty();
+            for part in identifier.namespace.parts() {
+                segments.push(part);
+            }
+            segments.push(&identifier.name);
+        }
+        Ok(Some(location.to_string()))
+    }
+}
+
 pub(super) async fn execute_table_workflow(
     recorder: &mut OperationRecorder<'_>,
     routes: &CatalogRoutes,
     fixture: &TableFixture,
+    create_locations: &TableCreateLocations,
     optional_operations: &OptionalTableOperations,
     facts: &mut TableFacts,
 ) -> Result<TablePaginationTranscript> {
@@ -91,10 +127,30 @@ pub(super) async fn execute_table_workflow(
         });
     }
 
-    let primary_create = create_table(recorder, routes, &fixture.primary, "create-primary").await?;
-    let sibling_create = create_table(recorder, routes, &fixture.sibling, "create-sibling").await?;
-    let primary_snapshot = validate_initial_snapshot(&primary_create);
-    let sibling_snapshot = validate_initial_snapshot(&sibling_create);
+    let primary_create = create_table(
+        recorder,
+        routes,
+        create_locations,
+        &fixture.primary,
+        "create-primary",
+    )
+    .await?;
+    let sibling_create = create_table(
+        recorder,
+        routes,
+        create_locations,
+        &fixture.sibling,
+        "create-sibling",
+    )
+    .await?;
+    let primary_snapshot = validate_initial_snapshot(
+        &primary_create.observation,
+        primary_create.requested_location.as_deref(),
+    );
+    let sibling_snapshot = validate_initial_snapshot(
+        &sibling_create.observation,
+        sibling_create.requested_location.as_deref(),
+    );
     let both_created = primary_snapshot.is_ok() && sibling_snapshot.is_ok();
     let create_result = all_results([&primary_snapshot, &sibling_snapshot]).and_then(|()| {
         if primary_snapshot.as_ref().expect("validated above").uuid
@@ -221,12 +277,13 @@ pub(super) async fn execute_table_workflow(
         let duplicate = create_table(
             recorder,
             routes,
+            create_locations,
             &fixture.primary,
             "create-primary-duplicate",
         )
         .await?;
         facts.duplicate = Fact::from_result(validate_error_response(
-            &duplicate,
+            &duplicate.observation,
             409,
             "AlreadyExistsException",
         ));
@@ -317,22 +374,31 @@ pub(super) async fn execute_table_workflow(
 async fn create_table(
     recorder: &mut OperationRecorder<'_>,
     routes: &CatalogRoutes,
+    create_locations: &TableCreateLocations,
     identifier: &TableIdentifier,
     operation_id: &str,
-) -> Result<Observation> {
-    Ok(recorder
+) -> Result<CreateTableAttempt> {
+    let requested_location = create_locations.for_table(identifier)?;
+    let observation = recorder
         .attempt(
             operation_id,
             Some(CREATE_CAPABILITY),
             Method::POST,
             routes.table_collection(&identifier.namespace)?,
-            Some(create_table_request(&identifier.name)),
+            Some(create_table_request(
+                &identifier.name,
+                requested_location.as_deref(),
+            )),
         )
-        .await)
+        .await;
+    Ok(CreateTableAttempt {
+        observation,
+        requested_location,
+    })
 }
 
-fn create_table_request(name: &str) -> Value {
-    json!({
+fn create_table_request(name: &str, location: Option<&str>) -> Value {
+    let mut request = json!({
         "name": name,
         "schema": {
             "type": "struct",
@@ -347,7 +413,11 @@ fn create_table_request(name: &str) -> Value {
             (REMOVE_PROPERTY): "before",
             (STATE_PROPERTY): "before"
         }
-    })
+    });
+    if let Some(location) = location {
+        request["location"] = Value::String(location.to_owned());
+    }
+    request
 }
 
 async fn load_created_table(
@@ -703,8 +773,17 @@ fn validate_namespace_response(
 
 fn validate_initial_snapshot(
     observation: &Observation,
+    requested_location: Option<&str>,
 ) -> std::result::Result<TableSnapshot, String> {
     let snapshot = parse_snapshot(observation, 200)?;
+    if let Some(requested_location) = requested_location {
+        if snapshot.location != requested_location {
+            return Err(format!(
+                "created table location `{}` does not preserve requested table location `{requested_location}`",
+                snapshot.location
+            ));
+        }
+    }
     for (key, expected) in [
         (OWNER_PROPERTY, "catalog-bench"),
         (REMOVE_PROPERTY, "before"),
@@ -773,6 +852,12 @@ fn validate_same_snapshot(
             actual.metadata_location, expected.metadata_location
         ));
     }
+    if actual.location != expected.location {
+        return Err(format!(
+            "table location `{}` does not match `{}`",
+            actual.location, expected.location
+        ));
+    }
     if actual.schema != expected.schema {
         return Err("current table schema changed unexpectedly".to_owned());
     }
@@ -799,10 +884,14 @@ fn parse_snapshot(
     if response.metadata.table_uuid.trim().is_empty() {
         return Err("table metadata returned an empty table-uuid".to_owned());
     }
+    if response.metadata.location.trim().is_empty() {
+        return Err("table metadata returned an empty location".to_owned());
+    }
     let schema = current_schema(&response.metadata)?;
     validate_requested_schema(&schema)?;
     Ok(TableSnapshot {
         metadata_location,
+        location: response.metadata.location,
         uuid: response.metadata.table_uuid,
         schema,
         properties: response.metadata.properties,
@@ -968,6 +1057,7 @@ struct TableMetadata {
     format_version: u8,
     #[serde(rename = "table-uuid")]
     table_uuid: String,
+    location: String,
     #[serde(default)]
     properties: BTreeMap<String, String>,
     #[serde(default)]
@@ -996,9 +1086,15 @@ struct TableField {
 #[derive(Clone)]
 struct TableSnapshot {
     metadata_location: String,
+    location: String,
     uuid: String,
     schema: TableSchema,
     properties: BTreeMap<String, String>,
+}
+
+struct CreateTableAttempt {
+    observation: Observation,
+    requested_location: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

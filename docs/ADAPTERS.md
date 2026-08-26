@@ -48,6 +48,13 @@ result record.
 These are container-network addresses. Host port mappings are diagnostic access,
 not benchmark adapter endpoints.
 
+For the table-behavior scenario, an explicit standard create location is a
+fixture root, not one shared table path. The runner appends the run-owned
+namespace and table name as URI path segments, sends that unique child in every
+`createTable` request (including the duplicate probe), and requires returned
+Iceberg metadata to preserve it. A catalog-managed binding omits `location` and
+therefore tests the catalog's configured default without inventing a substitute.
+
 OAuth2 adapters name two portable environment variables rather than carrying
 credential values in the profile. The current Polaris binding uses
 `CATALOG_BENCH_POLARIS_CLIENT_ID` and

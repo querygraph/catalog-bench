@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C1-05 shared-storage correction: the table runner now consumes an adapter's
+  validated `create_table_location` as a fixture root, derives unique
+  namespace/table child locations, sends them on every create attempt, and
+  verifies the catalog preserves each requested table location. Adapters without
+  an explicit root continue to exercise their configured catalog default.
+
 - C1-05 LakeCat provenance pin: advanced the draft profile and current-profile
   report to the exact pushed table-lifecycle implementation
   `lakecat@762527c7` (`v0.3.0-31-g762527c7`). The pin includes register and

@@ -155,6 +155,10 @@ missing-table candidates. The runner validates requested schema and properties,
 nonempty immutable metadata locations, stable distinct table UUIDs, exact
 isolated listings, bounded pagination, an update-and-reload metadata transition,
 duplicate/missing-table/missing-namespace error envelopes, and non-purging drop.
+When the adapter declares a `create_table_location`, the runner derives unique
+namespace/table children, sends those standard `location` values, and also
+requires the returned metadata's table location to match. Without that field it
+deliberately omits `location` and exercises the catalog-managed default.
 
 Same-namespace rename and metadata registration are standard optional
 assertions. An attempted protocol failure remains a visible optional `fail`; a

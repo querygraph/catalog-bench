@@ -158,6 +158,9 @@ where
                 )
             }),
     };
+    let create_locations = workflow::TableCreateLocations::new(
+        target.adapter.endpoint.create_table_location.as_deref(),
+    )?;
 
     let client = http_client(REQUEST_TIMEOUT_MS)?;
     let routing = negotiate_routing(&client, target.adapter, &getenv).await?;
@@ -181,6 +184,7 @@ where
                 &mut recorder,
                 &routes,
                 &fixture,
+                &create_locations,
                 &optional_operations,
                 &mut facts,
             )
