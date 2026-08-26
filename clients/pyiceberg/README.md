@@ -65,8 +65,10 @@ fixed explanations, exception classes, counts, ID ranges, and canonical SHA-256
 digests. They never contain raw rows, response bodies, exception messages,
 OAuth tokens, object-store keys, or credential values. Before serialization,
 the evidence builder recursively rejects any configured secret even when it is
-embedded inside a larger string. Output uses exclusive creation and refuses to
-overwrite an existing transcript.
+embedded inside a larger evidence value, and rejects it as an exact map key.
+The key comparison avoids false positives when deliberately simple fixture
+values such as `secret` occur inside safe schema field names. Output uses
+exclusive creation and refuses to overwrite an existing transcript.
 
 Use a fresh lowercase fixture ID and output path for every invocation. A
 preflight collision proves ownership unsafe, suppresses all mutation and

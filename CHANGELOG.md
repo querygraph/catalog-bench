@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C1-07 live-smoke corrections: construct Arrow batches with the scenario's
+  required `id` nullability instead of relying on nullable inference, and make
+  embedded-secret rejection inspect evidence values while comparing map keys
+  exactly so short fixture credentials cannot collide with safe schema field
+  names. Added regressions for both representation boundaries.
+
 - Catalog community C1-07 reproducible client image: build CPython 3.13.15 from
   the profile's Linux ARM64 child manifest, install all 27 PyIceberg/PyArrow
   distributions from exact wheel hashes, and run the stock-client oracle as an

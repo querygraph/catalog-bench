@@ -29,15 +29,8 @@ class EvidenceTests(unittest.TestCase):
 
     def test_secret_fragment_embedded_in_an_observation_is_rejected(self) -> None:
         contracts = load_contracts(PROFILE, SCENARIO, "lakecat")
-        operations = tuple(
-            OperationResult.passed(
-                step,
-                capability,
-                {"unsafe": "prefix-sensitive-value-suffix"}
-                if step == "verify-client-runtime"
-                else None,
-            )
-            for step, capability in STEP_CAPABILITIES.items()
+        operations = self._passing_operations(
+            {"unsafe": "prefix-sensitive-value-suffix"}
         )
         runtime = RuntimeIdentity("3.13.15", "0.11.1", "25.0.1", "Linux", "aarch64")
         fixture = FixtureIdentity("unit", ("unit",), ("events",))
@@ -50,6 +43,31 @@ class EvidenceTests(unittest.TestCase):
                 operations,
                 forbidden_values=("sensitive-value",),
             )
+
+    def test_short_secret_does_not_match_safe_evidence_field_names(self) -> None:
+        contracts = load_contracts(PROFILE, SCENARIO, "polaris")
+        transcript = build_transcript(
+            contracts,
+            RuntimeIdentity("3.13.15", "0.11.1", "25.0.1", "Linux", "aarch64"),
+            FixtureIdentity("unit", ("unit",), ("events",)),
+            self._passing_operations(),
+            forbidden_values=("secret",),
+        )
+
+        self.assertFalse(transcript["sanitization"]["raw_secrets_persisted"])
+
+    @staticmethod
+    def _passing_operations(
+        first_observation: dict[str, str] | None = None,
+    ) -> tuple[OperationResult, ...]:
+        return tuple(
+            OperationResult.passed(
+                step,
+                capability,
+                first_observation if step == "verify-client-runtime" else None,
+            )
+            for step, capability in STEP_CAPABILITIES.items()
+        )
 
 
 if __name__ == "__main__":

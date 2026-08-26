@@ -859,14 +859,18 @@ def _batch(table: Any, start: int, count: int) -> tuple[list[dict[str, Any]], An
         }
         for row_id in range(start, start + count)
     ]
-    columns: dict[str, Any] = {
-        "id": pa.array([row["id"] for row in rows], type=pa.int64()),
-        "category": pa.array([row["category"] for row in rows], type=pa.string()),
-        "amount": pa.array([row["amount"] for row in rows], type=pa.float64()),
-    }
+    fields = [
+        pa.field("id", pa.int64(), nullable=False),
+        pa.field("category", pa.string(), nullable=True),
+        pa.field("amount", pa.float64(), nullable=True),
+    ]
     if has_note:
-        columns["note"] = pa.array([row["note"] for row in rows], type=pa.string())
-    return rows, pa.table(columns)
+        fields.append(pa.field("note", pa.string(), nullable=True))
+    schema = pa.schema(fields)
+    arrays = [
+        pa.array([row[field.name] for row in rows], type=field.type) for field in fields
+    ]
+    return rows, pa.Table.from_arrays(arrays, schema=schema)
 
 
 def _assert_rows(table: Any, expected: list[dict[str, Any]]) -> dict[str, Any]:

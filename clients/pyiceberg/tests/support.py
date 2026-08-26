@@ -124,6 +124,7 @@ class FakeTable:
         return FakeScan(self.state)
 
     def append(self, batch: pa.Table) -> None:
+        assert batch.schema.field("id").nullable is False
         if self.loaded_generation != self.state.generation:
             raise CommitFailedException("stale test handle")
         self.state.rows.extend(batch.to_pylist())

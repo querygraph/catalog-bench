@@ -139,8 +139,7 @@ def _contains_string_fragment(value: Any, forbidden: str) -> bool:
         return forbidden in value
     if isinstance(value, Mapping):
         return any(
-            _contains_string_fragment(key, forbidden)
-            or _contains_string_fragment(item, forbidden)
+            key == forbidden or _contains_string_fragment(item, forbidden)
             for key, item in value.items()
         )
     if isinstance(value, (list, tuple)):
