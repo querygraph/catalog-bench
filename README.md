@@ -145,12 +145,15 @@ the **same storage**. The harness is built around that:
 
 ## Docker setup for impartial runs with MinIO
 
-Everything shares one **external** Docker network and one **MinIO**, so the
-catalogs and the benchmark resolve each other by service name and write to the same
-bucket.
+The Phase 1 topology is now owned completely by this repository. Compose creates
+`catalog-bench-net`, source-builds the pinned MinIO release, initializes the
+shared `warehouse` bucket, and gives each catalog isolated private state. It no
+longer relies on `~/src/boat`, an external Docker network, a host MinIO, or the
+mutable `minio/mc` image. See [DOCKER.md](DOCKER.md) for the canonical topology,
+exact provenance, readiness chain, and commands.
 
 ```
-                       iceberg_lakehouse-net  (external docker network)
+                          catalog-bench-net  (Compose-owned network)
    ┌───────────┐   ┌──────────┐   ┌───────────┐   ┌──────────┐   ┌──────────────┐
    │  lakecat  │   │  nessie  │   │ gravitino │   │ polaris  │   │ catalog-     │
    │  :8181    │   │  :19120  │   │  :9001    │   │  :8181   │   │ bench-commit │
@@ -161,140 +164,46 @@ bucket.
                               └──────────────┘
 ```
 
-### 1. Create the shared network
+### 1. Validate and create the shared infrastructure
 
 ```sh
-docker network create iceberg_lakehouse-net
+docker compose --profile lakekeeper config --quiet
+docker compose --profile lakekeeper build minio
 ```
 
-### 2. Bring up MinIO + the comparison catalogs
+### 2. Bring up MinIO + Lakekeeper
 
-The comparison catalogs (MinIO, Nessie, Gravitino, Polaris) come from the sibling
-`boat` stack. Every service joins `iceberg_lakehouse-net` and is configured to use
-`s3://warehouse/` on MinIO — same credentials (`admin`/`password`), path-style
-access, region `us-east-1`, endpoint `http://minio:9000`. For example, Nessie:
-
-```yaml
-NESSIE_CATALOG_DEFAULT_WAREHOUSE: warehouse
-NESSIE_CATALOG_WAREHOUSES_WAREHOUSE_LOCATION: s3://warehouse/
-NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_ENDPOINT: http://minio:9000
-```
+The first Phase 1 catalog is Lakekeeper 0.13.3 with PostgreSQL 17.11. All services
+join the owned network and use `s3://warehouse` on the owned MinIO. Lakekeeper
+has a dedicated PostgreSQL role, database, and volume; its migration, process
+health, management bootstrap, and warehouse creation are separate readiness
+gates.
 
 Bring them up and create the bucket:
 
 ```sh
-cd ~/src/boat && docker compose up -d minio nessie gravitino polaris
-#   (polaris is auto-bootstrapped by polaris-bootstrap.sh — see step 4)
-docker run --rm --network iceberg_lakehouse-net --entrypoint sh minio/mc -c \
-  "mc alias set m http://minio:9000 admin password && mc mb -p m/warehouse"
+docker compose --profile lakekeeper up --detach lakekeeper-ready
+lakekeeper_ready_id="$(docker compose --profile lakekeeper ps \
+  --all --quiet lakekeeper-ready)"
+test "$(docker wait "$lakekeeper_ready_id")" = 0
 ```
 
-### 3. The benchmark's own compose (LakeCat + the driver)
+### 3. Add LakeCat or another catalog profile
 
-This repo's `docker-compose.yml` runs LakeCat — built from source into a Linux
-image — on the same network, with its `object_store` pointed at the same MinIO. The
-LakeCat `environment` block (`AWS_ENDPOINT: http://minio:9000`, `admin`/`password`)
-is what makes its `metadata.json` writes hit the shared bucket:
+`docker-compose.yml` also runs LakeCat and optional Nessie, Polaris, and Gravitino
+profiles on the same owned network. The checked-in Compose file—not a copied
+excerpt—is the authority while C1-02 validates every current adapter. For local
+diagnostics, start only the profile under inspection:
 
-```yaml
-services:
-  # LakeCat: joins the shared network and points its object_store at the same
-  # MinIO the other catalogs use, so its Iceberg metadata.json writes hit S3 too.
-  # Turso stays LakeCat's local catalog-state store (the analogue of the others'
-  # metastores). Create tables with --location s3://warehouse/lakecat.
-  lakecat:
-    build:
-      context: ./docker/lakecat
-    image: lakecat-service:bench
-    networks: [lakehouse-net]
-    ports: ["8181:8181"]
-    environment:
-      LAKECAT_BIND_ADDR: 0.0.0.0:8181
-      LAKECAT_WAREHOUSE: local
-      LAKECAT_TURSO_PATH: /data/lakecat.db
-      AWS_ACCESS_KEY_ID: admin
-      AWS_SECRET_ACCESS_KEY: password
-      AWS_REGION: us-east-1
-      AWS_ENDPOINT: http://minio:9000
-      AWS_ALLOW_HTTP: "true"
-    volumes:
-      - lakecat-data:/data
-
-  # Comparison catalogs are usually run from ~/src/boat, but are also available
-  # here behind profiles for a self-contained stack:
-  nessie:                       # docker compose --profile nessie up -d nessie
-    image: ghcr.io/projectnessie/nessie:0.108.4-java
-    networks: [lakehouse-net]
-    ports: ["19120:19120"]
-    profiles: ["nessie"]
-    environment:
-      NESSIE_CATALOG_DEFAULT_WAREHOUSE: warehouse
-      NESSIE_CATALOG_WAREHOUSES_WAREHOUSE_LOCATION: s3://warehouse/
-      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_AUTH_TYPE: STATIC
-      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_ACCESS_KEY: urn:nessie-secret:quarkus:s3creds
-      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_ENDPOINT: http://minio:9000
-      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_EXTERNAL_ENDPOINT: http://127.0.0.1:9000
-      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_REGION: us-east-1
-      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_PATH_STYLE_ACCESS: "true"
-      S3CREDS_NAME: admin
-      S3CREDS_SECRET: password
-  polaris:                       # docker compose --profile polaris up -d polaris
-    image: apache/polaris:1.5.0
-    networks: [lakehouse-net]
-    ports: ["8185:8181"]
-    profiles: ["polaris"]
-    environment:
-      POLARIS_BOOTSTRAP_CREDENTIALS: "POLARIS,root,secret"
-      polaris.realm-context.realms: POLARIS
-      AWS_ACCESS_KEY_ID: admin
-      AWS_SECRET_ACCESS_KEY: password
-      AWS_REGION: us-east-1
-  gravitino:                     # docker compose --profile gravitino up -d gravitino
-    image: apache/gravitino-iceberg-rest:1.1.0
-    networks: [lakehouse-net]
-    ports: ["9002:9001"]
-    profiles: ["gravitino"]
-    environment:
-      # `memory` acknowledges commits without writing metadata.json to S3.
-      GRAVITINO_CATALOG_BACKEND: jdbc
-      # File-backed SQLite shares one schema across the JDBC connection pool;
-      # jdbc:sqlite::memory: creates an isolated database per connection.
-      GRAVITINO_URI: jdbc:sqlite:/data/gravitino.db
-      GRAVITINO_WAREHOUSE: s3://warehouse/
-      GRAVITINO_IO_IMPL: org.apache.iceberg.aws.s3.S3FileIO
-      GRAVITINO_S3_ACCESS_KEY: admin
-      GRAVITINO_S3_SECRET_KEY: password
-      GRAVITINO_S3_ENDPOINT: http://minio:9000
-      GRAVITINO_S3_REGION: us-east-1
-      GRAVITINO_S3_PATH_STYLE_ACCESS: "true"
-    volumes:
-      - gravitino-data:/data
-  unitycatalog:                  # read-only Iceberg REST until PR #1618 / 0.6.0
-    image: unitycatalog/unitycatalog:0.5.0
-    ports: ["8080:8080"]         # server 8080 (UI 3000); not in the comparison yet
-    profiles: ["unity"]
-
-  # The benchmark itself, as a container (or run the host binary).
-  bench:                         # docker compose run --rm bench --base-url ... --create
-    build:
-      context: .
-      dockerfile: docker/bench.Dockerfile
-    image: catalog-bench-commit:latest
-    networks: [lakehouse-net]
-    profiles: ["bench"]
-    entrypoint: ["/usr/local/bin/catalog-bench-commit"]
-
-volumes:
-  gravitino-data:
-  lakecat-data:
-
-networks:
-  # Shared (external) with the ~/src/boat catalog stack so every catalog reaches
-  # the same MinIO. Create it once: `docker network create iceberg_lakehouse-net`.
-  lakehouse-net:
-    name: iceberg_lakehouse-net
-    external: true
+```sh
+docker compose --profile nessie up --detach nessie
+docker compose --profile polaris up --detach polaris
+docker compose --profile gravitino up --detach gravitino
 ```
+
+Starting an image is not a conformance result. New public measurements wait for
+C1-03 through C1-09 to provide operation assertions, generated evidence, and the
+fully optimized same-Docker artifact pipeline.
 
 **Why LakeCat is built from source.** LakeCat depends on Sail as a Cargo *git*
 dependency on `querygraph/sail#lakecat` (fetched at build time); Grust (0.11.0) and
@@ -303,29 +212,14 @@ for Linux inside a Rust container with `~/src` mounted (so `../lakecat` is the b
 root and Sail is fetched over the network), stages the ELF, and
 `docker compose build lakecat` packages it into the slim runtime image.
 
-### 4. Build, deploy, and run — one command
+### 4. Benchmark launcher status
 
-```sh
-./bench-stack.sh
-```
-
-`bench-stack.sh` builds `lakecat-service` for Linux, packages + (re)starts the
-LakeCat container, ensures the `warehouse` bucket exists, and benchmarks every
-reachable catalog with **identical** parameters — LakeCat with
-`--location s3://warehouse/lakecat` and idempotency, Nessie/Gravitino with their
-prefixes, and Polaris after token/bootstrap. Tune with env vars:
-
-```sh
-ITER=2000 CONC=8 DUR=10 ./bench-stack.sh      # heavier run
-SKIP_BUILD=1 ./bench-stack.sh                 # skip the LakeCat rebuild
-POLARIS_TOKEN=... ./bench-stack.sh            # include Polaris
-```
-
-This is the one-round smoke harness. It intentionally stops when a target returns
-request errors (Nessie 0.108.4 currently does). The published table instead uses
-the six-round Docker-only protocol and production artifacts documented in
-[RESULTS.md](RESULTS.md); invalid Nessie reports are retained there as a `fail`
-outcome with their diagnostic measurements.
+`bench-stack.sh` and the manual recipes below reproduce the earlier commit-only
+development workflow. They are retained for historical diagnostics, but they
+still build or execute part of the workload on the host and therefore cannot
+produce new public Phase 1 evidence. C1-09 replaces them with smoke and full
+commands that build optimized production artifacts and run every measured
+process inside the same Docker environment.
 
 ## Build the driver alone
 

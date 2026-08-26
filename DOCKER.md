@@ -1,142 +1,181 @@
-# Docker harness — build & operations
+# Docker harness
 
-How the containerized benchmark is built and run. For the **impartiality design**
-and the **shared-MinIO setup** (the external network, the comparison catalogs, why
-every catalog writes to one bucket), see **[README.md](README.md) → "Docker setup
-for impartial runs with MinIO"**. This file covers the LakeCat-from-source build
-and day-to-day operation.
+The Phase 1 harness owns its execution substrate. `docker-compose.yml` creates
+the `catalog-bench-net` bridge, the shared MinIO process and `warehouse` bucket,
+and catalog-private state volumes. It does not depend on `~/src/boat`, an
+external Docker network, host MinIO ports, or a host-built benchmark process.
 
-**LakeCat is fully wired and verified here.** Nessie, Polaris, and Gravitino are
-included behind compose profiles with best-effort upstream images; some require
-upstream-specific bootstrap or auth (see *Bootstrap caveats*). Unity OSS has a
-profile too but is **not benchmarkable on the commit path** until its write
-endpoints ship (read-only until PR #1618 / 0.6.0 — see *Bootstrap caveats*).
+The checked-in [current candidate profile](profiles/v1/current-2026-08-26.json)
+is the authority for selected versions and provenance. Compose references are
+digest-pinned for Linux ARM64. Final public evidence additionally requires a
+runnable profile containing the hashes of every optimized executable; the
+candidate profile remains `draft` until those artifacts are materialized.
 
-## Layout assumption
+## Phase 1 topology
 
-The harness lives in `~/src/catalog-bench` next to the one sibling repo it
-builds:
+```text
+                         catalog-bench-net
 
+  benchmark/client ──────────────┬───────────────────────┐
+                                 │ Iceberg REST          │
+                                 v                       v
+                           Lakekeeper :8181         other catalogs
+                                 │
+                                 v
+                         PostgreSQL :5432
+                      dedicated role/database/volume
+
+  benchmark/client ──────────────┬───────────────────────┐
+                                 │ S3                    │ S3
+                                 v                       v
+                              MinIO :9000  ── s3://warehouse
 ```
-~/src/
-  catalog-bench/          <- this repo
-  lakecat/                <- built from source
-```
 
-As of LakeCat 0.3.0 the only sibling checkout needed is `lakecat` itself. Sail is
-a Cargo **git** dependency on `querygraph/sail#lakecat`, fetched during the build;
-Grust (0.11.0) and TypeSec are now **published crates**, so neither needs a local
-path checkout.
+All measured traffic uses service DNS names on this network. Host port 8186 is
+published only for interactive inspection of Lakekeeper; it is not the endpoint
+used by benchmark evidence. MinIO publishes no host port, which prevents an
+unrelated local MinIO from accidentally entering a run.
 
-## Building LakeCat for Linux
+## Exact infrastructure
 
-LakeCat's only out-of-registry dependency is the Sail git dep, so we build
-`lakecat-service` for Linux inside a Rust container with `~/src` mounted (so
-`../lakecat` is the build root) — Sail is fetched over the container's network,
-Grust/TypeSec come from crates.io, and the output is a real Linux ELF for the slim
-runtime image:
+- **MinIO** is built from upstream tag
+  `RELEASE.2025-10-15T17-29-55Z`, commit
+  `9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a`, using upstream's Go 1.24.8
+  toolchain in the pinned `golang:1.24.8-bookworm` image. The final image is
+  scratch-based and contains only MinIO, the typed readiness/setup helpers, CA
+  roots, and MinIO's license.
+- **PostgreSQL** is `17.11-bookworm` at the profile's immutable image digest.
+  Lakekeeper receives a dedicated `lakekeeper` role, database, and named volume.
+- **Lakekeeper** is `v0.13.3` at the profile's immutable image digest. The exact
+  image runs migrations before `serve`; its own `healthcheck` subcommand gates
+  process readiness.
+- **Bootstrap** uses a typed helper compiled alongside the MinIO setup tools.
+  It reads Lakekeeper's management state before writing, verifies the exact
+  server version, and rejects an existing warehouse whose configuration drifts
+  from the checked-in request. The JSON first accepts Lakekeeper's terms and
+  creates the nil-ID default project, then creates warehouse `bench` at
+  `s3://warehouse/lakekeeper`. The warehouse uses MinIO's S3-compatible endpoint,
+  path-style requests, and STS credential vending.
+
+The fixture credentials in Compose are intentionally obvious and local-only.
+They are part of a reproducible benchmark topology, not production deployment
+guidance. Do not expose this network or reuse the values in a real environment.
+
+## Validate without starting containers
+
+Static validation does not require a running Docker daemon:
 
 ```sh
-./docker/build-lakecat.sh          # compile lakecat-service (Linux) and stage the binary
-docker compose build lakecat       # package the staged ELF into lakecat-service:bench
-docker compose up -d lakecat       # run it on the shared network, pointed at MinIO
+docker compose \
+  --profile lakekeeper \
+  --profile nessie \
+  --profile polaris \
+  --profile gravitino \
+  --profile bench \
+  config --quiet
+
+(cd docker/minio/tools && gofmt -d . && go mod tidy -diff && go vet ./... && go test ./...)
+jq -e . docker/lakekeeper/*.json
 ```
 
-`docker/build-lakecat.sh` details:
-- runs `cargo build -p lakecat-service --release --features "$FEATURES"` (default
-  `FEATURES=turso-local,sail-local`; `sail-local` makes each commit write a real
-  `metadata.json`) in a pinned `rust:1.96.0-bookworm` container with fat LTO,
-  one codegen unit, `target-cpu=native`, stripped symbols, and panic abort;
-- mounts `~/src` read-write at `/src`, plus two named volumes —
-  `catalog-bench-cargo-registry` (crates.io cache, incl. Grust/TypeSec) and
-  `catalog-bench-cargo-git` (the querygraph/sail git checkout) — so rebuilds are
-  incremental;
-- needs the container's default-bridge network to fetch the Sail git dep, and
-  `protobuf-compiler` (installed in-container) for Sail/DataFusion;
-- writes output to `.linux-target/` and stages the binary at
-  `docker/lakecat/lakecat-service` (both gitignored).
+## Start Lakekeeper independently
 
-The runtime image (`docker/lakecat/Dockerfile`) is a `debian:bookworm-slim` with
-`ca-certificates`, `curl`, and `libpython3.11` (Sail links libpython), the staged
-binary, a `/data` volume for the Turso DB, and a `/catalog/v1/config` healthcheck.
-
-## Running the benchmark
-
-### One-shot (recommended)
+Build MinIO and start Lakekeeper through the client-facing readiness gate. The
+explicit `docker wait` turns the final one-shot container's exit code into the
+command's exit status; Compose's `up --wait` mode is intended for long-running
+services and reports completed one-shots as stopped:
 
 ```sh
-./bench-stack.sh
+docker compose --profile lakekeeper build minio
+docker compose --profile lakekeeper up --detach lakekeeper-ready
+lakekeeper_ready_id="$(docker compose --profile lakekeeper ps \
+  --all --quiet lakekeeper-ready)"
+test "$(docker wait "$lakekeeper_ready_id")" = 0
 ```
 
-Builds LakeCat → image → (re)starts the container → ensures the MinIO `warehouse`
-bucket → benchmarks every reachable catalog with identical parameters (LakeCat with
-`--location s3://warehouse/lakecat` + idempotency; Nessie/Gravitino with their
-prefixes; Polaris when `POLARIS_TOKEN` is set). Tunables: `ITER`, `CONC`, `DUR`,
-`SKIP_BUILD=1`, `POLARIS_TOKEN`, `POLARIS_CATALOG`.
+The dependency chain is deliberate:
 
-The driver deliberately exits nonzero if any concurrent request fails. With
-Nessie 0.108.4, the one-shot command therefore stops on its reproduced
-request-context HTTP 500s; this is an integrity gate, not a harness failure. See
-[RESULTS.md](RESULTS.md) for the six-round final protocol that retains Nessie's
-complete report as DQ while continuing the other catalogs.
+```text
+postgresql healthy -> lakekeeper-migrate completed -> lakekeeper healthy
+                                                        |
+minio healthy -> minio-init completed ------------------+
+                                                        v
+                                          bootstrap completed
+                                                        v
+                                      warehouse creation completed
+                                                        v
+                               client config negotiation completed
+```
 
-### Manual
+Inspect the resulting state:
 
 ```sh
-docker compose up -d lakecat
-./run-bench.sh                     # benchmarks every reachable catalog
-# or one target, host binary:
-cargo build --release
-./target/release/catalog-bench-commit \
-  --base-url http://127.0.0.1:8181/catalog --location s3://warehouse/lakecat \
-  --create --idempotency --iterations 1000 --concurrency 8 --duration-secs 6
-# or via the bench container on the shared network:
-docker compose run --rm bench --base-url http://lakecat:8181/catalog \
-  --location s3://warehouse/lakecat --create
+docker compose --profile lakekeeper ps --all
+docker compose --profile lakekeeper logs lakekeeper-migrate lakekeeper
+curl -fsS 'http://127.0.0.1:8186/catalog/v1/config?warehouse=bench'
 ```
 
-Enable an external catalog by profile (or run them from `~/src/boat`):
+For requests made from a benchmark/client container, use
+`http://lakekeeper:8181/catalog` and warehouse/prefix `bench`. Do not use the
+host-published endpoint in timed runs.
+
+## State lifecycle
+
+Ordinary shutdown preserves MinIO objects and Lakekeeper's PostgreSQL state:
 
 ```sh
-docker compose --profile gravitino up -d gravitino
-docker compose --profile nessie    up -d nessie
-docker compose --profile polaris   up -d polaris
-docker compose --profile unity     up -d unitycatalog
+docker compose --profile lakekeeper down
 ```
 
-## Bootstrap caveats (the externals are not turnkey)
+An evidence run that requires isolated fresh state must use a run-specific
+Compose project name or explicitly remove only that project's volumes after the
+run artifacts have been captured. Never reuse a persistent developer volume and
+claim clean-state evidence. Example isolation without deletion:
 
-- **Polaris** needs an OAuth2 token + an S3 catalog (no auto-served warehouse).
-  `polaris-bootstrap.sh` automates both (token via client creds `root`/`secret`,
-  catalog `bench` on `s3://warehouse/bench`); `bench-stack.sh` calls it
-  automatically, or pass a ready `POLARIS_TOKEN`. Prefix = catalog name.
-  Spec-conformant commit path.
-- **Gravitino** uses the pinned `apache/gravitino-iceberg-rest:1.1.0` image with
-  its bundled file-backed SQLite JDBC backend. Do not use the image's `memory`
-  backend for this comparison: it acknowledges commits and returns S3 metadata
-  locations without writing `metadata.json` objects. The harness verifies MinIO
-  object growth before accepting a run. Do not use `jdbc:sqlite::memory:` either:
-  each pooled JDBC connection gets an isolated database and concurrent writers
-  fail against missing schema; the compose file uses `/data/gravitino.db`.
-- **Nessie** uses the official `0.108.4-java` image. Its final five measured
-  eight-writer runs all returned Quarkus `ContextNotActiveException` HTTP 500s,
-  so its raw throughput is published as DQ. The compose profile is exact
-  reproduction infrastructure, not evidence of a valid result.
-- **Unity (OSS)** released builds (latest 0.5.0) serve Iceberg REST **read-only** —
-  there is no external `updateTable`/`set-properties` commit handler, so Unity is
-  *out of the comparison*, not merely un-bootstrapped. Commit support exists only in
-  unmerged draft PR #1618 (unreleased 0.6.0); build the image from that branch to
-  benchmark it. The `unity` compose profile is kept ready for when it lands.
+```sh
+COMPOSE_PROJECT_NAME=catalog-bench-smoke-001 \
+  docker compose --profile lakekeeper up --detach lakekeeper-ready
+```
 
-Nessie, Polaris, and Gravitino are scaffolded honestly: the service definitions
-and run-script hooks are correct, but their setup and version-specific behavior
-must be checked before the commit numbers mean anything. Unity OSS is wired the
-same way but blocked upstream (read-only REST). LakeCat is the one path proven
-end-to-end in this harness.
+Wait for that project's `lakekeeper-ready` container and require exit code zero
+before collecting evidence, as in the normal startup sequence above.
 
-## What it measures
+The explicit network name is stable (`catalog-bench-net`) for the normal local
+project. Concurrent isolated projects therefore need a future per-run network
+override; C1-09 owns that full orchestration. Do not run two ordinary projects
+with this Compose file concurrently until that unit lands.
 
-See **[README.md](README.md)**. The commit phase (`set-properties` commits:
-validation → metadata write → pointer CAS → durable persist) is identical across
-all catalogs; only creation, auth, and prefixes differ — and every catalog's
-`metadata.json` goes to the same MinIO bucket.
+## LakeCat build status
+
+`docker/build-lakecat.sh` is still the earlier development packaging path: it
+compiles a Linux binary in a Rust container, stages the ignored ELF under
+`docker/lakecat/`, and packages it in a runtime image. It is retained so existing
+LakeCat smoke work remains usable, but it is not sufficient provenance for new
+public evidence.
+
+C1-09 replaces that path and `docker/bench.Dockerfile` with one common,
+production-optimized Docker build pipeline. The final protocol must build and
+execute LakeCat, catalog-bench, clients, engines, and support tools inside the
+same Docker environment and record the executable/image hashes before accepting
+measurements.
+
+## Optional catalog profiles
+
+Nessie, Polaris, and Gravitino remain behind Compose profiles and now share the
+owned MinIO/network. Their selected images are digest-pinned. They are not
+declared behaviorally ready merely because Compose can start them: C1-02 validates
+each adapter binding and C1-03 through C1-07 establish operation-level outcomes.
+
+```sh
+docker compose --profile nessie up --wait nessie
+docker compose --profile polaris up --wait polaris
+docker compose --profile gravitino up --wait gravitino
+```
+
+Released Unity Catalog OSS 0.5.0 is not in this topology because its Iceberg REST
+surface is read-only. It remains an explicit `unsupported` capability outcome,
+not a failed or silently omitted commit benchmark.
+
+Nessie 0.108.4 remains useful diagnostic infrastructure. Its historical
+2026-08-08 concurrent run is an unranked `fail`, not a valid performance row,
+because all measured rounds contained request-context HTTP 500 responses.

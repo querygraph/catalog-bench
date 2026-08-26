@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Phase 1 infrastructure: made the benchmark Compose project own its Docker
+  network, exact source-built MinIO release, idempotently initialized warehouse
+  bucket, and state volumes. Added digest-pinned Lakekeeper 0.13.3 and PostgreSQL
+  17.11 services with migration, process-health, management-bootstrap, warehouse,
+  and isolated-state readiness gates; typed/tested MinIO and Lakekeeper setup
+  helpers that reconcile current state and fail on configuration drift; and
+  current operations documentation. The final public benchmark artifact
+  pipeline remains explicitly assigned to C1-09.
 - Contract test portability: embedded checked-in profiles, scenarios, and schemas
   in the integration-test binary so a shared Cargo target directory cannot reuse
   stale absolute paths from a removed clean worktree.
