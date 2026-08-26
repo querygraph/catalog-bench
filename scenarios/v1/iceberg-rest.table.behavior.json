@@ -339,7 +339,7 @@
       "id": "table-create-round-trip",
       "step": "create-tables",
       "required": true,
-      "description": "Both create responses contain committed metadata locations, distinct nonempty UUIDs, the requested schema, and exact initial properties.",
+      "description": "Both create responses contain committed metadata locations, distinct nonempty UUIDs, the requested schema, and every requested initial property.",
       "check": {
         "kind": "custom",
         "name": "querygraph/catalog-bench/table-create-v1",

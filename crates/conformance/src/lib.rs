@@ -9,8 +9,10 @@ mod evidence;
 mod iceberg;
 mod namespace;
 mod operation;
+mod routing;
 mod sanitize;
 mod spec;
+mod table;
 mod target;
 mod transport;
 
@@ -22,6 +24,7 @@ pub use config::*;
 pub use evidence::*;
 pub use namespace::*;
 pub use spec::*;
+pub use table::*;
 
 /// Serialize evidence deterministically as pretty JSON with one final newline.
 pub fn encode_evidence<T: Serialize>(value: &T) -> Result<Vec<u8>> {

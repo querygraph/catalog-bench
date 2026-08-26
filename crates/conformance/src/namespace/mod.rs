@@ -7,26 +7,22 @@ use anyhow::Result;
 use catalog_bench_common::contract::{AssertionCheck, ComponentId, Profile, ProfileId, Scenario};
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::json;
 
-use crate::config::{resolve_prefix, PrefixResolution};
 use crate::encode_evidence;
 use crate::evidence::{
     not_evaluated_assertions, passed_required_assertions, transcript_adapter, transcript_scenario,
-    AuthenticationOutcome, AuthenticationTranscript, ContractDigests, HttpRequestTranscript,
-    HttpResponseTranscript, ProbeAssertion, ProbeClassification, ProbeFailure,
-    SanitizationTranscript, TranscriptAdapter, TranscriptScenario,
+    AuthenticationOutcome, AuthenticationTranscript, ContractDigests, ProbeAssertion,
+    ProbeClassification, SanitizationTranscript, TranscriptAdapter, TranscriptScenario,
 };
 use crate::operation::{
     all_results, parse_json_response, validate_error_response, validate_status, Fact, Observation,
     OperationExecution, OperationHttpRequestTranscript, OperationRecorder, OperationTranscript,
 };
+use crate::routing::{negotiate_routing, not_evaluated_config, RoutingConfigTranscript};
 use crate::sanitize::contains_sensitive_value;
 use crate::target::ProbeTarget;
-use crate::transport::{
-    acquire_authentication, authentication_mode, endpoint_url, execute_json_request, http_client,
-    CapturedResponse, REDACTED,
-};
+use crate::transport::{authentication_mode, http_client};
 
 pub use crate::iceberg::{NamespaceIdentifier, NamespaceSeparatorResolution};
 pub use routes::NamespaceFixture;
@@ -34,8 +30,9 @@ pub use routes::NamespaceFixture;
 pub type NamespaceHttpRequestTranscript = OperationHttpRequestTranscript;
 pub type NamespaceOperationExecution = OperationExecution;
 pub type NamespaceOperationTranscript = OperationTranscript;
+pub type NamespaceConfigTranscript = RoutingConfigTranscript;
 
-use crate::iceberg::{CatalogRoutes, NamespaceCodec};
+use crate::iceberg::CatalogRoutes;
 
 pub const NAMESPACE_TRANSCRIPT_FORMAT: &str = "catalog-bench/namespace-transcript/v1";
 pub const NAMESPACE_SCENARIO_ID: &str = "iceberg-rest.namespace.behavior";
@@ -57,18 +54,6 @@ const MISSING_PARENT_CAPABILITY: &str = "iceberg-rest.namespace.error.missing-pa
 const OWNER_PROPERTY: &str = "owner";
 const REMOVE_PROPERTY: &str = "c1-04.remove";
 const STATE_PROPERTY: &str = "c1-04.state";
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct NamespaceConfigTranscript {
-    pub request: HttpRequestTranscript,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub response: Option<HttpResponseTranscript>,
-    pub prefix: PrefixResolution,
-    pub namespace_separator: NamespaceSeparatorResolution,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub failure: Option<ProbeFailure>,
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "mode", rename_all = "kebab-case", deny_unknown_fields)]
@@ -131,12 +116,6 @@ where
     policy::validate_invocation(profile, scenario, catalog)?;
     let target = ProbeTarget::resolve(profile, scenario, catalog)?;
     let fixture = NamespaceFixture::new(catalog, fixture_id)?;
-    let config_url = endpoint_url(
-        &target.adapter.endpoint.base_url,
-        &target.adapter.endpoint.config.path,
-        &target.adapter.endpoint.config.query,
-    )?;
-    let unauthenticated_config_request = config_request(config_url.as_str(), false);
 
     if let Some(limitation) = target.first_required_limitation(scenario) {
         let reason = format!(
@@ -162,17 +141,7 @@ where
                 scope: None,
                 http_status: None,
             },
-            config: NamespaceConfigTranscript {
-                request: unauthenticated_config_request,
-                response: None,
-                prefix: PrefixResolution::NotEvaluated {
-                    reason: reason.clone(),
-                },
-                namespace_separator: NamespaceSeparatorResolution::NotEvaluated {
-                    reason: reason.clone(),
-                },
-                failure: None,
-            },
+            config: not_evaluated_config(target.adapter, &reason)?,
             operations: Vec::new(),
             pagination: PaginationTranscript::NotEvaluated {
                 reason: reason.clone(),
@@ -188,63 +157,13 @@ where
     }
 
     let client = http_client(REQUEST_TIMEOUT_MS)?;
-    let authentication = acquire_authentication(&client, target.adapter, &getenv).await;
-    let config_request = config_request(config_url.as_str(), authentication.bearer_token.is_some());
-    let captured_config = if authentication.failure.is_none() {
-        execute_json_request(
-            &client,
-            Method::GET,
-            config_url,
-            authentication.bearer_token.as_deref(),
-            None,
-            &authentication.sensitive_values,
-            "config",
-        )
-        .await
-    } else {
-        CapturedResponse {
-            response: None,
-            private_json: None,
-            redactions: Vec::new(),
-            failure: None,
-        }
-    };
+    let routing = negotiate_routing(&client, target.adapter, &getenv).await?;
+    let authentication = routing.authentication;
+    let config = routing.config;
+    let codec = routing.codec;
+    let mut redactions = routing.redactions;
 
-    let config_json = captured_config.private_json;
-    let prefix = resolve_prefix(target.adapter, config_json.as_ref());
-    let (namespace_separator, codec) = NamespaceCodec::resolve(config_json.as_ref());
-    let config_ready = validate_config_routing(
-        authentication.failure.as_ref(),
-        captured_config.response.as_ref(),
-        config_json.as_ref(),
-        &prefix,
-        codec.as_ref(),
-    );
-    let config = NamespaceConfigTranscript {
-        request: config_request,
-        response: captured_config.response,
-        prefix: prefix.clone(),
-        namespace_separator,
-        failure: authentication.failure.clone().or(captured_config.failure),
-    };
-
-    let mut redactions = captured_config
-        .redactions
-        .into_iter()
-        .map(|path| format!("config.{path}"))
-        .collect::<Vec<_>>();
-    if authentication.bearer_token.is_some() {
-        redactions.extend([
-            "config.request.headers.authorization".to_owned(),
-            "authentication.oauth2-request-credentials".to_owned(),
-            "authentication.oauth2-response-token".to_owned(),
-        ]);
-    }
-
-    let mut facts = NamespaceFacts::new(
-        authentication.failure.is_none(),
-        Fact::from_result(config_ready),
-    );
+    let mut facts = NamespaceFacts::new(authentication.failure.is_none(), routing.config_routing);
     let mut recorder = OperationRecorder::new(
         &client,
         authentication.bearer_token.as_deref(),
@@ -253,7 +172,7 @@ where
 
     let routes = codec
         .ok_or_else(|| anyhow::anyhow!("namespace routing unavailable after config negotiation"))
-        .and_then(|codec| CatalogRoutes::new(target.adapter, &prefix, codec, "namespace"));
+        .and_then(|codec| CatalogRoutes::new(target.adapter, &config.prefix, codec, "namespace"));
     let pagination = match (routes, &facts.config_routing) {
         (Ok(routes), Fact::Pass) => {
             execute_namespace_workflow(&mut recorder, &routes, &fixture, &mut facts).await?
@@ -315,58 +234,6 @@ where
             raw_response_body_persisted: false,
         },
     })
-}
-
-fn config_request(url: &str, authenticated: bool) -> HttpRequestTranscript {
-    let mut headers = BTreeMap::from([("accept".to_owned(), "application/json".to_owned())]);
-    if authenticated {
-        headers.insert("authorization".to_owned(), REDACTED.to_owned());
-    }
-    HttpRequestTranscript {
-        method: "GET".to_owned(),
-        url: url.to_owned(),
-        headers,
-    }
-}
-
-fn validate_config_routing(
-    authentication_failure: Option<&ProbeFailure>,
-    response: Option<&HttpResponseTranscript>,
-    private_json: Option<&Value>,
-    prefix: &PrefixResolution,
-    codec: Option<&NamespaceCodec>,
-) -> std::result::Result<(), String> {
-    if let Some(failure) = authentication_failure {
-        return Err(failure.explanation.clone());
-    }
-    let response = response.ok_or_else(|| "no config response was received".to_owned())?;
-    if response.status != 200 {
-        return Err(format!(
-            "config returned HTTP {} instead of 200",
-            response.status
-        ));
-    }
-    if !response
-        .headers
-        .get("content-type")
-        .is_some_and(|value| is_json_media_type(value))
-    {
-        return Err("config response did not declare application/json".to_owned());
-    }
-    if private_json.is_none() {
-        return Err("config response did not contain valid captured JSON".to_owned());
-    }
-    match prefix {
-        PrefixResolution::Unprefixed
-        | PrefixResolution::Static { .. }
-        | PrefixResolution::Negotiated { .. } => {}
-        PrefixResolution::Failed { explanation } => return Err(explanation.clone()),
-        PrefixResolution::NotEvaluated { reason } => return Err(reason.clone()),
-    }
-    if codec.is_none() {
-        return Err("namespace separator did not resolve".to_owned());
-    }
-    Ok(())
 }
 
 async fn execute_namespace_workflow(
@@ -897,13 +764,6 @@ fn parse_namespaces(
         return Err("listing contains duplicate namespace identifiers".to_owned());
     }
     Ok(parsed)
-}
-
-fn is_json_media_type(content_type: &str) -> bool {
-    content_type
-        .split(';')
-        .next()
-        .is_some_and(|media_type| media_type.trim().eq_ignore_ascii_case("application/json"))
 }
 
 #[derive(Debug, Deserialize)]

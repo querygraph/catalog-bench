@@ -194,14 +194,27 @@ docker compose --profile conformance run --rm conformance namespace \
   --output /evidence/lakecat-namespace.json
 ```
 
+Run the table lifecycle with a different fresh fixture ID and output path:
+
+```sh
+docker compose --profile conformance run --rm conformance table \
+  --profile /contracts/profiles/v1/current-2026-08-26.json \
+  --scenario /contracts/scenarios/v1/iceberg-rest.table.behavior.json \
+  --catalog lakecat \
+  --fixture-id review_lakecat_table_01 \
+  --output /evidence/lakecat-table.json
+```
+
 Fixture IDs use a conservative cross-catalog grammar. The runner derives
-run-owned top-level and multipart namespace names, rejects collisions before
-mutation, and performs child-first cleanup plus post-drop verification after
-both passing and failing assertions. The exact optimized five-catalog C1-04
-matrix is documented in
+run-owned namespace and table names, rejects collisions before mutation, and
+performs dependency-ordered cleanup plus post-drop verification after both
+passing and failing assertions. Table cleanup reconciles the source, rename
+destination, dropped sibling, and registration destination with
+`purgeRequested=false` before dropping the fixture namespace. The exact
+optimized five-catalog C1-04 namespace matrix is documented in
 [`docs/NAMESPACE-CONFORMANCE.md`](docs/NAMESPACE-CONFORMANCE.md).
 
-Choose a new output name and namespace fixture ID for every run: the CLI refuses
+Choose a new output name and fixture ID for every run: the CLI refuses
 to overwrite evidence or mutate a colliding fixture.
 Exit `0` means all required assertions passed, `2` means a `fail` or declared
 `unsupported` transcript was written, and `1` means invocation, contract, or I/O

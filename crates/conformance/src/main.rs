@@ -8,8 +8,8 @@ use catalog_bench_common::contract::{
     parse_contract, ComponentId, ContractDocument, Profile, Scenario,
 };
 use catalog_bench_conformance::{
-    encode_evidence, run_config_probe, run_namespace_probe, sha256_hex, ContractDigests,
-    ProbeClassification,
+    encode_evidence, run_config_probe, run_namespace_probe, run_table_probe, sha256_hex,
+    ContractDigests, ProbeClassification,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -29,6 +29,8 @@ enum Command {
     Config(ConfigArgs),
     /// Exercise namespace lifecycle, hierarchy, pagination, and errors.
     Namespace(NamespaceArgs),
+    /// Exercise table lifecycle, pagination, optional operations, and errors.
+    Table(TableArgs),
 }
 
 #[derive(Debug, Args)]
@@ -66,6 +68,25 @@ struct NamespaceArgs {
     output: PathBuf,
 }
 
+#[derive(Debug, Args)]
+struct TableArgs {
+    /// Validated profile containing the catalog adapter.
+    #[arg(long)]
+    profile: PathBuf,
+    /// Table-behavior scenario contract.
+    #[arg(long)]
+    scenario: PathBuf,
+    /// Profile component identifier to probe.
+    #[arg(long)]
+    catalog: String,
+    /// Run-owned suffix: 1-24 lowercase ASCII letters, digits, or underscores.
+    #[arg(long)]
+    fixture_id: String,
+    /// New evidence file. Existing files are never overwritten.
+    #[arg(long)]
+    output: PathBuf,
+}
+
 struct LoadedContracts {
     profile: Profile,
     scenario: Scenario,
@@ -88,6 +109,7 @@ async fn run(cli: Cli) -> Result<bool> {
     match cli.command {
         Command::Config(args) => run_config(args).await,
         Command::Namespace(args) => run_namespace(args).await,
+        Command::Table(args) => run_table(args).await,
     }
 }
 
@@ -116,6 +138,29 @@ async fn run_config(args: ConfigArgs) -> Result<bool> {
 async fn run_namespace(args: NamespaceArgs) -> Result<bool> {
     let contracts = load_contracts(&args.profile, &args.scenario)?;
     let transcript = run_namespace_probe(
+        &contracts.profile,
+        &contracts.scenario,
+        &ComponentId::new(args.catalog),
+        &args.fixture_id,
+        contracts.digests,
+        |name| std::env::var(name).ok(),
+    )
+    .await?;
+    let passed = transcript.passed();
+    let classification = classification_name(&transcript.classification);
+    let evidence = encode_evidence(&transcript)?;
+    write_new(&args.output, &evidence)?;
+    println!(
+        "wrote {} (sha256={}, classification={classification})",
+        args.output.display(),
+        sha256_hex(&evidence)
+    );
+    Ok(passed)
+}
+
+async fn run_table(args: TableArgs) -> Result<bool> {
+    let contracts = load_contracts(&args.profile, &args.scenario)?;
+    let transcript = run_table_probe(
         &contracts.profile,
         &contracts.scenario,
         &ComponentId::new(args.catalog),

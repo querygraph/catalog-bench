@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Catalog community C1-05 runner: implemented a strict Iceberg REST table
+  lifecycle probe with run-owned namespace preflight, committed two-table
+  create/list/load, exact isolated pagination, immutable property update, three
+  spec-shaped errors, same-namespace rename, non-purging drop, metadata
+  registration, complete candidate reconciliation, and sanitized no-overwrite
+  evidence. Shared routing negotiation keeps config/auth/prefix/separator policy
+  identical across probes; 15 adversarial table tests cover optional limitations
+  and failures, collisions, metadata drift, pagination defects, response bounds,
+  OAuth secrecy, and cleanup after failed assertions.
+
 - Catalog community C1-05 contract: added a neutral, versioned Iceberg REST
   table-behavior scenario with isolated namespace ownership, two-table
   create/list/load/update/drop coverage, bounded pagination, optional standard

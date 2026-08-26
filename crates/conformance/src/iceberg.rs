@@ -197,6 +197,38 @@ impl CatalogRoutes {
         Ok(url)
     }
 
+    pub(crate) fn table_collection(&self, namespace: &NamespaceIdentifier) -> Result<Url> {
+        let encoded = self.codec.join(namespace);
+        self.resource_url(&["namespaces", &encoded, "tables"])
+    }
+
+    pub(crate) fn table(&self, namespace: &NamespaceIdentifier, name: &str) -> Result<Url> {
+        let encoded = self.codec.join(namespace);
+        self.resource_url(&["namespaces", &encoded, "tables", name])
+    }
+
+    pub(crate) fn table_page(
+        &self,
+        namespace: &NamespaceIdentifier,
+        token: &str,
+        size: usize,
+    ) -> Result<Url> {
+        let mut url = self.table_collection(namespace)?;
+        url.query_pairs_mut()
+            .append_pair("pageToken", token)
+            .append_pair("pageSize", &size.to_string());
+        Ok(url)
+    }
+
+    pub(crate) fn table_register(&self, namespace: &NamespaceIdentifier) -> Result<Url> {
+        let encoded = self.codec.join(namespace);
+        self.resource_url(&["namespaces", &encoded, "register"])
+    }
+
+    pub(crate) fn table_rename(&self) -> Result<Url> {
+        self.resource_url(&["tables", "rename"])
+    }
+
     pub(crate) fn resource_url(&self, tail: &[&str]) -> Result<Url> {
         let mut url = Url::parse(&self.base_url)
             .with_context(|| format!("invalid adapter base URL `{}`", self.base_url))?;

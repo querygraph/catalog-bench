@@ -146,6 +146,30 @@ and loop freedom without retaining reusable opaque tokens. See the exact
 five-catalog acceptance matrix and artifact identities in
 [`NAMESPACE-CONFORMANCE.md`](NAMESPACE-CONFORMANCE.md).
 
+### Table-probe transcripts
+
+The C1-05 table runner produces the intermediate
+`catalog-bench/table-transcript/v1` evidence shape. One preflighted run-owned
+namespace contains two committed tables plus distinct rename, registration, and
+missing-table candidates. The runner validates requested schema and properties,
+nonempty immutable metadata locations, stable distinct table UUIDs, exact
+isolated listings, bounded pagination, an update-and-reload metadata transition,
+duplicate/missing-table/missing-namespace error envelopes, and non-purging drop.
+
+Same-namespace rename and metadata registration are standard optional
+assertions. An attempted protocol failure remains a visible optional `fail`; a
+profile-declared limitation is `not-evaluated` and sends no request. Neither can
+change the required classification. Cleanup always reconciles all four possible
+table names, verifies each absent, drops the fixture namespace, and verifies the
+namespace absent. A failed collision preflight is the sole case that forbids
+cleanup mutation, protecting pre-existing state.
+
+The table runner shares authentication, config negotiation, route-prefix and
+namespace-separator resolution, bounded response capture, request recording,
+recursive sanitization, and opaque page-token redaction with the namespace
+runner. Its smoke transcripts remain non-publishable until the immutable
+result/manifest pipeline records exact artifacts and environment provenance.
+
 ## Closed fields and extensions
 
 All ordinary records and enum variants deny unknown fields. This turns misspelled
