@@ -104,6 +104,9 @@
         "upstream_reference": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
       }
     },
+    "namespace_properties": {
+      "catalog-bench.owner": "catalog-bench"
+    },
     "object_store": {
       "access_key_env": "CATALOG_BENCH_S3_ACCESS_KEY_ID",
       "endpoint": "http://minio:9000",

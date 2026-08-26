@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Catalog community C1-07 stock-client runner: execute the pinned PyIceberg
+  namespace/table round trip, real Arrow append and exact scan, independent
+  property/schema/delete/conflict/delegation/rename/register classifications,
+  explicit client-level view and pagination limitations, conservative fixture
+  reconciliation, and immutable value-sanitized transcripts across all five
+  protocol-native adapters. Strict contract loading rejects workload drift and
+  behavior-changing shims; deterministic fakes cover successful and refusing
+  paths without replacing the production stock client.
+
 - Catalog community C1-07 contract: pin the stock PyIceberg runtime and Arrow
   data plane, split optional client operations into explicit capabilities, and
   define a no-shim five-catalog workflow whose evidence distinguishes pass,
