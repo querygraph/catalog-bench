@@ -176,6 +176,29 @@ result/manifest pipeline records exact artifacts and environment provenance.
 See the optimized five-catalog acceptance matrix, shared-MinIO audit, and exact
 artifact identities in [`TABLE-CONFORMANCE.md`](TABLE-CONFORMANCE.md).
 
+### Commit-correctness transcripts
+
+The C1-06 commit scenario separates deterministic correctness from the existing
+throughput workload. One preflighted table first accepts matching table-UUID and
+schema requirements, then advances from schema 0 to schema 1 under matching
+UUID, schema, and last-field requirements. A request planned against schema 0 is
+therefore provably stale without depending on scheduler timing: it must return a
+spec-shaped HTTP/code 409 `CommitFailedException`, leave the current metadata
+location unchanged, and apply no property update.
+
+Idempotency remains an optional protocol capability. The runner inspects the
+standard `idempotency-key-lifetime` configuration after applying config
+defaults/overrides. If absent, it sends no `Idempotency-Key` and records the
+three optional assertions as not evaluated. If present, it uses a valid UUIDv7
+key, repeats one byte-identical commit, and requires exactly one metadata-pointer
+transition. Reusing that finalized key with drifted content is an explicit
+optional safety check. Raw keys are redacted from evidence, while cleanup and
+the required stale-state branch remain mandatory regardless of advertisement.
+
+This scenario does not replace the same-table contention benchmark. It proves
+admission and retry semantics one operation at a time; the contention scenario
+continues to measure accepted throughput, 409 rate, and non-conflict errors.
+
 ## Closed fields and extensions
 
 All ordinary records and enum variants deny unknown fields. This turns misspelled

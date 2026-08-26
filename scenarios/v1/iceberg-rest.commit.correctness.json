@@ -1,0 +1,477 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "iceberg-rest.commit.correctness",
+  "version": 1,
+  "title": "Iceberg REST commit requirements, stale state, and idempotency",
+  "description": "Creates one isolated table, admits requirements that match current metadata, advances the schema, proves an old schema requirement fails atomically, and—only when the catalog advertises Idempotency-Key support—proves an exact UUIDv7-key retry has no second effect and same-key content drift is rejected.",
+  "family": "iceberg-rest",
+  "classification": "strict-v1",
+  "tags": [
+    "iceberg-rest",
+    "commit",
+    "requirements",
+    "optimistic-concurrency",
+    "idempotency",
+    "no-shim"
+  ],
+  "capabilities": [
+    {
+      "capability": "iceberg-rest.namespace.create",
+      "level": "required",
+      "description": "Create one run-owned namespace for an isolated commit fixture.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.load",
+      "level": "required",
+      "description": "Prove the run-owned namespace is absent before mutation and after cleanup.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.drop",
+      "level": "required",
+      "description": "Drop the empty run-owned namespace after the commit fixture is reconciled.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.create",
+      "level": "required",
+      "description": "Create one committed table with known schema and properties.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.load",
+      "level": "required",
+      "description": "Load exact metadata before and after every commit attempt.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.update",
+      "level": "required",
+      "description": "Apply standard requirement and update objects through updateTable.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.drop",
+      "level": "required",
+      "description": "Drop the fixture table without purging retained metadata.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.error.spec-shape",
+      "level": "required",
+      "description": "Return matching HTTP status/code, nonempty type, and nonempty message for commit conflicts and cleanup absence.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.commit.set-properties",
+      "level": "required",
+      "description": "Commit a set-properties update guarded by current table requirements.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.commit.requirements",
+      "level": "required",
+      "description": "Evaluate table UUID, current schema, and last-assigned-field requirements before applying updates.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.commit.stale-pointer-rejection",
+      "level": "required",
+      "description": "Reject a commit planned against the previous schema state without advancing metadata or applying properties.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "level": "optional",
+      "description": "When advertised, replay a finalized commit under the same UUIDv7 Idempotency-Key without a second semantic update.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "level": "optional",
+      "description": "When advertised, reject reuse of a finalized Idempotency-Key with different request content and preserve admitted state.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    }
+  ],
+  "parameters": {
+    "accepted_set_properties": {
+      "c1-06.state": "requirement-accepted"
+    },
+    "commit_conflict": {
+      "code": 409,
+      "type": "CommitFailedException"
+    },
+    "drifted_set_properties": {
+      "c1-06.retry": "drifted-must-not-apply"
+    },
+    "exact_retry_set_properties": {
+      "c1-06.retry": "accepted-once"
+    },
+    "fixture_prefix": "cb_c106",
+    "iceberg_openapi_sha256": "80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a",
+    "iceberg_openapi_source": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml",
+    "idempotency_advertisement_pointers": [
+      "/idempotency-key-lifetime",
+      "/overrides/idempotency-key-lifetime",
+      "/defaults/idempotency-key-lifetime"
+    ],
+    "idempotency_header": "Idempotency-Key",
+    "idempotency_key_format": "uuid-v7",
+    "initial_properties": {
+      "c1-06.state": "initial",
+      "catalog-bench.owner": "catalog-bench"
+    },
+    "initial_schema": {
+      "fields": [
+        {
+          "id": 1,
+          "name": "value",
+          "required": false,
+          "type": "long"
+        }
+      ],
+      "schema-id": 0,
+      "type": "struct"
+    },
+    "maximum_response_bytes": 1048576,
+    "namespace_separator_default": "%1F",
+    "purge_requested": false,
+    "request_timeout_ms": 30000,
+    "schema_transition": {
+      "last-column-id": 2,
+      "schema": {
+        "fields": [
+          {
+            "id": 1,
+            "name": "value",
+            "required": false,
+            "type": "long"
+          },
+          {
+            "id": 2,
+            "name": "note",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "schema-id": 1,
+        "type": "struct"
+      }
+    },
+    "stale_set_properties": {
+      "c1-06.stale": "must-not-apply"
+    },
+    "transcript_format": "catalog-bench/commit-transcript/v1"
+  },
+  "steps": [
+    {
+      "id": "negotiate-authentication",
+      "actor": "harness",
+      "operation": "authentication.negotiate",
+      "description": "Use the adapter's anonymous or OAuth2 client-credentials flow without persisting a credential."
+    },
+    {
+      "id": "negotiate-config",
+      "actor": "client",
+      "operation": "config.get-routing-and-idempotency",
+      "description": "Resolve route-prefix and namespace-separator policy and inspect the standard idempotency-key-lifetime advertisement.",
+      "depends_on": [
+        "negotiate-authentication"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "preflight-fixture",
+      "actor": "harness",
+      "operation": "commit.verify-fixture-absence",
+      "description": "Prove the run-owned namespace is absent before mutation so cleanup cannot delete pre-existing state.",
+      "depends_on": [
+        "negotiate-config"
+      ]
+    },
+    {
+      "id": "create-fixture",
+      "actor": "client",
+      "operation": "commit.create-and-load-table",
+      "description": "Create the run-owned namespace and one committed table, then load its UUID, metadata location, schema, and properties.",
+      "depends_on": [
+        "preflight-fixture"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "accept-current-requirements",
+      "actor": "client",
+      "operation": "table.commit.set-properties",
+      "description": "Commit a property transition guarded by the loaded table UUID and current schema ID, then reload exact admitted state.",
+      "depends_on": [
+        "create-fixture"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "advance-schema",
+      "actor": "client",
+      "operation": "table.commit.advance-schema",
+      "description": "Use matching UUID, schema-ID, and last-field-ID requirements to add schema 1 and make it current.",
+      "depends_on": [
+        "accept-current-requirements"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "reject-stale-requirement",
+      "actor": "client",
+      "operation": "table.commit.reject-stale-schema",
+      "description": "Submit a property update still asserting schema 0, require CommitFailedException, and reload to prove the metadata pointer and properties did not change.",
+      "depends_on": [
+        "advance-schema"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "inspect-idempotency-advertisement",
+      "actor": "harness",
+      "operation": "config.inspect-idempotency-key-lifetime",
+      "description": "Treat a resolved idempotency-key-lifetime as support; when absent, skip UUIDv7 retry operations rather than sending an unsupported extension.",
+      "depends_on": [
+        "negotiate-config"
+      ]
+    },
+    {
+      "id": "retry-exact-request",
+      "actor": "client",
+      "operation": "table.commit.retry-exact",
+      "description": "When advertised, send one property commit twice with identical bytes and one UUIDv7 Idempotency-Key, reloading after each response to prove exactly one pointer transition.",
+      "depends_on": [
+        "reject-stale-requirement",
+        "inspect-idempotency-advertisement"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "reject-idempotency-drift",
+      "actor": "client",
+      "operation": "table.commit.reject-idempotency-content-drift",
+      "description": "When advertised, reuse the finalized key with a different property value, require a conflict, and reload to prove no drifted effect.",
+      "depends_on": [
+        "retry-exact-request"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "verify-required-state",
+      "actor": "client",
+      "operation": "table.load-required-final-state",
+      "description": "Prove the required branch retains schema 1 and the admitted property while the rejected stale property remains absent, independent of optional idempotency support.",
+      "depends_on": [
+        "reject-stale-requirement"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "cleanup-fixture",
+      "actor": "harness",
+      "operation": "commit.reconcile-drop-and-verify",
+      "description": "Drop the table without purge, prove it absent, drop the namespace, and prove the namespace absent even when an earlier assertion failed.",
+      "depends_on": [
+        "reject-idempotency-drift",
+        "verify-required-state"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "sanitize-transcript",
+      "actor": "harness",
+      "operation": "evidence.sanitize-commit-transcript",
+      "description": "Persist only sanitized requests, redacted idempotency headers, allowlisted response metadata, assertion outcomes, and bounded JSON evidence.",
+      "depends_on": [
+        "cleanup-fixture"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "authentication-ready",
+      "step": "negotiate-authentication",
+      "required": true,
+      "description": "Authentication completes without persisting a credential or token.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/authentication-ready-v1",
+        "configuration": {
+          "persist_token": false
+        }
+      }
+    },
+    {
+      "id": "config-routing-ready",
+      "step": "negotiate-config",
+      "required": true,
+      "description": "Config returns HTTP 200 JSON and resolves route-prefix and namespace-separator policy.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/commit-config-routing-v1",
+        "configuration": {
+          "default_namespace_separator": "%1F"
+        }
+      }
+    },
+    {
+      "id": "fixture-isolated",
+      "step": "preflight-fixture",
+      "required": true,
+      "description": "The run-owned namespace returned a spec-shaped NoSuchNamespace response before mutation.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/commit-fixture-isolation-v1",
+        "configuration": {
+          "code": 404,
+          "type": "NoSuchNamespaceException"
+        }
+      }
+    },
+    {
+      "id": "commit-fixture-ready",
+      "step": "create-fixture",
+      "required": true,
+      "description": "Namespace create and table create/load return exact run-owned identity, nonempty UUID and metadata location, schema 0, and initial properties.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/commit-fixture-v1",
+        "configuration": {
+          "create_http_status": 200,
+          "load_http_status": 200
+        }
+      }
+    },
+    {
+      "id": "current-requirements-admitted",
+      "step": "accept-current-requirements",
+      "required": true,
+      "description": "Matching UUID and current-schema requirements admit one property update, preserve identity/schema, and advance metadata exactly once.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/commit-requirements-v1",
+        "configuration": {
+          "expected_http_status": 200,
+          "require_new_metadata_location": true
+        }
+      }
+    },
+    {
+      "id": "schema-transition-admitted",
+      "step": "advance-schema",
+      "required": true,
+      "description": "Matching UUID, schema, and last-field requirements admit schema 1 with fields 1 and 2 and one new metadata location.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/commit-schema-transition-v1",
+        "configuration": {
+          "current_schema_id": 1,
+          "last_column_id": 2
+        }
+      }
+    },
+    {
+      "id": "stale-requirement-rejected-atomically",
+      "step": "reject-stale-requirement",
+      "required": true,
+      "description": "The stale schema-0 request returns HTTP/code 409 CommitFailedException and leaves metadata location, schema, and properties unchanged.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/commit-stale-rejection-v1",
+        "configuration": {
+          "code": 409,
+          "type": "CommitFailedException"
+        }
+      }
+    },
+    {
+      "id": "idempotency-support-advertised",
+      "step": "inspect-idempotency-advertisement",
+      "required": false,
+      "description": "Config exposes a nonempty idempotency-key-lifetime through the standard field or resolved defaults/overrides map.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/idempotency-advertisement-v1",
+        "configuration": {
+          "accepted_pointers": [
+            "/idempotency-key-lifetime",
+            "/overrides/idempotency-key-lifetime",
+            "/defaults/idempotency-key-lifetime"
+          ]
+        }
+      }
+    },
+    {
+      "id": "exact-request-replayed-once",
+      "step": "retry-exact-request",
+      "required": false,
+      "description": "When idempotency is advertised, an exact UUIDv7-key retry returns equivalent success while the metadata pointer advances only on the first request.",
+      "check": {
+        "kind": "exact-replay"
+      }
+    },
+    {
+      "id": "idempotency-content-drift-rejected",
+      "step": "reject-idempotency-drift",
+      "required": false,
+      "description": "When idempotency is advertised, same-key different content returns a spec-shaped conflict and cannot alter the finalized state.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/idempotency-content-binding-v1",
+        "configuration": {
+          "expected_http_status": 409,
+          "require_unchanged_metadata_location": true
+        }
+      }
+    },
+    {
+      "id": "required-final-state-exact",
+      "step": "verify-required-state",
+      "required": true,
+      "description": "The required branch ends at schema 1 with the admitted state property and without the stale request's property.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/commit-final-state-v1",
+        "configuration": {
+          "current_schema_id": 1,
+          "forbidden_property": "c1-06.stale"
+        }
+      }
+    },
+    {
+      "id": "commit-fixture-clean",
+      "step": "cleanup-fixture",
+      "required": true,
+      "description": "The table and namespace are both spec-shaped absent after non-purging reconciliation.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/commit-cleanup-v1",
+        "configuration": {
+          "final_http_status": 404,
+          "purge_requested": false
+        }
+      }
+    },
+    {
+      "id": "transcript-sanitized",
+      "step": "sanitize-transcript",
+      "required": true,
+      "description": "The transcript contains no bearer token, OAuth credential, cookie, raw idempotency key, or secret-shaped response value.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/sanitized-commit-transcript-v1",
+        "configuration": {
+          "idempotency_header_policy": "redact",
+          "request_header_policy": "allowlist-and-redact-authorization",
+          "response_header_policy": "allowlist",
+          "response_json_policy": "recursive-secret-key-redaction"
+        }
+      }
+    }
+  ]
+}

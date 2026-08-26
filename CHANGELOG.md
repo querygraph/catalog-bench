@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- Catalog community C1-06 contract: define a neutral Iceberg REST commit
+  correctness scenario that proves valid requirement admission, a deterministic
+  stale-schema 409 with no mutation, UUIDv7 exact-retry behavior when advertised,
+  same-key content-drift rejection, complete fixture reconciliation, and
+  sanitized evidence without turning optional idempotency support into a hidden
+  required capability.
+
 - Catalog community C1-05 acceptance: documented the exact stable-Rust,
   production-optimized table-conformance runner and LakeCat artifact,
   five-catalog required/optional matrix, direct audit of all 15 referenced
