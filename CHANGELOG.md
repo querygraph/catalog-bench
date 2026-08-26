@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Documentation quality: escaped the write-data example URI so workspace
+  Rustdoc builds are warning-free under `-D warnings`.
 - Historical evidence: added a deterministic importer that hash-checks and
   recomputes the 2026-08-08 raw TSV evidence into four typed aggregate result
   records and an immutable bundle manifest. Added bundle-wide digest, identity,

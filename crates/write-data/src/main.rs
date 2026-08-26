@@ -60,7 +60,7 @@ struct Args {
     #[arg(long, default_value_t = true)]
     create: bool,
 
-    /// Explicit table location (defaults to s3://<bucket>/write_bench).
+    /// Explicit table location (defaults to `s3://<bucket>/write_bench`).
     #[arg(long)]
     location: Option<String>,
 
