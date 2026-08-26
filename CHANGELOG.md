@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Catalog community C1-05 acceptance: documented the exact stable-Rust,
+  production-optimized table-conformance runner and LakeCat artifact,
+  five-catalog required/optional matrix, direct audit of all 15 referenced
+  metadata objects in shared MinIO, complete cleanup and sanitization evidence,
+  LakeCat's repaired no-snapshot rename defect, Gravitino's repaired deployment
+  defaults, Nessie's narrow missing-namespace mismatch, rejected exploratory
+  evidence, reproduction workflow, and the C1-09 publication boundary.
+
 - C1-05 Gravitino state initialization: added a least-privilege one-shot that
   prepares only Gravitino's named state volume for the image's UID 1000 before
   the catalog starts. Fresh SQLite-backed deployments no longer fail with a

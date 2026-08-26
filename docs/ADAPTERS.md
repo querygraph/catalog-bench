@@ -55,6 +55,13 @@ namespace and table name as URI path segments, sends that unique child in every
 Iceberg metadata to preserve it. A catalog-managed binding omits `location` and
 therefore tests the catalog's configured default without inventing a substitute.
 
+Catalog-managed does not mean storage is unaudited. C1-05 requires each returned
+metadata location to resolve to the profile-declared shared MinIO warehouse and
+independently stats every distinct referenced object. The accepted Gravitino
+1.3.0 deployment additionally verifies its effective
+`GRAVITINO_ICEBERG_REST_*` rewrite output; a memory backend or `/tmp` warehouse
+invalidates the run. See [`TABLE-CONFORMANCE.md`](TABLE-CONFORMANCE.md).
+
 OAuth2 adapters name two portable environment variables rather than carrying
 credential values in the profile. The current Polaris binding uses
 `CATALOG_BENCH_POLARIS_CLIENT_ID` and

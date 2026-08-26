@@ -212,7 +212,9 @@ passing and failing assertions. Table cleanup reconciles the source, rename
 destination, dropped sibling, and registration destination with
 `purgeRequested=false` before dropping the fixture namespace. The exact
 optimized five-catalog C1-04 namespace matrix is documented in
-[`docs/NAMESPACE-CONFORMANCE.md`](docs/NAMESPACE-CONFORMANCE.md).
+[`docs/NAMESPACE-CONFORMANCE.md`](docs/NAMESPACE-CONFORMANCE.md); the C1-05
+table matrix, shared-MinIO object audit, and rejected-run analysis are in
+[`docs/TABLE-CONFORMANCE.md`](docs/TABLE-CONFORMANCE.md).
 
 Choose a new output name and fixture ID for every run: the CLI refuses
 to overwrite evidence or mutate a colliding fixture.

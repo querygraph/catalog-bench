@@ -173,6 +173,8 @@ namespace-separator resolution, bounded response capture, request recording,
 recursive sanitization, and opaque page-token redaction with the namespace
 runner. Its smoke transcripts remain non-publishable until the immutable
 result/manifest pipeline records exact artifacts and environment provenance.
+See the optimized five-catalog acceptance matrix, shared-MinIO audit, and exact
+artifact identities in [`TABLE-CONFORMANCE.md`](TABLE-CONFORMANCE.md).
 
 ## Closed fields and extensions
 

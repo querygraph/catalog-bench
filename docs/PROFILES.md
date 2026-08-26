@@ -99,6 +99,13 @@ endpoint. `exercise` schedules a standard operation; it does not predict a pass.
 See [ADAPTERS.md](ADAPTERS.md) for routing, authentication, capability, shim, and
 historical-compatibility semantics.
 
+The C1-05 smoke acceptance rebuilt and hashed the candidate conformance runner
+and LakeCat production executable, then proved all five catalog metadata paths
+against shared MinIO. Those observed local artifacts do not resolve this draft:
+C1-09 must materialize them into a new immutable runnable profile and bundle.
+Exact hashes and the behavioral matrix are in
+[`TABLE-CONFORMANCE.md`](TABLE-CONFORMANCE.md).
+
 The config-negotiation scenario additionally pins the exact Apache Iceberg 1.11.0
 OpenAPI bytes at SHA-256
 `80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a`.
