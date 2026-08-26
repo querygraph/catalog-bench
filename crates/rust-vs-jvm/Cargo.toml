@@ -18,23 +18,23 @@ tokio = { workspace = true }
 anyhow = { workspace = true }
 url = "2"
 
-# Sail's Foyer object-store cache, by PATH on the feat/object-store-foyer-cache
-# branch — so the Rust "warm" phase serves bytes from the same CachingObjectStore
-# that `cache-scan` uses. `default-features = false` skips Sail's `hdfs` feature.
-sail-object-store = { path = "../../../sail/crates/sail-object-store", default-features = false }
+# Sail's pinned Foyer object-store cache makes the Rust "warm" phase serve bytes
+# from the same `CachingObjectStore` that `cache-scan` uses.
+sail-object-store = { workspace = true }
 
 # DataFusion is the engine inside Sail; this is a real engine-vs-engine read.
 # These MUST resolve to the SAME versions `cache-scan` / `sail-object-store` use,
 # so DataFusion shares ONE `object_store` with `CachingObjectStore`. Pinned from
-# ~/src/sail/Cargo.lock: datafusion 54.0.0, object_store 0.13.2, arrow 58.3.0.
+# the selected Sail revision: datafusion 54.0.0, object_store 0.13.2,
+# arrow 58.3.0.
 #
-# The feature list MIRRORS Sail's own `datafusion` dependency EXACTLY (see
-# ~/src/sail/Cargo.toml [workspace.dependencies]). Crucially it has `default-features
-# = false` and NO `sql` feature: Sail's `sail-common-datafusion` (pulled transitively
-# via sail-object-store -> sail-telemetry) is written against a datafusion-common
-# WITHOUT the `sqlparser` SQL-error variant, so enabling DataFusion's SQL frontend
-# here would break that crate via Cargo feature unification. We therefore build the
-# query through the DataFrame API rather than `ctx.sql()` — same logical plan.
+# The feature list MIRRORS Sail's own `datafusion` dependency EXACTLY. Crucially it
+# has `default-features = false` and NO `sql` feature: `sail-common-datafusion`
+# (pulled transitively via sail-object-store -> sail-telemetry) is written against
+# a datafusion-common WITHOUT the `sqlparser` SQL-error variant. Enabling
+# DataFusion's SQL frontend here would break that crate via Cargo feature
+# unification. We therefore build the query through the DataFrame API rather than
+# `ctx.sql()` — same logical plan.
 datafusion = { version = "54.0.0", default-features = false, features = [
     "nested_expressions",
     "crypto_expressions",

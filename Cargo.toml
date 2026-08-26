@@ -26,3 +26,8 @@ object_store = { version = "0.11", features = ["aws"] }
 
 # The shared library, consumed by every bench + the driver.
 catalog-bench-common = { path = "crates/common" }
+
+# The cache/read benchmarks must build from a standalone checkout. Keep Sail's
+# object-store boundary immutable and aligned with the LakeCat 0.3.0 dependency
+# line instead of resolving whichever sibling checkout happens to be present.
+sail-object-store = { git = "https://github.com/querygraph/sail.git", rev = "bddb1706ba2308e5029d47f04f03121236edbfa6", default-features = false }

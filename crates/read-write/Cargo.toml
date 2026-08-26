@@ -21,19 +21,18 @@ reqwest = { workspace = true }
 futures = "0.3"
 url = "2"
 
-# Sail's Foyer object-store cache, by PATH on the feat/object-store-foyer-cache
-# branch — so the read phase serves bytes from the same CachingObjectStore that
-# `cache-scan` / `rust-vs-jvm` use. `default-features = false` skips Sail's `hdfs`.
-sail-object-store = { path = "../../../sail/crates/sail-object-store", default-features = false }
+# Sail's pinned Foyer object-store cache makes the read phase serve bytes from the
+# same `CachingObjectStore` that `cache-scan` and `rust-vs-jvm` use.
+sail-object-store = { workspace = true }
 
 # DataFusion is the engine inside Sail; this is a real Sail-path read.
 # These MUST resolve to the SAME versions `cache-scan` / `rust-vs-jvm` /
 # `sail-object-store` use, so the write (ArrowWriter + object_store PUT) and the
 # read (DataFusion over CachingObjectStore) share ONE `object_store`/`arrow`.
-# Pinned from ~/src/sail/Cargo.lock: datafusion 54.0.0, object_store 0.13.2,
-# parquet/arrow 58.3.0. The datafusion feature list MIRRORS Sail's own (no `sql`
-# feature: Sail's transitive datafusion-common lacks the sqlparser error variant,
-# so the query is built via the DataFrame API, not `ctx.sql()`).
+# Pinned from the selected Sail revision: datafusion 54.0.0, object_store 0.13.2,
+# and parquet/arrow 58.3.0. The feature list mirrors Sail's own and omits `sql`:
+# Sail's transitive datafusion-common lacks the sqlparser error variant, so the
+# query is built via the DataFrame API rather than `ctx.sql()`.
 datafusion = { version = "54.0.0", default-features = false, features = [
     "nested_expressions",
     "crypto_expressions",
