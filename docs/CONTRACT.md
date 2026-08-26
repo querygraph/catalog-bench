@@ -198,6 +198,9 @@ the required stale-state branch remain mandatory regardless of advertisement.
 This scenario does not replace the same-table contention benchmark. It proves
 admission and retry semantics one operation at a time; the contention scenario
 continues to measure accepted throughput, 409 rate, and non-conflict errors.
+See the optimized five-catalog acceptance matrix, exact-retry findings,
+shared-MinIO audit, and rejected-run analysis in
+[`COMMIT-CONFORMANCE.md`](COMMIT-CONFORMANCE.md).
 
 ## Closed fields and extensions
 

@@ -88,7 +88,9 @@ contains the exact commands and explains why files under `target/` are smoke
 evidence rather than publishable result records. The optimized five-catalog
 outcomes are recorded in
 [Iceberg REST Namespace Conformance](docs/NAMESPACE-CONFORMANCE.md) for C1-04
-and [Iceberg REST Table Conformance](docs/TABLE-CONFORMANCE.md) for C1-05.
+and [Iceberg REST Table Conformance](docs/TABLE-CONFORMANCE.md) for C1-05, and
+[Iceberg REST Commit Correctness Conformance](docs/COMMIT-CONFORMANCE.md) for
+C1-06.
 
 ## The commit benchmark
 

@@ -50,12 +50,18 @@ ARM64 executables built inside Docker from read-only committed source checkouts.
 | Namespace scenario | SHA-256 `0cd6262c9bda87ac217e8fc618cf3138ddabe6ca89aac94ee05628a67729b7ac` |
 | Runner source | `catalog-bench@1f4e640566906ded6aa0589d52351eb1c32788f0` |
 | Runner executable | SHA-256 `6a81806f955924dd2961bc6bfe68fab97cd24d302a50532d6410bccbf9c0f78e` |
-| LakeCat source | `lakecat@42b2f34b85d7cbcce1b36d4008211075b6c51593` |
+| LakeCat source | `lakecat@c821a0dcb4b326c23f4a56472a2a5e574ef33fea` |
 | LakeCat executable | SHA-256 `5a6a867c0e3923505f107d418f2a3cc327fd7fa73566b9ac89af77dc588ab839` |
 | LakeCat runtime image | `lakecat-service@sha256:33dfed34779cd601cf8b98b30dde49d0f363020b0daac8f27baa35756e118691` |
 | Rust toolchain | `rustc 1.97.1 (8bab26f4f 2026-07-14)`; `cargo 1.97.1 (c980f4866 2026-06-30)` |
 | Production profile | `opt-level=3`, fat LTO, one codegen unit, stripped symbols, aborting panics, disabled incremental compilation, `-Dwarnings`, `-Ctarget-cpu=native`, `-j1` |
 | LakeCat features | `turso-local,sail-local` |
+
+The LakeCat source identity is the reachable canonical commit after a
+privacy-only history rewrite. An isolated comparison proved its `Cargo.toml`,
+`Cargo.lock`, and complete `crates/` tree source-identical to the acceptance
+checkout; the historical executable, image, and transcript hashes remain the
+exact artifacts observed by this C1-04 run.
 
 The comparison catalog images were the profile-pinned artifacts:
 

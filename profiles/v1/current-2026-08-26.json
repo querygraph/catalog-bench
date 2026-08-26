@@ -169,10 +169,10 @@
       "id": "lakecat",
       "kind": "catalog",
       "name": "LakeCat",
-      "version": "0.3.0-31-g762527c7",
+      "version": "0.3.0-32-gef94b550",
       "source": {
         "repository": "https://github.com/querygraph/lakecat.git",
-        "revision": "762527c7d27730dd789cf41b1cdee021ab712aef"
+        "revision": "ef94b5508e94554f51f4764af932cbb819ae3e41"
       },
       "build": {
         "toolchain": "Rust 1.97.1",

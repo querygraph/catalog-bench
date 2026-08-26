@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- LakeCat canonical provenance repair: repin every current-profile and
+  conformance milestone to its reachable commit after a privacy-only history
+  rewrite. Verified `Cargo.toml`, `Cargo.lock`, and the complete `crates/` tree
+  are source-identical across each rewritten milestone, rebuilt the exact
+  C1-06 LakeCat pin with the production recipe, and reran the five-catalog
+  commit matrix plus all 16 direct MinIO object checks.
+
+- Catalog community C1-06 acceptance: document the exact stable-Rust,
+  production-optimized commit-correctness runner, five-catalog required and
+  config-gated optional matrix, direct audit of all 16 transcript-referenced
+  metadata objects in shared MinIO, complete cleanup and sanitization evidence,
+  Lakekeeper's and Nessie's error-envelope mismatches, Lakekeeper's exact-replay
+  success and content-binding defect, rejected runner diagnostics, reproduction
+  workflow, and the C1-09 publication boundary.
+
 - C1-06 optional-branch independence: permit advertised idempotency checks after
   the required final-state reload proves the complete baseline unchanged, even
   when the stale response's status/type envelope fails its separate required
@@ -72,7 +87,7 @@
 
 - C1-05 LakeCat provenance pin: advanced the draft profile and current-profile
   report to the exact pushed table-lifecycle implementation
-  `lakecat@762527c7` (`v0.3.0-31-g762527c7`). The pin includes register and
+  `lakecat@ef94b550` (`v0.3.0-32-gef94b550`). The pin includes register and
   rename support plus compatible no-current-snapshot commit evidence; C1-09
   still owns immutable artifact resolution and public result publication.
 
@@ -119,7 +134,7 @@
 
 - C1-04 provenance pin: advanced the draft current profile to the independently
   verified namespace-runner revision `catalog-bench@1f4e640` and corrected
-  LakeCat namespace implementation `lakecat@42b2f34b`. Both source builds retain
+  LakeCat namespace implementation `lakecat@c821a0dc`. Both source builds retain
   the exact stable Rust 1.97.1 production recipe; C1-09 still owns resolved
   executable/image artifacts and conversion of smoke transcripts into a
   publishable immutable bundle.
@@ -135,7 +150,7 @@
 
 - C1-03 provenance pin: bound the production commit driver and conformance
   runner to `catalog-bench@feb803f8`, LakeCat to its independently verified
-  endpoint-correction revision `09dd7ee3`, and modeled the conformance runner as
+  endpoint-correction revision `10d98cbe`, and modeled the conformance runner as
   its own unresolved source-build component and service. Corrected the candidate
   profile's previously future-dated resolution timestamp; it remains `draft`
   until C1-09 materializes and hashes every listed artifact.

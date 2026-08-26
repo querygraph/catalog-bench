@@ -58,7 +58,7 @@ Versions were selected from official release records and registry metadata on
 
 | Role | Component | Selected identity |
 |---|---|---|
-| Catalog | LakeCat | `0.3.0-31-g762527c7` / `762527c7d27730dd789cf41b1cdee021ab712aef` |
+| Catalog | LakeCat | `0.3.0-32-gef94b550` / `ef94b5508e94554f51f4764af932cbb819ae3e41` |
 | Catalog | Apache Polaris | 1.7.0 / `4ac2f059…`; index `3495f67f…`, ARM64 `53022013…` |
 | Catalog | Apache Gravitino | 1.3.0 / `40fdf6ab…`; index `80136ae7…`, ARM64 `01cf367b…` |
 | Catalog | Lakekeeper | 0.13.3 / `12bb82fc…`; index `db2ba616…`, ARM64 `ba942413…` |
@@ -73,6 +73,13 @@ Versions were selected from official release records and registry metadata on
 | Object store | MinIO | `RELEASE.2025-10-15T17-29-55Z` / `9e49d5e7…`; source-built image unresolved |
 | State store | PostgreSQL | 17.11-bookworm; index `051f7b7b…`, ARM64 `b2605730…` |
 | Build runner | Rust 1.97.1 bookworm | index `0e2bcaef…`, ARM64 `6e957ef0…` |
+
+LakeCat's identity is its reachable canonical commit after a privacy-only
+history rewrite. An isolated pre/post-rewrite comparison verified `Cargo.toml`,
+`Cargo.lock`, and the complete `crates/` tree are source-identical at every
+affected conformance milestone. The current profile therefore names only
+reproducible public history; historical artifact hashes in the C1-04 and C1-05
+reports remain unchanged and are labeled as such.
 
 Spark 4.1.3 is the maintained 4.x line selected with Iceberg 1.11; Spark 4.2 is
 not silently substituted. Flink 2.1.3 is the newest selected line with the Iceberg

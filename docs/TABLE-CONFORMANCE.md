@@ -100,11 +100,17 @@ request crossed a host-published port.
 | Runner build image | `rust:1.97.1-bookworm@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97`; ARM64 manifest `sha256:6e957ef098dcc77d33e310261e4ed5843bb108d5c3b5dc2b476cbc8b6caf53fa` |
 | Rust toolchain | `rustc 1.97.1 (8bab26f4f 2026-07-14)`; `cargo 1.97.1 (c980f4866 2026-06-30)`; LLVM 22.1.6 |
 | Production profile | `opt-level=3`, fat LTO, one codegen unit, stripped symbols, aborting panics, no debug or incremental compilation, `-Dwarnings`, `-Ctarget-cpu=native`, `--locked`, `-j1` |
-| LakeCat source | `lakecat@762527c7d27730dd789cf41b1cdee021ab712aef` (`0.3.0-31-g762527c7`) |
+| LakeCat source | `lakecat@ef94b5508e94554f51f4764af932cbb819ae3e41` (`0.3.0-32-gef94b550`) |
 | LakeCat executable | SHA-256 `70bc7d84b5c08a9addf52848edec4c0746f65a2680074d1c606dd2889ae60abd`; 19,560,096 bytes |
 | LakeCat runtime image | local Linux ARM64 image `sha256:3936e3576bfee378e2fde0227a4a1f9f2eb6b75322291feb3b67b4fd87ae23f6`; 60,017,816 bytes |
 | LakeCat production features | `turso-local,sail-local`; Sail source `bddb1706ba2308e5029d47f04f03121236edbfa6`; Turso `0.7.0-pre.10` |
 | Shared MinIO | `RELEASE.2025-10-15T17-29-55Z`, source `9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a`, local image `sha256:28c9405d4591b7803c8cf79afcef6a32f8fe9964982e5075babcb6a1c7ddecdb` |
+
+The LakeCat source identity is the reachable canonical commit after a
+privacy-only history rewrite. An isolated comparison proved its `Cargo.toml`,
+`Cargo.lock`, and complete `crates/` tree source-identical to the acceptance
+checkout; the historical executable, image, transcript, and MinIO hashes remain
+the exact artifacts observed by this C1-05 run.
 
 The acceptance checkout is newer than the runner implementation pin because
 the later commits only pin profile provenance and repair/document deployment
@@ -180,10 +186,10 @@ internal error: table commit record snapshot id must be non-negative
 Iceberg legitimately represents a newly created table with no current snapshot
 as `current-snapshot-id: -1`. LakeCat had copied that wire sentinel into its
 unsigned durable commit evidence. Rename later revalidated the history and
-rejected the negative value. LakeCat revision `335f94ef` now normalizes the
+rejected the negative value. LakeCat revision `af442023` now normalizes the
 no-snapshot sentinel to zero at the evidence boundary, decodes legacy serialized
 `-1` as zero, rejects every other negative value, and validates the complete
-transition before mutating either memory or Turso state. Revision `762527c7`
+transition before mutating either memory or Turso state. Revision `ef94b550`
 contains that repair and the regenerated book artifacts.
 
 ### Runner silently omitted the declared LakeCat location
