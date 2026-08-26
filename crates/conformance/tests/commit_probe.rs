@@ -222,7 +222,7 @@ async fn stale_success_and_mutation_fail_atomicity_while_cleanup_still_runs() {
 #[tokio::test]
 async fn stale_conflict_with_the_wrong_error_type_fails_without_short_circuiting_cleanup() {
     let names = FixtureNames::new("lakecat", FIXTURE_ID);
-    let mut responses = required_and_cleanup_responses(&names, config_response(Some("PT30M")));
+    let mut responses = happy_responses(&names, config_response(Some("PT30M")));
     responses[9] = error_response(409, "ValidationException");
     let server = MockServer::start(responses);
     let (mut profile, scenario) = contracts();
@@ -239,10 +239,18 @@ async fn stale_conflict_with_the_wrong_error_type_fails_without_short_circuiting
         AssertionOutcome::Pass
     ));
     assert!(matches!(
+        assertion(&transcript, "exact-request-replayed-once").outcome,
+        AssertionOutcome::Pass
+    ));
+    assert!(matches!(
+        assertion(&transcript, "idempotency-content-drift-rejected").outcome,
+        AssertionOutcome::Pass
+    ));
+    assert!(matches!(
         assertion(&transcript, "commit-fixture-clean").outcome,
         AssertionOutcome::Pass
     ));
-    assert_eq!(server.finish().len(), 16);
+    assert_eq!(server.finish().len(), 22);
 }
 
 #[tokio::test]

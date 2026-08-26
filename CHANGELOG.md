@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C1-06 optional-branch independence: permit advertised idempotency checks after
+  the required final-state reload proves the complete baseline unchanged, even
+  when the stale response's status/type envelope fails its separate required
+  assertion. Unsafe or mutated final state still suppresses every optional
+  request.
+
 - C1-06 successful-transition projection: compare the scenario-owned
   `catalog-bench.*` and `c1-06.*` properties exactly while treating unrelated
   catalog-managed metadata properties as opaque across admitted commits. Exact

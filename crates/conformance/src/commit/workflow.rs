@@ -366,10 +366,10 @@ async fn execute_optional_idempotency(
     idempotency: CommitIdempotency<'_>,
     facts: &mut CommitFacts,
 ) -> Result<()> {
-    if !facts.stale_rejection.passed() {
+    if !facts.required_final.passed() {
         let reason = facts
-            .stale_rejection
-            .explanation("stale requirement rejection did not pass");
+            .required_final
+            .explanation("required final state did not pass");
         skip_optional_commits(recorder, &reason);
         facts.exact_replay = Fact::NotEvaluated(reason.clone());
         facts.content_binding = Fact::NotEvaluated(reason);
