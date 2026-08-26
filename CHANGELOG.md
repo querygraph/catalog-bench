@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C1-03 provenance pin: bound the production commit driver and conformance
+  runner to `catalog-bench@feb803f8`, LakeCat to its independently verified
+  endpoint-correction revision `09dd7ee3`, and modeled the conformance runner as
+  its own unresolved source-build component and service. Corrected the candidate
+  profile's previously future-dated resolution timestamp; it remains `draft`
+  until C1-09 materializes and hashes every listed artifact.
+
 - Catalog community C1-03: added a strict, catalog-neutral Iceberg REST config
   negotiation runner with anonymous/OAuth2 authentication, exact profile and
   scenario projection, bounded and recursively sanitized HTTP evidence, config

@@ -304,9 +304,17 @@ fn checked_in_profiles_scenario_and_phase_one_adapters_validate() {
     else {
         panic!("current profile must stay draft until artifacts are built");
     };
-    assert_eq!(unresolved_artifacts.len(), 5);
+    assert_eq!(unresolved_artifacts.len(), 6);
     assert_eq!(current.catalog_adapters.len(), 5);
     assert_eq!(current.catalog_capabilities.len(), 27);
+    assert!(current.components.iter().any(|component| {
+        component.id.as_str() == "catalog-bench-conformance"
+            && component.kind == ComponentKind::BenchmarkHarness
+    }));
+    assert!(current.services.iter().any(|service| {
+        service.component.as_str() == "catalog-bench-conformance"
+            && service.role == "conformance-runner"
+    }));
 
     let catalog_ids = current
         .catalog_adapters

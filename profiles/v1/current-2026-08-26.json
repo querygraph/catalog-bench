@@ -4,18 +4,19 @@
   "id": "catalog-community-current-2026-08-26-linux-arm64",
   "title": "Catalog community current candidate pinset",
   "description": "Versions selected from primary release sources on 2026-08-26 for the next Linux ARM64 same-Docker interoperability run. This is a draft input profile, not benchmark evidence.",
-  "resolved_at": "2026-08-26T18:00:00-04:00",
+  "resolved_at": "2026-08-26T06:29:17-04:00",
   "purpose": "current-candidate",
   "readiness": {
     "status": "draft",
     "unresolved_artifacts": [
       "catalog-bench-commit",
+      "catalog-bench-conformance",
       "duckdb",
       "iceberg-java",
       "lakecat",
       "minio"
     ],
-    "explanation": "Source and version choices are pinned. The exact MinIO source build and Lakekeeper topology are runnable, but their final published image identity plus the optimized Linux ARM64 executables, DuckDB package, and engine-specific Iceberg runtime JAR hashes must be materialized by the common C1-09 Docker pipeline before this profile can back results."
+    "explanation": "Source and version choices are pinned. The exact MinIO source build and Lakekeeper topology are runnable, but their final published image identity plus the optimized Linux ARM64 benchmark, conformance, and LakeCat executables, DuckDB package, and engine-specific Iceberg runtime JAR hashes must be materialized by the common C1-09 Docker pipeline before this profile can back results."
   },
   "platform": {
     "operating_system": "Linux",
@@ -53,10 +54,10 @@
       "id": "catalog-bench-commit",
       "kind": "benchmark-harness",
       "name": "catalog-bench commit driver",
-      "version": "f9d70356c73c96e1f560f1c99d9fd79b48572b7a",
+      "version": "feb803f83135fc2814a56a1859fafd20af6561d0",
       "source": {
         "repository": "https://github.com/querygraph/catalog-bench.git",
-        "revision": "f9d70356c73c96e1f560f1c99d9fd79b48572b7a"
+        "revision": "feb803f83135fc2814a56a1859fafd20af6561d0"
       },
       "build": {
         "toolchain": "Rust 1.97.1",
@@ -65,6 +66,43 @@
         "options": [
           "package=catalog-bench-commit",
           "binary=catalog-bench-commit",
+          "jobs=1"
+        ],
+        "compiler_flags": [
+          "-Dwarnings",
+          "-Ctarget-cpu=native"
+        ],
+        "locked": true,
+        "environment": {
+          "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_RELEASE_DEBUG": "false",
+          "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+          "CARGO_PROFILE_RELEASE_LTO": "fat",
+          "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+          "CARGO_PROFILE_RELEASE_PANIC": "abort",
+          "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+        }
+      },
+      "artifact": {
+        "kind": "source-build"
+      }
+    },
+    {
+      "id": "catalog-bench-conformance",
+      "kind": "benchmark-harness",
+      "name": "catalog-bench conformance runner",
+      "version": "feb803f83135fc2814a56a1859fafd20af6561d0",
+      "source": {
+        "repository": "https://github.com/querygraph/catalog-bench.git",
+        "revision": "feb803f83135fc2814a56a1859fafd20af6561d0"
+      },
+      "build": {
+        "toolchain": "Rust 1.97.1",
+        "target": "aarch64-unknown-linux-gnu",
+        "profile": "release",
+        "options": [
+          "package=catalog-bench-conformance",
+          "binary=catalog-bench-conformance",
           "jobs=1"
         ],
         "compiler_flags": [
@@ -131,10 +169,10 @@
       "id": "lakecat",
       "kind": "catalog",
       "name": "LakeCat",
-      "version": "0.3.0-10-g54ad9dcb",
+      "version": "0.3.0-20-g09dd7ee3",
       "source": {
         "repository": "https://github.com/querygraph/lakecat.git",
-        "revision": "54ad9dcb7c941781a77c5210394924a2ae88a459"
+        "revision": "09dd7ee358e79d4acd04b5732e61e0330b7c1c97"
       },
       "build": {
         "toolchain": "Rust 1.97.1",
@@ -460,6 +498,10 @@
     {
       "component": "catalog-bench-commit",
       "role": "benchmark-runner"
+    },
+    {
+      "component": "catalog-bench-conformance",
+      "role": "conformance-runner"
     },
     {
       "component": "minio",

@@ -80,10 +80,10 @@ runtime; Flink 2.3 remains an explicit compatibility gap. Community MinIO is
 source-only at the selected release, so the final image must be built from that
 commit rather than replacing it with `latest`.
 
-The draft's unresolved list is normative: `catalog-bench-commit`, `lakecat`, and
-`duckdb` need optimized production executables; `minio` needs its source-built
-runtime image; `iceberg-java` needs exact engine-specific JAR hashes. The
-materialization process must:
+The draft's unresolved list is normative: `catalog-bench-commit`,
+`catalog-bench-conformance`, `lakecat`, and `duckdb` need optimized production
+executables; `minio` needs its source-built runtime image; `iceberg-java` needs
+exact engine-specific JAR hashes. The materialization process must:
 
 1. use the pinned Linux ARM64 runner and one Docker environment;
 2. build with locked dependencies and the recorded optimization recipe;
