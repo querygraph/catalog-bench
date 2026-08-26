@@ -1,0 +1,544 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "profile",
+  "id": "catalog-community-current-2026-08-26-linux-arm64",
+  "title": "Catalog community current candidate pinset",
+  "description": "Versions selected from primary release sources on 2026-08-26 for the next Linux ARM64 same-Docker interoperability run. This is a draft input profile, not benchmark evidence.",
+  "resolved_at": "2026-08-26T18:00:00-04:00",
+  "purpose": "current-candidate",
+  "readiness": {
+    "status": "draft",
+    "unresolved_artifacts": [
+      "catalog-bench-commit",
+      "duckdb",
+      "iceberg-java",
+      "lakecat",
+      "minio"
+    ],
+    "explanation": "Source and version choices are pinned, but final optimized Linux ARM64 executables, the MinIO source-built image, DuckDB package, and engine-specific Iceberg runtime JAR hashes must be materialized in the common Docker runner before this profile can back results."
+  },
+  "platform": {
+    "operating_system": "Linux",
+    "architecture": "aarch64",
+    "mode": "docker-compose",
+    "container_runtime": "rust-runner",
+    "network": "catalog-bench-net",
+    "shared_object_store": "minio",
+    "warehouse_uri": "s3://warehouse",
+    "extensions": {
+      "querygraph/execution-rule": "All catalogs, clients, engines, and benchmark processes execute in containers on this one Docker network."
+    }
+  },
+  "components": [
+    {
+      "id": "rust-runner",
+      "kind": "container-runtime",
+      "name": "Rust production build runner",
+      "version": "Rust 1.97.1 on Debian bookworm",
+      "artifact": {
+        "kind": "container-image",
+        "reference": "rust:1.97.1-bookworm",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "6e957ef098dcc77d33e310261e4ed5843bb108d5c3b5dc2b476cbc8b6caf53fa"
+        }
+      }
+    },
+    {
+      "id": "catalog-bench-commit",
+      "kind": "benchmark-harness",
+      "name": "catalog-bench commit driver",
+      "version": "f9d70356c73c96e1f560f1c99d9fd79b48572b7a",
+      "source": {
+        "repository": "https://github.com/querygraph/catalog-bench.git",
+        "revision": "f9d70356c73c96e1f560f1c99d9fd79b48572b7a"
+      },
+      "build": {
+        "toolchain": "Rust 1.97.1",
+        "target": "aarch64-unknown-linux-gnu",
+        "profile": "release",
+        "options": [
+          "package=catalog-bench-commit",
+          "binary=catalog-bench-commit",
+          "jobs=1"
+        ],
+        "compiler_flags": [
+          "-Ctarget-cpu=native"
+        ],
+        "locked": true,
+        "environment": {
+          "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_RELEASE_DEBUG": "false",
+          "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+          "CARGO_PROFILE_RELEASE_LTO": "fat",
+          "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+          "CARGO_PROFILE_RELEASE_PANIC": "abort",
+          "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+        }
+      },
+      "artifact": {
+        "kind": "source-build"
+      }
+    },
+    {
+      "id": "minio",
+      "kind": "object-store",
+      "name": "MinIO",
+      "version": "RELEASE.2025-10-15T17-29-55Z",
+      "source": {
+        "repository": "https://github.com/minio/minio.git",
+        "revision": "9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a",
+        "tag": "RELEASE.2025-10-15T17-29-55Z"
+      },
+      "build": {
+        "toolchain": "Go toolchain pinned by the MinIO source tree",
+        "target": "linux/arm64",
+        "profile": "release",
+        "options": [
+          "build exact upstream source in the common Docker runner"
+        ],
+        "compiler_flags": [],
+        "locked": true,
+        "environment": {}
+      },
+      "artifact": {
+        "kind": "source-build"
+      }
+    },
+    {
+      "id": "lakecat",
+      "kind": "catalog",
+      "name": "LakeCat",
+      "version": "0.3.0-10-g54ad9dcb",
+      "source": {
+        "repository": "https://github.com/querygraph/lakecat.git",
+        "revision": "54ad9dcb7c941781a77c5210394924a2ae88a459"
+      },
+      "build": {
+        "toolchain": "Rust 1.97.1",
+        "target": "aarch64-unknown-linux-gnu",
+        "profile": "release",
+        "options": [
+          "package=lakecat-service",
+          "binary=lakecat-service",
+          "features=turso-local,sail-local",
+          "jobs=1"
+        ],
+        "compiler_flags": [
+          "-Ctarget-cpu=native"
+        ],
+        "locked": true,
+        "environment": {
+          "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_RELEASE_DEBUG": "false",
+          "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+          "CARGO_PROFILE_RELEASE_LTO": "fat",
+          "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+          "CARGO_PROFILE_RELEASE_PANIC": "abort",
+          "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+        }
+      },
+      "artifact": {
+        "kind": "source-build"
+      },
+      "extensions": {
+        "querygraph/sail-source": {
+          "repository": "https://github.com/querygraph/sail.git",
+          "revision": "bddb1706ba2308e5029d47f04f03121236edbfa6"
+        }
+      }
+    },
+    {
+      "id": "lakecat-turso",
+      "kind": "state-store",
+      "name": "Turso embedded state store",
+      "version": "0.7.0-pre.10",
+      "artifact": {
+        "kind": "package",
+        "ecosystem": "crates.io",
+        "package": "turso",
+        "version": "0.7.0-pre.10",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "1d01c4d88407d9f140d7c20700820a3ed848a0f38f1502557b731cb7432e7025"
+        }
+      }
+    },
+    {
+      "id": "polaris",
+      "kind": "catalog",
+      "name": "Apache Polaris",
+      "version": "1.7.0",
+      "source": {
+        "repository": "https://github.com/apache/polaris.git",
+        "revision": "4ac2f059d1cce149453d0a5f1ff1dff980ec97cc",
+        "tag": "apache-polaris-1.7.0"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "apache/polaris:1.7.0",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "3495f67f38cca33892a045f7dd3f46eb52387f0fd52d4145538a772fd8aedad7"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "53022013a54121d6f81a130b80df85e2c3c1961c592c39e7e3e2353db2ab7acf"
+        }
+      }
+    },
+    {
+      "id": "gravitino",
+      "kind": "catalog",
+      "name": "Apache Gravitino",
+      "version": "1.3.0",
+      "source": {
+        "repository": "https://github.com/apache/gravitino.git",
+        "revision": "40fdf6ab96ac87b47e6d3e14e7c4dc0d815e68f0",
+        "tag": "v1.3.0"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "apache/gravitino-iceberg-rest:1.3.0",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "80136ae753ee77735153fc1482a389018f8c2638a54f453cb96967c7194584c7"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "01cf367b77f91652da6c545ad5253d94c11f4e3dd71c5442863eaa330d8a1088"
+        }
+      }
+    },
+    {
+      "id": "lakekeeper",
+      "kind": "catalog",
+      "name": "Lakekeeper",
+      "version": "0.13.3",
+      "source": {
+        "repository": "https://github.com/lakekeeper/lakekeeper.git",
+        "revision": "12bb82fc0859a82b584afda70e311a0399124a39",
+        "tag": "v0.13.3"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "quay.io/lakekeeper/catalog:v0.13.3",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "db2ba6168eb107f22242fb7f2edc4016fa35e57bdcc606894e809c418e32e8dc"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "ba9424131ff088e8eb5263dbdf66e63c2aec0e71687971673ca37a97389394f2"
+        }
+      }
+    },
+    {
+      "id": "nessie",
+      "kind": "catalog",
+      "name": "Apache Nessie",
+      "version": "0.108.4",
+      "source": {
+        "repository": "https://github.com/projectnessie/nessie.git",
+        "revision": "41d6986725edb95bca176c128300642b8e52d958",
+        "tag": "nessie-0.108.4"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "ghcr.io/projectnessie/nessie:0.108.4-java",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "c0f42874c810f28ac30fc991e979c1b8cf5a2cbfa94212086cdddeae49629517"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "10d751690c54c837d687437e1cb269f61b8d2ca541277639d623f495b408fe9c"
+        }
+      }
+    },
+    {
+      "id": "postgresql",
+      "kind": "state-store",
+      "name": "PostgreSQL",
+      "version": "17.11-bookworm",
+      "artifact": {
+        "kind": "container-image",
+        "reference": "postgres:17.11-bookworm",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "b260573038b3770e3d1aba5a9a033bdd19c4b16304b104d4b4256c75d8f15123"
+        }
+      }
+    },
+    {
+      "id": "pyiceberg",
+      "kind": "client",
+      "name": "PyIceberg",
+      "version": "0.11.1",
+      "source": {
+        "repository": "https://github.com/apache/iceberg-python.git",
+        "revision": "8dee48a8e0218353f706133ed035334869a7ee12",
+        "tag": "pyiceberg-0.11.1"
+      },
+      "artifact": {
+        "kind": "package",
+        "ecosystem": "PyPI wheel for CPython 3.13 Linux ARM64",
+        "package": "pyiceberg",
+        "version": "0.11.1",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "ddb360da76c62c7c23ec3da40e1af48e6712a563905fea2d1a8911ff7a3b6c4d"
+        }
+      },
+      "extensions": {
+        "querygraph/package-file": "pyiceberg-0.11.1-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl",
+        "querygraph/package-bytes": 722202
+      }
+    },
+    {
+      "id": "iceberg-java",
+      "kind": "connector",
+      "name": "Apache Iceberg Java engine runtimes",
+      "version": "1.11.0",
+      "source": {
+        "repository": "https://github.com/apache/iceberg.git",
+        "revision": "6976e020b894f6a6777704df2b8c4458cb291ae9",
+        "tag": "apache-iceberg-1.11.0"
+      },
+      "artifact": {
+        "kind": "package",
+        "ecosystem": "Maven Central engine-specific runtime JARs",
+        "package": "org.apache.iceberg runtime bundles",
+        "version": "1.11.0"
+      }
+    },
+    {
+      "id": "spark-3.5",
+      "kind": "engine",
+      "name": "Apache Spark",
+      "version": "3.5.9",
+      "source": {
+        "repository": "https://github.com/apache/spark.git",
+        "revision": "7c14a3c28b141cc97a330c4d0f5d2a6da7267f85",
+        "tag": "v3.5.9"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "apache/spark:3.5.9",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "af02a459c8706e031c835c16f9db3c463816776e2543dd0f828af65606bcf392"
+        }
+      }
+    },
+    {
+      "id": "spark-4.1",
+      "kind": "engine",
+      "name": "Apache Spark",
+      "version": "4.1.3",
+      "source": {
+        "repository": "https://github.com/apache/spark.git",
+        "revision": "77bbf77e86ad48f58b5dfbc6ac882b3e70cf1989",
+        "tag": "v4.1.3"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "apache/spark:4.1.3",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "bf9d035a7c32a8ca46aa58d6348182ffd7d2dff6409206ecfbb3915ff1fef211"
+        }
+      },
+      "extensions": {
+        "querygraph/selection-rationale": "Selected instead of Spark 4.2 because Apache Iceberg 1.11 publishes the compatible maintained runtime line identified during the Phase 0 audit."
+      }
+    },
+    {
+      "id": "flink",
+      "kind": "engine",
+      "name": "Apache Flink",
+      "version": "2.1.3",
+      "source": {
+        "repository": "https://github.com/apache/flink.git",
+        "revision": "6cda56b084d5c337b36d2f8ed464bc92093b0a34",
+        "tag": "release-2.1.3"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "flink:2.1.3-scala_2.12-java17",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "cc557bbe316d804e83195717a41788dc1ddb9a965887bd0ab83d148480a7802d"
+        }
+      },
+      "extensions": {
+        "querygraph/compatibility-gap": "Flink 2.3.0 is newer but has no Apache Iceberg 1.11 runtime selected by this profile."
+      }
+    },
+    {
+      "id": "trino",
+      "kind": "engine",
+      "name": "Trino",
+      "version": "483",
+      "source": {
+        "repository": "https://github.com/trinodb/trino.git",
+        "revision": "50b0b50b75abd47f830b7805ee1b51716eb4065e",
+        "tag": "483"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "trinodb/trino:483",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "db58cc93e593a2706553745f276bb119c9810e69918be56ecde088ba7ccb0534"
+        }
+      }
+    },
+    {
+      "id": "duckdb",
+      "kind": "engine",
+      "name": "DuckDB",
+      "version": "1.5.3",
+      "source": {
+        "repository": "https://github.com/duckdb/duckdb.git",
+        "revision": "14eca11bd9d4a0de2ea0f078be588a9c1c5b279c",
+        "tag": "v1.5.3"
+      },
+      "build": {
+        "toolchain": "DuckDB release toolchain in the common Docker runner",
+        "target": "linux/arm64",
+        "profile": "release",
+        "options": [
+          "include the released Iceberg/HTTPFS extension set used by the scenario"
+        ],
+        "compiler_flags": [],
+        "locked": true,
+        "environment": {}
+      },
+      "artifact": {
+        "kind": "source-build"
+      }
+    }
+  ],
+  "services": [
+    {
+      "component": "catalog-bench-commit",
+      "role": "benchmark-runner"
+    },
+    {
+      "component": "minio",
+      "role": "shared-object-store",
+      "endpoint": "http://minio:9000",
+      "settings": {
+        "bucket": "warehouse",
+        "path_style_access": true,
+        "region": "us-east-1"
+      }
+    },
+    {
+      "component": "postgresql",
+      "role": "shared-database-process",
+      "endpoint": "postgresql://postgresql:5432",
+      "settings": {
+        "isolation": "separate database/schema per catalog"
+      }
+    },
+    {
+      "component": "lakecat",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://lakecat:8181/catalog",
+      "private_state": "lakecat-turso",
+      "settings": {
+        "state_mode": "file-backed Turso",
+        "warehouse": "local"
+      }
+    },
+    {
+      "component": "polaris",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://polaris:8181/api/catalog",
+      "private_state": "postgresql",
+      "settings": {
+        "state_isolation": "dedicated Polaris database/schema",
+        "warehouse": "s3://warehouse/"
+      }
+    },
+    {
+      "component": "gravitino",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://gravitino:9001/iceberg",
+      "settings": {
+        "state_backend": "file-backed SQLite JDBC inside the pinned image",
+        "warehouse": "s3://warehouse/"
+      }
+    },
+    {
+      "component": "lakekeeper",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://lakekeeper:8181/catalog",
+      "private_state": "postgresql",
+      "settings": {
+        "state_isolation": "dedicated Lakekeeper database/schema",
+        "warehouse": "s3://warehouse/"
+      }
+    },
+    {
+      "component": "nessie",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://nessie:19120/iceberg",
+      "settings": {
+        "state_backend": "pinned image configured version store",
+        "warehouse": "s3://warehouse/"
+      }
+    },
+    {
+      "component": "pyiceberg",
+      "role": "stock-client"
+    },
+    {
+      "component": "iceberg-java",
+      "role": "engine-connector"
+    },
+    {
+      "component": "spark-3.5",
+      "role": "stock-engine"
+    },
+    {
+      "component": "spark-4.1",
+      "role": "stock-engine"
+    },
+    {
+      "component": "flink",
+      "role": "stock-engine"
+    },
+    {
+      "component": "trino",
+      "role": "stock-engine"
+    },
+    {
+      "component": "duckdb",
+      "role": "stock-engine"
+    }
+  ],
+  "extensions": {
+    "querygraph/profile-state": "Version selection only. A run must materialize every unresolved artifact, replace draft with runnable, and hash the resulting profile bytes before execution."
+  }
+}

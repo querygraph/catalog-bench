@@ -148,6 +148,7 @@
       "enum": [
         "catalog",
         "client",
+        "connector",
         "engine",
         "object-store",
         "state-store",

@@ -248,6 +248,40 @@ fn checked_in_schemas_exactly_match_rust_types() {
 }
 
 #[test]
+fn checked_in_phase_zero_profiles_and_scenario_validate() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
+    let paths = [
+        "profiles/v1/reproduction-2026-08-08.json",
+        "profiles/v1/current-2026-08-26.json",
+        "scenarios/v1/iceberg-rest.commit.same-table-contention.json",
+    ];
+
+    let documents = paths.map(|path| {
+        let bytes = fs::read(root.join(path)).unwrap();
+        parse_contract(&bytes).unwrap()
+    });
+
+    let ContractDocument::Profile(historical) = &documents[0] else {
+        panic!("first document must be the historical profile");
+    };
+    assert!(matches!(historical.readiness, ProfileReadiness::Runnable));
+
+    let ContractDocument::Profile(current) = &documents[1] else {
+        panic!("second document must be the current profile");
+    };
+    let ProfileReadiness::Draft {
+        unresolved_artifacts,
+        ..
+    } = &current.readiness
+    else {
+        panic!("current profile must stay draft until artifacts are built");
+    };
+    assert_eq!(unresolved_artifacts.len(), 5);
+
+    assert!(matches!(&documents[2], ContractDocument::Scenario(_)));
+}
+
+#[test]
 fn unknown_fields_are_rejected_outside_extensions() {
     let mut value = serde_json::to_value(scenario()).unwrap();
     value["typo"] = serde_json::json!(true);

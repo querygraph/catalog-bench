@@ -1,0 +1,178 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "iceberg-rest.commit.same-table-contention",
+  "version": 1,
+  "title": "Iceberg REST same-table commit contention",
+  "description": "Measures sequential set-properties commits and concurrent writers contending on one Iceberg table while requiring complete request accounting and shared-object-store persistence evidence.",
+  "family": "concurrency",
+  "classification": "strict-v1",
+  "tags": [
+    "iceberg-rest",
+    "commit",
+    "optimistic-concurrency",
+    "same-table"
+  ],
+  "capabilities": [
+    {
+      "capability": "iceberg-rest.namespace.create",
+      "level": "required",
+      "description": "Create an isolated namespace through the Iceberg REST API."
+    },
+    {
+      "capability": "iceberg-rest.table.create",
+      "level": "required",
+      "description": "Create one Iceberg table whose metadata location is in the shared object store."
+    },
+    {
+      "capability": "iceberg-rest.table.commit.set-properties",
+      "level": "required",
+      "description": "Apply standard set-properties updates with metadata requirements through the Iceberg REST commit endpoint."
+    }
+  ],
+  "parameters": {
+    "conditioning_rounds": 1,
+    "concurrent_duration_seconds": 6,
+    "concurrent_writers": 8,
+    "measured_rounds": 5,
+    "sequential_commits": 1000,
+    "warmup_commits": 50
+  },
+  "steps": [
+    {
+      "id": "create-namespace",
+      "actor": "catalog",
+      "operation": "namespace.create",
+      "description": "Create a unique namespace for this run.",
+      "parameters": {
+        "unique_per_run": true
+      }
+    },
+    {
+      "id": "create-table",
+      "actor": "catalog",
+      "operation": "table.create",
+      "description": "Create one unique table with its metadata location in the shared MinIO warehouse.",
+      "depends_on": [
+        "create-namespace"
+      ],
+      "parameters": {
+        "format_version": 2,
+        "shared_object_store": true,
+        "unique_per_run": true
+      }
+    },
+    {
+      "id": "warmup",
+      "actor": "harness",
+      "operation": "table.commit.set-properties",
+      "description": "Issue 50 unmeasured commits to warm the catalog, state backend, connections, and object store.",
+      "depends_on": [
+        "create-table"
+      ],
+      "parameters": {
+        "commits": 50,
+        "measured": false,
+        "request_identity_scope": "warmup"
+      }
+    },
+    {
+      "id": "sequential",
+      "actor": "harness",
+      "operation": "table.commit.set-properties",
+      "description": "Issue 1,000 measured commits in series and capture latency and throughput.",
+      "depends_on": [
+        "warmup"
+      ],
+      "parameters": {
+        "commits": 1000,
+        "measured": true,
+        "request_identity_scope": "sequential"
+      }
+    },
+    {
+      "id": "concurrent",
+      "actor": "harness",
+      "operation": "table.commit.set-properties",
+      "description": "Run eight writers against the same table for six seconds; count accepted commits, HTTP 409 conflicts, and every other error separately.",
+      "depends_on": [
+        "sequential"
+      ],
+      "parameters": {
+        "duration_seconds": 6,
+        "measured": true,
+        "request_identity_scope": "concurrent writer",
+        "writers": 8
+      }
+    },
+    {
+      "id": "audit-object-growth",
+      "actor": "object-store",
+      "operation": "object.count.delta",
+      "description": "Count MinIO objects before and after the run and compare growth with every accepted warmup, sequential, and concurrent commit.",
+      "depends_on": [
+        "concurrent"
+      ],
+      "parameters": {
+        "minimum_formula": "warmup_commits + sequential_commits + concurrent_accepted"
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "id": "setup-succeeded",
+      "step": "create-table",
+      "required": true,
+      "description": "Namespace and table setup complete successfully.",
+      "check": {
+        "kind": "http-status",
+        "allowed": [
+          200,
+          201
+        ]
+      }
+    },
+    {
+      "id": "all-requests-accounted",
+      "step": "concurrent",
+      "required": true,
+      "description": "Every request is classified as accepted, an HTTP 409 optimistic-concurrency conflict, or an explicit request error; no errors are silently dropped.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/request-accounting-v1",
+        "configuration": {
+          "formula": "attempts = accepted + conflicts + errors"
+        }
+      }
+    },
+    {
+      "id": "zero-request-errors",
+      "step": "concurrent",
+      "required": true,
+      "description": "No request fails outside the accepted-commit and HTTP 409 conflict classes.",
+      "check": {
+        "kind": "no-request-errors"
+      }
+    },
+    {
+      "id": "metadata-persisted",
+      "step": "audit-object-growth",
+      "required": true,
+      "description": "Shared MinIO object growth covers every accepted warmup, sequential, and concurrent commit.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/accepted-metadata-object-growth-v1",
+        "configuration": {
+          "minimum_formula": "50 + 1000 + concurrent_accepted"
+        }
+      }
+    }
+  ],
+  "extensions": {
+    "querygraph/round-policy": {
+      "catalog_order": "rotated between rounds",
+      "conditioning_rounds_discarded": 1,
+      "published_statistic": "median of rounds 2 through 6"
+    }
+  }
+}

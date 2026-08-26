@@ -266,6 +266,7 @@ impl Validate for RuntimeArtifact {
 pub enum ComponentKind {
     Catalog,
     Client,
+    Connector,
     Engine,
     ObjectStore,
     StateStore,

@@ -1,0 +1,315 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "profile",
+  "id": "commit-2026-08-08-linux-arm64",
+  "title": "2026-08-08 commit benchmark reproduction",
+  "description": "Immutable identities reconstructed from the published Linux ARM64 same-table commit sweep. This profile reproduces historical inputs; it is not a claim that the run was repeated.",
+  "resolved_at": "2026-08-08",
+  "purpose": "historical-reproduction",
+  "readiness": {
+    "status": "runnable"
+  },
+  "platform": {
+    "operating_system": "Linux",
+    "architecture": "aarch64",
+    "mode": "docker-compose",
+    "container_runtime": "rust-runner",
+    "network": "iceberg_lakehouse-net",
+    "shared_object_store": "minio",
+    "warehouse_uri": "s3://warehouse",
+    "extensions": {
+      "querygraph/run-location": "One Docker network on one Apple Silicon host"
+    }
+  },
+  "components": [
+    {
+      "id": "rust-runner",
+      "kind": "container-runtime",
+      "name": "Rust build and benchmark runner",
+      "version": "Rust 1.96.0 on rust:1-bookworm",
+      "artifact": {
+        "kind": "container-image",
+        "reference": "rust:1-bookworm",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "5e2214abe154fe26e39f64488952e5c991eeed1d6d6da7cc8381ae83927f0cfc"
+        }
+      }
+    },
+    {
+      "id": "catalog-bench-commit",
+      "kind": "benchmark-harness",
+      "name": "catalog-bench commit driver",
+      "version": "fbdf684566edb877abca94629ff702c93d6ca2fb",
+      "source": {
+        "repository": "https://github.com/querygraph/catalog-bench.git",
+        "revision": "fbdf684566edb877abca94629ff702c93d6ca2fb"
+      },
+      "build": {
+        "toolchain": "Rust 1.96.0",
+        "target": "aarch64-unknown-linux-gnu",
+        "profile": "release",
+        "options": [
+          "package=catalog-bench-commit",
+          "binary=catalog-bench-commit",
+          "jobs=1"
+        ],
+        "compiler_flags": [
+          "-Ctarget-cpu=native"
+        ],
+        "locked": true,
+        "environment": {
+          "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_RELEASE_DEBUG": "false",
+          "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+          "CARGO_PROFILE_RELEASE_LTO": "fat",
+          "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+          "CARGO_PROFILE_RELEASE_PANIC": "abort",
+          "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+        }
+      },
+      "artifact": {
+        "kind": "source-build",
+        "executable": {
+          "location": "image:/usr/local/bin/catalog-bench-commit",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "c04e363420ae8152a229ad4e12e126b28a18deb056c976e4e9af48a6ced75139"
+          },
+          "bytes": 2626432,
+          "description": "Stripped production benchmark executable."
+        }
+      },
+      "extensions": {
+        "querygraph/cargo-lock": {
+          "algorithm": "sha256",
+          "value": "5c9c924c7c0999892c44130d8d2638039c58369b1576b8642c3a5e71de9c8dd6"
+        }
+      }
+    },
+    {
+      "id": "minio",
+      "kind": "object-store",
+      "name": "MinIO",
+      "version": "RELEASE.2025-09-07T16-13-09Z",
+      "source": {
+        "repository": "https://github.com/minio/minio.git",
+        "revision": "01ce918d8279a20e4706b96a64396146894adee4",
+        "tag": "RELEASE.2025-09-07T16-13-09Z"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "minio/minio:RELEASE.2025-09-07T16-13-09Z",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e"
+        }
+      }
+    },
+    {
+      "id": "lakecat",
+      "kind": "catalog",
+      "name": "LakeCat",
+      "version": "3cca8d1c749fcf1c7cbd30661ba2bd4805b256d3",
+      "source": {
+        "repository": "https://github.com/querygraph/lakecat.git",
+        "revision": "3cca8d1c749fcf1c7cbd30661ba2bd4805b256d3"
+      },
+      "build": {
+        "toolchain": "Rust 1.96.0",
+        "target": "aarch64-unknown-linux-gnu",
+        "profile": "release",
+        "options": [
+          "package=lakecat-service",
+          "binary=lakecat-service",
+          "features=turso-local,sail-local",
+          "jobs=1"
+        ],
+        "compiler_flags": [
+          "-Ctarget-cpu=native"
+        ],
+        "locked": true,
+        "environment": {
+          "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_RELEASE_DEBUG": "false",
+          "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+          "CARGO_PROFILE_RELEASE_LTO": "fat",
+          "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+          "CARGO_PROFILE_RELEASE_PANIC": "abort",
+          "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+        }
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "lakecat-service:bench-public-2026-08-08",
+        "digest_scope": "local-image",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "5f661e70cd67f7c4eb720c2eb030b6373b49a1b7c9b86a25796d98547020ad06"
+        },
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/local/bin/lakecat-service",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "56b5081b82aab567eede1b42fbd6e5f4a767d992eff3c0b29915a7b79d076617"
+            },
+            "bytes": 19494560,
+            "description": "Stripped production LakeCat executable packaged without recompilation."
+          },
+          {
+            "location": "https://raw.githubusercontent.com/querygraph/lakecat/3cca8d1c749fcf1c7cbd30661ba2bd4805b256d3/Cargo.lock",
+            "media_type": "text/plain",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "2c580d644aeaac4bb959b883dd785ddbe81202fb34d1bc5dde5538790ea8e70f"
+            },
+            "description": "Locked dependency graph used for the production executable."
+          }
+        ]
+      },
+      "extensions": {
+        "querygraph/sail-source": {
+          "repository": "https://github.com/querygraph/sail.git",
+          "revision": "6471fb9a82620e046d825219eaad26cd569ed91f"
+        }
+      }
+    },
+    {
+      "id": "lakecat-turso",
+      "kind": "state-store",
+      "name": "Turso embedded state store",
+      "version": "0.7.0-pre.10",
+      "artifact": {
+        "kind": "package",
+        "ecosystem": "crates.io",
+        "package": "turso",
+        "version": "0.7.0-pre.10",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "1d01c4d88407d9f140d7c20700820a3ed848a0f38f1502557b731cb7432e7025"
+        }
+      }
+    },
+    {
+      "id": "polaris",
+      "kind": "catalog",
+      "name": "Apache Polaris",
+      "version": "1.5.0",
+      "source": {
+        "repository": "https://github.com/apache/polaris.git",
+        "revision": "da95233805815b1d6a8576c5b527143193e7d7e5",
+        "tag": "apache-polaris-1.5.0"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "apache/polaris:1.5.0",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "03a04f0459948da3977f7ea2ad2fb9ea672b2b503ec409c89c2934d400d71c67"
+        }
+      }
+    },
+    {
+      "id": "gravitino",
+      "kind": "catalog",
+      "name": "Apache Gravitino",
+      "version": "1.1.0",
+      "source": {
+        "repository": "https://github.com/apache/gravitino.git",
+        "revision": "5a6b5ae772d50aff98878ae3659fba3598a9027f",
+        "tag": "v1.1.0"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "apache/gravitino-iceberg-rest:1.1.0",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "906b392c22df95bb3a26085e97a96d2ada3db570c2b40b630f130fa6e1c6648b"
+        }
+      }
+    },
+    {
+      "id": "nessie",
+      "kind": "catalog",
+      "name": "Apache Nessie",
+      "version": "0.108.4",
+      "source": {
+        "repository": "https://github.com/projectnessie/nessie.git",
+        "revision": "41d6986725edb95bca176c128300642b8e52d958",
+        "tag": "nessie-0.108.4"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "ghcr.io/projectnessie/nessie:0.108.4-java",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "c0f42874c810f28ac30fc991e979c1b8cf5a2cbfa94212086cdddeae49629517"
+        }
+      }
+    }
+  ],
+  "services": [
+    {
+      "component": "catalog-bench-commit",
+      "role": "benchmark-runner"
+    },
+    {
+      "component": "minio",
+      "role": "shared-object-store",
+      "endpoint": "http://minio:9000",
+      "settings": {
+        "bucket": "warehouse",
+        "path_style_access": true,
+        "region": "us-east-1"
+      }
+    },
+    {
+      "component": "lakecat",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://lakecat:8181/catalog",
+      "private_state": "lakecat-turso",
+      "settings": {
+        "state_mode": "file-backed Turso",
+        "warehouse": "local"
+      }
+    },
+    {
+      "component": "polaris",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://polaris:8181/api/catalog",
+      "settings": {
+        "state_backend": "official image default",
+        "warehouse": "s3://warehouse/"
+      }
+    },
+    {
+      "component": "gravitino",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://gravitino:9001/iceberg",
+      "settings": {
+        "state_backend": "file-backed SQLite JDBC inside the pinned image",
+        "warehouse": "s3://warehouse/"
+      }
+    },
+    {
+      "component": "nessie",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://nessie:19120/iceberg",
+      "settings": {
+        "state_backend": "official image default",
+        "warehouse": "s3://warehouse/"
+      }
+    }
+  ],
+  "extensions": {
+    "querygraph/historical-evidence": "This profile was reconstructed from the published report and immutable artifacts on 2026-08-26."
+  }
+}

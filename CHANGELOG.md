@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Phase 0 pinsets: added a runnable reconstruction of the 2026-08-08 Linux ARM64
+  commit environment, an explicitly draft 2026-08-26 catalog/client/engine
+  profile, and a neutral versioned same-table contention scenario.
+- Component taxonomy: added an explicit connector kind for engine/catalog runtime
+  artifacts such as Apache Iceberg Java bundles.
 - Evidence fidelity: environment values now encode exact, approximate, or unknown
   precision, allowing historical imports to retain incomplete hardware/runtime
   capture without fabricated values.
