@@ -7,6 +7,12 @@ Nessie / Gravitino / Polaris) and now spans the read and write paths where a Rus
 stack (LakeCat + [Sail](https://github.com/querygraph/sail), with the Foyer
 object-store cache) is meant to shine.
 
+Versioned, catalog-neutral interoperability evidence uses the
+[`catalog-bench/v1` contract](docs/CONTRACT.md). Its Rust algebraic data types,
+Draft 2020-12 JSON Schemas, semantic validators, and explicit extension points
+keep `pass`, `fail`, `unsupported`, and `not-tested` distinct. The public matrix
+must be generated from these records rather than maintained independently.
+
 ## Benchmarks
 
 | Name | Status | What it measures |
@@ -41,6 +47,13 @@ cargo run -p catalog-bench -- run all               # run all ready benchmarks, 
 
 Each benchmark emits a JSON `BenchReport` that the driver aggregates; `run all`
 runs all five.
+
+Contract maintenance and validation use the companion CLI:
+
+```sh
+cargo run -p catalog-bench-contract -- schemas check
+cargo run -p catalog-bench-contract -- validate profiles/v1 scenarios/v1 results/v1
+```
 
 See **[RESULTS.md](RESULTS.md)** for measured results.
 

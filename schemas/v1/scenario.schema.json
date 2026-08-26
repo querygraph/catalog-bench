@@ -1,0 +1,392 @@
+{
+  "$defs": {
+    "ActorRole": {
+      "enum": [
+        "harness",
+        "catalog",
+        "client",
+        "engine",
+        "object-store",
+        "state-store",
+        "external-sink"
+      ],
+      "type": "string"
+    },
+    "AssertionCheck": {
+      "description": "A portable assertion definition. `Custom` is namespaced and carries its full\nconfiguration so a consumer never has to guess what an adapter checked.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "allowed": {
+              "items": {
+                "format": "uint16",
+                "maximum": 65535,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            "kind": {
+              "const": "http-status",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "allowed"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "expected": true,
+            "kind": {
+              "const": "json-pointer-equals",
+              "type": "string"
+            },
+            "pointer": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "pointer",
+            "expected"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "artifact-exists",
+              "type": "string"
+            },
+            "role": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "role"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "object-count-delta",
+              "type": "string"
+            },
+            "minimum": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "minimum"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "no-request-errors",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "exact-replay",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "expectation": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "data-read",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "expectation"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "configuration": true,
+            "kind": {
+              "const": "custom",
+              "type": "string"
+            },
+            "name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "name",
+            "configuration"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "AssertionId": {
+      "description": "Identifier for an assertion within a scenario.",
+      "type": "string"
+    },
+    "AssertionSpec": {
+      "additionalProperties": false,
+      "properties": {
+        "check": {
+          "$ref": "#/$defs/AssertionCheck"
+        },
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/AssertionId"
+        },
+        "required": {
+          "type": "boolean"
+        },
+        "step": {
+          "$ref": "#/$defs/StepId"
+        }
+      },
+      "required": [
+        "id",
+        "step",
+        "required",
+        "description",
+        "check"
+      ],
+      "type": "object"
+    },
+    "CapabilityRequirement": {
+      "additionalProperties": false,
+      "description": "Capability prerequisite used to classify an unattempted operation as\n`unsupported`, rather than as a failed assertion.",
+      "properties": {
+        "capability": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "level": {
+          "$ref": "#/$defs/RequirementLevel"
+        },
+        "specification": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "capability",
+        "level",
+        "description"
+      ],
+      "type": "object"
+    },
+    "ClassificationPolicy": {
+      "description": "Fixed v1 classification semantics:\n\n- pass: the scenario ran and every required assertion passed;\n- fail: the scenario ran and behavior violated a required assertion;\n- unsupported: a declared prerequisite capability is absent;\n- not-tested: execution was not attempted for an environmental or procedural\n  reason, without making a capability claim.",
+      "enum": [
+        "strict-v1"
+      ],
+      "type": "string"
+    },
+    "ContractVersion": {
+      "description": "The only contract version accepted by these Rust types.",
+      "oneOf": [
+        {
+          "const": "catalog-bench/v1",
+          "description": "The initial public contract.",
+          "type": "string"
+        }
+      ]
+    },
+    "RequirementLevel": {
+      "enum": [
+        "required",
+        "optional"
+      ],
+      "type": "string"
+    },
+    "ScenarioDocumentKind": {
+      "enum": [
+        "scenario"
+      ],
+      "type": "string"
+    },
+    "ScenarioFamily": {
+      "enum": [
+        "iceberg-rest",
+        "client-interoperability",
+        "concurrency",
+        "security-and-tenancy",
+        "operations",
+        "migration-and-federation",
+        "semantic-interoperability"
+      ],
+      "type": "string"
+    },
+    "ScenarioId": {
+      "description": "Stable identifier for a versioned scenario.",
+      "type": "string"
+    },
+    "ScenarioStep": {
+      "additionalProperties": false,
+      "description": "One neutral action. `operation` names behavior, not an implementation-specific\ncommand; catalog adapters translate it without changing its semantics.",
+      "properties": {
+        "actor": {
+          "$ref": "#/$defs/ActorRole"
+        },
+        "depends_on": {
+          "items": {
+            "$ref": "#/$defs/StepId"
+          },
+          "type": "array"
+        },
+        "description": {
+          "type": "string"
+        },
+        "id": {
+          "$ref": "#/$defs/StepId"
+        },
+        "operation": {
+          "type": "string"
+        },
+        "parameters": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "timeout_ms": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "actor",
+        "operation",
+        "description"
+      ],
+      "type": "object"
+    },
+    "StepId": {
+      "description": "Identifier for a step within a scenario.",
+      "type": "string"
+    }
+  },
+  "$id": "https://adversari.al/catalog-bench/schemas/v1/scenario.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A complete, implementation-neutral scenario definition.",
+  "properties": {
+    "assertions": {
+      "items": {
+        "$ref": "#/$defs/AssertionSpec"
+      },
+      "type": "array"
+    },
+    "capabilities": {
+      "items": {
+        "$ref": "#/$defs/CapabilityRequirement"
+      },
+      "type": "array"
+    },
+    "classification": {
+      "$ref": "#/$defs/ClassificationPolicy"
+    },
+    "contract_version": {
+      "$ref": "#/$defs/ContractVersion"
+    },
+    "description": {
+      "type": "string"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "family": {
+      "$ref": "#/$defs/ScenarioFamily"
+    },
+    "id": {
+      "$ref": "#/$defs/ScenarioId"
+    },
+    "kind": {
+      "$ref": "#/$defs/ScenarioDocumentKind"
+    },
+    "parameters": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "steps": {
+      "items": {
+        "$ref": "#/$defs/ScenarioStep"
+      },
+      "type": "array"
+    },
+    "tags": {
+      "items": {
+        "type": "string"
+      },
+      "type": "array"
+    },
+    "title": {
+      "type": "string"
+    },
+    "version": {
+      "description": "Monotonically increasing scenario revision, independent of contract v1.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "contract_version",
+    "kind",
+    "id",
+    "version",
+    "title",
+    "description",
+    "family",
+    "classification",
+    "steps",
+    "assertions"
+  ],
+  "title": "Scenario",
+  "type": "object"
+}

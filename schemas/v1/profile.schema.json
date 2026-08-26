@@ -1,0 +1,484 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": false,
+      "description": "A file or URI together with the digest that makes the reference immutable.",
+      "properties": {
+        "bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "location": {
+          "description": "Bundle-relative path or public URI.",
+          "type": "string"
+        },
+        "media_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "media_type",
+        "digest"
+      ],
+      "type": "object"
+    },
+    "BuildConfiguration": {
+      "additionalProperties": false,
+      "description": "Reproducible build settings that materially affect a native executable.",
+      "properties": {
+        "environment": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "features": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "locked": {
+          "type": "boolean"
+        },
+        "profile": {
+          "type": "string"
+        },
+        "rustflags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "target": {
+          "type": "string"
+        },
+        "toolchain": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "toolchain",
+        "target",
+        "profile",
+        "locked"
+      ],
+      "type": "object"
+    },
+    "Component": {
+      "additionalProperties": false,
+      "description": "Exact identity of a catalog, client, engine, service, or tool.",
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/RuntimeArtifact"
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "id": {
+          "$ref": "#/$defs/ComponentId"
+        },
+        "kind": {
+          "$ref": "#/$defs/ComponentKind"
+        },
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "name",
+        "version",
+        "artifact"
+      ],
+      "type": "object"
+    },
+    "ComponentId": {
+      "description": "Identifier for a component within a profile.",
+      "type": "string"
+    },
+    "ComponentKind": {
+      "enum": [
+        "catalog",
+        "client",
+        "engine",
+        "object-store",
+        "state-store",
+        "benchmark-harness",
+        "container-runtime",
+        "validator",
+        "converter",
+        "other"
+      ],
+      "type": "string"
+    },
+    "ContractVersion": {
+      "description": "The only contract version accepted by these Rust types.",
+      "oneOf": [
+        {
+          "const": "catalog-bench/v1",
+          "description": "The initial public contract.",
+          "type": "string"
+        }
+      ]
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "description": "A content hash. Hash algorithms are explicit so a future contract can add one\nwithout changing the meaning of existing values.",
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/DigestAlgorithm"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "value"
+      ],
+      "type": "object"
+    },
+    "DigestAlgorithm": {
+      "enum": [
+        "sha256"
+      ],
+      "type": "string"
+    },
+    "ExecutionMode": {
+      "enum": [
+        "docker-compose",
+        "kubernetes",
+        "host-processes",
+        "mixed"
+      ],
+      "type": "string"
+    },
+    "ExecutionPlatform": {
+      "additionalProperties": false,
+      "description": "Shared execution substrate. Actual per-run hardware is captured in each\nresult's environment manifest.",
+      "properties": {
+        "architecture": {
+          "type": "string"
+        },
+        "container_runtime": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComponentId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "mode": {
+          "$ref": "#/$defs/ExecutionMode"
+        },
+        "network": {
+          "type": "string"
+        },
+        "operating_system": {
+          "type": "string"
+        },
+        "shared_object_store": {
+          "$ref": "#/$defs/ComponentId"
+        },
+        "warehouse_uri": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "operating_system",
+        "architecture",
+        "mode",
+        "network",
+        "shared_object_store",
+        "warehouse_uri"
+      ],
+      "type": "object"
+    },
+    "ProfileDocumentKind": {
+      "enum": [
+        "profile"
+      ],
+      "type": "string"
+    },
+    "ProfileId": {
+      "description": "Stable identifier for an execution profile.",
+      "type": "string"
+    },
+    "ProfilePurpose": {
+      "enum": [
+        "historical-reproduction",
+        "current-candidate",
+        "conformance",
+        "performance",
+        "fault-injection"
+      ],
+      "type": "string"
+    },
+    "RuntimeArtifact": {
+      "description": "The deployable artifact used for a component.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "index_digest": {
+              "$ref": "#/$defs/Digest"
+            },
+            "kind": {
+              "const": "container-image",
+              "type": "string"
+            },
+            "platform_digest": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Digest"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "reference": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "reference",
+            "index_digest"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "build": {
+              "$ref": "#/$defs/BuildConfiguration"
+            },
+            "executable": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/ArtifactReference"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "kind": {
+              "const": "source-build",
+              "type": "string"
+            },
+            "source": {
+              "$ref": "#/$defs/SourceRevision"
+            }
+          },
+          "required": [
+            "kind",
+            "source",
+            "build"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "digest": {
+              "anyOf": [
+                {
+                  "$ref": "#/$defs/Digest"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ecosystem": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "package",
+              "type": "string"
+            },
+            "package": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "ecosystem",
+            "package",
+            "version"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ServiceBinding": {
+      "additionalProperties": false,
+      "description": "A component's neutral role and endpoint within the profile topology.",
+      "properties": {
+        "component": {
+          "$ref": "#/$defs/ComponentId"
+        },
+        "endpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "private_state": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ComponentId"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "role": {
+          "type": "string"
+        },
+        "settings": {
+          "additionalProperties": true,
+          "description": "Sanitized, behaviorally relevant settings only. Secrets are forbidden.",
+          "type": "object"
+        }
+      },
+      "required": [
+        "component",
+        "role"
+      ],
+      "type": "object"
+    },
+    "SourceRevision": {
+      "additionalProperties": false,
+      "description": "Immutable source identity for a component built from source.",
+      "properties": {
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "repository": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "tag": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "repository",
+        "revision"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://adversari.al/catalog-bench/schemas/v1/profile.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A version-pinned environment recipe shared by scenarios and result records.",
+  "properties": {
+    "components": {
+      "items": {
+        "$ref": "#/$defs/Component"
+      },
+      "type": "array"
+    },
+    "contract_version": {
+      "$ref": "#/$defs/ContractVersion"
+    },
+    "description": {
+      "type": "string"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "id": {
+      "$ref": "#/$defs/ProfileId"
+    },
+    "kind": {
+      "$ref": "#/$defs/ProfileDocumentKind"
+    },
+    "platform": {
+      "$ref": "#/$defs/ExecutionPlatform"
+    },
+    "purpose": {
+      "$ref": "#/$defs/ProfilePurpose"
+    },
+    "resolved_at": {
+      "description": "RFC 3339 date or timestamp at which moving dependencies were resolved.",
+      "type": "string"
+    },
+    "services": {
+      "items": {
+        "$ref": "#/$defs/ServiceBinding"
+      },
+      "type": "array"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract_version",
+    "kind",
+    "id",
+    "title",
+    "description",
+    "resolved_at",
+    "purpose",
+    "platform",
+    "components",
+    "services"
+  ],
+  "title": "Profile",
+  "type": "object"
+}

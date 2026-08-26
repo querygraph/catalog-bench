@@ -6,5 +6,6 @@ license.workspace = true
 description = "Shared types, config, and stats helpers for the catalog-bench suite."
 
 [dependencies]
+schemars = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }

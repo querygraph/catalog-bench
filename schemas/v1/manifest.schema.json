@@ -1,0 +1,255 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": false,
+      "description": "A file or URI together with the digest that makes the reference immutable.",
+      "properties": {
+        "bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "location": {
+          "description": "Bundle-relative path or public URI.",
+          "type": "string"
+        },
+        "media_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "media_type",
+        "digest"
+      ],
+      "type": "object"
+    },
+    "BundleId": {
+      "description": "Unique identifier for one result bundle.",
+      "type": "string"
+    },
+    "ComponentId": {
+      "description": "Identifier for a component within a profile.",
+      "type": "string"
+    },
+    "ContractVersion": {
+      "description": "The only contract version accepted by these Rust types.",
+      "oneOf": [
+        {
+          "const": "catalog-bench/v1",
+          "description": "The initial public contract.",
+          "type": "string"
+        }
+      ]
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "description": "A content hash. Hash algorithms are explicit so a future contract can add one\nwithout changing the meaning of existing values.",
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/DigestAlgorithm"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "value"
+      ],
+      "type": "object"
+    },
+    "DigestAlgorithm": {
+      "enum": [
+        "sha256"
+      ],
+      "type": "string"
+    },
+    "ManifestDocumentKind": {
+      "enum": [
+        "manifest"
+      ],
+      "type": "string"
+    },
+    "Provenance": {
+      "description": "How a result bundle came into existence. Historical imports are first-class\nand cannot be mistaken for a fresh live run.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "completed_at": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "live-run",
+              "type": "string"
+            },
+            "runner": {
+              "$ref": "#/$defs/ComponentId"
+            },
+            "sanitized_invocation": {
+              "type": "string"
+            },
+            "started_at": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "runner",
+            "sanitized_invocation",
+            "started_at",
+            "completed_at"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "imported_at": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "historical-import",
+              "type": "string"
+            },
+            "source_date": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "source_date",
+            "imported_at",
+            "explanation"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "kind": {
+              "const": "fixture",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "explanation"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "RedactionStatement": {
+      "additionalProperties": false,
+      "properties": {
+        "policy": {
+          "type": "string"
+        },
+        "removed_fields": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "reviewed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "reviewed",
+        "policy"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://adversari.al/catalog-bench/schemas/v1/manifest.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Root index for one immutable result bundle.",
+  "properties": {
+    "contract_version": {
+      "$ref": "#/$defs/ContractVersion"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "id": {
+      "$ref": "#/$defs/BundleId"
+    },
+    "kind": {
+      "$ref": "#/$defs/ManifestDocumentKind"
+    },
+    "profile": {
+      "$ref": "#/$defs/ArtifactReference"
+    },
+    "provenance": {
+      "$ref": "#/$defs/Provenance"
+    },
+    "redaction": {
+      "$ref": "#/$defs/RedactionStatement"
+    },
+    "results": {
+      "items": {
+        "$ref": "#/$defs/ArtifactReference"
+      },
+      "type": "array"
+    },
+    "scenarios": {
+      "items": {
+        "$ref": "#/$defs/ArtifactReference"
+      },
+      "type": "array"
+    },
+    "source_evidence": {
+      "items": {
+        "$ref": "#/$defs/ArtifactReference"
+      },
+      "type": "array"
+    },
+    "title": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "contract_version",
+    "kind",
+    "id",
+    "title",
+    "created_at",
+    "provenance",
+    "profile",
+    "scenarios",
+    "results",
+    "redaction"
+  ],
+  "title": "ResultBundleManifest",
+  "type": "object"
+}

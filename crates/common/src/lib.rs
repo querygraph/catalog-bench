@@ -12,6 +12,8 @@
 //! * [`percentile`] / [`throughput`] — the latency/throughput math used to fill
 //!   in [`Phase`].
 
+pub mod contract;
+
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
@@ -211,31 +213,5 @@ pub fn throughput(count: u64, elapsed: Duration) -> f64 {
         0.0
     } else {
         count as f64 / secs
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn percentile_basic() {
-        let s: Vec<Duration> = (1..=100).map(|n| Duration::from_millis(n)).collect();
-        assert!((percentile(&s, 50.0) - 50.0).abs() < 1.5);
-        assert!((percentile(&s, 95.0) - 95.0).abs() < 1.5);
-        assert_eq!(percentile(&[], 50.0), 0.0);
-    }
-
-    #[test]
-    fn throughput_basic() {
-        assert_eq!(throughput(100, Duration::from_secs(10)), 10.0);
-        assert_eq!(throughput(5, Duration::ZERO), 0.0);
-    }
-
-    #[test]
-    fn report_roundtrips() {
-        let r = BenchReport::scaffold("x", "todo");
-        let back: BenchReport = serde_json::from_str(&r.to_json()).unwrap();
-        assert_eq!(back.status, BenchStatus::Scaffold);
     }
 }

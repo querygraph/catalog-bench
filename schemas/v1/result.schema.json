@@ -1,0 +1,831 @@
+{
+  "$defs": {
+    "ArtifactReference": {
+      "additionalProperties": false,
+      "description": "A file or URI together with the digest that makes the reference immutable.",
+      "properties": {
+        "bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "description": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "location": {
+          "description": "Bundle-relative path or public URI.",
+          "type": "string"
+        },
+        "media_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "location",
+        "media_type",
+        "digest"
+      ],
+      "type": "object"
+    },
+    "AssertionEvaluation": {
+      "additionalProperties": false,
+      "properties": {
+        "assertion": {
+          "$ref": "#/$defs/AssertionId"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceId"
+          },
+          "type": "array"
+        },
+        "outcome": {
+          "$ref": "#/$defs/AssertionOutcome"
+        },
+        "required": {
+          "description": "Copied from the immutable scenario for standalone readability; bundle\nvalidation verifies that it agrees with the scenario definition.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "assertion",
+        "required",
+        "outcome"
+      ],
+      "type": "object"
+    },
+    "AssertionId": {
+      "description": "Identifier for an assertion within a scenario.",
+      "type": "string"
+    },
+    "AssertionOutcome": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "pass",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "status": {
+              "const": "fail",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "explanation"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "type": "string"
+            },
+            "status": {
+              "const": "not-evaluated",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "ComponentId": {
+      "description": "Identifier for a component within a profile.",
+      "type": "string"
+    },
+    "ContractVersion": {
+      "description": "The only contract version accepted by these Rust types.",
+      "oneOf": [
+        {
+          "const": "catalog-bench/v1",
+          "description": "The initial public contract.",
+          "type": "string"
+        }
+      ]
+    },
+    "Digest": {
+      "additionalProperties": false,
+      "description": "A content hash. Hash algorithms are explicit so a future contract can add one\nwithout changing the meaning of existing values.",
+      "properties": {
+        "algorithm": {
+          "$ref": "#/$defs/DigestAlgorithm"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "value"
+      ],
+      "type": "object"
+    },
+    "DigestAlgorithm": {
+      "enum": [
+        "sha256"
+      ],
+      "type": "string"
+    },
+    "Distribution": {
+      "additionalProperties": false,
+      "description": "Distribution summary. Quantile keys use `p<number>` (for example `p50`,\n`p95`, `p99`, or `p99.9`) and values use the surrounding measurement's unit.",
+      "properties": {
+        "maximum": {
+          "format": "double",
+          "type": "number"
+        },
+        "mean": {
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "minimum": {
+          "format": "double",
+          "type": "number"
+        },
+        "quantiles": {
+          "additionalProperties": {
+            "format": "double",
+            "type": "number"
+          },
+          "type": "object"
+        },
+        "samples": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "standard_deviation": {
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "samples",
+        "minimum",
+        "maximum",
+        "quantiles"
+      ],
+      "type": "object"
+    },
+    "EnvironmentManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "architecture": {
+          "type": "string"
+        },
+        "container_runtime": {
+          "type": "string"
+        },
+        "cpu_limit": {
+          "format": "double",
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "cpu_model": {
+          "type": "string"
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "logical_cpus": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "memory_bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "memory_limit_bytes": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "network": {
+          "type": "string"
+        },
+        "operating_system": {
+          "type": "string"
+        },
+        "runtime_flags": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "type": "object"
+        }
+      },
+      "required": [
+        "operating_system",
+        "architecture",
+        "cpu_model",
+        "logical_cpus",
+        "memory_bytes",
+        "network",
+        "container_runtime"
+      ],
+      "type": "object"
+    },
+    "Evidence": {
+      "additionalProperties": false,
+      "properties": {
+        "artifact": {
+          "$ref": "#/$defs/ArtifactReference"
+        },
+        "extensions": {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        "id": {
+          "$ref": "#/$defs/EvidenceId"
+        },
+        "kind": {
+          "$ref": "#/$defs/EvidenceKind"
+        },
+        "redactions": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sanitized": {
+          "description": "Public result bundles require `true`; an internal unsanitized capture must\nbe transformed before it enters this contract.",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "artifact",
+        "sanitized"
+      ],
+      "type": "object"
+    },
+    "EvidenceId": {
+      "description": "Identifier for an evidence item within a result.",
+      "type": "string"
+    },
+    "EvidenceKind": {
+      "enum": [
+        "http-transcript",
+        "log",
+        "object-audit",
+        "query-output",
+        "catalog-state",
+        "lineage",
+        "policy-receipt",
+        "graph-proof",
+        "other"
+      ],
+      "type": "string"
+    },
+    "ExecutedComponent": {
+      "additionalProperties": false,
+      "description": "Component identity repeated at the result boundary for readable, standalone\nevidence. The immutable profile carries its full artifact/source pin.",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "profile_component": {
+          "$ref": "#/$defs/ComponentId"
+        },
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "profile_component",
+        "name",
+        "version"
+      ],
+      "type": "object"
+    },
+    "Failure": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "$ref": "#/$defs/FailureCategory"
+        },
+        "detail": {
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/EvidenceId"
+          },
+          "type": "array"
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "summary": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "category",
+        "summary",
+        "detail",
+        "retryable"
+      ],
+      "type": "object"
+    },
+    "FailureCategory": {
+      "enum": [
+        "assertion",
+        "transport",
+        "catalog",
+        "client",
+        "harness",
+        "environment"
+      ],
+      "type": "string"
+    },
+    "MeasuredPhase": {
+      "additionalProperties": false,
+      "properties": {
+        "elapsed_ms": {
+          "format": "double",
+          "type": "number"
+        },
+        "latency_ms": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Distribution"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "metrics": {
+          "items": {
+            "$ref": "#/$defs/Metric"
+          },
+          "type": "array"
+        },
+        "name": {
+          "type": "string"
+        },
+        "operations": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "name",
+        "elapsed_ms"
+      ],
+      "type": "object"
+    },
+    "Metric": {
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string"
+        },
+        "value": {
+          "$ref": "#/$defs/MetricValue"
+        }
+      },
+      "required": [
+        "name",
+        "unit",
+        "value"
+      ],
+      "type": "object"
+    },
+    "MetricValue": {
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "scalar",
+              "type": "string"
+            },
+            "value": {
+              "format": "double",
+              "type": "number"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "const": "counter",
+              "type": "string"
+            },
+            "value": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "denominator": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            },
+            "kind": {
+              "const": "ratio",
+              "type": "string"
+            },
+            "numerator": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "kind",
+            "numerator",
+            "denominator"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "distribution": {
+              "$ref": "#/$defs/Distribution"
+            },
+            "kind": {
+              "const": "distribution",
+              "type": "string"
+            }
+          },
+          "required": [
+            "kind",
+            "distribution"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "NotTestedReason": {
+      "additionalProperties": false,
+      "properties": {
+        "blocking_dependency": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "explanation": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "explanation"
+      ],
+      "type": "object"
+    },
+    "ProfileId": {
+      "description": "Stable identifier for an execution profile.",
+      "type": "string"
+    },
+    "ProfileReference": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "id": {
+          "$ref": "#/$defs/ProfileId"
+        }
+      },
+      "required": [
+        "id",
+        "digest"
+      ],
+      "type": "object"
+    },
+    "ResultDocumentKind": {
+      "enum": [
+        "result"
+      ],
+      "type": "string"
+    },
+    "ResultId": {
+      "description": "Unique identifier for one result record.",
+      "type": "string"
+    },
+    "ResultOutcome": {
+      "description": "Exhaustive result classification. Details required by non-pass outcomes are\nrepresented by the variant itself and cannot drift into unrelated fields.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "const": "pass",
+              "type": "string"
+            },
+            "summary": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "status"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "failure": {
+              "$ref": "#/$defs/Failure"
+            },
+            "status": {
+              "const": "fail",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "failure"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "limitation": {
+              "$ref": "#/$defs/UnsupportedCapability"
+            },
+            "status": {
+              "const": "unsupported",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "limitation"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "reason": {
+              "$ref": "#/$defs/NotTestedReason"
+            },
+            "status": {
+              "const": "not-tested",
+              "type": "string"
+            }
+          },
+          "required": [
+            "status",
+            "reason"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "RunIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "finished_at": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "random_seed": {
+          "format": "uint64",
+          "minimum": 0,
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "repetition": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "started_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "started_at",
+        "finished_at",
+        "repetition"
+      ],
+      "type": "object"
+    },
+    "ScenarioId": {
+      "description": "Stable identifier for a versioned scenario.",
+      "type": "string"
+    },
+    "ScenarioReference": {
+      "additionalProperties": false,
+      "properties": {
+        "digest": {
+          "$ref": "#/$defs/Digest"
+        },
+        "id": {
+          "$ref": "#/$defs/ScenarioId"
+        },
+        "version": {
+          "format": "uint32",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "version",
+        "digest"
+      ],
+      "type": "object"
+    },
+    "UnsupportedCapability": {
+      "additionalProperties": false,
+      "properties": {
+        "capability": {
+          "type": "string"
+        },
+        "explanation": {
+          "type": "string"
+        },
+        "upstream_reference": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "capability",
+        "explanation"
+      ],
+      "type": "object"
+    }
+  },
+  "$id": "https://adversari.al/catalog-bench/schemas/v1/result.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "One independently auditable scenario execution.",
+  "properties": {
+    "adapters": {
+      "description": "Every shim or adapter that can affect behavior must be disclosed here.",
+      "items": {
+        "$ref": "#/$defs/ComponentId"
+      },
+      "type": "array"
+    },
+    "artifacts": {
+      "items": {
+        "$ref": "#/$defs/ArtifactReference"
+      },
+      "type": "array"
+    },
+    "assertions": {
+      "items": {
+        "$ref": "#/$defs/AssertionEvaluation"
+      },
+      "type": "array"
+    },
+    "catalog": {
+      "$ref": "#/$defs/ExecutedComponent"
+    },
+    "client": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ExecutedComponent"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "contract_version": {
+      "$ref": "#/$defs/ContractVersion"
+    },
+    "environment": {
+      "$ref": "#/$defs/EnvironmentManifest"
+    },
+    "evidence": {
+      "items": {
+        "$ref": "#/$defs/Evidence"
+      },
+      "type": "array"
+    },
+    "extensions": {
+      "additionalProperties": true,
+      "type": "object"
+    },
+    "id": {
+      "$ref": "#/$defs/ResultId"
+    },
+    "kind": {
+      "$ref": "#/$defs/ResultDocumentKind"
+    },
+    "measurements": {
+      "items": {
+        "$ref": "#/$defs/MeasuredPhase"
+      },
+      "type": "array"
+    },
+    "outcome": {
+      "$ref": "#/$defs/ResultOutcome"
+    },
+    "profile": {
+      "$ref": "#/$defs/ProfileReference"
+    },
+    "run": {
+      "$ref": "#/$defs/RunIdentity"
+    },
+    "scenario": {
+      "$ref": "#/$defs/ScenarioReference"
+    }
+  },
+  "required": [
+    "contract_version",
+    "kind",
+    "id",
+    "scenario",
+    "profile",
+    "catalog",
+    "run",
+    "outcome",
+    "environment",
+    "assertions"
+  ],
+  "title": "ResultRecord",
+  "type": "object"
+}
