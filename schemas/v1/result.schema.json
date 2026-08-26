@@ -122,6 +122,194 @@
         }
       ]
     },
+    "Captured": {
+      "description": "A captured environment value with explicit precision. Historical imports can\npreserve rounded or missing metadata without fabricating exact values.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "precision": {
+              "const": "exact",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "precision",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "precision": {
+              "const": "approximate",
+              "type": "string"
+            },
+            "value": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "precision",
+            "value",
+            "explanation"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "precision": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "precision",
+            "explanation"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Captured2": {
+      "description": "A captured environment value with explicit precision. Historical imports can\npreserve rounded or missing metadata without fabricating exact values.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "precision": {
+              "const": "exact",
+              "type": "string"
+            },
+            "value": {
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "precision",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "precision": {
+              "const": "approximate",
+              "type": "string"
+            },
+            "value": {
+              "format": "uint32",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "precision",
+            "value",
+            "explanation"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "precision": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "precision",
+            "explanation"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "Captured3": {
+      "description": "A captured environment value with explicit precision. Historical imports can\npreserve rounded or missing metadata without fabricating exact values.",
+      "oneOf": [
+        {
+          "additionalProperties": false,
+          "properties": {
+            "precision": {
+              "const": "exact",
+              "type": "string"
+            },
+            "value": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "precision",
+            "value"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "precision": {
+              "const": "approximate",
+              "type": "string"
+            },
+            "value": {
+              "format": "uint64",
+              "minimum": 0,
+              "type": "integer"
+            }
+          },
+          "required": [
+            "precision",
+            "value",
+            "explanation"
+          ],
+          "type": "object"
+        },
+        {
+          "additionalProperties": false,
+          "properties": {
+            "explanation": {
+              "type": "string"
+            },
+            "precision": {
+              "const": "unknown",
+              "type": "string"
+            }
+          },
+          "required": [
+            "precision",
+            "explanation"
+          ],
+          "type": "object"
+        }
+      ]
+    },
     "ComponentId": {
       "description": "Identifier for a component within a profile.",
       "type": "string"
@@ -213,7 +401,7 @@
           "type": "string"
         },
         "container_runtime": {
-          "type": "string"
+          "$ref": "#/$defs/Captured"
         },
         "cpu_limit": {
           "format": "double",
@@ -223,21 +411,17 @@
           ]
         },
         "cpu_model": {
-          "type": "string"
+          "$ref": "#/$defs/Captured"
         },
         "extensions": {
           "additionalProperties": true,
           "type": "object"
         },
         "logical_cpus": {
-          "format": "uint32",
-          "minimum": 0,
-          "type": "integer"
+          "$ref": "#/$defs/Captured2"
         },
         "memory_bytes": {
-          "format": "uint64",
-          "minimum": 0,
-          "type": "integer"
+          "$ref": "#/$defs/Captured3"
         },
         "memory_limit_bytes": {
           "format": "uint64",

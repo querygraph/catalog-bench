@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Evidence fidelity: environment values now encode exact, approximate, or unknown
+  precision, allowing historical imports to retain incomplete hardware/runtime
+  capture without fabricated values.
 - Build provenance: generalized component build options and compiler flags so
   Rust, Go, C++, Java, and other toolchains share one neutral recipe shape.
 - Profiles: distinguished runnable profiles from draft pinsets. Runnable profiles

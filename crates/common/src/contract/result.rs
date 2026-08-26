@@ -51,20 +51,30 @@ pub struct RunIdentity {
     pub random_seed: Option<u64>,
 }
 
+/// A captured environment value with explicit precision. Historical imports can
+/// preserve rounded or missing metadata without fabricating exact values.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
+#[serde(tag = "precision", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum Captured<T> {
+    Exact { value: T },
+    Approximate { value: T, explanation: String },
+    Unknown { explanation: String },
+}
+
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 pub struct EnvironmentManifest {
     pub operating_system: String,
     pub architecture: String,
-    pub cpu_model: String,
-    pub logical_cpus: u32,
-    pub memory_bytes: u64,
+    pub cpu_model: Captured<String>,
+    pub logical_cpus: Captured<u32>,
+    pub memory_bytes: Captured<u64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cpu_limit: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub memory_limit_bytes: Option<u64>,
     pub network: String,
-    pub container_runtime: String,
+    pub container_runtime: Captured<String>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub runtime_flags: BTreeMap<String, String>,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
@@ -408,29 +418,27 @@ fn validate_environment(
         child_path(path, "architecture"),
         issues,
     );
-    require_non_empty(
+    validate_captured_text(
         &environment.cpu_model,
         child_path(path, "cpu_model"),
         issues,
     );
+    validate_captured_positive_u32(
+        &environment.logical_cpus,
+        &child_path(path, "logical_cpus"),
+        issues,
+    );
+    validate_captured_positive_u64(
+        &environment.memory_bytes,
+        &child_path(path, "memory_bytes"),
+        issues,
+    );
     require_non_empty(&environment.network, child_path(path, "network"), issues);
-    require_non_empty(
+    validate_captured_text(
         &environment.container_runtime,
         child_path(path, "container_runtime"),
         issues,
     );
-    if environment.logical_cpus == 0 {
-        issues.push(ValidationIssue::new(
-            child_path(path, "logical_cpus"),
-            "must be greater than zero",
-        ));
-    }
-    if environment.memory_bytes == 0 {
-        issues.push(ValidationIssue::new(
-            child_path(path, "memory_bytes"),
-            "must be greater than zero",
-        ));
-    }
     if let Some(cpu_limit) = environment.cpu_limit {
         require_finite_non_negative(cpu_limit, child_path(path, "cpu_limit"), issues);
         if cpu_limit == 0.0 {
@@ -439,6 +447,72 @@ fn validate_environment(
                 "must be greater than zero when present",
             ));
         }
+    }
+}
+
+fn validate_captured_text(
+    captured: &Captured<String>,
+    path: impl Into<String>,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    let path = path.into();
+    match captured {
+        Captured::Exact { value } => require_non_empty(value, child_path(&path, "value"), issues),
+        Captured::Approximate { value, explanation } => {
+            require_non_empty(value, child_path(&path, "value"), issues);
+            require_non_empty(explanation, child_path(&path, "explanation"), issues);
+        }
+        Captured::Unknown { explanation } => {
+            require_non_empty(explanation, child_path(&path, "explanation"), issues)
+        }
+    }
+}
+
+fn validate_captured_positive_u32(
+    captured: &Captured<u32>,
+    path: &str,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    match captured {
+        Captured::Exact { value } if *value == 0 => issues.push(ValidationIssue::new(
+            child_path(path, "value"),
+            "must be greater than zero",
+        )),
+        Captured::Approximate { value, .. } if *value == 0 => issues.push(ValidationIssue::new(
+            child_path(path, "value"),
+            "must be greater than zero",
+        )),
+        Captured::Approximate { explanation, .. } => {
+            require_non_empty(explanation, child_path(path, "explanation"), issues);
+        }
+        Captured::Unknown { explanation } => {
+            require_non_empty(explanation, child_path(path, "explanation"), issues)
+        }
+        Captured::Exact { .. } => {}
+    }
+}
+
+fn validate_captured_positive_u64(
+    captured: &Captured<u64>,
+    path: &str,
+    issues: &mut Vec<ValidationIssue>,
+) {
+    match captured {
+        Captured::Exact { value } if *value == 0 => issues.push(ValidationIssue::new(
+            child_path(path, "value"),
+            "must be greater than zero",
+        )),
+        Captured::Approximate { value, .. } if *value == 0 => issues.push(ValidationIssue::new(
+            child_path(path, "value"),
+            "must be greater than zero",
+        )),
+        Captured::Approximate { explanation, .. } => {
+            require_non_empty(explanation, child_path(path, "explanation"), issues);
+        }
+        Captured::Unknown { explanation } => {
+            require_non_empty(explanation, child_path(path, "explanation"), issues)
+        }
+        Captured::Exact { .. } => {}
     }
 }
 

@@ -148,13 +148,19 @@ fn result_record() -> ResultRecord {
         environment: EnvironmentManifest {
             operating_system: "Linux".to_owned(),
             architecture: "aarch64".to_owned(),
-            cpu_model: "fixture".to_owned(),
-            logical_cpus: 4,
-            memory_bytes: 8 * 1024 * 1024 * 1024,
+            cpu_model: Captured::Exact {
+                value: "fixture".to_owned(),
+            },
+            logical_cpus: Captured::Exact { value: 4 },
+            memory_bytes: Captured::Exact {
+                value: 8 * 1024 * 1024 * 1024,
+            },
             cpu_limit: Some(4.0),
             memory_limit_bytes: Some(4 * 1024 * 1024 * 1024),
             network: "fixture-net".to_owned(),
-            container_runtime: "Docker fixture".to_owned(),
+            container_runtime: Captured::Exact {
+                value: "Docker fixture".to_owned(),
+            },
             runtime_flags: BTreeMap::new(),
             extensions: BTreeMap::new(),
         },
@@ -273,6 +279,29 @@ fn unsanitized_evidence_is_not_publishable() {
     assert!(error
         .to_string()
         .contains("must be true for a publishable result"));
+}
+
+#[test]
+fn historical_environment_uncertainty_is_explicit() {
+    let mut result = result_record();
+    result.environment.cpu_model = Captured::Unknown {
+        explanation: "The historical runner did not record the CPU model.".to_owned(),
+    };
+    result.environment.memory_bytes = Captured::Approximate {
+        value: 8_375_186_227,
+        explanation: "Converted from the rounded report value 7.8 GiB.".to_owned(),
+    };
+
+    result.validate().unwrap();
+
+    result.environment.container_runtime = Captured::Unknown {
+        explanation: String::new(),
+    };
+    assert!(result
+        .validate()
+        .unwrap_err()
+        .to_string()
+        .contains("container_runtime.explanation: must not be empty"));
 }
 
 #[test]

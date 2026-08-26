@@ -60,6 +60,11 @@ validation rejects non-finite values, inverted ranges, non-monotonic quantiles,
 zero-denominator ratios, duplicate identifiers, dangling evidence references,
 and a `pass` that hides a failed required assertion.
 
+Environment values that are commonly absent from legacy reports carry explicit
+`exact`, `approximate`, or `unknown` precision. Approximate and unknown values
+require an explanation; migration code must preserve uncertainty instead of
+inventing an exact CPU model, byte count, runtime version, or limit.
+
 Artifacts are addressed by an explicit digest object. The digest covers the
 artifact's exact bytes—not a reserialized JSON value—so whitespace and final
 newlines are significant. Manifests identify whether evidence is a `live-run`,
