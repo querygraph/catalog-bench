@@ -17,7 +17,7 @@ from .model import Limitation, OperationResult, SafeFailure, Status
 
 
 class CatalogFactory(Protocol):
-    def __call__(self, name: str, properties: Mapping[str, str]) -> Any: ...
+    def __call__(self, name: str, properties: Mapping[str, Any]) -> Any: ...
 
 
 class WorkflowAssertion(AssertionError):
@@ -55,17 +55,19 @@ class _State:
 def detect_runtime() -> RuntimeIdentity:
     import pyarrow
     import pyiceberg
+    import s3fs
 
     return RuntimeIdentity(
         python=platform.python_version(),
         pyiceberg=pyiceberg.__version__,
         pyarrow=pyarrow.__version__,
+        s3fs=s3fs.__version__,
         operating_system=platform.system(),
         architecture=platform.machine(),
     )
 
 
-def default_catalog_factory(name: str, properties: Mapping[str, str]) -> Any:
+def default_catalog_factory(name: str, properties: Mapping[str, Any]) -> Any:
     from pyiceberg.catalog.rest import RestCatalog
 
     return RestCatalog(name, **dict(properties))
@@ -224,6 +226,7 @@ def _verify_runtime(
         "python": contracts.python_component["version"],
         "pyiceberg": contracts.client_component["version"],
         "pyarrow": contracts.arrow_component["version"],
+        "s3fs": contracts.s3fs_component["version"],
         "operating_system": contracts.profile["platform"]["operating_system"],
         "architecture": contracts.profile["platform"]["architecture"],
     }
@@ -244,13 +247,13 @@ def _verify_runtime(
 
 def _catalog_properties(
     contracts: ResolvedContracts, getenv: Callable[[str], str | None]
-) -> tuple[dict[str, str], list[str]]:
+) -> tuple[dict[str, Any], list[str]]:
     adapter = contracts.adapter
     parameters = contracts.scenario["parameters"]
     object_store = parameters["object_store"]
     access_key = _required_environment(getenv, object_store["access_key_env"])
     secret_key = _required_environment(getenv, object_store["secret_key_env"])
-    properties = {
+    properties: dict[str, Any] = {
         "uri": adapter["endpoint"]["base_url"],
         "s3.endpoint": object_store["endpoint"],
         "s3.region": object_store["region"],
@@ -264,7 +267,9 @@ def _catalog_properties(
 
     forbidden = [access_key, secret_key]
     authentication = adapter["authentication"]
-    if authentication["kind"] == "oauth2-client-credentials":
+    if authentication["kind"] == "anonymous":
+        properties["auth"] = {"type": "noop"}
+    elif authentication["kind"] == "oauth2-client-credentials":
         client_id = _required_environment(getenv, authentication["client_id_env"])
         client_secret = _required_environment(
             getenv, authentication["client_secret_env"]
@@ -280,7 +285,7 @@ def _catalog_properties(
             }
         )
         forbidden.extend((client_id, client_secret, properties["credential"]))
-    elif authentication["kind"] != "anonymous":
+    else:
         raise ValueError("unsupported profile authentication mode")
     return properties, forbidden
 
@@ -295,7 +300,7 @@ def _required_environment(getenv: Callable[[str], str | None], name: str) -> str
 def _initialize_catalog(
     contracts: ResolvedContracts,
     state: _State,
-    properties: Mapping[str, str],
+    properties: Mapping[str, Any],
     catalog_factory: CatalogFactory,
 ) -> OperationResult:
     try:

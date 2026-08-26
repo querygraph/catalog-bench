@@ -151,7 +151,7 @@ class FakeTable:
 
 
 class FakeCatalog:
-    def __init__(self, name: str, properties: Mapping[str, str]) -> None:
+    def __init__(self, name: str, properties: Mapping[str, Any]) -> None:
         self.name = name
         self.properties = dict(properties)
         self.namespaces: dict[tuple[str, ...], dict[str, str]] = {}
@@ -236,7 +236,7 @@ class FakeCatalogFactory:
     def __init__(self) -> None:
         self.catalogs: list[FakeCatalog] = []
 
-    def __call__(self, name: str, properties: Mapping[str, str]) -> FakeCatalog:
+    def __call__(self, name: str, properties: Mapping[str, Any]) -> FakeCatalog:
         catalog = FakeCatalog(name, properties)
         self.catalogs.append(catalog)
         return catalog

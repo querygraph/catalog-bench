@@ -19,6 +19,7 @@ class RuntimeIdentity:
     python: str
     pyiceberg: str
     pyarrow: str
+    s3fs: str
     operating_system: str
     architecture: str
 
@@ -27,6 +28,7 @@ class RuntimeIdentity:
             "python": self.python,
             "pyiceberg": self.pyiceberg,
             "pyarrow": self.pyarrow,
+            "s3fs": self.s3fs,
             "operating_system": self.operating_system,
             "architecture": self.architecture,
         }
@@ -85,6 +87,7 @@ def build_transcript(
             "runtime": component_identity(contracts.python_component),
             "catalog_client": component_identity(contracts.client_component),
             "data_plane": component_identity(contracts.arrow_component),
+            "object_store_io": component_identity(contracts.s3fs_component),
             "observed": runtime.as_json(),
             "shim": False,
         },

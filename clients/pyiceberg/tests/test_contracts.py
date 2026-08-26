@@ -25,6 +25,7 @@ class ContractTests(unittest.TestCase):
                 self.assertEqual(contracts.client_component["version"], "0.11.1")
                 self.assertEqual(contracts.python_component["version"], "3.13.15")
                 self.assertEqual(contracts.arrow_component["version"], "25.0.1")
+                self.assertEqual(contracts.s3fs_component["version"], "2026.7.0")
 
     def test_matrix_catalog_order_comes_from_the_strict_profile_loader(self) -> None:
         self.assertEqual(

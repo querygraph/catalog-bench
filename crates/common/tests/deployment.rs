@@ -122,6 +122,7 @@ fn pyiceberg_image_is_profile_pinned_hash_locked_and_hardened() {
     assert_eq!(python["version"], "3.13.15");
     assert_eq!(component("pyiceberg")["version"], "0.11.1");
     assert_eq!(component("pyarrow")["version"], "25.0.1");
+    assert_eq!(component("s3fs")["version"], "2026.7.0");
 
     let dockerfile = fs::read_to_string(root.join("docker/pyiceberg.Dockerfile"))
         .expect("read PyIceberg Dockerfile");
@@ -149,7 +150,7 @@ fn pyiceberg_image_is_profile_pinned_hash_locked_and_hardened() {
         .map(str::trim)
         .filter(|line| !line.is_empty() && !line.starts_with('#'))
         .collect::<Vec<_>>();
-    assert_eq!(entries.len(), 27, "complete selected wheel set is locked");
+    assert_eq!(entries.len(), 41, "complete selected wheel set is locked");
     for entry in &entries {
         let (requirement, hash) = entry
             .split_once(" --hash=sha256:")
@@ -175,6 +176,12 @@ fn pyiceberg_image_is_profile_pinned_hash_locked_and_hardened() {
             .iter()
             .any(|entry| entry.starts_with("pyarrow==25.0.1 ")),
         "lock contains the profile-selected PyArrow"
+    );
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry.starts_with("s3fs==2026.7.0 ")),
+        "lock contains the profile-selected S3FS"
     );
 
     let compose =

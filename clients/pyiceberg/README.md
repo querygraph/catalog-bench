@@ -14,9 +14,11 @@ Linux ARM64. Its complete runtime is fixed in three layers:
 
 - CPython 3.13.15 comes from the profile-recorded Linux ARM64 child manifest,
   not from a mutable tag selection.
-- PyIceberg 0.11.1 and PyArrow 25.0.1 are imported at startup and must equal the
-  scenario and profile before any network request or mutation occurs.
-- [`requirements.lock`](requirements.lock) pins all 27 direct and transitive
+- PyIceberg 0.11.1, PyArrow 25.0.1, and S3FS 2026.7.0 are imported at startup
+  and must equal the scenario and profile before any network request or
+  mutation occurs. S3FS is part of the stock runtime because a catalog may
+  select PyIceberg's public `FsspecFileIO` through its config response.
+- [`requirements.lock`](requirements.lock) pins all 41 direct and transitive
   distributions and the exact Linux ARM64 or platform-independent wheel hash.
   The image uses `pip --require-hashes --only-binary=:all:`; an incomplete lock,
   wrong wheel, or source-build fallback fails the build.
@@ -31,8 +33,8 @@ access only to the evidence bind mount and a bounded temporary filesystem.
 run-owned workflow in scenario order:
 
 1. prove the exact runtime;
-2. initialize stock `RestCatalog`, including anonymous or OAuth config
-   negotiation;
+2. initialize stock `RestCatalog`, including OAuth config negotiation or the
+   public `noop` auth manager for anonymous adapters;
 3. prove the fixture namespace absent before mutation;
 4. create, list, and reload its namespace and table;
 5. append a real Arrow batch and scan every canonical row exactly once;
@@ -50,6 +52,13 @@ failure. `unsupported` is emitted only for a profile-declared prerequisite or
 when the stock client declines an optional operation before a successful
 mutation. A skipped dependent operation is `not-evaluated`, never silently
 counted as support or failure.
+
+PyIceberg 0.11.1's legacy auth fallback constructs `Bearer None` when neither a
+credential nor token is configured. Some anonymous servers ignore that invalid
+header, while others correctly reject it. Anonymous profile adapters therefore
+select PyIceberg's built-in `NoopAuthManager` through the public `auth.type`
+configuration. This omits authorization entirely and is stock-client
+configuration, not a request shim.
 
 Registration is deliberately last among mutating optional operations. The
 public client checks server-advertised endpoint support inside `register_table`,

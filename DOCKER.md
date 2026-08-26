@@ -174,7 +174,7 @@ from that same Docker environment.
 C1-07 adds a separate stock-client image built from
 [`docker/pyiceberg.Dockerfile`](docker/pyiceberg.Dockerfile). It directly pins
 the profile's Python 3.13.15 Linux ARM64 child manifest and installs the complete
-PyIceberg 0.11.1 / PyArrow 25.0.1 environment from wheel hashes in
+PyIceberg 0.11.1 / PyArrow 25.0.1 / S3FS 2026.7.0 environment from wheel hashes in
 [`clients/pyiceberg/requirements.lock`](clients/pyiceberg/requirements.lock).
 The build cannot resolve a new dependency, accept a different wheel, or fall
 back to a source distribution. The container runs unprivileged with a read-only

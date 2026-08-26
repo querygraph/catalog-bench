@@ -80,6 +80,7 @@ class ResolvedContracts:
     client_component: Mapping[str, Any]
     python_component: Mapping[str, Any]
     arrow_component: Mapping[str, Any]
+    s3fs_component: Mapping[str, Any]
     digests: ContractDigests
 
     @property
@@ -142,10 +143,14 @@ def load_contracts(
     arrow_component = _find_by(
         components, "id", parameters["arrow_component"], "Arrow component"
     )
+    s3fs_component = _find_by(
+        components, "id", parameters["s3fs_component"], "S3FS component"
+    )
 
     _validate_component_version(client_component, parameters["client_version"])
     _validate_component_version(python_component, parameters["python_version"])
     _validate_component_version(arrow_component, parameters["arrow_version"])
+    _validate_component_version(s3fs_component, parameters["s3fs_version"])
     _validate_protocol_native_adapter(profile, scenario, adapter)
 
     return ResolvedContracts(
@@ -156,6 +161,7 @@ def load_contracts(
         client_component=client_component,
         python_component=python_component,
         arrow_component=arrow_component,
+        s3fs_component=s3fs_component,
         digests=ContractDigests(
             profile_sha256=hashlib.sha256(profile_bytes).hexdigest(),
             scenario_sha256=hashlib.sha256(scenario_bytes).hexdigest(),
@@ -267,6 +273,8 @@ def _validate_scenario(scenario: Mapping[str, Any]) -> None:
         "python_version": "3.13.15",
         "arrow_component": "pyarrow",
         "arrow_version": "25.0.1",
+        "s3fs_component": "s3fs",
+        "s3fs_version": "2026.7.0",
         "transcript_format": TRANSCRIPT_FORMAT,
         "fixture_prefix": "cb_c107",
     }
@@ -342,10 +350,7 @@ def _validate_scenario(scenario: Mapping[str, Any]) -> None:
 
 def _validate_string_mapping(value: Any, role: str) -> None:
     if not isinstance(value, dict) or any(
-        not isinstance(key, str)
-        or not key
-        or not isinstance(item, str)
-        or not item
+        not isinstance(key, str) or not key or not isinstance(item, str) or not item
         for key, item in value.items()
     ):
         raise ContractError(f"{role} must map non-empty strings to non-empty strings")

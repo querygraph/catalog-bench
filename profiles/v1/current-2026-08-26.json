@@ -415,6 +415,31 @@
       }
     },
     {
+      "id": "s3fs",
+      "kind": "client",
+      "name": "S3FS",
+      "version": "2026.7.0",
+      "source": {
+        "repository": "https://github.com/fsspec/s3fs.git",
+        "revision": "609950a67e1d2f26bd98b5053b016200272a35dd",
+        "tag": "2026.7.0"
+      },
+      "artifact": {
+        "kind": "package",
+        "ecosystem": "PyPI universal Python wheel",
+        "package": "s3fs",
+        "version": "2026.7.0",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "64edf3c01ebffab1eec38ff9c09eefbf86a3db14c87d248f795da0e7b801d698"
+        }
+      },
+      "extensions": {
+        "querygraph/package-file": "s3fs-2026.7.0-py3-none-any.whl",
+        "querygraph/package-bytes": 32659
+      }
+    },
+    {
       "id": "iceberg-java",
       "kind": "connector",
       "name": "Apache Iceberg Java engine runtimes",
@@ -636,6 +661,10 @@
     {
       "component": "pyarrow",
       "role": "stock-client-data-plane"
+    },
+    {
+      "component": "s3fs",
+      "role": "stock-client-s3-data-plane"
     },
     {
       "component": "iceberg-java",

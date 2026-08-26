@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C1-07 stock-runtime completeness: select PyIceberg's public no-op auth manager
+  for anonymous adapters instead of its legacy `Bearer None` fallback, and add
+  profile-pinned S3FS 2026.7.0 plus all exact transitive wheels so
+  catalog-selected `FsspecFileIO` remains a stock supported path. Runtime
+  identity, transcript provenance, contracts, tests, and profile documentation
+  now cover both object-store data planes.
+
 - C1-07 live-smoke corrections: construct Arrow batches with the scenario's
   required `id` nullability instead of relying on nullable inference, and make
   embedded-secret rejection inspect evidence values while comparing map keys
@@ -9,7 +16,8 @@
   names. Added regressions for both representation boundaries.
 
 - Catalog community C1-07 reproducible client image: build CPython 3.13.15 from
-  the profile's Linux ARM64 child manifest, install all 27 PyIceberg/PyArrow
+  the profile's Linux ARM64 child manifest, install all 41
+  PyIceberg/PyArrow/S3FS
   distributions from exact wheel hashes, and run the stock-client oracle as an
   unprivileged read-only Compose service on the catalogs' shared Docker network
   and MinIO. Added exact five-catalog startup, readiness, smoke-matrix,

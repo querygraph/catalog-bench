@@ -32,7 +32,9 @@ class EvidenceTests(unittest.TestCase):
         operations = self._passing_operations(
             {"unsafe": "prefix-sensitive-value-suffix"}
         )
-        runtime = RuntimeIdentity("3.13.15", "0.11.1", "25.0.1", "Linux", "aarch64")
+        runtime = RuntimeIdentity(
+            "3.13.15", "0.11.1", "25.0.1", "2026.7.0", "Linux", "aarch64"
+        )
         fixture = FixtureIdentity("unit", ("unit",), ("events",))
 
         with self.assertRaisesRegex(ValueError, "sensitive value"):
@@ -48,7 +50,9 @@ class EvidenceTests(unittest.TestCase):
         contracts = load_contracts(PROFILE, SCENARIO, "polaris")
         transcript = build_transcript(
             contracts,
-            RuntimeIdentity("3.13.15", "0.11.1", "25.0.1", "Linux", "aarch64"),
+            RuntimeIdentity(
+                "3.13.15", "0.11.1", "25.0.1", "2026.7.0", "Linux", "aarch64"
+            ),
             FixtureIdentity("unit", ("unit",), ("events",)),
             self._passing_operations(),
             forbidden_values=("secret",),

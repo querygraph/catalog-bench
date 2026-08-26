@@ -16,6 +16,7 @@ RUNTIME = RuntimeIdentity(
     python="3.13.15",
     pyiceberg="0.11.1",
     pyarrow="25.0.1",
+    s3fs="2026.7.0",
     operating_system="Linux",
     architecture="aarch64",
 )
@@ -59,6 +60,10 @@ class WorkflowTests(unittest.TestCase):
                 )
                 self.assertEqual(by_id["cleanup-fixture"].status, Status.PASS)
                 self.assertTrue(factory.catalogs[0].closed)
+                if contracts.adapter["authentication"]["kind"] == "anonymous":
+                    self.assertEqual(
+                        factory.catalogs[0].properties["auth"], {"type": "noop"}
+                    )
                 self.assertFalse(factory.catalogs[0].tables)
                 self.assertFalse(factory.catalogs[0].namespaces)
 
@@ -69,6 +74,7 @@ class WorkflowTests(unittest.TestCase):
             python="3.13.14",
             pyiceberg="0.11.1",
             pyarrow="25.0.1",
+            s3fs="2026.7.0",
             operating_system="Linux",
             architecture="aarch64",
         )
