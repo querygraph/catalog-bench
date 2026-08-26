@@ -286,6 +286,7 @@ fn checked_in_profiles_scenario_and_phase_one_adapters_validate() {
         include_bytes!("../../../scenarios/v1/iceberg-rest.commit.same-table-contention.json")
             .as_slice(),
         include_bytes!("../../../scenarios/v1/iceberg-rest.config.negotiation.json").as_slice(),
+        include_bytes!("../../../scenarios/v1/iceberg-rest.table.behavior.json").as_slice(),
     ];
     let documents = bytes.map(|document| parse_contract(document).unwrap());
 

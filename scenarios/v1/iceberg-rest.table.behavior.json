@@ -1,0 +1,521 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "iceberg-rest.table.behavior",
+  "version": 1,
+  "title": "Iceberg REST table lifecycle, pagination, optional operations, and errors",
+  "description": "Creates an isolated namespace with two tables, proves create/list/load/update/drop behavior, traverses paginated or standards-permitted unpaginated listings, attempts standard rename and metadata registration, validates duplicate and missing-resource errors, reconciles every run-owned identifier, and emits a sanitized no-shim transcript.",
+  "family": "iceberg-rest",
+  "classification": "strict-v1",
+  "tags": [
+    "iceberg-rest",
+    "table",
+    "pagination",
+    "errors",
+    "register",
+    "rename",
+    "no-shim"
+  ],
+  "capabilities": [
+    {
+      "capability": "iceberg-rest.namespace.create",
+      "level": "required",
+      "description": "Create one run-owned namespace for isolated table lifecycle operations.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.load",
+      "level": "required",
+      "description": "Prove the run-owned namespace is absent before mutation and after cleanup.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.drop",
+      "level": "required",
+      "description": "Drop the empty run-owned namespace after all table identifiers are reconciled.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.create",
+      "level": "required",
+      "description": "Create committed Iceberg tables through the standard REST operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.list",
+      "level": "required",
+      "description": "List exact table identifiers and traverse pagination without loss or duplication.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.load",
+      "level": "required",
+      "description": "Load committed metadata, metadata location, UUID, schema, and properties.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.register",
+      "level": "optional",
+      "description": "Register a dropped table's retained metadata under a new run-owned name through the standard optional operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.rename",
+      "level": "optional",
+      "description": "Rename a table within its namespace through the standard optional operation and reconcile both identifiers.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.update",
+      "level": "required",
+      "description": "Commit standard set-properties and remove-properties updates and reload exact final metadata.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.table.drop",
+      "level": "required",
+      "description": "Drop a committed table without requesting metadata purge and prove it is absent.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.error.spec-shape",
+      "level": "required",
+      "description": "Preserve matching HTTP status, error code, nonempty message, and operation-appropriate Iceberg error type.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    }
+  ],
+  "parameters": {
+    "fixture_prefix": "cb_c105",
+    "iceberg_openapi_sha256": "80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a",
+    "iceberg_openapi_source": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml",
+    "initial_properties": {
+      "c1-05.remove": "before",
+      "c1-05.state": "before",
+      "catalog-bench.owner": "catalog-bench"
+    },
+    "maximum_pages": 64,
+    "maximum_response_bytes": 1048576,
+    "namespace_separator_default": "%1F",
+    "page_size": 1,
+    "purge_requested": false,
+    "register_overwrite": false,
+    "remove_properties": [
+      "c1-05.remove"
+    ],
+    "request_timeout_ms": 30000,
+    "set_properties": {
+      "c1-05.state": "after"
+    },
+    "table_schema": {
+      "fields": [
+        {
+          "id": 1,
+          "name": "value",
+          "required": false,
+          "type": "long"
+        }
+      ],
+      "schema-id": 0,
+      "type": "struct"
+    },
+    "transcript_format": "catalog-bench/table-transcript/v1"
+  },
+  "steps": [
+    {
+      "id": "negotiate-authentication",
+      "actor": "harness",
+      "operation": "authentication.negotiate",
+      "description": "Use the adapter's anonymous or OAuth2 client-credentials flow without persisting a credential."
+    },
+    {
+      "id": "negotiate-config",
+      "actor": "client",
+      "operation": "config.get-routing",
+      "description": "Read config to resolve the route prefix and namespace separator used by standard table paths.",
+      "depends_on": [
+        "negotiate-authentication"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "preflight-fixture",
+      "actor": "harness",
+      "operation": "table.verify-fixture-absence",
+      "description": "Prove the run-owned namespace is absent before mutation so cleanup cannot delete pre-existing state.",
+      "depends_on": [
+        "negotiate-config"
+      ]
+    },
+    {
+      "id": "create-namespace",
+      "actor": "client",
+      "operation": "namespace.create-table-fixture",
+      "description": "Create the exact run-owned namespace that contains every table candidate.",
+      "depends_on": [
+        "preflight-fixture"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "create-tables",
+      "actor": "client",
+      "operation": "table.create",
+      "description": "Create two committed tables with the same typed schema and initial property map.",
+      "depends_on": [
+        "create-namespace"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "inspect-tables",
+      "actor": "client",
+      "operation": "table.list-and-load",
+      "description": "List both identifiers and load both committed metadata documents without assuming response order or rejecting additive fields.",
+      "depends_on": [
+        "create-tables"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "traverse-pagination",
+      "actor": "client",
+      "operation": "table.list-pages",
+      "description": "Start with an explicit empty page token, follow every returned token exactly once, and reject loss, duplication, loops, or page-size violations.",
+      "depends_on": [
+        "create-tables"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "update-table",
+      "actor": "client",
+      "operation": "table.update-properties",
+      "description": "Commit one set-properties and one remove-properties update, then reload to prove the exact immutable metadata transition.",
+      "depends_on": [
+        "inspect-tables"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "reject-duplicate",
+      "actor": "client",
+      "operation": "table.create-duplicate",
+      "description": "Repeat the primary create request and require a spec-shaped HTTP 409 response.",
+      "depends_on": [
+        "create-tables"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "reject-missing-table",
+      "actor": "client",
+      "operation": "table.load-missing",
+      "description": "Load a run-owned absent table and require a spec-shaped HTTP 404 response.",
+      "depends_on": [
+        "create-namespace"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "reject-missing-namespace",
+      "actor": "client",
+      "operation": "table.list-missing-namespace",
+      "description": "List tables under a run-owned absent namespace and require a spec-shaped HTTP 404 response.",
+      "depends_on": [
+        "negotiate-config"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "rename-table",
+      "actor": "client",
+      "operation": "table.rename-same-namespace",
+      "description": "Attempt the standard optional same-namespace rename, then load both source and destination to reconcile actual state.",
+      "depends_on": [
+        "update-table"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "drop-table",
+      "actor": "client",
+      "operation": "table.drop-without-purge",
+      "description": "Drop the sibling table with purgeRequested=false and prove a subsequent load is spec-shaped not-found.",
+      "depends_on": [
+        "inspect-tables"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "register-table",
+      "actor": "client",
+      "operation": "table.register-metadata",
+      "description": "Attempt to register the dropped sibling metadata under a new run-owned name, validate its UUID and metadata location on success, and leave cleanup responsible for the candidate.",
+      "depends_on": [
+        "drop-table"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "cleanup-fixture",
+      "actor": "harness",
+      "operation": "table.reconcile-drop-and-verify",
+      "description": "Drop every source, rename destination, sibling, and registration candidate without purge; prove each absent; drop the namespace; and prove it absent even when an earlier assertion failed.",
+      "depends_on": [
+        "traverse-pagination",
+        "reject-duplicate",
+        "reject-missing-table",
+        "reject-missing-namespace",
+        "rename-table",
+        "register-table"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "sanitize-transcript",
+      "actor": "harness",
+      "operation": "evidence.sanitize-http-transcript",
+      "description": "Persist only sanitized requests, allowlisted response headers, recursively sanitized response JSON, assertion outcomes, and opaque-token redactions.",
+      "depends_on": [
+        "cleanup-fixture"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "authentication-ready",
+      "step": "negotiate-authentication",
+      "required": true,
+      "description": "Authentication completes without persisting a credential or token.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/authentication-ready-v1",
+        "configuration": {
+          "persist_token": false
+        }
+      }
+    },
+    {
+      "id": "config-routing-ready",
+      "step": "negotiate-config",
+      "required": true,
+      "description": "Config returns HTTP 200 JSON and resolves both route-prefix and namespace-separator policy.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-config-routing-v1",
+        "configuration": {
+          "default_namespace_separator": "%1F"
+        }
+      }
+    },
+    {
+      "id": "fixture-isolated",
+      "step": "preflight-fixture",
+      "required": true,
+      "description": "The run-owned namespace returned a spec-shaped NoSuchNamespace response before mutation.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-fixture-isolation-v1",
+        "configuration": {
+          "code": 404,
+          "type": "NoSuchNamespaceException"
+        }
+      }
+    },
+    {
+      "id": "fixture-namespace-created",
+      "step": "create-namespace",
+      "required": true,
+      "description": "Namespace creation returns HTTP 200 and the exact run-owned identifier.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-namespace-create-v1",
+        "configuration": {
+          "expected_http_status": 200
+        }
+      }
+    },
+    {
+      "id": "table-create-round-trip",
+      "step": "create-tables",
+      "required": true,
+      "description": "Both create responses contain committed metadata locations, distinct nonempty UUIDs, the requested schema, and exact initial properties.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-create-v1",
+        "configuration": {
+          "expected_http_status": 200,
+          "stage_create": false
+        }
+      }
+    },
+    {
+      "id": "table-list-visible",
+      "step": "inspect-tables",
+      "required": true,
+      "description": "An ordinary listing contains both created identifiers exactly once and in the exact namespace.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-list-v1",
+        "configuration": {
+          "duplicate_policy": "reject"
+        }
+      }
+    },
+    {
+      "id": "table-load-round-trip",
+      "step": "inspect-tables",
+      "required": true,
+      "description": "Loading both tables preserves each create response's UUID, metadata location, schema, and properties.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-load-v1",
+        "configuration": {
+          "expected_http_status": 200
+        }
+      }
+    },
+    {
+      "id": "table-pagination-complete",
+      "step": "traverse-pagination",
+      "required": true,
+      "description": "Pagination yields complete unique results with bounded token traversal, or the permitted unpaginated fallback returns all results and no token.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-pagination-v1",
+        "configuration": {
+          "accept_unpaginated_fallback": true,
+          "maximum_pages": 64,
+          "page_size": 1
+        }
+      }
+    },
+    {
+      "id": "table-update-round-trip",
+      "step": "update-table",
+      "required": true,
+      "description": "Commit and reload preserve the UUID and schema, advance to a nonempty metadata location, set/remove exact properties, and preserve unmentioned properties.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-update-v1",
+        "configuration": {
+          "preserve_unmentioned": true,
+          "require_new_metadata_location": true
+        }
+      }
+    },
+    {
+      "id": "duplicate-table-error-spec-shaped",
+      "step": "reject-duplicate",
+      "required": true,
+      "description": "Duplicate create returns HTTP/code 409, nonempty message, and AlreadyExistsException.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-duplicate-error-v1",
+        "configuration": {
+          "code": 409,
+          "type": "AlreadyExistsException"
+        }
+      }
+    },
+    {
+      "id": "missing-table-error-spec-shaped",
+      "step": "reject-missing-table",
+      "required": true,
+      "description": "Loading an absent table returns HTTP/code 404, nonempty message, and NoSuchTableException.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-missing-error-v1",
+        "configuration": {
+          "code": 404,
+          "type": "NoSuchTableException"
+        }
+      }
+    },
+    {
+      "id": "missing-namespace-error-spec-shaped",
+      "step": "reject-missing-namespace",
+      "required": true,
+      "description": "Listing tables under an absent namespace returns HTTP/code 404, nonempty message, and NoSuchNamespaceException.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-missing-namespace-error-v1",
+        "configuration": {
+          "code": 404,
+          "type": "NoSuchNamespaceException"
+        }
+      }
+    },
+    {
+      "id": "table-rename-round-trip",
+      "step": "rename-table",
+      "required": false,
+      "description": "A same-namespace rename returns 204, leaves the source spec-shaped absent, and loads the destination with unchanged UUID and metadata location.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-rename-v1",
+        "configuration": {
+          "expected_http_status": 204,
+          "scope": "same-namespace"
+        }
+      }
+    },
+    {
+      "id": "table-drop-clean",
+      "step": "drop-table",
+      "required": true,
+      "description": "Dropping the sibling with purgeRequested=false returns 204 and a final load returns a spec-shaped NoSuchTable response.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-drop-v1",
+        "configuration": {
+          "final_http_status": 404,
+          "purge_requested": false
+        }
+      }
+    },
+    {
+      "id": "table-register-round-trip",
+      "step": "register-table",
+      "required": false,
+      "description": "Registering retained metadata returns 200 and loads the new name with the exact source UUID and metadata location without overwrite.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-register-v1",
+        "configuration": {
+          "expected_http_status": 200,
+          "overwrite": false
+        }
+      }
+    },
+    {
+      "id": "table-fixture-clean",
+      "step": "cleanup-fixture",
+      "required": true,
+      "description": "Every table candidate is absent, the namespace drop succeeds or finds it already absent, and the final namespace load is spec-shaped not-found.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-cleanup-v1",
+        "configuration": {
+          "final_http_status": 404,
+          "purge_requested": false
+        }
+      }
+    },
+    {
+      "id": "transcript-sanitized",
+      "step": "sanitize-transcript",
+      "required": true,
+      "description": "The transcript contains no bearer token, OAuth client credential, cookie, opaque page token, or secret-shaped response value.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/sanitized-http-transcript-v1",
+        "configuration": {
+          "request_header_policy": "allowlist-and-redact-authorization",
+          "response_header_policy": "allowlist",
+          "response_json_policy": "recursive-secret-key-redaction"
+        }
+      }
+    }
+  ]
+}

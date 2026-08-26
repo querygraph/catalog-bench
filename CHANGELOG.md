@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Catalog community C1-05 contract: added a neutral, versioned Iceberg REST
+  table-behavior scenario with isolated namespace ownership, two-table
+  create/list/load/update/drop coverage, bounded pagination, optional standard
+  rename and register operations, exact duplicate/missing-resource error shapes,
+  full candidate reconciliation, and sanitized no-shim evidence policy.
+
 - Catalog community C1-05 preparation: generalized the namespace probe's HTTP
   operation recorder, typed observation facts, response-shape checks, and
   Iceberg error validation into one reusable evidence engine. Existing public
