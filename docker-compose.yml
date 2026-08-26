@@ -394,6 +394,37 @@ services:
       minio-init:
         condition: service_completed_successfully
 
+  # Exact stock-client oracle for C1-07. The image contains only CPython
+  # 3.13.15, hash-locked PyIceberg/PyArrow dependencies, and the value-safe
+  # runner. It shares the catalogs' network and MinIO; no host Python or proxy
+  # participates in evidence generation.
+  pyiceberg:
+    build:
+      context: .
+      dockerfile: docker/pyiceberg.Dockerfile
+    image: catalog-bench-pyiceberg:0.11.1-python3.13.15
+    platform: linux/arm64
+    networks: [lakehouse-net]
+    profiles: ["pyiceberg"]
+    init: true
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    environment:
+      CATALOG_BENCH_S3_ACCESS_KEY_ID: admin
+      CATALOG_BENCH_S3_SECRET_ACCESS_KEY: password
+      CATALOG_BENCH_POLARIS_CLIENT_ID: root
+      CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret
+    volumes:
+      - ./profiles:/contracts/profiles:ro
+      - ./scenarios:/contracts/scenarios:ro
+      - ${CATALOG_BENCH_PYICEBERG_EVIDENCE_DIR:-./target/pyiceberg-evidence}:/evidence
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+
 volumes:
   gravitino-data:
   lakecat-data:

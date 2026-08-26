@@ -78,6 +78,7 @@ docker compose \
   --profile polaris \
   --profile gravitino \
   --profile bench \
+  --profile pyiceberg \
   config --quiet
 
 (cd docker/minio/tools && gofmt -d . && go mod tidy -diff && go vet ./... && go test ./...)
@@ -167,6 +168,71 @@ This is the production build recipe required for final runs, but C1-09 still
 owns artifact materialization: hash the resulting executables and images, create
 a runnable profile containing those identities, and accept measurements only
 from that same Docker environment.
+
+## Stock PyIceberg interoperability
+
+C1-07 adds a separate stock-client image built from
+[`docker/pyiceberg.Dockerfile`](docker/pyiceberg.Dockerfile). It directly pins
+the profile's Python 3.13.15 Linux ARM64 child manifest and installs the complete
+PyIceberg 0.11.1 / PyArrow 25.0.1 environment from wheel hashes in
+[`clients/pyiceberg/requirements.lock`](clients/pyiceberg/requirements.lock).
+The build cannot resolve a new dependency, accept a different wheel, or fall
+back to a source distribution. The container runs unprivileged with a read-only
+root filesystem on `catalog-bench-net`; both REST and S3 traffic remain inside
+the same Docker topology as every catalog and MinIO.
+
+Bring up all five catalogs and their readiness chains:
+
+```sh
+profiles=(
+  --profile lakekeeper
+  --profile nessie
+  --profile polaris
+  --profile gravitino
+  --profile pyiceberg
+)
+
+docker compose "${profiles[@]}" build lakecat pyiceberg
+docker compose "${profiles[@]}" up --detach \
+  lakecat lakekeeper-ready nessie-ready polaris-ready gravitino-ready
+
+for gate in lakekeeper-ready nessie-ready polaris-ready gravitino-ready; do
+  gate_id="$(docker compose "${profiles[@]}" ps --all --quiet "$gate")"
+  test -n "$gate_id"
+  test "$(docker wait "$gate_id")" = 0
+done
+
+docker compose "${profiles[@]}" run --rm --no-deps \
+  --env READY_URL=http://lakecat:8181/catalog/v1/config \
+  --entrypoint /usr/local/bin/wait-http \
+  minio
+```
+
+Run the complete matrix with one fresh fixture. The CLI creates the named output
+directory exclusively and writes one transcript per profile adapter:
+
+```sh
+fixture_id="c107_$(date -u +%m%d%H%M%S)"
+docker compose "${profiles[@]}" run --rm pyiceberg matrix \
+  --profile /contracts/profiles/v1/current-2026-08-26.json \
+  --scenario /contracts/scenarios/v1/client.pyiceberg.interoperability.json \
+  --fixture-id "$fixture_id" \
+  --output-dir "/evidence/$fixture_id"
+```
+
+Exit `0` means every catalog passed all required stock-client assertions; exit
+`2` means every attempted transcript was still written but at least one catalog
+is `fail` or required-`unsupported`; exit `1` is an invocation, contract, or
+evidence-write failure. Optional operation failures and unsupported capabilities
+remain explicit inside an otherwise passing required result.
+
+The runner never purges table data. It proves all run-owned catalog identifiers
+and the namespace absent, while retained Parquet/metadata objects remain
+available for the later shared-MinIO audit. The default host destination,
+`target/pyiceberg-evidence`, is mutable smoke evidence and cannot be published
+directly. See
+[`clients/pyiceberg/README.md`](clients/pyiceberg/README.md) for operation,
+classification, registration, sanitization, and lock-maintenance details.
 
 ## Behavioral conformance smoke evidence
 

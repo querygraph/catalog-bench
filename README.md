@@ -74,7 +74,9 @@ The executable behavioral scenarios now cover
 [`iceberg-rest.namespace.behavior`](scenarios/v1/iceberg-rest.namespace.behavior.json),
 [`iceberg-rest.table.behavior`](scenarios/v1/iceberg-rest.table.behavior.json),
 and
-[`iceberg-rest.commit.correctness`](scenarios/v1/iceberg-rest.commit.correctness.json).
+[`iceberg-rest.commit.correctness`](scenarios/v1/iceberg-rest.commit.correctness.json),
+plus the no-shim stock-client oracle
+[`client.pyiceberg.interoperability`](scenarios/v1/client.pyiceberg.interoperability.json).
 Their typed runners negotiate anonymous or OAuth2 client-credentials access,
 validate config and prefix resolution, then exercise isolated namespace and
 table lifecycles with hierarchy, immutable metadata updates, errors, pagination,
@@ -90,7 +92,9 @@ outcomes are recorded in
 [Iceberg REST Namespace Conformance](docs/NAMESPACE-CONFORMANCE.md) for C1-04
 and [Iceberg REST Table Conformance](docs/TABLE-CONFORMANCE.md) for C1-05, and
 [Iceberg REST Commit Correctness Conformance](docs/COMMIT-CONFORMANCE.md) for
-C1-06.
+C1-06. The stock PyIceberg runner, exact Linux ARM64 image, classifications,
+sanitization boundary, and reproduction commands are documented in
+[`clients/pyiceberg/README.md`](clients/pyiceberg/README.md).
 
 ## The commit benchmark
 

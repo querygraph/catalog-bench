@@ -97,6 +97,110 @@ fn gravitino_state_volume_is_prepared_without_running_catalog_as_root() {
     );
 }
 
+#[test]
+fn pyiceberg_image_is_profile_pinned_hash_locked_and_hardened() {
+    let root = repository_root();
+    let profile: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("profiles/v1/current-2026-08-26.json"))
+            .expect("read current profile"),
+    )
+    .expect("parse current profile");
+    let components = profile["components"]
+        .as_array()
+        .expect("profile components are an array");
+    let component = |id: &str| {
+        components
+            .iter()
+            .find(|component| component["id"] == id)
+            .unwrap_or_else(|| panic!("profile contains component `{id}`"))
+    };
+    let python = component("cpython");
+    let child_digest = python["artifact"]["platform_digest"]["value"]
+        .as_str()
+        .expect("CPython platform digest is a string");
+
+    assert_eq!(python["version"], "3.13.15");
+    assert_eq!(component("pyiceberg")["version"], "0.11.1");
+    assert_eq!(component("pyarrow")["version"], "25.0.1");
+
+    let dockerfile = fs::read_to_string(root.join("docker/pyiceberg.Dockerfile"))
+        .expect("read PyIceberg Dockerfile");
+    assert!(
+        dockerfile.contains(&format!(
+            "FROM python:3.13.15-slim-bookworm@sha256:{child_digest}"
+        )),
+        "PyIceberg image must directly pin the profile's Linux ARM64 child manifest"
+    );
+    for required in [
+        "--require-hashes",
+        "--only-binary=:all:",
+        "USER 65534:65534",
+    ] {
+        assert!(
+            dockerfile.contains(required),
+            "PyIceberg Dockerfile must contain `{required}`"
+        );
+    }
+
+    let lock = fs::read_to_string(root.join("clients/pyiceberg/requirements.lock"))
+        .expect("read PyIceberg lock");
+    let entries = lock
+        .lines()
+        .map(str::trim)
+        .filter(|line| !line.is_empty() && !line.starts_with('#'))
+        .collect::<Vec<_>>();
+    assert_eq!(entries.len(), 27, "complete selected wheel set is locked");
+    for entry in &entries {
+        let (requirement, hash) = entry
+            .split_once(" --hash=sha256:")
+            .unwrap_or_else(|| panic!("lock entry has one SHA-256 wheel hash: `{entry}`"));
+        assert!(
+            requirement.contains("=="),
+            "lock entry pins an exact version: `{entry}`"
+        );
+        assert_eq!(hash.len(), 64, "lock hash has 256 bits: `{entry}`");
+        assert!(
+            hash.bytes().all(|byte| byte.is_ascii_hexdigit()),
+            "lock hash is hexadecimal: `{entry}`"
+        );
+    }
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry.starts_with("pyiceberg==0.11.1 ")),
+        "lock contains the profile-selected PyIceberg"
+    );
+    assert!(
+        entries
+            .iter()
+            .any(|entry| entry.starts_with("pyarrow==25.0.1 ")),
+        "lock contains the profile-selected PyArrow"
+    );
+
+    let compose =
+        fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
+    let service = compose_service(&compose, "pyiceberg");
+    for required_line in [
+        "dockerfile: docker/pyiceberg.Dockerfile",
+        "platform: linux/arm64",
+        "networks: [lakehouse-net]",
+        "read_only: true",
+        "cap_drop: [\"ALL\"]",
+        "security_opt: [\"no-new-privileges:true\"]",
+        "- ./profiles:/contracts/profiles:ro",
+        "- ./scenarios:/contracts/scenarios:ro",
+    ] {
+        assert!(
+            service.lines().any(|line| line.trim() == required_line),
+            "PyIceberg Compose service must contain `{required_line}`"
+        );
+    }
+    assert!(
+        service.contains("minio-init:\n        condition: service_completed_successfully"),
+        "PyIceberg must wait for successful shared-MinIO initialization"
+    );
+}
+
 fn repository_root() -> &'static Path {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()

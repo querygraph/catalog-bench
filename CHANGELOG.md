@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Catalog community C1-07 reproducible client image: build CPython 3.13.15 from
+  the profile's Linux ARM64 child manifest, install all 27 PyIceberg/PyArrow
+  distributions from exact wheel hashes, and run the stock-client oracle as an
+  unprivileged read-only Compose service on the catalogs' shared Docker network
+  and MinIO. Added exact five-catalog startup, readiness, smoke-matrix,
+  classification, cleanup, security, and lock-maintenance documentation, plus a
+  deployment regression test that binds image, lock, profile, and Compose
+  invariants together.
+
 - Catalog community C1-07 stock-client runner: execute the pinned PyIceberg
   namespace/table round trip, real Arrow append and exact scan, independent
   property/schema/delete/conflict/delegation/rename/register classifications,
