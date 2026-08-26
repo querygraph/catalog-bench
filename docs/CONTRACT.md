@@ -47,8 +47,10 @@ Every result repeats the readable catalog and client name/version while referrin
 to an immutable profile digest for full source and artifact identity. Every
 profile component records one of:
 
-- a container reference plus index and optional platform digest;
-- an immutable source revision, executable digest, and locked build settings; or
+- a container reference plus a scoped index, platform-manifest, or local-image
+  digest and optional embedded artifact hashes;
+- an immutable source revision, optional executable digest, and locked build
+  settings; or
 - an ecosystem package name, version, and optional package digest.
 
 Each result embeds its actual OS, architecture, CPU, memory, limits, runtime,

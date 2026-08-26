@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Provenance: normalized source and build identity at the component boundary so
+  source-built container images retain both their revision/build recipe and their
+  scoped image plus embedded-executable digests.
 - Contracts: added the catalog-neutral `catalog-bench/v1` scenario, profile,
   result, and bundle-manifest ADTs; checked-in Draft 2020-12 JSON Schemas; strict
   semantic validation and evidence-sanitization gates; and a stable-Rust CLI

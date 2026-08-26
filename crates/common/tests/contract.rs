@@ -28,6 +28,8 @@ fn package_component(id: &str, kind: ComponentKind, name: &str) -> Component {
         kind,
         name: name.to_owned(),
         version: "1.2.3".to_owned(),
+        source: None,
+        build: None,
         artifact: RuntimeArtifact::Package {
             ecosystem: "fixture".to_owned(),
             package: name.to_owned(),
@@ -282,6 +284,35 @@ fn profile_rejects_secret_shaped_settings() {
     let error = profile.validate().unwrap_err();
 
     assert!(error.to_string().contains("secret-like setting key"));
+}
+
+#[test]
+fn source_builds_require_source_and_build_provenance() {
+    let mut component = package_component("catalog", ComponentKind::Catalog, "Catalog");
+    component.artifact = RuntimeArtifact::SourceBuild { executable: None };
+
+    let error = component.validate().unwrap_err();
+
+    assert!(error.to_string().contains("source: is required"));
+    assert!(error.to_string().contains("build: is required"));
+}
+
+#[test]
+fn image_digest_scope_cannot_be_ambiguous() {
+    let mut component = package_component("catalog", ComponentKind::Catalog, "Catalog");
+    component.artifact = RuntimeArtifact::ContainerImage {
+        reference: "catalog:fixture".to_owned(),
+        digest_scope: ImageDigestScope::LocalImage,
+        digest: digest('a'),
+        platform_digest: Some(digest('b')),
+        embedded_artifacts: Vec::new(),
+    };
+
+    let error = component.validate().unwrap_err();
+
+    assert!(error
+        .to_string()
+        .contains("only meaningful when digest_scope is `index`"));
 }
 
 #[test]

@@ -94,6 +94,16 @@
         "artifact": {
           "$ref": "#/$defs/RuntimeArtifact"
         },
+        "build": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/BuildConfiguration"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
         "extensions": {
           "additionalProperties": true,
           "type": "object"
@@ -106,6 +116,16 @@
         },
         "name": {
           "type": "string"
+        },
+        "source": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SourceRevision"
+            },
+            {
+              "type": "null"
+            }
+          ]
         },
         "version": {
           "type": "string"
@@ -228,6 +248,15 @@
       ],
       "type": "object"
     },
+    "ImageDigestScope": {
+      "description": "What an image digest addresses. Registry indexes, platform manifests, and\nlocal Docker image IDs are different objects and must not be conflated.",
+      "enum": [
+        "index",
+        "platform-manifest",
+        "local-image"
+      ],
+      "type": "string"
+    },
     "ProfileDocumentKind": {
       "enum": [
         "profile"
@@ -254,8 +283,17 @@
         {
           "additionalProperties": false,
           "properties": {
-            "index_digest": {
+            "digest": {
               "$ref": "#/$defs/Digest"
+            },
+            "digest_scope": {
+              "$ref": "#/$defs/ImageDigestScope"
+            },
+            "embedded_artifacts": {
+              "items": {
+                "$ref": "#/$defs/ArtifactReference"
+              },
+              "type": "array"
             },
             "kind": {
               "const": "container-image",
@@ -278,16 +316,14 @@
           "required": [
             "kind",
             "reference",
-            "index_digest"
+            "digest_scope",
+            "digest"
           ],
           "type": "object"
         },
         {
           "additionalProperties": false,
           "properties": {
-            "build": {
-              "$ref": "#/$defs/BuildConfiguration"
-            },
             "executable": {
               "anyOf": [
                 {
@@ -301,15 +337,10 @@
             "kind": {
               "const": "source-build",
               "type": "string"
-            },
-            "source": {
-              "$ref": "#/$defs/SourceRevision"
             }
           },
           "required": [
-            "kind",
-            "source",
-            "build"
+            "kind"
           ],
           "type": "object"
         },

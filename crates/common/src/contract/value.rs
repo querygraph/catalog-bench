@@ -182,15 +182,16 @@ impl Validate for BuildConfiguration {
 pub enum RuntimeArtifact {
     ContainerImage {
         reference: String,
-        index_digest: Digest,
+        digest_scope: ImageDigestScope,
+        digest: Digest,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         platform_digest: Option<Digest>,
+        #[serde(default, skip_serializing_if = "Vec::is_empty")]
+        embedded_artifacts: Vec<ArtifactReference>,
     },
     SourceBuild {
-        source: Box<SourceRevision>,
         #[serde(default, skip_serializing_if = "Option::is_none")]
         executable: Option<Box<ArtifactReference>>,
-        build: Box<BuildConfiguration>,
     },
     Package {
         ecosystem: String,
@@ -201,30 +202,47 @@ pub enum RuntimeArtifact {
     },
 }
 
+/// What an image digest addresses. Registry indexes, platform manifests, and
+/// local Docker image IDs are different objects and must not be conflated.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[serde(rename_all = "kebab-case")]
+pub enum ImageDigestScope {
+    Index,
+    PlatformManifest,
+    LocalImage,
+}
+
 impl Validate for RuntimeArtifact {
     fn collect_issues(&self, path: &str, issues: &mut Vec<ValidationIssue>) {
         match self {
             Self::ContainerImage {
                 reference,
-                index_digest,
+                digest_scope,
+                digest,
                 platform_digest,
+                embedded_artifacts,
             } => {
                 require_non_empty(reference, child_path(path, "reference"), issues);
-                index_digest.collect_issues(&child_path(path, "index_digest"), issues);
+                digest.collect_issues(&child_path(path, "digest"), issues);
                 if let Some(digest) = platform_digest {
                     digest.collect_issues(&child_path(path, "platform_digest"), issues);
+                    if *digest_scope != ImageDigestScope::Index {
+                        issues.push(ValidationIssue::new(
+                            child_path(path, "platform_digest"),
+                            "is only meaningful when digest_scope is `index`",
+                        ));
+                    }
                 }
+                validate_artifacts(
+                    embedded_artifacts,
+                    &child_path(path, "embedded_artifacts"),
+                    issues,
+                );
             }
-            Self::SourceBuild {
-                source,
-                executable,
-                build,
-            } => {
-                source.collect_issues(&child_path(path, "source"), issues);
+            Self::SourceBuild { executable } => {
                 if let Some(artifact) = executable {
                     artifact.collect_issues(&child_path(path, "executable"), issues);
                 }
-                build.collect_issues(&child_path(path, "build"), issues);
             }
             Self::Package {
                 ecosystem,
@@ -266,6 +284,10 @@ pub struct Component {
     pub kind: ComponentKind,
     pub name: String,
     pub version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<Box<SourceRevision>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build: Option<Box<BuildConfiguration>>,
     pub artifact: RuntimeArtifact,
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub extensions: Extensions,
@@ -276,6 +298,32 @@ impl Validate for Component {
         self.id.collect_issues(&child_path(path, "id"), issues);
         require_non_empty(&self.name, child_path(path, "name"), issues);
         require_non_empty(&self.version, child_path(path, "version"), issues);
+        if let Some(source) = &self.source {
+            source.collect_issues(&child_path(path, "source"), issues);
+        }
+        if let Some(build) = &self.build {
+            build.collect_issues(&child_path(path, "build"), issues);
+            if self.source.is_none() {
+                issues.push(ValidationIssue::new(
+                    child_path(path, "build"),
+                    "requires an immutable source revision",
+                ));
+            }
+        }
+        if matches!(&self.artifact, RuntimeArtifact::SourceBuild { .. }) {
+            if self.source.is_none() {
+                issues.push(ValidationIssue::new(
+                    child_path(path, "source"),
+                    "is required for a source-build artifact",
+                ));
+            }
+            if self.build.is_none() {
+                issues.push(ValidationIssue::new(
+                    child_path(path, "build"),
+                    "is required for a source-build artifact",
+                ));
+            }
+        }
         self.artifact
             .collect_issues(&child_path(path, "artifact"), issues);
     }
