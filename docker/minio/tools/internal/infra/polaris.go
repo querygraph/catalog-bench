@@ -13,6 +13,8 @@ import (
 	"strings"
 )
 
+const defaultPolarisS3RoleARN = "arn:aws:iam::000000000000:role/polaris-bench"
+
 // PolarisSettings is the validated fixture boundary for OAuth, management, and
 // client-facing catalog readiness.
 type PolarisSettings struct {
@@ -24,6 +26,8 @@ type PolarisSettings struct {
 	Catalog             string
 	DefaultBaseLocation string
 	S3Endpoint          string
+	S3STSEndpoint       string
+	S3RoleARN           string
 	S3Region            string
 }
 
@@ -32,6 +36,7 @@ func LoadPolarisSettings(getenv func(string) string) (PolarisSettings, error) {
 	if err != nil {
 		return PolarisSettings{}, err
 	}
+	s3Endpoint := valueOr(getenv, "POLARIS_S3_ENDPOINT", "http://minio:9000")
 	settings := PolarisSettings{
 		BaseURL:             baseURL,
 		Realm:               valueOr(getenv, "POLARIS_REALM", "POLARIS"),
@@ -40,8 +45,14 @@ func LoadPolarisSettings(getenv func(string) string) (PolarisSettings, error) {
 		Scope:               valueOr(getenv, "POLARIS_SCOPE", "PRINCIPAL_ROLE:ALL"),
 		Catalog:             valueOr(getenv, "POLARIS_CATALOG", "bench"),
 		DefaultBaseLocation: valueOr(getenv, "POLARIS_BASE_LOCATION", "s3://warehouse/bench"),
-		S3Endpoint:          valueOr(getenv, "POLARIS_S3_ENDPOINT", "http://minio:9000"),
-		S3Region:            valueOr(getenv, "POLARIS_S3_REGION", "us-east-1"),
+		S3Endpoint:          s3Endpoint,
+		S3STSEndpoint:       valueOr(getenv, "POLARIS_S3_STS_ENDPOINT", s3Endpoint),
+		S3RoleARN: valueOr(
+			getenv,
+			"POLARIS_S3_ROLE_ARN",
+			defaultPolarisS3RoleARN,
+		),
+		S3Region: valueOr(getenv, "POLARIS_S3_REGION", "us-east-1"),
 	}
 
 	required := []struct {
@@ -55,6 +66,8 @@ func LoadPolarisSettings(getenv func(string) string) (PolarisSettings, error) {
 		{"POLARIS_CATALOG", settings.Catalog},
 		{"POLARIS_BASE_LOCATION", settings.DefaultBaseLocation},
 		{"POLARIS_S3_ENDPOINT", settings.S3Endpoint},
+		{"POLARIS_S3_STS_ENDPOINT", settings.S3STSEndpoint},
+		{"POLARIS_S3_ROLE_ARN", settings.S3RoleARN},
 		{"POLARIS_S3_REGION", settings.S3Region},
 	}
 	for _, field := range required {
@@ -70,6 +83,9 @@ func LoadPolarisSettings(getenv func(string) string) (PolarisSettings, error) {
 	}
 	if _, err := parsePolarisBaseURL(settings.S3Endpoint); err != nil {
 		return PolarisSettings{}, fmt.Errorf("POLARIS_S3_ENDPOINT: %w", err)
+	}
+	if _, err := parsePolarisBaseURL(settings.S3STSEndpoint); err != nil {
+		return PolarisSettings{}, fmt.Errorf("POLARIS_S3_STS_ENDPOINT: %w", err)
 	}
 	return settings, nil
 }
@@ -158,7 +174,28 @@ type createPolarisCatalogRequest struct {
 	Catalog polarisCatalog `json:"catalog"`
 }
 
+const (
+	polarisCatalogAdminRole       = "catalog_admin"
+	polarisCatalogGrantType       = "catalog"
+	polarisManageContentPrivilege = "CATALOG_MANAGE_CONTENT"
+)
+
+type polarisGrant struct {
+	Type      string `json:"type"`
+	Privilege string `json:"privilege"`
+}
+
+type listPolarisGrantsResponse struct {
+	Grants []polarisGrant `json:"grants"`
+}
+
+type putPolarisGrantRequest struct {
+	Grant polarisGrant `json:"grant"`
+}
+
 func (client PolarisClient) desiredCatalog() polarisCatalog {
+	roleARN := client.settings.S3RoleARN
+	stsEndpoint := client.settings.S3STSEndpoint
 	return polarisCatalog{
 		Type: "INTERNAL",
 		Name: client.settings.Catalog,
@@ -168,17 +205,20 @@ func (client PolarisClient) desiredCatalog() polarisCatalog {
 		StorageConfigInfo: polarisStorageConfig{
 			StorageType:      "S3",
 			AllowedLocations: []string{client.settings.DefaultBaseLocation},
+			RoleARN:          &roleARN,
 			Region:           client.settings.S3Region,
 			Endpoint:         client.settings.S3Endpoint,
 			EndpointInternal: client.settings.S3Endpoint,
-			STSUnavailable:   true,
+			STSEndpoint:      &stsEndpoint,
 			PathStyleAccess:  true,
+			KMSUnavailable:   true,
 		},
 	}
 }
 
-// EnsureCatalog creates the fixture catalog only when absent, then reads it
-// back and rejects any material storage or routing drift.
+// EnsureCatalog creates the fixture catalog only when absent, reads it back,
+// rejects material storage or routing drift, and idempotently reconciles the
+// catalog role needed for stock clients to read and write table data.
 func (client PolarisClient) EnsureCatalog(ctx context.Context) error {
 	token, err := client.acquireToken(ctx)
 	if err != nil {
@@ -189,39 +229,127 @@ func (client PolarisClient) EnsureCatalog(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if found {
-		return comparePolarisCatalog(desired, actual)
+	if !found {
+		payload, err := json.Marshal(createPolarisCatalogRequest{Catalog: desired})
+		if err != nil {
+			return fmt.Errorf("encode Polaris catalog request: %w", err)
+		}
+		err = client.transport.Do(
+			ctx,
+			http.MethodPost,
+			"/api/management/v1/catalogs",
+			nil,
+			payload,
+			client.authorizedHeaders(token),
+			nil,
+		)
+		if err != nil {
+			var statusError HTTPStatusError
+			if !errors.As(err, &statusError) || statusError.Code != http.StatusConflict {
+				return fmt.Errorf("create Polaris catalog %q: %w", desired.Name, err)
+			}
+		}
+
+		actual, found, err = client.getCatalog(ctx, token)
+		if err != nil {
+			return fmt.Errorf("verify Polaris catalog %q: %w", desired.Name, err)
+		}
+		if !found {
+			return fmt.Errorf("Polaris catalog %q is absent after creation", desired.Name)
+		}
+	}
+	if err := comparePolarisCatalog(desired, actual); err != nil {
+		return err
+	}
+	return client.ensureCatalogAdminGrant(ctx, token)
+}
+
+func (client PolarisClient) ensureCatalogAdminGrant(ctx context.Context, token string) error {
+	desired := desiredPolarisCatalogAdminGrant()
+	grants, err := client.listCatalogAdminGrants(ctx, token)
+	if err != nil {
+		return err
+	}
+	if slices.Contains(grants, desired) {
+		return nil
 	}
 
-	payload, err := json.Marshal(createPolarisCatalogRequest{Catalog: desired})
+	payload, err := json.Marshal(putPolarisGrantRequest{Grant: desired})
 	if err != nil {
-		return fmt.Errorf("encode Polaris catalog request: %w", err)
+		return fmt.Errorf("encode Polaris catalog-role grant request: %w", err)
 	}
-	headers := client.authorizedHeaders(token)
 	err = client.transport.Do(
 		ctx,
-		http.MethodPost,
-		"/api/management/v1/catalogs",
+		http.MethodPut,
+		client.catalogAdminGrantsPath(),
 		nil,
 		payload,
-		headers,
+		client.authorizedHeaders(token),
 		nil,
 	)
 	if err != nil {
 		var statusError HTTPStatusError
 		if !errors.As(err, &statusError) || statusError.Code != http.StatusConflict {
-			return fmt.Errorf("create Polaris catalog %q: %w", desired.Name, err)
+			return fmt.Errorf(
+				"grant Polaris privilege %s to catalog role %q: %w",
+				desired.Privilege,
+				polarisCatalogAdminRole,
+				err,
+			)
 		}
 	}
 
-	actual, found, err = client.getCatalog(ctx, token)
+	grants, err = client.listCatalogAdminGrants(ctx, token)
 	if err != nil {
-		return fmt.Errorf("verify Polaris catalog %q: %w", desired.Name, err)
+		return fmt.Errorf("verify Polaris catalog-role grant: %w", err)
 	}
-	if !found {
-		return fmt.Errorf("Polaris catalog %q is absent after creation", desired.Name)
+	if !slices.Contains(grants, desired) {
+		return fmt.Errorf(
+			"Polaris catalog role %q lacks privilege %s after grant",
+			polarisCatalogAdminRole,
+			desired.Privilege,
+		)
 	}
-	return comparePolarisCatalog(desired, actual)
+	return nil
+}
+
+func (client PolarisClient) listCatalogAdminGrants(
+	ctx context.Context,
+	token string,
+) ([]polarisGrant, error) {
+	var response listPolarisGrantsResponse
+	if err := client.transport.Do(
+		ctx,
+		http.MethodGet,
+		client.catalogAdminGrantsPath(),
+		nil,
+		nil,
+		client.authorizedHeaders(token),
+		&response,
+	); err != nil {
+		return nil, fmt.Errorf(
+			"read grants for Polaris catalog role %q: %w",
+			polarisCatalogAdminRole,
+			err,
+		)
+	}
+	return response.Grants, nil
+}
+
+func (client PolarisClient) catalogAdminGrantsPath() string {
+	return polarisCatalogRoleGrantsPath(client.settings.Catalog, polarisCatalogAdminRole)
+}
+
+func desiredPolarisCatalogAdminGrant() polarisGrant {
+	return polarisGrant{
+		Type:      polarisCatalogGrantType,
+		Privilege: polarisManageContentPrivilege,
+	}
+}
+
+func polarisCatalogRoleGrantsPath(catalog, role string) string {
+	return "/api/management/v1/catalogs/" + url.PathEscape(catalog) +
+		"/catalog-roles/" + url.PathEscape(role) + "/grants"
 }
 
 // CheckCatalogReady proves the authenticated client-facing config route for the
@@ -321,17 +449,20 @@ func comparePolarisCatalog(desired, actual polarisCatalog) error {
 		maps.Equal(desired.Properties, actual.Properties) &&
 		desired.StorageConfigInfo.StorageType == actual.StorageConfigInfo.StorageType &&
 		slices.Equal(desiredLocations, actualLocations) &&
-		actual.StorageConfigInfo.StorageName == nil &&
-		actual.StorageConfigInfo.RoleARN == nil &&
-		actual.StorageConfigInfo.ExternalID == nil &&
-		actual.StorageConfigInfo.UserARN == nil &&
+		equalOptionalString(desired.StorageConfigInfo.StorageName, actual.StorageConfigInfo.StorageName) &&
+		equalOptionalString(desired.StorageConfigInfo.RoleARN, actual.StorageConfigInfo.RoleARN) &&
+		equalOptionalString(desired.StorageConfigInfo.ExternalID, actual.StorageConfigInfo.ExternalID) &&
+		equalOptionalString(desired.StorageConfigInfo.UserARN, actual.StorageConfigInfo.UserARN) &&
 		desired.StorageConfigInfo.Region == actual.StorageConfigInfo.Region &&
 		equivalentEndpoint(desired.StorageConfigInfo.Endpoint, actual.StorageConfigInfo.Endpoint) &&
 		equivalentEndpoint(
 			effectiveInternalEndpoint(desired.StorageConfigInfo),
 			effectiveInternalEndpoint(actual.StorageConfigInfo),
 		) &&
-		actual.StorageConfigInfo.STSEndpoint == nil &&
+		equivalentOptionalEndpoint(
+			desired.StorageConfigInfo.STSEndpoint,
+			actual.StorageConfigInfo.STSEndpoint,
+		) &&
 		desired.StorageConfigInfo.STSUnavailable == actual.StorageConfigInfo.STSUnavailable &&
 		desired.StorageConfigInfo.PathStyleAccess == actual.StorageConfigInfo.PathStyleAccess &&
 		desired.StorageConfigInfo.KMSUnavailable == actual.StorageConfigInfo.KMSUnavailable
@@ -343,6 +474,20 @@ func comparePolarisCatalog(desired, actual polarisCatalog) error {
 
 func equivalentEndpoint(left, right string) bool {
 	return strings.TrimRight(left, "/") == strings.TrimRight(right, "/")
+}
+
+func equalOptionalString(left, right *string) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return *left == *right
+}
+
+func equivalentOptionalEndpoint(left, right *string) bool {
+	if left == nil || right == nil {
+		return left == nil && right == nil
+	}
+	return equivalentEndpoint(*left, *right)
 }
 
 func effectiveInternalEndpoint(config polarisStorageConfig) string {

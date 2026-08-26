@@ -60,6 +60,14 @@ select PyIceberg's built-in `NoopAuthManager` through the public `auth.type`
 configuration. This omits authorization entirely and is stock-client
 configuration, not a request shim.
 
+The runner also deliberately omits `s3.force-virtual-addressing` for shared
+MinIO. PyIceberg 0.11.1's stock `FsspecFileIO` checks whether that property has a
+non-empty string instead of parsing its Boolean value, so even the string
+`false` forces requests to `warehouse.minio`. Omitting the optional force flag
+lets S3FS use path-style requests for the custom `http://minio:9000` endpoint.
+This is ordinary stock-client configuration; no filesystem or DNS behavior is
+patched.
+
 Registration is deliberately last among mutating optional operations. The
 public client checks server-advertised endpoint support inside `register_table`,
 so the runner cannot preflight it through a private API. It first drops with

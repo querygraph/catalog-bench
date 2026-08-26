@@ -60,8 +60,25 @@ unrelated local MinIO from accidentally entering a run.
   It obtains OAuth client credentials without logging the token, reads before it
   writes, creates only a missing `bench` catalog, and then compares catalog type,
   base location, allowed locations, internal/external MinIO endpoints, region,
-  path-style mode, and disabled STS vending. A separate gate proves authenticated
-  config negotiation with `warehouse=bench`.
+  path-style mode, MinIO STS endpoint, fixture role ARN, and unavailable KMS.
+  MinIO implements STS, so `stsUnavailable` remains false: Polaris uses its
+  standard AWS environment identity to call MinIO `AssumeRole` and returns
+  scoped temporary credentials to a stock client that requests delegation. The
+  helper also reads the grants on the catalog's built-in `catalog_admin` role,
+  adds `CATALOG_MANAGE_CONTENT` only when absent, and reads back the role before
+  succeeding. That catalog privilege supplies the table read/write data
+  privileges required by stock clients; extra server-managed grants remain
+  untouched. A separate gate proves authenticated config negotiation with
+  `warehouse=bench`.
+- **Nessie** uses static fixture credentials and advertises
+  `http://minio:9000` as both its internal and client-visible S3 endpoint. Every
+  benchmark client shares the Compose network, where service DNS is valid and
+  `127.0.0.1` would incorrectly refer to the client container itself.
+- **Gravitino** uses its 1.3.0 `GRAVITINO_ICEBERG_REST_*` rewrite namespace,
+  SQLite-backed private state, `S3FileIO`, and the documented
+  `s3-secret-key` credential provider. The provider turns the configured MinIO
+  key pair into credentials for table operations instead of creating metadata
+  and then failing the response because no credential provider was available.
 
 The fixture credentials in Compose are intentionally obvious and local-only.
 They are part of a reproducible benchmark topology, not production deployment

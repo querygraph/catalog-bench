@@ -60,6 +60,9 @@ class WorkflowTests(unittest.TestCase):
                 )
                 self.assertEqual(by_id["cleanup-fixture"].status, Status.PASS)
                 self.assertTrue(factory.catalogs[0].closed)
+                self.assertNotIn(
+                    "s3.force-virtual-addressing", factory.catalogs[0].properties
+                )
                 if contracts.adapter["authentication"]["kind"] == "anonymous":
                     self.assertEqual(
                         factory.catalogs[0].properties["auth"], {"type": "noop"}

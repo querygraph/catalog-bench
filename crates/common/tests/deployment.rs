@@ -11,6 +11,10 @@ const GRAVITINO_ENVIRONMENT: &[(&str, &str)] = &[
         "GRAVITINO_ICEBERG_REST_IO_IMPL",
         "org.apache.iceberg.aws.s3.S3FileIO",
     ),
+    (
+        "GRAVITINO_ICEBERG_REST_CREDENTIAL_PROVIDERS",
+        "s3-secret-key",
+    ),
     ("GRAVITINO_ICEBERG_REST_S3_ENDPOINT", "http://minio:9000"),
     ("GRAVITINO_ICEBERG_REST_S3_REGION", "us-east-1"),
     ("GRAVITINO_ICEBERG_REST_S3_PATH_STYLE_ACCESS", "\"true\""),
@@ -21,6 +25,7 @@ const IGNORED_GRAVITINO_ENVIRONMENT: &[&str] = &[
     "GRAVITINO_URI",
     "GRAVITINO_WAREHOUSE",
     "GRAVITINO_IO_IMPL",
+    "GRAVITINO_CREDENTIAL_PROVIDERS",
     "GRAVITINO_S3_ACCESS_KEY",
     "GRAVITINO_S3_SECRET_KEY",
     "GRAVITINO_S3_ENDPOINT",
@@ -95,6 +100,45 @@ fn gravitino_state_volume_is_prepared_without_running_catalog_as_root() {
         catalog.lines().all(|line| line.trim() != "user: \"0\""),
         "the long-running Gravitino catalog must retain its unprivileged image user"
     );
+}
+
+#[test]
+fn nessie_advertises_shared_minio_to_same_docker_clients() {
+    let compose = fs::read_to_string(repository_root().join("docker-compose.yml"))
+        .expect("read docker-compose.yml");
+    let service = compose_service(&compose, "nessie");
+
+    for name in [
+        "NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_ENDPOINT",
+        "NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_EXTERNAL_ENDPOINT",
+    ] {
+        let binding = format!("{name}: http://minio:9000");
+        assert!(
+            service.lines().any(|line| line.trim() == binding),
+            "Nessie deployment must contain `{binding}`"
+        );
+    }
+    assert!(
+        !service.contains("127.0.0.1:9000"),
+        "Nessie must not advertise host loopback to same-Docker clients"
+    );
+}
+
+#[test]
+fn polaris_setup_enables_minio_sts_credential_vending() {
+    let compose = fs::read_to_string(repository_root().join("docker-compose.yml"))
+        .expect("read docker-compose.yml");
+
+    for binding in [
+        "POLARIS_S3_ENDPOINT: http://minio:9000",
+        "POLARIS_S3_STS_ENDPOINT: http://minio:9000",
+        "POLARIS_S3_ROLE_ARN: arn:aws:iam::000000000000:role/polaris-bench",
+    ] {
+        assert!(
+            compose.lines().any(|line| line.trim() == binding),
+            "Polaris setup must contain `{binding}`"
+        );
+    }
 }
 
 #[test]

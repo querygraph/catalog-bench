@@ -259,7 +259,6 @@ def _catalog_properties(
         "s3.region": object_store["region"],
         "s3.access-key-id": access_key,
         "s3.secret-access-key": secret_key,
-        "s3.force-virtual-addressing": "false",
     }
     config_query = adapter["endpoint"]["config"].get("query", {})
     if warehouse := config_query.get("warehouse"):

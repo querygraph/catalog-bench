@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C1-07 catalog data-plane reconciliation: make Nessie's client-visible S3
+  endpoint resolve to shared MinIO inside the benchmark network, enable
+  Gravitino's documented `s3-secret-key` credential provider, and extend the
+  typed Polaris bootstrap to idempotently grant and verify
+  `CATALOG_MANAGE_CONTENT` on `catalog_admin` while enabling MinIO-backed STS
+  credential vending with an explicit fixture role. Omit PyIceberg 0.11.1's
+  optional `s3.force-virtual-addressing` flag because its stock S3FS adapter
+  treats the non-empty string `false` as enabled. Added deterministic grant
+  creation/no-op/failure tests and static regressions for the same-Docker
+  Nessie and effective Gravitino configuration boundaries.
+
 - C1-07 stock-runtime completeness: select PyIceberg's public no-op auth manager
   for anonymous adapters instead of its legacy `Bearer None` fallback, and add
   profile-pinned S3FS 2026.7.0 plus all exact transitive wheels so
