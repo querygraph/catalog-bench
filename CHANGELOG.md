@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- C1-05 Gravitino state initialization: added a least-privilege one-shot that
+  prepares only Gravitino's named state volume for the image's UID 1000 before
+  the catalog starts. Fresh SQLite-backed deployments no longer fail with a
+  root-owned volume, and the catalog process itself remains unprivileged.
+
 - C1-05 Gravitino storage correction: aligned the pinned 1.3.0 container's
   Compose environment with its `GRAVITINO_ICEBERG_REST_*` rewrite contract, so
   the declared SQLite JDBC backend, S3 warehouse, S3FileIO, MinIO endpoint, and

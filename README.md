@@ -312,7 +312,9 @@ catalog-bench-commit --base-url http://127.0.0.1:8080/api/2.1/unity-catalog/iceb
   the exact `GRAVITINO_ICEBERG_REST_*` environment namespace; shorter historical
   names are silently ignored and leave the image on its memory catalog and
   `/tmp` warehouse defaults. The deployment test and live effective-config check
-  in [DOCKER.md](DOCKER.md) protect that boundary.
+  in [DOCKER.md](DOCKER.md) protect that boundary. A dedicated one-shot prepares
+  the fresh state volume for UID 1000 before the catalog starts, so the server
+  itself does not need to run as root.
 - **Nessie 0.108.4** is reproducible through its profile, but its eight-writer
   commit path failed the final integrity gate in all five measured rounds with
   Quarkus request-context HTTP 500s. It remains in the generated matrix as an

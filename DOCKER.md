@@ -266,7 +266,12 @@ The accepted shape is JDBC at `jdbc:sqlite:/data/gravitino.db`, warehouse
 `s3://warehouse/`, `S3FileIO`, endpoint `http://minio:9000`, region
 `us-east-1`, and path-style access. Seeing `catalog-backend = memory` or
 `warehouse = /tmp` means the container ignored its environment and the run is
-not comparable shared-MinIO evidence.
+not comparable shared-MinIO evidence. On a fresh named volume,
+`gravitino-state-init` first assigns the dedicated `/data` directory to UID
+1000 and exits successfully; the catalog waits for that gate and then runs as
+the upstream image's unprivileged user. A permission error opening
+`/data/gravitino.db` means that gate did not complete and also invalidates the
+run.
 
 Released Unity Catalog OSS 0.5.0 is not in this topology because its Iceberg REST
 surface is read-only. It remains an explicit `unsupported` capability outcome,

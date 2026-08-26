@@ -64,6 +64,39 @@ fn gravitino_1_3_uses_its_effective_config_rewrite_environment() {
     }
 }
 
+#[test]
+fn gravitino_state_volume_is_prepared_without_running_catalog_as_root() {
+    let compose = fs::read_to_string(repository_root().join("docker-compose.yml"))
+        .expect("read docker-compose.yml");
+    let initializer = compose_service(&compose, "gravitino-state-init");
+    let catalog = compose_service(&compose, "gravitino");
+
+    for required_line in [
+        "image: *gravitino-image",
+        "restart: \"no\"",
+        "user: \"0\"",
+        "entrypoint: [\"/bin/sh\", \"-eu\", \"-c\"]",
+        "chown 1000:0 /data",
+        "chmod 0750 /data",
+        "- gravitino-data:/data",
+    ] {
+        assert!(
+            initializer.lines().any(|line| line.trim() == required_line),
+            "Gravitino state initializer must contain `{required_line}`"
+        );
+    }
+
+    assert!(
+        catalog
+            .contains("gravitino-state-init:\n        condition: service_completed_successfully"),
+        "Gravitino must wait for successful state initialization"
+    );
+    assert!(
+        catalog.lines().all(|line| line.trim() != "user: \"0\""),
+        "the long-running Gravitino catalog must retain its unprivileged image user"
+    );
+}
+
 fn repository_root() -> &'static Path {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()
