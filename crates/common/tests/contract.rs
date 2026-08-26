@@ -1,6 +1,4 @@
 use std::collections::BTreeMap;
-use std::fs;
-use std::path::PathBuf;
 
 use catalog_bench_common::contract::*;
 
@@ -233,12 +231,23 @@ fn every_document_round_trips_through_the_dispatch_parser() {
 
 #[test]
 fn checked_in_schemas_exactly_match_rust_types() {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-
     for schema in generated_schemas().unwrap() {
-        let path = root.join("schemas/v1").join(schema.file_name);
-        let checked_in: serde_json::Value =
-            serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+        let bytes = match schema.file_name {
+            "manifest.schema.json" => {
+                include_bytes!("../../../schemas/v1/manifest.schema.json").as_slice()
+            }
+            "profile.schema.json" => {
+                include_bytes!("../../../schemas/v1/profile.schema.json").as_slice()
+            }
+            "result.schema.json" => {
+                include_bytes!("../../../schemas/v1/result.schema.json").as_slice()
+            }
+            "scenario.schema.json" => {
+                include_bytes!("../../../schemas/v1/scenario.schema.json").as_slice()
+            }
+            unexpected => panic!("unexpected generated schema {unexpected}"),
+        };
+        let checked_in: serde_json::Value = serde_json::from_slice(bytes).unwrap();
         assert_eq!(checked_in, schema.document, "{} drifted", schema.file_name);
         assert_eq!(
             checked_in["$schema"],
@@ -249,17 +258,13 @@ fn checked_in_schemas_exactly_match_rust_types() {
 
 #[test]
 fn checked_in_phase_zero_profiles_and_scenario_validate() {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../..");
-    let paths = [
-        "profiles/v1/reproduction-2026-08-08.json",
-        "profiles/v1/current-2026-08-26.json",
-        "scenarios/v1/iceberg-rest.commit.same-table-contention.json",
+    let bytes = [
+        include_bytes!("../../../profiles/v1/reproduction-2026-08-08.json").as_slice(),
+        include_bytes!("../../../profiles/v1/current-2026-08-26.json").as_slice(),
+        include_bytes!("../../../scenarios/v1/iceberg-rest.commit.same-table-contention.json")
+            .as_slice(),
     ];
-
-    let documents = paths.map(|path| {
-        let bytes = fs::read(root.join(path)).unwrap();
-        parse_contract(&bytes).unwrap()
-    });
+    let documents = bytes.map(|document| parse_contract(document).unwrap());
 
     let ContractDocument::Profile(historical) = &documents[0] else {
         panic!("first document must be the historical profile");

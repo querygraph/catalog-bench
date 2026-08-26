@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Contract test portability: embedded checked-in profiles, scenarios, and schemas
+  in the integration-test binary so a shared Cargo target directory cannot reuse
+  stale absolute paths from a removed clean worktree.
 - Documentation quality: escaped the write-data example URI so workspace
   Rustdoc builds are warning-free under `-D warnings`.
 - Historical evidence: added a deterministic importer that hash-checks and
