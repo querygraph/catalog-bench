@@ -1,0 +1,388 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "iceberg-rest.namespace.behavior",
+  "version": 1,
+  "title": "Iceberg REST namespace lifecycle, hierarchy, pagination, and errors",
+  "description": "Creates isolated namespace fixtures, proves create/list/load/property-update/drop behavior, preserves multipart hierarchy, traverses paginated or standards-permitted unpaginated listings, validates duplicate and missing-parent errors, cleans up, and emits a sanitized no-shim transcript.",
+  "family": "iceberg-rest",
+  "classification": "strict-v1",
+  "tags": [
+    "iceberg-rest",
+    "namespace",
+    "pagination",
+    "errors",
+    "no-shim"
+  ],
+  "capabilities": [
+    {
+      "capability": "iceberg-rest.namespace.create",
+      "level": "required",
+      "description": "Create single-part and multipart namespaces through the standard REST operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.list",
+      "level": "required",
+      "description": "List top-level namespaces and observe newly created identifiers.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.load",
+      "level": "required",
+      "description": "Load exact namespace identifiers and stored properties.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.update-properties",
+      "level": "optional",
+      "description": "Set and remove namespace properties through the standard optional operation when the profile exercises it.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.drop",
+      "level": "required",
+      "description": "Drop empty namespace fixtures and prove they are absent.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.hierarchy",
+      "level": "required",
+      "description": "Create a multipart child and list it under its parent without flattening the namespace identifier.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.pagination",
+      "level": "required",
+      "description": "Traverse every page without loss or duplication when pagination is implemented, while accepting the specification's explicit unpaginated fallback.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.error.duplicate",
+      "level": "required",
+      "description": "Reject duplicate namespace creation with HTTP 409 and an Iceberg error envelope.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.namespace.error.missing-parent",
+      "level": "required",
+      "description": "Reject listing under a missing parent with HTTP 404 and an Iceberg error envelope.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "iceberg-rest.error.spec-shape",
+      "level": "required",
+      "description": "Preserve matching HTTP status, error code, nonempty message, and operation-appropriate error type.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    }
+  ],
+  "parameters": {
+    "fixture_prefix": "cb_c104",
+    "iceberg_openapi_sha256": "80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a",
+    "iceberg_openapi_source": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml",
+    "maximum_pages": 64,
+    "maximum_response_bytes": 1048576,
+    "namespace_separator_default": "%1F",
+    "page_size": 1,
+    "request_timeout_ms": 30000,
+    "transcript_format": "catalog-bench/namespace-transcript/v1"
+  },
+  "steps": [
+    {
+      "id": "negotiate-authentication",
+      "actor": "harness",
+      "operation": "authentication.negotiate",
+      "description": "Use the adapter's anonymous or OAuth2 client-credentials flow without persisting a credential."
+    },
+    {
+      "id": "negotiate-config",
+      "actor": "client",
+      "operation": "config.get-routing",
+      "description": "Read config to resolve the route prefix and namespace separator used by standard resource paths.",
+      "depends_on": [
+        "negotiate-authentication"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "preflight-fixture",
+      "actor": "harness",
+      "operation": "namespace.verify-fixture-absence",
+      "description": "Prove every run-owned namespace is absent before mutation so cleanup cannot delete pre-existing state.",
+      "depends_on": [
+        "negotiate-config"
+      ]
+    },
+    {
+      "id": "create-namespaces",
+      "actor": "client",
+      "operation": "namespace.create",
+      "description": "Create two top-level namespaces and one multipart child using typed Iceberg requests.",
+      "depends_on": [
+        "preflight-fixture"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "inspect-namespace",
+      "actor": "client",
+      "operation": "namespace.list-and-load",
+      "description": "List the top level and load the primary fixture without assuming response order or rejecting additive properties.",
+      "depends_on": [
+        "create-namespaces"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "update-namespace",
+      "actor": "client",
+      "operation": "namespace.update-properties",
+      "description": "Set one property, remove another, and reload to prove exact stored state.",
+      "depends_on": [
+        "inspect-namespace"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "reject-duplicate",
+      "actor": "client",
+      "operation": "namespace.create-duplicate",
+      "description": "Repeat the primary create request and require a spec-shaped HTTP 409 response.",
+      "depends_on": [
+        "create-namespaces"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "inspect-hierarchy",
+      "actor": "client",
+      "operation": "namespace.list-under-parent",
+      "description": "List immediate children under the primary namespace using the negotiated separator.",
+      "depends_on": [
+        "create-namespaces"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "traverse-pagination",
+      "actor": "client",
+      "operation": "namespace.list-pages",
+      "description": "Start with an explicit empty page token, follow every returned token exactly once, and reject loss, duplication, loops, or page-size violations.",
+      "depends_on": [
+        "create-namespaces"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "reject-missing-parent",
+      "actor": "client",
+      "operation": "namespace.list-under-missing-parent",
+      "description": "List beneath a run-owned absent parent and require a spec-shaped HTTP 404 response.",
+      "depends_on": [
+        "negotiate-config"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "cleanup-namespaces",
+      "actor": "harness",
+      "operation": "namespace.drop-and-verify",
+      "description": "Drop run-owned fixtures in child-first order and prove all are absent even when an earlier assertion failed.",
+      "depends_on": [
+        "inspect-namespace",
+        "update-namespace",
+        "reject-duplicate",
+        "inspect-hierarchy",
+        "traverse-pagination",
+        "reject-missing-parent"
+      ],
+      "timeout_ms": 30000
+    },
+    {
+      "id": "sanitize-transcript",
+      "actor": "harness",
+      "operation": "evidence.sanitize-http-transcript",
+      "description": "Persist only sanitized requests, allowlisted response headers, recursively sanitized response JSON, and assertion outcomes.",
+      "depends_on": [
+        "cleanup-namespaces"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "authentication-ready",
+      "step": "negotiate-authentication",
+      "required": true,
+      "description": "Authentication completes without persisting a credential or token.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/authentication-ready-v1",
+        "configuration": {
+          "persist_token": false
+        }
+      }
+    },
+    {
+      "id": "config-routing-ready",
+      "step": "negotiate-config",
+      "required": true,
+      "description": "Config returns HTTP 200 JSON and resolves both route-prefix and namespace-separator policy.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-config-routing-v1",
+        "configuration": {
+          "default_namespace_separator": "%1F"
+        }
+      }
+    },
+    {
+      "id": "fixture-isolated",
+      "step": "preflight-fixture",
+      "required": true,
+      "description": "All three run-owned identifiers returned spec-shaped not-found responses before mutation.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-fixture-isolation-v1",
+        "configuration": {
+          "expected_http_status": 404
+        }
+      }
+    },
+    {
+      "id": "namespace-create-round-trip",
+      "step": "create-namespaces",
+      "required": true,
+      "description": "Every create returns HTTP 200 and its exact single- or multipart namespace identifier.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-create-v1",
+        "configuration": {
+          "expected_http_status": 200
+        }
+      }
+    },
+    {
+      "id": "namespace-list-visible",
+      "step": "inspect-namespace",
+      "required": true,
+      "description": "An ordinary top-level listing contains both created top-level namespaces exactly once.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-list-v1",
+        "configuration": {
+          "duplicate_policy": "reject"
+        }
+      }
+    },
+    {
+      "id": "namespace-load-round-trip",
+      "step": "inspect-namespace",
+      "required": true,
+      "description": "Loading the primary fixture returns HTTP 200 and its exact identifier.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-load-v1",
+        "configuration": {
+          "expected_http_status": 200
+        }
+      }
+    },
+    {
+      "id": "namespace-properties-updated",
+      "step": "update-namespace",
+      "required": false,
+      "description": "The update response accounts for set/removed keys and reload proves the final property map.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-properties-v1",
+        "configuration": {
+          "preserve_unmentioned": true
+        }
+      }
+    },
+    {
+      "id": "duplicate-error-spec-shaped",
+      "step": "reject-duplicate",
+      "required": true,
+      "description": "Duplicate create returns HTTP/code 409, nonempty message, and AlreadyExistsException.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-duplicate-error-v1",
+        "configuration": {
+          "code": 409,
+          "type": "AlreadyExistsException"
+        }
+      }
+    },
+    {
+      "id": "namespace-hierarchy-preserved",
+      "step": "inspect-hierarchy",
+      "required": true,
+      "description": "Listing under the primary parent returns the exact multipart child and no flattened surrogate.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-hierarchy-v1",
+        "configuration": {
+          "scope": "immediate-children"
+        }
+      }
+    },
+    {
+      "id": "namespace-pagination-complete",
+      "step": "traverse-pagination",
+      "required": true,
+      "description": "Pagination yields complete unique results with bounded token traversal, or the permitted unpaginated fallback returns all results and no token.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-pagination-v1",
+        "configuration": {
+          "accept_unpaginated_fallback": true,
+          "maximum_pages": 64,
+          "page_size": 1
+        }
+      }
+    },
+    {
+      "id": "missing-parent-error-spec-shaped",
+      "step": "reject-missing-parent",
+      "required": true,
+      "description": "Listing under an absent parent returns HTTP/code 404, nonempty message, and NoSuchNamespaceException.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-missing-parent-error-v1",
+        "configuration": {
+          "code": 404,
+          "type": "NoSuchNamespaceException"
+        }
+      }
+    },
+    {
+      "id": "namespace-drop-clean",
+      "step": "cleanup-namespaces",
+      "required": true,
+      "description": "Child-first drops return HTTP 204 or already-absent 404, and final loads prove every fixture absent.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/namespace-cleanup-v1",
+        "configuration": {
+          "final_http_status": 404
+        }
+      }
+    },
+    {
+      "id": "transcript-sanitized",
+      "step": "sanitize-transcript",
+      "required": true,
+      "description": "The transcript contains no bearer token, OAuth client credential, cookie, or secret-shaped response value.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/sanitized-http-transcript-v1",
+        "configuration": {
+          "request_header_policy": "allowlist-and-redact-authorization",
+          "response_header_policy": "allowlist",
+          "response_json_policy": "recursive-secret-key-redaction"
+        }
+      }
+    }
+  ]
+}

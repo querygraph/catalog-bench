@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Catalog community C1-04 runner: added a strict Iceberg REST namespace
+  lifecycle probe covering isolated create/list/load, multipart hierarchy,
+  property update, duplicate and missing-parent errors, bounded pagination, and
+  child-first cleanup. Refactored shared target, authentication, transport,
+  evidence, and specification primitives out of the config runner; added
+  recursively sanitized no-overwrite transcripts, explicit optional-operation
+  classification, adversarial mock-server coverage, and a production CLI that
+  keeps protocol failures as evidence instead of losing them as process errors.
+
 - C1-03 provenance pin: bound the production commit driver and conformance
   runner to `catalog-bench@feb803f8`, LakeCat to its independently verified
   endpoint-correction revision `09dd7ee3`, and modeled the conformance runner as

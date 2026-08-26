@@ -1,9 +1,3 @@
-use std::collections::BTreeMap;
-use std::io::{Read as _, Write as _};
-use std::net::{SocketAddr, TcpListener, TcpStream};
-use std::thread::{self, JoinHandle};
-use std::time::Duration;
-
 use catalog_bench_common::contract::{
     parse_contract, AdapterCapabilityCoverage, AssertionCheck, AssertionOutcome,
     CapabilityLimitationSource, ComponentId, ContractDocument, Profile, Scenario,
@@ -14,6 +8,10 @@ use catalog_bench_conformance::{
     EndpointAdvertisement, PrefixResolution, ProbeClassification, SanitizedResponseBody,
 };
 use serde_json::json;
+
+mod support;
+
+use support::{MockResponse, MockServer};
 
 const PROFILE: &[u8] = include_bytes!("../../../profiles/v1/current-2026-08-26.json");
 const SCENARIO: &[u8] =
@@ -601,160 +599,4 @@ fn digests() -> ContractDigests {
         profile_sha256: "0".repeat(64),
         scenario_sha256: "1".repeat(64),
     }
-}
-
-#[derive(Debug)]
-struct RecordedRequest {
-    method: String,
-    target: String,
-    headers: BTreeMap<String, String>,
-    body: String,
-}
-
-struct MockResponse {
-    status: u16,
-    content_type: Option<String>,
-    body: Vec<u8>,
-    declared_length: Option<usize>,
-}
-
-impl MockResponse {
-    fn json(value: serde_json::Value) -> Self {
-        Self {
-            status: 200,
-            content_type: Some("application/json".to_owned()),
-            body: serde_json::to_vec(&value).expect("mock JSON should serialize"),
-            declared_length: None,
-        }
-    }
-
-    fn oversized(declared_length: usize) -> Self {
-        Self {
-            status: 200,
-            content_type: Some("application/json".to_owned()),
-            body: Vec::new(),
-            declared_length: Some(declared_length),
-        }
-    }
-
-    fn with_content_type(mut self, content_type: &str) -> Self {
-        self.content_type = Some(content_type.to_owned());
-        self
-    }
-}
-
-struct MockServer {
-    address: SocketAddr,
-    worker: JoinHandle<Vec<RecordedRequest>>,
-}
-
-impl MockServer {
-    fn start(responses: Vec<MockResponse>) -> Self {
-        let listener = TcpListener::bind("127.0.0.1:0").expect("mock server should bind");
-        let address = listener
-            .local_addr()
-            .expect("mock server should expose its address");
-        let worker = thread::spawn(move || {
-            responses
-                .into_iter()
-                .map(|response| {
-                    let (mut stream, _) = listener.accept().expect("mock request should arrive");
-                    stream
-                        .set_read_timeout(Some(Duration::from_secs(5)))
-                        .expect("mock read timeout should apply");
-                    let request = read_request(&mut stream);
-                    write_response(&mut stream, response);
-                    request
-                })
-                .collect()
-        });
-        Self { address, worker }
-    }
-
-    fn url(&self) -> String {
-        format!("http://{}", self.address)
-    }
-
-    fn finish(self) -> Vec<RecordedRequest> {
-        self.worker.join().expect("mock server should finish")
-    }
-}
-
-fn read_request(stream: &mut TcpStream) -> RecordedRequest {
-    const HEADER_END: &[u8] = b"\r\n\r\n";
-    let mut bytes = Vec::new();
-    let mut chunk = [0_u8; 4096];
-    let header_end = loop {
-        let read = stream.read(&mut chunk).expect("mock request should read");
-        assert!(read > 0, "connection closed before request headers");
-        bytes.extend_from_slice(&chunk[..read]);
-        if let Some(position) = find_bytes(&bytes, HEADER_END) {
-            break position + HEADER_END.len();
-        }
-    };
-    let headers = String::from_utf8(bytes[..header_end].to_vec())
-        .expect("HTTP request headers should be UTF-8");
-    let mut lines = headers.split("\r\n");
-    let request_line = lines.next().expect("request line should exist");
-    let mut request_parts = request_line.split_whitespace();
-    let method = request_parts
-        .next()
-        .expect("request method should exist")
-        .to_owned();
-    let target = request_parts
-        .next()
-        .expect("request target should exist")
-        .to_owned();
-    let headers = lines
-        .filter_map(|line| line.split_once(':'))
-        .map(|(name, value)| (name.to_ascii_lowercase(), value.trim().to_owned()))
-        .collect::<BTreeMap<_, _>>();
-    let content_length = headers
-        .get("content-length")
-        .map(|length| {
-            length
-                .parse::<usize>()
-                .expect("content length should parse")
-        })
-        .unwrap_or_default();
-    while bytes.len() - header_end < content_length {
-        let read = stream.read(&mut chunk).expect("mock body should read");
-        assert!(read > 0, "connection closed before request body");
-        bytes.extend_from_slice(&chunk[..read]);
-    }
-    let body = String::from_utf8(bytes[header_end..header_end + content_length].to_vec())
-        .expect("HTTP request body should be UTF-8");
-    RecordedRequest {
-        method,
-        target,
-        headers,
-        body,
-    }
-}
-
-fn write_response(stream: &mut TcpStream, response: MockResponse) {
-    let reason = match response.status {
-        200 => "OK",
-        _ => "Test Response",
-    };
-    write!(stream, "HTTP/1.1 {} {reason}\r\n", response.status)
-        .expect("mock response status should write");
-    if let Some(content_type) = response.content_type {
-        write!(stream, "Content-Type: {content_type}\r\n").expect("mock content type should write");
-    }
-    write!(
-        stream,
-        "Content-Length: {}\r\nConnection: close\r\n\r\n",
-        response.declared_length.unwrap_or(response.body.len())
-    )
-    .expect("mock response headers should write");
-    // A bounded-body test deliberately closes the client side after reading
-    // Content-Length, so a broken pipe here is an expected mock transport race.
-    let _ = stream.write_all(&response.body);
-}
-
-fn find_bytes(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    haystack
-        .windows(needle.len())
-        .position(|window| window == needle)
 }

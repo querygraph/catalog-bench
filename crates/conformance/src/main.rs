@@ -4,9 +4,12 @@ use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
 use anyhow::{bail, Context, Result};
-use catalog_bench_common::contract::{parse_contract, ComponentId, ContractDocument};
+use catalog_bench_common::contract::{
+    parse_contract, ComponentId, ContractDocument, Profile, Scenario,
+};
 use catalog_bench_conformance::{
-    encode_evidence, run_config_probe, sha256_hex, ContractDigests, ProbeClassification,
+    encode_evidence, run_config_probe, run_namespace_probe, sha256_hex, ContractDigests,
+    ProbeClassification,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -24,6 +27,8 @@ struct Cli {
 enum Command {
     /// Negotiate Iceberg REST configuration and endpoint advertisement.
     Config(ConfigArgs),
+    /// Exercise namespace lifecycle, hierarchy, pagination, and errors.
+    Namespace(NamespaceArgs),
 }
 
 #[derive(Debug, Args)]
@@ -42,6 +47,31 @@ struct ConfigArgs {
     output: PathBuf,
 }
 
+#[derive(Debug, Args)]
+struct NamespaceArgs {
+    /// Validated profile containing the catalog adapter.
+    #[arg(long)]
+    profile: PathBuf,
+    /// Namespace-behavior scenario contract.
+    #[arg(long)]
+    scenario: PathBuf,
+    /// Profile component identifier to probe.
+    #[arg(long)]
+    catalog: String,
+    /// Run-owned suffix: 1-24 lowercase ASCII letters, digits, or underscores.
+    #[arg(long)]
+    fixture_id: String,
+    /// New evidence file. Existing files are never overwritten.
+    #[arg(long)]
+    output: PathBuf,
+}
+
+struct LoadedContracts {
+    profile: Profile,
+    scenario: Scenario,
+    digests: ContractDigests,
+}
+
 #[tokio::main]
 async fn main() -> ExitCode {
     match run(Cli::parse()).await {
@@ -57,41 +87,17 @@ async fn main() -> ExitCode {
 async fn run(cli: Cli) -> Result<bool> {
     match cli.command {
         Command::Config(args) => run_config(args).await,
+        Command::Namespace(args) => run_namespace(args).await,
     }
 }
 
 async fn run_config(args: ConfigArgs) -> Result<bool> {
-    let profile_bytes = read_contract(&args.profile)?;
-    let scenario_bytes = read_contract(&args.scenario)?;
-    let profile = match parse_contract(&profile_bytes)
-        .with_context(|| format!("invalid profile {}", args.profile.display()))?
-    {
-        ContractDocument::Profile(profile) => profile,
-        document => bail!(
-            "{} is a {}, not a profile",
-            args.profile.display(),
-            document.kind()
-        ),
-    };
-    let scenario = match parse_contract(&scenario_bytes)
-        .with_context(|| format!("invalid scenario {}", args.scenario.display()))?
-    {
-        ContractDocument::Scenario(scenario) => scenario,
-        document => bail!(
-            "{} is a {}, not a scenario",
-            args.scenario.display(),
-            document.kind()
-        ),
-    };
-
+    let contracts = load_contracts(&args.profile, &args.scenario)?;
     let transcript = run_config_probe(
-        &profile,
-        &scenario,
+        &contracts.profile,
+        &contracts.scenario,
         &ComponentId::new(args.catalog),
-        ContractDigests {
-            profile_sha256: sha256_hex(&profile_bytes),
-            scenario_sha256: sha256_hex(&scenario_bytes),
-        },
+        contracts.digests,
         |name| std::env::var(name).ok(),
     )
     .await?;
@@ -105,6 +111,62 @@ async fn run_config(args: ConfigArgs) -> Result<bool> {
         sha256_hex(&evidence)
     );
     Ok(passed)
+}
+
+async fn run_namespace(args: NamespaceArgs) -> Result<bool> {
+    let contracts = load_contracts(&args.profile, &args.scenario)?;
+    let transcript = run_namespace_probe(
+        &contracts.profile,
+        &contracts.scenario,
+        &ComponentId::new(args.catalog),
+        &args.fixture_id,
+        contracts.digests,
+        |name| std::env::var(name).ok(),
+    )
+    .await?;
+    let passed = transcript.passed();
+    let classification = classification_name(&transcript.classification);
+    let evidence = encode_evidence(&transcript)?;
+    write_new(&args.output, &evidence)?;
+    println!(
+        "wrote {} (sha256={}, classification={classification})",
+        args.output.display(),
+        sha256_hex(&evidence)
+    );
+    Ok(passed)
+}
+
+fn load_contracts(profile_path: &Path, scenario_path: &Path) -> Result<LoadedContracts> {
+    let profile_bytes = read_contract(profile_path)?;
+    let scenario_bytes = read_contract(scenario_path)?;
+    let profile = match parse_contract(&profile_bytes)
+        .with_context(|| format!("invalid profile {}", profile_path.display()))?
+    {
+        ContractDocument::Profile(profile) => profile,
+        document => bail!(
+            "{} is a {}, not a profile",
+            profile_path.display(),
+            document.kind()
+        ),
+    };
+    let scenario = match parse_contract(&scenario_bytes)
+        .with_context(|| format!("invalid scenario {}", scenario_path.display()))?
+    {
+        ContractDocument::Scenario(scenario) => scenario,
+        document => bail!(
+            "{} is a {}, not a scenario",
+            scenario_path.display(),
+            document.kind()
+        ),
+    };
+    Ok(LoadedContracts {
+        profile,
+        scenario,
+        digests: ContractDigests {
+            profile_sha256: sha256_hex(&profile_bytes),
+            scenario_sha256: sha256_hex(&scenario_bytes),
+        },
+    })
 }
 
 fn read_contract(path: &Path) -> Result<Vec<u8>> {

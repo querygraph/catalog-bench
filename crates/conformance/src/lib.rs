@@ -5,13 +5,21 @@
 //! bundles remain the responsibility of the final execution pipeline.
 
 mod config;
+mod evidence;
+mod namespace;
 mod sanitize;
+mod spec;
+mod target;
+mod transport;
 
 use anyhow::Result;
 use serde::Serialize;
 use sha2::{Digest as _, Sha256};
 
 pub use config::*;
+pub use evidence::*;
+pub use namespace::*;
+pub use spec::*;
 
 /// Serialize evidence deterministically as pretty JSON with one final newline.
 pub fn encode_evidence<T: Serialize>(value: &T) -> Result<Vec<u8>> {

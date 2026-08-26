@@ -1,31 +1,33 @@
-use std::collections::{BTreeMap, BTreeSet};
-use std::time::Duration;
+use std::collections::BTreeMap;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{bail, Result};
 use catalog_bench_common::contract::{
-    ActorRole, AdapterRequestHandling, AssertionCheck, AssertionId, AssertionOutcome, CapabilityId,
-    CapabilityLimitationSource, CatalogAdapter, CatalogAuthentication, CatalogProtocol,
-    CatalogRoutePrefix, ComponentId, Profile, ProfileId, RequirementLevel, Scenario, ScenarioId,
+    ActorRole, AssertionCheck, AssertionOutcome, CatalogAdapter, CatalogRoutePrefix, ComponentId,
+    Profile, ProfileId, RequirementLevel, Scenario,
 };
-use reqwest::header::{ACCEPT, CONTENT_TYPE};
-use reqwest::{Client, Response};
+use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use url::form_urlencoded::Serializer;
-use url::Url;
 
-use crate::sanitize::{contains_sensitive_value, sanitize_json};
-use crate::{encode_evidence, sha256_hex};
+use crate::encode_evidence;
+use crate::evidence::{
+    not_evaluated_assertions, passed_required_assertions, transcript_adapter,
+    AuthenticationOutcome, AuthenticationTranscript, ContractDigests, HttpRequestTranscript,
+    HttpResponseTranscript, ProbeAssertion, ProbeClassification, ProbeFailure,
+    SanitizationTranscript, TranscriptAdapter, TranscriptScenario,
+};
+use crate::sanitize::contains_sensitive_value;
+use crate::spec::{ICEBERG_REST_OPENAPI_SHA256, ICEBERG_REST_OPENAPI_SOURCE};
+use crate::target::ProbeTarget;
+use crate::transport::{
+    acquire_authentication, authentication_mode, endpoint_url, execute_json_request, http_client,
+    MAXIMUM_RESPONSE_BYTES, REDACTED,
+};
 
 pub const CONFIG_TRANSCRIPT_FORMAT: &str = "catalog-bench/config-transcript/v1";
 pub const CONFIG_SCENARIO_ID: &str = "iceberg-rest.config.negotiation";
-pub const ICEBERG_REST_OPENAPI_SHA256: &str =
-    "80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a";
 const CONFIG_SCENARIO_VERSION: u32 = 1;
-const ICEBERG_REST_OPENAPI_SOURCE: &str = "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml";
-const MAXIMUM_RESPONSE_BYTES: usize = 1024 * 1024;
 const RESPONSE_MEDIA_TYPE: &str = "application/json";
-const REDACTED: &str = "<redacted>";
 
 const STANDARD_ENDPOINTS: &[&str] = &[
     "GET /v1/config",
@@ -63,115 +65,6 @@ const STANDARD_ENDPOINTS: &[&str] = &[
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct ContractDigests {
-    pub profile_sha256: String,
-    pub scenario_sha256: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum ProbeFailureStage {
-    Authentication,
-    Request,
-    Response,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct ProbeFailure {
-    pub stage: ProbeFailureStage,
-    pub explanation: String,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "status", rename_all = "kebab-case", deny_unknown_fields)]
-pub enum ProbeClassification {
-    Pass,
-    Fail {
-        summary: String,
-    },
-    Unsupported {
-        capability: CapabilityId,
-        attributed_to: CapabilityLimitationSource,
-        explanation: String,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct TranscriptScenario {
-    pub id: ScenarioId,
-    pub version: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct TranscriptAdapter {
-    pub catalog: ComponentId,
-    pub name: String,
-    pub version: String,
-    pub protocol: CatalogProtocol,
-    pub request_handling: AdapterRequestHandling,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum AuthenticationOutcome {
-    Ready,
-    Failed,
-    NotAttempted,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct AuthenticationTranscript {
-    pub mode: String,
-    pub outcome: AuthenticationOutcome,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub token_url: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub http_status: Option<u16>,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct HttpRequestTranscript {
-    pub method: String,
-    pub url: String,
-    pub headers: BTreeMap<String, String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
-pub enum SanitizedResponseBody {
-    Json { value: Value },
-    Omitted { reason: String },
-}
-
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct HttpResponseTranscript {
-    pub status: u16,
-    pub headers: BTreeMap<String, String>,
-    pub body_bytes_observed: u64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub raw_body_sha256: Option<String>,
-    pub body: SanitizedResponseBody,
-}
-
-impl HttpResponseTranscript {
-    fn json(&self) -> Option<&Value> {
-        match &self.body {
-            SanitizedResponseBody::Json { value } => Some(value),
-            SanitizedResponseBody::Omitted { .. } => None,
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "mode", rename_all = "kebab-case", deny_unknown_fields)]
 pub enum PrefixResolution {
     Unprefixed,
@@ -188,23 +81,6 @@ pub enum EndpointAdvertisement {
     Omitted,
     Invalid { explanation: String },
     NotEvaluated { reason: String },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct ProbeAssertion {
-    pub assertion: AssertionId,
-    pub required: bool,
-    pub outcome: AssertionOutcome,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct SanitizationTranscript {
-    pub policy: String,
-    pub redactions: Vec<String>,
-    pub raw_secrets_persisted: bool,
-    pub raw_response_body_persisted: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -235,13 +111,6 @@ impl ConfigTranscript {
     }
 }
 
-struct AuthenticationAttempt {
-    transcript: AuthenticationTranscript,
-    bearer_token: Option<String>,
-    sensitive_values: Vec<String>,
-    failure: Option<ProbeFailure>,
-}
-
 struct ProbeFacts {
     authentication_ready: bool,
     response_status: Option<u16>,
@@ -268,16 +137,9 @@ where
     F: Fn(&str) -> Option<String>,
 {
     validate_invocation(profile, scenario, catalog)?;
-    let adapter = profile
-        .catalog_adapters
-        .iter()
-        .find(|adapter| adapter.catalog == *catalog)
-        .context("validated profile has no requested adapter")?;
-    let component = profile
-        .components
-        .iter()
-        .find(|component| component.id == *catalog)
-        .context("validated profile has no requested catalog component")?;
+    let target = ProbeTarget::resolve(profile, scenario, catalog)?;
+    let adapter = target.adapter;
+    let component = target.component;
     let config_url = endpoint_url(
         &adapter.endpoint.base_url,
         &adapter.endpoint.config.path,
@@ -289,12 +151,7 @@ where
         headers: BTreeMap::from([("accept".to_owned(), "application/json".to_owned())]),
     };
 
-    if let Some(limitation) = scenario
-        .capabilities
-        .iter()
-        .filter(|requirement| requirement.level == RequirementLevel::Required)
-        .find_map(|requirement| adapter.capabilities.limitation(&requirement.capability))
-    {
+    if let Some(limitation) = target.first_required_limitation(scenario) {
         let reason = format!(
             "required capability `{}` is declared unsupported before execution",
             limitation.capability
@@ -339,10 +196,7 @@ where
         });
     }
 
-    let client = Client::builder()
-        .timeout(Duration::from_secs(30))
-        .build()
-        .context("build conformance HTTP client")?;
+    let client = http_client(30_000)?;
     let authentication = acquire_authentication(&client, adapter, &getenv).await;
     let mut request = request;
     if authentication.bearer_token.is_some() {
@@ -351,23 +205,39 @@ where
             .insert("authorization".to_owned(), REDACTED.to_owned());
     }
 
-    let (response, response_redactions, request_failure) = if let Some(token) =
-        authentication.bearer_token.as_deref()
-    {
-        execute_config_request(
+    let captured = if let Some(token) = authentication.bearer_token.as_deref() {
+        execute_json_request(
             &client,
+            Method::GET,
             config_url,
             Some(token),
+            None,
             &authentication.sensitive_values,
+            "config",
         )
         .await
     } else if authentication.failure.is_none() {
-        execute_config_request(&client, config_url, None, &authentication.sensitive_values).await
+        execute_json_request(
+            &client,
+            Method::GET,
+            config_url,
+            None,
+            None,
+            &authentication.sensitive_values,
+            "config",
+        )
+        .await
     } else {
-        (None, Vec::new(), None)
+        crate::transport::CapturedResponse {
+            response: None,
+            private_json: None,
+            redactions: Vec::new(),
+            failure: None,
+        }
     };
+    let response = captured.response;
 
-    let failure = authentication.failure.clone().or(request_failure);
+    let failure = authentication.failure.clone().or(captured.failure);
     let prefix = resolve_prefix(
         adapter,
         response.as_ref().and_then(HttpResponseTranscript::json),
@@ -378,7 +248,7 @@ where
         .and_then(HttpResponseTranscript::json)
         .map(validate_config_map_shape);
 
-    let mut redactions = response_redactions;
+    let mut redactions = captured.redactions;
     if authentication.bearer_token.is_some() {
         redactions.push("request.headers.authorization".to_owned());
         redactions.push("authentication.oauth2-request-credentials".to_owned());
@@ -409,9 +279,7 @@ where
         transcript_sanitized,
     };
     let assertions = evaluate_assertions(scenario, &facts);
-    let classification = if assertions.iter().all(|evaluation| {
-        !evaluation.required || matches!(evaluation.outcome, AssertionOutcome::Pass)
-    }) {
+    let classification = if passed_required_assertions(&assertions) {
         ProbeClassification::Pass
     } else {
         ProbeClassification::Fail {
@@ -463,35 +331,7 @@ fn validate_invocation(
         );
     }
     validate_scenario_policy(scenario)?;
-    let adapter = profile
-        .catalog_adapters
-        .iter()
-        .find(|adapter| adapter.catalog == *catalog)
-        .with_context(|| format!("profile has no adapter for catalog `{catalog}`"))?;
-    let defined = profile
-        .catalog_capabilities
-        .iter()
-        .map(|capability| &capability.id)
-        .collect::<BTreeSet<_>>();
-    for requirement in &scenario.capabilities {
-        if !defined.contains(&requirement.capability) {
-            bail!(
-                "scenario capability `{}` is absent from profile vocabulary",
-                requirement.capability
-            );
-        }
-        if !adapter.capabilities.exercises(&requirement.capability)
-            && adapter
-                .capabilities
-                .limitation(&requirement.capability)
-                .is_none()
-        {
-            bail!(
-                "adapter does not classify scenario capability `{}`",
-                requirement.capability
-            );
-        }
-    }
+    ProbeTarget::resolve(profile, scenario, catalog)?;
     Ok(())
 }
 
@@ -696,349 +536,7 @@ fn validate_scenario_policy(scenario: &Scenario) -> Result<()> {
     Ok(())
 }
 
-fn transcript_adapter(
-    adapter: &CatalogAdapter,
-    component: &catalog_bench_common::contract::Component,
-) -> TranscriptAdapter {
-    TranscriptAdapter {
-        catalog: adapter.catalog.clone(),
-        name: component.name.clone(),
-        version: component.version.clone(),
-        protocol: adapter.protocol,
-        request_handling: adapter.request_handling.clone(),
-    }
-}
-
-async fn acquire_authentication<F>(
-    client: &Client,
-    adapter: &CatalogAdapter,
-    getenv: &F,
-) -> AuthenticationAttempt
-where
-    F: Fn(&str) -> Option<String>,
-{
-    match &adapter.authentication {
-        CatalogAuthentication::Anonymous => AuthenticationAttempt {
-            transcript: AuthenticationTranscript {
-                mode: "anonymous".to_owned(),
-                outcome: AuthenticationOutcome::Ready,
-                token_url: None,
-                scope: None,
-                http_status: None,
-            },
-            bearer_token: None,
-            sensitive_values: Vec::new(),
-            failure: None,
-        },
-        CatalogAuthentication::OAuth2ClientCredentials {
-            token_path,
-            scope,
-            client_id_env,
-            client_secret_env,
-        } => {
-            let token_url = endpoint_url(&adapter.endpoint.base_url, token_path, &BTreeMap::new());
-            let transcript =
-                |outcome, http_status, token_url: Option<&Url>| AuthenticationTranscript {
-                    mode: "oauth2-client-credentials".to_owned(),
-                    outcome,
-                    token_url: token_url.map(ToString::to_string),
-                    scope: Some(scope.clone()),
-                    http_status,
-                };
-            let token_url = match token_url {
-                Ok(url) => url,
-                Err(error) => {
-                    return authentication_failure(
-                        transcript(AuthenticationOutcome::Failed, None, None),
-                        format!("invalid token endpoint: {error}"),
-                    )
-                }
-            };
-            let Some(client_id) = getenv(client_id_env).filter(|value| !value.is_empty()) else {
-                return authentication_failure(
-                    transcript(AuthenticationOutcome::Failed, None, Some(&token_url)),
-                    format!("environment variable `{client_id_env}` is not set or is empty"),
-                );
-            };
-            let Some(client_secret) = getenv(client_secret_env).filter(|value| !value.is_empty())
-            else {
-                return authentication_failure(
-                    transcript(AuthenticationOutcome::Failed, None, Some(&token_url)),
-                    format!("environment variable `{client_secret_env}` is not set or is empty"),
-                );
-            };
-            let body = Serializer::new(String::new())
-                .append_pair("grant_type", "client_credentials")
-                .append_pair("client_id", &client_id)
-                .append_pair("client_secret", &client_secret)
-                .append_pair("scope", scope)
-                .finish();
-            let response = match client
-                .post(token_url.clone())
-                .header(CONTENT_TYPE, "application/x-www-form-urlencoded")
-                .header(ACCEPT, "application/json")
-                .body(body)
-                .send()
-                .await
-            {
-                Ok(response) => response,
-                Err(error) => {
-                    let explanation = redact_text(
-                        &error.to_string(),
-                        &[client_id.clone(), client_secret.clone()],
-                    );
-                    return authentication_failure(
-                        transcript(AuthenticationOutcome::Failed, None, Some(&token_url)),
-                        format!("OAuth2 request failed: {explanation}"),
-                    );
-                }
-            };
-            let status = response.status().as_u16();
-            let bytes = match read_limited_body(response, MAXIMUM_RESPONSE_BYTES).await {
-                Ok(CollectedBody::Complete(bytes)) => bytes,
-                Ok(CollectedBody::TooLarge { .. }) => {
-                    return authentication_failure(
-                        transcript(
-                            AuthenticationOutcome::Failed,
-                            Some(status),
-                            Some(&token_url),
-                        ),
-                        "OAuth2 response exceeds the evidence body limit".to_owned(),
-                    )
-                }
-                Err(error) => {
-                    return authentication_failure(
-                        transcript(
-                            AuthenticationOutcome::Failed,
-                            Some(status),
-                            Some(&token_url),
-                        ),
-                        format!("OAuth2 response read failed: {error}"),
-                    )
-                }
-            };
-            if !(200..300).contains(&status) {
-                return authentication_failure(
-                    transcript(
-                        AuthenticationOutcome::Failed,
-                        Some(status),
-                        Some(&token_url),
-                    ),
-                    format!("OAuth2 endpoint returned HTTP {status}"),
-                );
-            }
-            let body: Value = match serde_json::from_slice(&bytes) {
-                Ok(body) => body,
-                Err(_) => {
-                    return authentication_failure(
-                        transcript(
-                            AuthenticationOutcome::Failed,
-                            Some(status),
-                            Some(&token_url),
-                        ),
-                        "OAuth2 endpoint did not return JSON".to_owned(),
-                    )
-                }
-            };
-            let Some(token) = body.get("access_token").and_then(Value::as_str) else {
-                return authentication_failure(
-                    transcript(
-                        AuthenticationOutcome::Failed,
-                        Some(status),
-                        Some(&token_url),
-                    ),
-                    "OAuth2 response omitted string `access_token`".to_owned(),
-                );
-            };
-            if token.is_empty() {
-                return authentication_failure(
-                    transcript(
-                        AuthenticationOutcome::Failed,
-                        Some(status),
-                        Some(&token_url),
-                    ),
-                    "OAuth2 response returned an empty access token".to_owned(),
-                );
-            }
-            AuthenticationAttempt {
-                transcript: transcript(
-                    AuthenticationOutcome::Ready,
-                    Some(status),
-                    Some(&token_url),
-                ),
-                bearer_token: Some(token.to_owned()),
-                sensitive_values: vec![client_id, client_secret, token.to_owned()],
-                failure: None,
-            }
-        }
-    }
-}
-
-fn authentication_failure(
-    transcript: AuthenticationTranscript,
-    explanation: String,
-) -> AuthenticationAttempt {
-    AuthenticationAttempt {
-        transcript,
-        bearer_token: None,
-        sensitive_values: Vec::new(),
-        failure: Some(ProbeFailure {
-            stage: ProbeFailureStage::Authentication,
-            explanation,
-        }),
-    }
-}
-
-async fn execute_config_request(
-    client: &Client,
-    url: Url,
-    bearer_token: Option<&str>,
-    sensitive_values: &[String],
-) -> (
-    Option<HttpResponseTranscript>,
-    Vec<String>,
-    Option<ProbeFailure>,
-) {
-    let mut request = client.get(url).header(ACCEPT, "application/json");
-    if let Some(token) = bearer_token {
-        request = request.bearer_auth(token);
-    }
-    let response = match request.send().await {
-        Ok(response) => response,
-        Err(error) => {
-            return (
-                None,
-                Vec::new(),
-                Some(ProbeFailure {
-                    stage: ProbeFailureStage::Request,
-                    explanation: redact_text(&error.to_string(), sensitive_values),
-                }),
-            )
-        }
-    };
-    let status = response.status().as_u16();
-    let headers = allowlisted_response_headers(&response, sensitive_values);
-    let body = match read_limited_body(response, MAXIMUM_RESPONSE_BYTES).await {
-        Ok(body) => body,
-        Err(error) => {
-            return (
-                None,
-                Vec::new(),
-                Some(ProbeFailure {
-                    stage: ProbeFailureStage::Response,
-                    explanation: redact_text(&error.to_string(), sensitive_values),
-                }),
-            )
-        }
-    };
-    match body {
-        CollectedBody::TooLarge { observed } => (
-            Some(HttpResponseTranscript {
-                status,
-                headers,
-                body_bytes_observed: observed as u64,
-                raw_body_sha256: None,
-                body: SanitizedResponseBody::Omitted {
-                    reason: format!(
-                        "response exceeds maximum capture size of {MAXIMUM_RESPONSE_BYTES} bytes"
-                    ),
-                },
-            }),
-            Vec::new(),
-            Some(ProbeFailure {
-                stage: ProbeFailureStage::Response,
-                explanation: "config response exceeded the evidence body limit".to_owned(),
-            }),
-        ),
-        CollectedBody::Complete(bytes) => {
-            let digest = sha256_hex(&bytes);
-            match serde_json::from_slice::<Value>(&bytes) {
-                Ok(value) => {
-                    let sanitized = sanitize_json(value, sensitive_values);
-                    let raw_body_sha256 = sanitized.redactions.is_empty().then_some(digest);
-                    (
-                        Some(HttpResponseTranscript {
-                            status,
-                            headers,
-                            body_bytes_observed: bytes.len() as u64,
-                            raw_body_sha256,
-                            body: SanitizedResponseBody::Json {
-                                value: sanitized.value,
-                            },
-                        }),
-                        sanitized
-                            .redactions
-                            .into_iter()
-                            .map(|pointer| format!("response.body{pointer}"))
-                            .collect(),
-                        None,
-                    )
-                }
-                Err(_) => (
-                    Some(HttpResponseTranscript {
-                        status,
-                        headers,
-                        body_bytes_observed: bytes.len() as u64,
-                        raw_body_sha256: None,
-                        body: SanitizedResponseBody::Omitted {
-                            reason: "response body is not valid JSON".to_owned(),
-                        },
-                    }),
-                    Vec::new(),
-                    None,
-                ),
-            }
-        }
-    }
-}
-
-enum CollectedBody {
-    Complete(Vec<u8>),
-    TooLarge { observed: usize },
-}
-
-async fn read_limited_body(mut response: Response, limit: usize) -> Result<CollectedBody> {
-    if let Some(length) = response.content_length() {
-        if length > limit as u64 {
-            return Ok(CollectedBody::TooLarge {
-                observed: usize::try_from(length).unwrap_or(usize::MAX),
-            });
-        }
-    }
-    let mut bytes = Vec::new();
-    while let Some(chunk) = response.chunk().await? {
-        let observed = bytes.len().saturating_add(chunk.len());
-        if observed > limit {
-            return Ok(CollectedBody::TooLarge { observed });
-        }
-        bytes.extend_from_slice(&chunk);
-    }
-    Ok(CollectedBody::Complete(bytes))
-}
-
-fn allowlisted_response_headers(
-    response: &Response,
-    sensitive_values: &[String],
-) -> BTreeMap<String, String> {
-    [
-        "content-type",
-        "iceberg-version",
-        "x-request-id",
-        "traceparent",
-    ]
-    .into_iter()
-    .filter_map(|name| {
-        response.headers().get(name).and_then(|value| {
-            value
-                .to_str()
-                .ok()
-                .map(|value| (name.to_owned(), redact_text(value, sensitive_values)))
-        })
-    })
-    .collect()
-}
-
-fn resolve_prefix(adapter: &CatalogAdapter, body: Option<&Value>) -> PrefixResolution {
+pub(crate) fn resolve_prefix(adapter: &CatalogAdapter, body: Option<&Value>) -> PrefixResolution {
     match &adapter.endpoint.route_prefix {
         CatalogRoutePrefix::Unprefixed => PrefixResolution::Unprefixed,
         CatalogRoutePrefix::Static { value } => PrefixResolution::Static {
@@ -1251,43 +749,4 @@ fn is_json_media_type(content_type: &str) -> bool {
         .split(';')
         .next()
         .is_some_and(|media_type| media_type.trim().eq_ignore_ascii_case(RESPONSE_MEDIA_TYPE))
-}
-
-fn not_evaluated_assertions(scenario: &Scenario, reason: &str) -> Vec<ProbeAssertion> {
-    scenario
-        .assertions
-        .iter()
-        .map(|assertion| ProbeAssertion {
-            assertion: assertion.id.clone(),
-            required: assertion.required,
-            outcome: AssertionOutcome::NotEvaluated {
-                reason: reason.to_owned(),
-            },
-        })
-        .collect()
-}
-
-fn endpoint_url(base_url: &str, path: &str, query: &BTreeMap<String, String>) -> Result<Url> {
-    let mut url = Url::parse(&format!("{base_url}{path}"))
-        .with_context(|| format!("invalid adapter endpoint `{base_url}{path}`"))?;
-    if !query.is_empty() {
-        url.query_pairs_mut().extend_pairs(query);
-    }
-    Ok(url)
-}
-
-fn authentication_mode(authentication: &CatalogAuthentication) -> &'static str {
-    match authentication {
-        CatalogAuthentication::Anonymous => "anonymous",
-        CatalogAuthentication::OAuth2ClientCredentials { .. } => "oauth2-client-credentials",
-    }
-}
-
-fn redact_text(text: &str, sensitive_values: &[String]) -> String {
-    sensitive_values
-        .iter()
-        .filter(|value| value.len() >= 4)
-        .fold(text.to_owned(), |redacted, value| {
-            redacted.replace(value, REDACTED)
-        })
 }
