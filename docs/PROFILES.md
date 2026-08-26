@@ -58,7 +58,7 @@ Versions were selected from official release records and registry metadata on
 
 | Role | Component | Selected identity |
 |---|---|---|
-| Catalog | LakeCat | `0.3.0-10-g54ad9dcb` / `54ad9dcb7c941781a77c5210394924a2ae88a459` |
+| Catalog | LakeCat | `0.3.0-31-g762527c7` / `762527c7d27730dd789cf41b1cdee021ab712aef` |
 | Catalog | Apache Polaris | 1.7.0 / `4ac2f059…`; index `3495f67f…`, ARM64 `53022013…` |
 | Catalog | Apache Gravitino | 1.3.0 / `40fdf6ab…`; index `80136ae7…`, ARM64 `01cf367b…` |
 | Catalog | Lakekeeper | 0.13.3 / `12bb82fc…`; index `db2ba616…`, ARM64 `ba942413…` |

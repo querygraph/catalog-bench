@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C1-05 LakeCat provenance pin: advanced the draft profile and current-profile
+  report to the exact pushed table-lifecycle implementation
+  `lakecat@762527c7` (`v0.3.0-31-g762527c7`). The pin includes register and
+  rename support plus compatible no-current-snapshot commit evidence; C1-09
+  still owns immutable artifact resolution and public result publication.
+
 - C1-05 provenance pin: advanced only the draft conformance-runner component to
   the independently reviewed table-runner revision `catalog-bench@efbce26`.
   Its stable Rust 1.97.1, fat-LTO, single-codegen-unit production recipe remains
