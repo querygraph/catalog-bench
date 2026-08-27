@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- C2-01 common stock-engine contract: define one catalog-neutral, no-shim
+  Iceberg REST write/read/additive-evolution scenario for Spark, Flink, Trino,
+  and later engines. The workflow pins exact format-v2 Parquet semantics,
+  generates one shared 16-row initial and four-row evolved fixture, verifies
+  deterministic canonical row hashes, correlates stock-engine observations
+  with independent REST and shared-MinIO evidence, preserves objects through
+  non-purging cleanup, and requires sanitized transcripts. Added focused tests
+  for implementation neutrality, strict assertion coverage, fixture hashes,
+  cleanup ordering, and comprehensive methodology with exact upstream source
+  references. Conflict synchronization and OpenLineage correlation remain
+  separate Phase 2 contracts so unsupported behavior cannot be hidden inside a
+  weaker common workflow.
+
 - C1-09 production contention publication: preserve the complete sanitized C110
   transcript as immutable source evidence and pair it with a minimal reviewed
   environment and server-failure sidecar. Added a deterministic importer that

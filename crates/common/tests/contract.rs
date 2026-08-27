@@ -279,7 +279,7 @@ fn checked_in_schemas_exactly_match_rust_types() {
 }
 
 #[test]
-fn checked_in_profiles_scenario_and_phase_one_adapters_validate() {
+fn checked_in_profiles_and_scenarios_validate() {
     let bytes = [
         include_bytes!("../../../profiles/v1/reproduction-2026-08-08.json").as_slice(),
         include_bytes!("../../../profiles/v1/current-2026-08-26.json").as_slice(),
@@ -291,6 +291,7 @@ fn checked_in_profiles_scenario_and_phase_one_adapters_validate() {
         include_bytes!("../../../scenarios/v1/iceberg-rest.config.negotiation.json").as_slice(),
         include_bytes!("../../../scenarios/v1/iceberg-rest.table.behavior.json").as_slice(),
         include_bytes!("../../../scenarios/v1/client.pyiceberg.interoperability.json").as_slice(),
+        include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json").as_slice(),
     ];
     let documents = bytes.map(|document| parse_contract(document).unwrap());
 

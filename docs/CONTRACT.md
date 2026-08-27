@@ -248,6 +248,39 @@ median-with-range aggregation. The common workload omits `Idempotency-Key` for
 every catalog; exact retry and content binding remain the separate C1-06
 correctness scenario.
 
+### Stock-engine interoperability transcripts
+
+The C2-01
+[`engine.iceberg.write-read-evolution`](../scenarios/v1/engine.iceberg.write-read-evolution.json)
+scenario is the common Phase 2 workflow for Spark, Flink, Trino, and any later
+stock engine. It uses the existing `engine` actor and records the executed engine
+in a result's `client` component slot; bundle validation already accepts profile
+components of kind `engine` there. No contract-shape change is required.
+
+One scenario-owned generator yields 16 initial rows and four evolved rows. Each
+engine must create the same unpartitioned format-v2 Parquet table, append and
+read the initial projection, add the same optional `note` field, append and read
+the evolved projection, and produce the exact canonical row counts, byte lengths,
+and SHA-256 values. The harness independently correlates table identity and
+metadata state through the profile's standard REST adapter and audits retained
+metadata and Parquet objects under the exact returned table root in shared MinIO.
+
+Engine-specific SQL spelling is a semantics-preserving renderer, not a
+catalog-specific shim. A renderer may depend on the engine component but cannot
+branch on LakeCat, Polaris, Gravitino, Lakekeeper, or another catalog. Routing,
+authentication, prefix, warehouse, and object-store behavior come from the
+immutable profile. Any adapter that rewrites the operation under test must be
+disclosed in the result and cannot satisfy the scenario's no-shim assertion.
+
+Both declared capabilities are required. A profile-proven engine or connector
+limitation is classified as `unsupported` before fixture mutation; once an
+operation is attempted, a behavioral violation is a failure. Cleanup after any
+post-mutation exit uses the profile's protocol-native REST adapter with purge
+disabled so an engine's destructive `DROP TABLE` spelling cannot erase the
+evidence being audited. The separate Phase 2 conflict and OpenLineage scenarios
+will retain their own synchronization and correlation contracts rather than
+weakening this common deterministic workflow.
+
 ## Closed fields and extensions
 
 All ordinary records and enum variants deny unknown fields. This turns misspelled

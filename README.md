@@ -88,7 +88,9 @@ and
 the strict performance scenario
 [`iceberg-rest.commit.same-table-contention` v2](scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json),
 plus the no-shim stock-client oracle
-[`client.pyiceberg.interoperability`](scenarios/v1/client.pyiceberg.interoperability.json).
+[`client.pyiceberg.interoperability`](scenarios/v1/client.pyiceberg.interoperability.json),
+and the Phase 2 stock-engine authority
+[`engine.iceberg.write-read-evolution`](scenarios/v1/engine.iceberg.write-read-evolution.json).
 Their typed runners negotiate anonymous or OAuth2 client-credentials access,
 validate config and prefix resolution, then exercise isolated namespace and
 table lifecycles with hierarchy, immutable metadata updates, errors, pagination,
@@ -110,6 +112,11 @@ publication boundary are in
 [Stock PyIceberg Interoperability](docs/PYICEBERG-INTEROPERABILITY.md). Runner
 internals and lock maintenance are documented in
 [`clients/pyiceberg/README.md`](clients/pyiceberg/README.md).
+The engine-neutral operation vocabulary, deterministic row oracle, shim boundary,
+and independent REST/MinIO evidence requirements are documented in
+[Stock Engine Interoperability](docs/ENGINE-INTEROPERABILITY.md). Spark is the
+first runtime implementation; Flink and Trino must execute the same scenario
+rather than maintaining engine-specific definitions of success.
 
 ## The commit benchmark
 
