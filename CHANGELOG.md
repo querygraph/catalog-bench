@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- C2-06 catalog-neutral Flink renderer: translate the closed Flink plan into a
+  typed, secret-free catalog setup and an ordered stock Flink SQL program for
+  namespace/table creation, both deterministic appends and reads, additive
+  schema evolution, and snapshot metadata inspection. Shared scenario data
+  drives types, requiredness, properties, locations, generators, columns, and
+  ordering; SQL identifiers use a closed vocabulary and literals are escaped.
+  Rendering rejects plan-format, execution, policy, endpoint, file-IO, fixture,
+  and generator drift before mutation. OAuth mode remains a typed setup value,
+  while credentials and object-store keys are deliberately absent for the
+  future process adapter to inject without serialization. Separate tests cover
+  all four profile catalogs, exact operation order and generated boundary rows,
+  authentication, escaping, drift, and absence of catalog branches or direct
+  transports. This validation-only unit does not execute Flink or claim a
+  result.
+
 - C2-06 closed Flink execution policy: extend the engine execution-plan ADT
   with an Apache Flink 2.1.3 variant while sharing the catalog-neutral REST,
   authentication, S3FileIO, fixture, and scenario representations already used

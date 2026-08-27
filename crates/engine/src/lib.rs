@@ -7,6 +7,7 @@
 mod adapters;
 mod catalog;
 mod execution;
+mod flink;
 mod negotiation;
 mod policy;
 mod process;
@@ -22,6 +23,7 @@ pub use catalog::{
     EngineCleanupReceipt, EngineResourcePresence, EngineTableLoad, RestEngineCatalog,
 };
 pub use execution::*;
+pub use flink::*;
 pub use negotiation::{
     EngineAuthenticationEvidence, EngineAuthenticationMode, EngineCatalogConfigEvidence,
     EngineCatalogNegotiationEvidence, EngineNegotiationProjectionFailure, EngineRoutingResolution,

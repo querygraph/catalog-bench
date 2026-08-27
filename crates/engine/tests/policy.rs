@@ -14,7 +14,7 @@ use serde_json::json;
 
 mod support;
 
-use support::{remove_engine_runner, RUNNER_REVISION};
+use support::{remove_engine_runner, select_synthetic_materialized_flink, RUNNER_REVISION};
 
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
@@ -656,73 +656,10 @@ fn contracts() -> (Profile, Scenario) {
 
 fn runnable_flink_contracts() -> (Profile, Scenario) {
     let (mut profile, scenario) = contracts();
-    remove_engine_runner(&mut profile);
     let ContractDocument::Profile(candidate) = parse_contract(CANDIDATE_PROFILE).unwrap() else {
         panic!("candidate fixture must be a profile");
     };
-    let mut flink = candidate
-        .components
-        .iter()
-        .find(|component| component.id.as_str() == "flink")
-        .unwrap()
-        .clone();
-    let spark_index = profile
-        .components
-        .iter()
-        .position(|component| component.id.as_str() == "spark-4.1")
-        .unwrap();
-    flink.artifact = profile.components.remove(spark_index).artifact;
-    let RuntimeArtifact::ContainerImage {
-        embedded_artifacts, ..
-    } = &mut flink.artifact
-    else {
-        panic!("materialized engine fixture must be an image");
-    };
-    embedded_artifacts.retain_mut(|artifact| {
-        if artifact.location == "image:/opt/spark/bin/spark-submit" {
-            artifact.location = "image:/opt/flink/bin/flink".to_owned();
-            true
-        } else if artifact.location.contains("iceberg-spark-runtime-4.1_2.13") {
-            artifact.location =
-                "image:/opt/flink/lib/iceberg-flink-runtime-2.1-1.11.0.jar".to_owned();
-            true
-        } else if artifact.location.contains("iceberg-aws-bundle") {
-            artifact.location = "image:/opt/flink/lib/iceberg-aws-bundle-1.11.0.jar".to_owned();
-            true
-        } else {
-            false
-        }
-    });
-    profile.components.push(flink);
-    profile
-        .services
-        .retain(|service| service.component.as_str() != "spark-4.1");
-    profile.services.push(
-        candidate
-            .services
-            .iter()
-            .find(|service| service.component.as_str() == "flink")
-            .unwrap()
-            .clone(),
-    );
-
-    let connector = profile
-        .components
-        .iter_mut()
-        .find(|component| component.id.as_str() == "iceberg-java")
-        .unwrap();
-    let RuntimeArtifact::ContainerImage {
-        embedded_artifacts, ..
-    } = &mut connector.artifact
-    else {
-        panic!("connector fixture must be an image");
-    };
-    for artifact in embedded_artifacts {
-        if artifact.location.contains("iceberg-spark-runtime-4.1_2.13") {
-            artifact.location =
-                "image:/opt/iceberg/iceberg-flink-runtime-2.1-1.11.0.jar".to_owned();
-        }
-    }
+    select_synthetic_materialized_flink(&mut profile, &candidate);
     (profile, scenario)
 }
 

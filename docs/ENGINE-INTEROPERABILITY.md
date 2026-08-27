@@ -166,6 +166,35 @@ combination. The forthcoming renderer must exercise that Flink catalog API and
 may not substitute a direct REST or standalone Iceberg client call. This policy
 unit is not runtime evidence and creates no Flink result or ranking row.
 
+### Catalog-neutral Flink rendering
+
+`FlinkRenderedProgram` is a pure boundary between the validated plan and the
+future effectful process adapter. It emits one typed catalog setup and eight
+ordered, purpose-tagged stock Flink statements: create the namespace, create
+the table, append and read the initial rows, add the scenario column, append and
+read the evolved rows, and inspect the Iceberg snapshots metadata table. The
+exact pinned [Flink 2.1 parser node for `ALTER TABLE ... ADD`](https://github.com/apache/flink/blob/6cda56b084d5c337b36d2f8ed464bc92093b0a34/flink-table/flink-sql-parser/src/main/java/org/apache/flink/sql/parser/ddl/SqlAlterTableAdd.java)
+documents and represents the syntax used by the renderer. Combined with the
+pinned Iceberg change-list implementation above, this keeps the schema change
+inside Flink's planner and stock Iceberg catalog path.
+
+The renderer has no catalog-name branch and no HTTP client. Catalog endpoint,
+standard `warehouse` and `prefix` options, S3FileIO settings, table location,
+schema, properties, generators, and canonical read projections all come from
+the plan. Identifiers are restricted to the scenario's closed lowercase
+vocabulary, text is SQL-escaped, and credential-free HTTP/S3 routes are checked
+again at the renderer boundary. Anonymous or OAuth mode is retained as a typed
+catalog-setup value, but no client secret, object-store key, credential option,
+or token can enter the rendered program. The process adapter will read secrets
+only after runtime verification and inject them directly into the child
+environment or in-memory catalog configuration.
+
+The renderer is presently validation-only: tests prove deterministic rendering
+for every selected profile catalog and reject format, parallelism, policy,
+route, file-IO, fixture, identifier, and generator drift. No Flink process was
+launched, so these tests are not interoperability evidence and do not add a
+ranking row.
+
 ## Reusable runtime-identity boundary
 
 Runtime-ready evidence contains a neutral engine version, an exact sorted map of
