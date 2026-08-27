@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C2-06 Flink image topology: add a non-destructive launcher that resolves the
+  selected Linux ARM64 child from the immutable Flink index, pulls that child
+  by digest, verifies its descriptor and platform, and creates a local build
+  indirection only after both identities agree. Wire source revision
+  `36906515b69a61ac26d44327b2a9ff94c2b84551` into separate optimized-Rust,
+  connector, composite-runner, and executed-Flink Compose services. The final
+  harness and child share one hardened, read-only runtime with the same catalog
+  topology and MinIO; the already materialized Spark donor remains unchanged.
+  Static Rust tests and daemon-free Compose validation cover the exact sources,
+  services, profiles, entry points, and absence of destructive Docker actions.
+  No image was built while the local Docker filesystem remains unsafe.
+
 - C2-06 checksum-locked Flink image definition: add a four-stage BuildKit
   boundary that compiles and tests the Java child inside the exact Flink Java
   17 image using SHA-512-locked Maven 3.9.16 with strict repository checksums;

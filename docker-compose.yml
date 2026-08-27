@@ -39,6 +39,23 @@ x-spark-build: &spark-build
     ICEBERG_SOURCE_REVISION: 6976e020b894f6a6777704df2b8c4458cb291ae9
   additional_contexts:
     catalog-bench-engine-runner: "service:engine-runner-image"
+x-flink-engine-runner-image: &flink-engine-runner-image catalog-bench-engine-flink:36906515b69a
+x-flink-engine-runner-build: &flink-engine-runner-build
+  context: "https://github.com/querygraph/catalog-bench.git#36906515b69a61ac26d44327b2a9ff94c2b84551"
+  dockerfile: docker/bench.Dockerfile
+  args:
+    CATALOG_BENCH_SOURCE_REVISION: 36906515b69a61ac26d44327b2a9ff94c2b84551
+x-flink-image: &flink-image catalog-bench/flink:2.1.3-iceberg1.11.0
+x-flink-build: &flink-build
+  context: "https://github.com/querygraph/catalog-bench.git#36906515b69a61ac26d44327b2a9ff94c2b84551"
+  dockerfile: docker/flink/Dockerfile
+  args:
+    CATALOG_BENCH_SOURCE_REVISION: 36906515b69a61ac26d44327b2a9ff94c2b84551
+    FLINK_BASE_IMAGE: catalog-bench/flink-base:2.1.3-arm64-99a499ed
+    FLINK_SOURCE_REVISION: 6cda56b084d5c337b36d2f8ed464bc92093b0a34
+    ICEBERG_SOURCE_REVISION: 6976e020b894f6a6777704df2b8c4458cb291ae9
+  additional_contexts:
+    catalog-bench-engine-runner: "service:flink-engine-runner-base"
 x-rust-runner: &rust-runner
   build: *bench-build
   image: *bench-image
@@ -65,6 +82,24 @@ x-spark-runtime: &spark-runtime
     - ./profiles:/contracts/profiles:ro
     - ./scenarios:/contracts/scenarios:ro
     - ${CATALOG_BENCH_SPARK_EVIDENCE_DIR:-./target/spark-evidence}:/evidence
+  depends_on:
+    minio-init:
+      condition: service_completed_successfully
+x-flink-runtime: &flink-runtime
+  image: *flink-image
+  platform: linux/arm64
+  networks: [lakehouse-net]
+  profiles: ["flink"]
+  init: true
+  read_only: true
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs:
+    - /tmp:size=512m,mode=1777
+  volumes:
+    - ./profiles:/contracts/profiles:ro
+    - ./scenarios:/contracts/scenarios:ro
+    - ${CATALOG_BENCH_FLINK_EVIDENCE_DIR:-./target/flink-evidence}:/evidence
   depends_on:
     minio-init:
       condition: service_completed_successfully
@@ -554,6 +589,76 @@ services:
   # The harness and stock Spark child execute from this one immutable image.
   spark-engine:
     <<: *spark-runtime
+    entrypoint: ["/usr/local/bin/catalog-bench-engine"]
+    command: ["--help"]
+    environment:
+      CATALOG_BENCH_S3_ACCESS_KEY_ID: admin
+      CATALOG_BENCH_S3_SECRET_ACCESS_KEY: password
+      CATALOG_BENCH_POLARIS_CLIENT_ID: root
+      CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret
+    depends_on:
+      lakecat-ready:
+        condition: service_completed_successfully
+      polaris-ready:
+        condition: service_completed_successfully
+      gravitino-ready:
+        condition: service_completed_successfully
+      lakekeeper-ready:
+        condition: service_completed_successfully
+
+  # Exact source-pinned optimized Rust donor used only to construct the
+  # independently inspectable composite Flink runner image.
+  flink-engine-runner-base:
+    build: *flink-engine-runner-build
+    image: *flink-engine-runner-image
+    platform: linux/arm64
+    profiles: ["flink"]
+    network_mode: none
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    entrypoint: ["/usr/local/bin/catalog-bench-engine"]
+    command: ["--help"]
+
+  # Iceberg connector bytes are inspectable independently and copied unchanged
+  # into the executed Flink runtime.
+  iceberg-flink-runtime:
+    build:
+      <<: *flink-build
+      target: connector
+    image: catalog-bench/iceberg-flink-runtime:1.11.0-flink2.1
+    platform: linux/arm64
+    networks: [lakehouse-net]
+    profiles: ["flink"]
+
+  # Composite donor proving the optimized Rust ELF and Java child JAR originate
+  # from the same exact public source revision.
+  flink-runner-image:
+    build:
+      <<: *flink-build
+      target: runner
+    image: catalog-bench/flink-runner:36906515b69a
+    platform: linux/arm64
+    profiles: ["flink"]
+    network_mode: none
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    entrypoint: ["/usr/local/bin/catalog-bench-engine"]
+    command: ["--help"]
+
+  # Stock Flink plus only the source-bound runner and exact Iceberg artifacts.
+  flink:
+    <<: *flink-runtime
+    build:
+      <<: *flink-build
+      target: runtime
+    entrypoint: ["/opt/flink/bin/flink"]
+    command: ["--version"]
+
+  # The optimized harness and its stock Flink child execute in this one image.
+  flink-engine:
+    <<: *flink-runtime
     entrypoint: ["/usr/local/bin/catalog-bench-engine"]
     command: ["--help"]
     environment:

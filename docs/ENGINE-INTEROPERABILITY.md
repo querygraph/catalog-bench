@@ -391,6 +391,46 @@ launch, image inspection, artifact extraction, profile materialization, and
 same-Docker behavior remain pending until that storage is made safe. The static
 audit proves the build boundary and immutable inputs, not runtime evidence.
 
+### Flink image topology and two-level admission
+
+[`docker/build-flink-images.sh`](../docker/build-flink-images.sh) does not trust
+the mutable Flink tag or silently accept whichever architecture Docker selects.
+It asks the registry for the immutable profile-selected index
+`cc557bbe…a7802d`, requires exactly one Linux ARM64 manifest and the expected
+child `99a499ed…c84e18`, pulls that child by digest, rechecks the local descriptor
+and platform, and only then creates the local tag consumed by BuildKit. The
+script performs no prune, reset, volume removal, or unrelated image deletion.
+
+Compose keeps this source line independent of the already materialized Spark
+line. The exact public catalog-bench revision
+`36906515b69a61ac26d44327b2a9ff94c2b84551` supplies both the optimized Rust
+donor build and the Flink Docker context. Four inspectable services represent
+the provenance chain:
+
+- `flink-engine-runner-base` builds the production Rust executable with level-3
+  optimization, fat LTO, one codegen unit, native CPU features, stripped
+  symbols, aborting panics, stable Rust 1.97.1, and warnings denied;
+- `iceberg-flink-runtime` owns the two checksum-locked connector JARs;
+- `flink-runner-image` binds the optimized ELF and Java child JAR to the same
+  public source revision; and
+- `flink` is the final stock engine image. `flink-engine` changes only the entry
+  point so the Rust harness and its `/opt/flink/bin/flink` child execute inside
+  that one immutable container.
+
+The Flink runtime is read-only, drops all Linux capabilities, denies privilege
+escalation, uses only a bounded temporary filesystem, mounts contracts
+read-only, and writes only to the dedicated evidence mount. Its parent receives
+the same fixed benchmark S3 and Polaris fixtures as Spark; the Rust process
+injects only standard AWS and generic engine OAuth variables into the isolated
+child after profile artifact verification. The build script enables every
+catalog profile needed for Compose dependency validation but builds only the
+four named Flink provenance targets.
+
+YAML expansion and Compose semantic validation can run against a deliberately
+nonexistent Docker socket and are green. Actual image construction, artifact
+extraction, and profile materialization still require a healthy Docker data
+volume; no result claim follows from topology validation alone.
+
 ## Reusable runtime-identity boundary
 
 Runtime-ready evidence contains a neutral engine version, an exact sorted map of

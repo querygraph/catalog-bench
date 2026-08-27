@@ -1,6 +1,12 @@
 use std::fs;
 
 const DOCKERFILE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docker/flink/Dockerfile");
+const BUILD_SCRIPT: &str = concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/../../docker/build-flink-images.sh"
+);
+const COMPOSE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docker-compose.yml");
+const SOURCE_REVISION: &str = "36906515b69a61ac26d44327b2a9ff94c2b84551";
 
 #[test]
 fn flink_image_definition_is_checksum_locked_and_source_correlated() {
@@ -38,6 +44,43 @@ fn flink_image_definition_is_checksum_locked_and_source_correlated() {
         assert!(
             !source.contains(forbidden),
             "Flink image gained `{forbidden}`"
+        );
+    }
+}
+
+#[test]
+fn flink_compose_build_resolves_the_pinned_arm_child_and_one_runtime() {
+    let build = fs::read_to_string(BUILD_SCRIPT).unwrap();
+    let compose = fs::read_to_string(COMPOSE).unwrap();
+    for required in [
+        "flink:2.1.3-scala_2.12-java17@sha256:cc557bbe316d804e83195717a41788dc1ddb9a965887bd0ab83d148480a7802d",
+        "flink@sha256:99a499ed147b28d358486066ab8308e351b232b2ac81aff69157fdb349c84e18",
+        "docker buildx imagetools inspect",
+        "docker pull --platform linux/arm64 \"$child_reference\"",
+        "actual_descriptor",
+        "COMPOSE_PROFILES=lakekeeper,polaris,gravitino,flink",
+    ] {
+        assert!(build.contains(required), "Flink build lost `{required}`");
+    }
+    for forbidden in ["prune", "volume rm", "system reset", "rm -rf"] {
+        assert!(
+            !build.contains(forbidden),
+            "Flink build gained `{forbidden}`"
+        );
+    }
+    assert_eq!(compose.matches(SOURCE_REVISION).count(), 4);
+    for required in [
+        "flink-engine-runner-base:",
+        "iceberg-flink-runtime:",
+        "flink-runner-image:",
+        "flink-engine:",
+        "catalog-bench-engine-runner: \"service:flink-engine-runner-base\"",
+        "entrypoint: [\"/usr/local/bin/catalog-bench-engine\"]",
+        "entrypoint: [\"/opt/flink/bin/flink\"]",
+    ] {
+        assert!(
+            compose.contains(required),
+            "Flink Compose lost `{required}`"
         );
     }
 }
