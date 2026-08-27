@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- C1-08 LakeCat contention recovery candidate: advance the exact public
+  source-built LakeCat image to
+  `962f43cb2d2f345addf188e63be0cf6059bc26b0`. This revision classifies Turso
+  busy outcomes without flattening them into internal failures, retries bounded
+  transaction boundaries, drops connections whose rollback cannot be
+  confirmed, configures the driver busy timeout, and pools bounded read
+  connections for commit-adjacent policy, table, storage-profile, and
+  idempotency reads.
+
 - C1-08 rerun isolation hardening: after stopping every recognized benchmark
   project without deleting its volumes, the fail-closed launcher now verifies
   that `catalog-bench-net` has zero remaining container attachments before

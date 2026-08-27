@@ -53,12 +53,13 @@ JSON records and matrix are reproducibly checked from their source evidence.
 
 ## Current candidate profile
 
-Versions were selected from official release records and registry metadata on
-2026-08-26:
+Versions were initially selected from official release records and registry
+metadata on 2026-08-26. LakeCat was advanced on 2026-08-27 to the exact
+contention-recovery revision selected for the fresh production rerun:
 
 | Role | Component | Selected identity |
 |---|---|---|
-| Catalog | LakeCat | `0.3.0-40-gbccb5075` / `bccb5075047f20686519dcb4192359bfe4d39d87` |
+| Catalog | LakeCat | `0.3.0-42-g962f43cb` / `962f43cb2d2f345addf188e63be0cf6059bc26b0` |
 | Catalog | Apache Polaris | 1.7.0 / `4ac2f059…`; index `3495f67f…`, ARM64 `53022013…` |
 | Catalog | Apache Gravitino | 1.3.0 / `40fdf6ab…`; index `80136ae7…`, ARM64 `01cf367b…` |
 | Catalog | Lakekeeper | 0.13.3 / `12bb82fc…`; index `db2ba616…`, ARM64 `ba942413…` |

@@ -3,8 +3,8 @@
   "kind": "profile",
   "id": "catalog-community-current-2026-08-26-linux-arm64",
   "title": "Catalog community current candidate pinset",
-  "description": "Versions selected from primary release sources on 2026-08-26 for the next Linux ARM64 same-Docker interoperability run. This is a draft input profile, not benchmark evidence.",
-  "resolved_at": "2026-08-26T12:39:50Z",
+  "description": "Versions initially selected from primary release sources on 2026-08-26, with LakeCat advanced on 2026-08-27, for the next Linux ARM64 same-Docker interoperability run. This is a draft input profile, not benchmark evidence.",
+  "resolved_at": "2026-08-27T04:21:39Z",
   "purpose": "current-candidate",
   "readiness": {
     "status": "draft",
@@ -169,10 +169,10 @@
       "id": "lakecat",
       "kind": "catalog",
       "name": "LakeCat",
-      "version": "0.3.0-40-gbccb5075",
+      "version": "0.3.0-42-g962f43cb",
       "source": {
         "repository": "https://github.com/querygraph/lakecat.git",
-        "revision": "bccb5075047f20686519dcb4192359bfe4d39d87"
+        "revision": "962f43cb2d2f345addf188e63be0cf6059bc26b0"
       },
       "build": {
         "toolchain": "Rust 1.97.1",
