@@ -92,8 +92,11 @@ outcomes are recorded in
 [Iceberg REST Namespace Conformance](docs/NAMESPACE-CONFORMANCE.md) for C1-04
 and [Iceberg REST Table Conformance](docs/TABLE-CONFORMANCE.md) for C1-05, and
 [Iceberg REST Commit Correctness Conformance](docs/COMMIT-CONFORMANCE.md) for
-C1-06. The stock PyIceberg runner, exact Linux ARM64 image, classifications,
-sanitization boundary, and reproduction commands are documented in
+C1-06. The accepted C1-07 five-catalog stock-client matrix, exact Linux ARM64
+artifacts, row and object proofs, catalog findings, rejected diagnostics, and
+publication boundary are in
+[Stock PyIceberg Interoperability](docs/PYICEBERG-INTEROPERABILITY.md). Runner
+internals and lock maintenance are documented in
 [`clients/pyiceberg/README.md`](clients/pyiceberg/README.md).
 
 ## The commit benchmark

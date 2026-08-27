@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Catalog community C1-07 acceptance: document the exact commit-built stock
+  PyIceberg runtime and production LakeCat artifact, five-catalog required and
+  optional matrix, four exact row-state digests, all 135 retained metadata,
+  manifest, and Parquet objects in shared MinIO, delegated-credential category
+  boundaries, complete cleanup and sanitization audit, catalog deployment
+  corrections, rejected diagnostics, reproduction workflow, and the C1-09
+  publication boundary.
+
 - C1-07 catalog data-plane reconciliation: make Nessie's client-visible S3
   endpoint resolve to shared MinIO inside the benchmark network, enable
   Gravitino's documented `s3-secret-key` credential provider, and extend the

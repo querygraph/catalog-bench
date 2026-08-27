@@ -202,6 +202,32 @@ See the optimized five-catalog acceptance matrix, exact-retry findings,
 shared-MinIO audit, and rejected-run analysis in
 [`COMMIT-CONFORMANCE.md`](COMMIT-CONFORMANCE.md).
 
+### Stock-PyIceberg transcripts
+
+The C1-07 stock-client runner produces the intermediate
+`catalog-bench/pyiceberg-transcript/v1` evidence shape. It loads the same profile
+and adapter bindings as the Rust probes, then verifies its exact CPython,
+PyIceberg, PyArrow, S3FS, OS, and architecture identity before making a catalog
+request. One public `RestCatalog` workflow creates a run-owned namespace and
+table, appends and scans real Arrow data, independently classifies property,
+schema, delete, stale-writer recovery, delegated-access, rename, register, view,
+and pagination behavior, and always reconciles owned identifiers without purge.
+
+Required round-trip assertions determine the top-level result. Each optional
+operation retains its own `pass`, `fail`, `unsupported`, or `not-evaluated`
+status; a catalog or pinned-client limitation cannot erase an attempted failure.
+The runner records canonical row counts, ID ranges, and SHA-256 digests instead
+of raw values. Delegated access records credential categories only. Runtime
+secrets, raw exceptions, response bodies, and raw rows are rejected before
+exclusive, no-overwrite serialization.
+
+These transcripts remain mutable smoke diagnostics under
+`target/pyiceberg-evidence` until the immutable result/manifest pipeline records
+reviewed evidence and complete environment provenance. See the accepted
+five-catalog matrix, exact artifact identities, shared-MinIO object proof,
+deployment corrections, and rejected diagnostics in
+[`PYICEBERG-INTEROPERABILITY.md`](PYICEBERG-INTEROPERABILITY.md).
+
 ## Closed fields and extensions
 
 All ordinary records and enum variants deny unknown fields. This turns misspelled

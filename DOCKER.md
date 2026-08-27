@@ -249,7 +249,10 @@ available for the later shared-MinIO audit. The default host destination,
 `target/pyiceberg-evidence`, is mutable smoke evidence and cannot be published
 directly. See
 [`clients/pyiceberg/README.md`](clients/pyiceberg/README.md) for operation,
-classification, registration, sanitization, and lock-maintenance details.
+classification, registration, sanitization, and lock-maintenance details. The
+accepted five-catalog matrix, exact artifact identities, row hashes,
+shared-MinIO audit, deployment findings, and rejected diagnostics are in
+[`docs/PYICEBERG-INTEROPERABILITY.md`](docs/PYICEBERG-INTEROPERABILITY.md).
 
 ## Behavioral conformance smoke evidence
 

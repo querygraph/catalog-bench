@@ -105,7 +105,10 @@ Canonical same-Docker startup and matrix commands are in
 [`DOCKER.md`](../../DOCKER.md#stock-pyiceberg-interoperability). Files written
 under `target/pyiceberg-evidence` are mutable smoke diagnostics. They are not
 public results until the repository's publication phase wraps reviewed bytes in
-an immutable result bundle and records the production image identity.
+an immutable result bundle and records the production image identity. The
+accepted five-catalog C1-07 matrix, exact row and MinIO proofs, artifact
+identities, and deployment findings are recorded in
+[`PYICEBERG-INTEROPERABILITY.md`](../../docs/PYICEBERG-INTEROPERABILITY.md).
 
 ## Verification
 
