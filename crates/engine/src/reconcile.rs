@@ -1,10 +1,14 @@
 use std::collections::BTreeMap;
 
 use catalog_bench_commit::store::{TableObjectAuditSnapshot, TableRoot};
+use catalog_bench_common::contract::AdapterRequestHandling;
+use catalog_bench_conformance::AuthenticationOutcome;
 use uuid::Uuid;
 
 use crate::runtime::{architecture_matches, operating_system_matches};
-use crate::workflow::{EngineBehaviorChecks, EngineExecution, EngineOperationEvidence};
+use crate::workflow::{
+    EngineBehaviorChecks, EngineCatalogConnectionEvidence, EngineExecution, EngineOperationEvidence,
+};
 use crate::{
     EngineCatalogTable, EngineEvent, EngineFieldObservation, EnginePropertyObservation,
     EngineRuntimeObservation, EngineTableLoad, EngineTableObservation, IcebergField,
@@ -125,7 +129,8 @@ pub(super) fn evaluate_checks(
             && events
                 .runtime
                 .is_some_and(|runtime| runtime_matches(plan, runtime)),
-        stock_rest_catalog_ready: events.catalog_ready,
+        stock_rest_catalog_ready: events.catalog_ready
+            && catalog_connection_matches(plan, execution),
         fixture_isolated: events.fixture_absent,
         namespace_round_trip: events.namespace_listed_exactly,
         table_round_trip,
@@ -142,6 +147,20 @@ pub(super) fn evaluate_checks(
         shared_object_evidence_complete,
         fixture_clean: execution.cleanup.passed(),
     }
+}
+
+fn catalog_connection_matches(plan: &InteroperabilityPlan, execution: &EngineExecution) -> bool {
+    matches!(
+        &execution.catalog_connection,
+        EngineCatalogConnectionEvidence::Ready { negotiation }
+            if negotiation.adapter.catalog == plan.catalog().id
+                && negotiation.adapter.name == plan.catalog().name
+                && negotiation.adapter.version == plan.catalog().version
+                && negotiation.adapter.protocol == plan.spark().scenario.catalog_protocol
+                && negotiation.adapter.request_handling == AdapterRequestHandling::ProtocolNative
+                && negotiation.authentication.outcome == AuthenticationOutcome::Ready
+                && negotiation.config.failure_stage.is_none()
+    )
 }
 
 fn runtime_matches(plan: &InteroperabilityPlan, runtime: &EngineRuntimeObservation) -> bool {

@@ -4,13 +4,12 @@ use catalog_bench_commit::store::{
     ObjectStoreFailure, ObjectStoreFailureKind, TableObjectAuditSnapshot, TableObjectStore,
     TableRoot,
 };
-use catalog_bench_conformance::CatalogNegotiationEvidence;
 use serde::{Deserialize, Serialize};
 
 use crate::reconcile::evaluate_checks;
 use crate::{
-    EngineCatalog, EngineCatalogFailure, EngineCleanupReceipt, EngineResourcePresence,
-    EngineTableLoad, InteroperabilityPlan, SparkProcessExecution,
+    EngineCatalog, EngineCatalogFailure, EngineCatalogNegotiationEvidence, EngineCleanupReceipt,
+    EngineResourcePresence, EngineTableLoad, InteroperabilityPlan, SparkProcessExecution,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -90,11 +89,11 @@ pub struct EngineCatalogConnectionFailure {
 
 pub enum EngineCatalogConnection<C> {
     Ready {
-        negotiation: CatalogNegotiationEvidence,
+        negotiation: EngineCatalogNegotiationEvidence,
         catalog: C,
     },
     Failed {
-        negotiation: Option<CatalogNegotiationEvidence>,
+        negotiation: Option<EngineCatalogNegotiationEvidence>,
         failure: EngineCatalogConnectionFailure,
     },
 }
@@ -128,11 +127,11 @@ pub enum EngineCatalogConnectionEvidence {
         reason: EngineSkipReason,
     },
     Ready {
-        negotiation: CatalogNegotiationEvidence,
+        negotiation: EngineCatalogNegotiationEvidence,
     },
     Failed {
         #[serde(default, skip_serializing_if = "Option::is_none")]
-        negotiation: Option<CatalogNegotiationEvidence>,
+        negotiation: Option<EngineCatalogNegotiationEvidence>,
         failure: EngineCatalogConnectionFailure,
     },
 }

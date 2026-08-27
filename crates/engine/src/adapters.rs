@@ -9,9 +9,9 @@ use catalog_bench_conformance::{
 
 use crate::{
     EngineCatalogConnection, EngineCatalogConnectionFailure, EngineCatalogConnectionFailureKind,
-    EngineCatalogConnector, EngineObjectStoreConnector, EngineRunner, InteroperabilityPlan,
-    RestEngineCatalog, RuntimeVerifier, SecretRead, SecretSource, SparkProcessExecution,
-    SparkProcessExecutor,
+    EngineCatalogConnector, EngineCatalogNegotiationEvidence, EngineObjectStoreConnector,
+    EngineRunner, InteroperabilityPlan, RestEngineCatalog, RuntimeVerifier, SecretRead,
+    SecretSource, SparkProcessExecution, SparkProcessExecutor,
 };
 
 const CATALOG_REQUEST_TIMEOUT_MS: u64 = 30_000;
@@ -107,21 +107,25 @@ where
             Ok(attempt) => attempt,
             Err(_) => return failed_connection(None, EngineCatalogConnectionFailureKind::Setup),
         };
+        let negotiation = match EngineCatalogNegotiationEvidence::try_from(attempt.evidence) {
+            Ok(negotiation) => negotiation,
+            Err(_) => return failed_connection(None, EngineCatalogConnectionFailureKind::Setup),
+        };
         match attempt.outcome {
             CatalogConnectionOutcome::Ready(session) => {
                 match RestEngineCatalog::from_plan(session, plan) {
                     Ok(catalog) => EngineCatalogConnection::Ready {
-                        negotiation: attempt.evidence,
+                        negotiation,
                         catalog,
                     },
                     Err(_) => failed_connection(
-                        Some(attempt.evidence),
+                        Some(negotiation),
                         EngineCatalogConnectionFailureKind::FixtureRoute,
                     ),
                 }
             }
             CatalogConnectionOutcome::Failed(failure) => failed_connection(
-                Some(attempt.evidence),
+                Some(negotiation),
                 match failure.stage {
                     CatalogNegotiationFailureStage::Authentication => {
                         EngineCatalogConnectionFailureKind::Authentication
@@ -139,7 +143,7 @@ where
 }
 
 fn failed_connection<C>(
-    negotiation: Option<catalog_bench_conformance::CatalogNegotiationEvidence>,
+    negotiation: Option<EngineCatalogNegotiationEvidence>,
     kind: EngineCatalogConnectionFailureKind,
 ) -> EngineCatalogConnection<C> {
     EngineCatalogConnection::Failed {

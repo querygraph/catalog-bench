@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-04 bounded catalog negotiation evidence: project the reusable conformance
+  session into a closed engine-specific record containing only adapter identity,
+  authentication outcome, response status and byte count, routing modes,
+  failure stage, and redaction count. Dynamic config JSON, routing values,
+  request data, and backend explanations cannot cross the engine evidence
+  boundary, even when catalog-controlled object keys contain private values.
+
 - C2-04 production engine adapters: compose the verified stock Spark executor,
   bounded profile-driven Iceberg REST negotiation, independent REST projection,
   and shared MinIO auditor behind the generic engine workflow. All three

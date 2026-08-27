@@ -59,8 +59,10 @@ async fn runtime_rejection_keeps_every_production_connector_closed() {
 
 #[tokio::test]
 async fn stock_rest_connector_negotiates_the_selected_profile_adapter() {
+    let private_key = "dynamic-private-key-sentinel";
+    let private_value = "dynamic-private-value-sentinel";
     let server = MockServer::start(vec![MockResponse::json(json!({
-        "defaults": {},
+        "defaults": {(private_key): private_value},
         "overrides": {}
     }))]);
     let (mut profile, scenario) = contracts();
@@ -76,6 +78,9 @@ async fn stock_rest_connector_negotiates_the_selected_profile_adapter() {
         panic!("anonymous adapter should negotiate");
     };
     assert_eq!(negotiation.adapter.catalog, ComponentId::from("lakecat"));
+    let serialized = serde_json::to_string(&negotiation).unwrap();
+    assert!(!serialized.contains(private_key));
+    assert!(!serialized.contains(private_value));
     assert!(secrets.reads().is_empty());
     let requests = server.finish();
     assert_eq!(requests.len(), 1);

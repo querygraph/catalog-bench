@@ -12,13 +12,14 @@ use catalog_bench_engine::{
     run_engine_workflow, EngineBehaviorClassification, EngineCatalog, EngineCatalogConnection,
     EngineCatalogConnectionEvidence, EngineCatalogConnectionFailure,
     EngineCatalogConnectionFailureKind, EngineCatalogConnector, EngineCatalogFailure,
-    EngineCatalogFailureKind, EngineCatalogTable, EngineCleanupReceipt, EngineEvent,
-    EngineEventCapture, EngineFailureCategory, EngineFieldObservation, EngineObjectStoreConnector,
-    EngineOperationEvidence, EnginePropertyObservation, EngineProtocolFailure,
-    EngineProtocolFailureKind, EngineResourcePresence, EngineRunner, EngineRuntimeObservation,
-    EngineStage, EngineTableLoad, EngineTableObservation, InteroperabilityPlan, RowReadObservation,
-    RuntimeArtifactObservation, RuntimeArtifactOutcome, RuntimePlatformObservation,
-    RuntimeVerification, SparkProcessExecution, SparkProcessOutcome,
+    EngineCatalogFailureKind, EngineCatalogNegotiationEvidence, EngineCatalogTable,
+    EngineCleanupReceipt, EngineEvent, EngineEventCapture, EngineFailureCategory,
+    EngineFieldObservation, EngineObjectStoreConnector, EngineOperationEvidence,
+    EnginePropertyObservation, EngineProtocolFailure, EngineProtocolFailureKind,
+    EngineResourcePresence, EngineRunner, EngineRuntimeObservation, EngineStage, EngineTableLoad,
+    EngineTableObservation, InteroperabilityPlan, RowReadObservation, RuntimeArtifactObservation,
+    RuntimeArtifactOutcome, RuntimePlatformObservation, RuntimeVerification, SparkProcessExecution,
+    SparkProcessOutcome,
 };
 use serde_json::json;
 
@@ -181,6 +182,21 @@ async fn rest_or_object_drift_fails_closed_but_preserves_cleanup_evidence() {
     assert!(!execution.checks.shared_object_evidence_complete);
     assert!(execution.cleanup.passed());
     assert!(!execution.passed());
+
+    let log = OperationLog::default();
+    let execution = run_engine_workflow(
+        &plan,
+        FakeRunner::new(fixture.process(&plan), log.clone()),
+        FakeCatalogConnector::ready_as(
+            fixture.catalog(),
+            ComponentId::from("polaris"),
+            log.clone(),
+        ),
+        FakeObjectStoreConnector::ready(fixture.object_audit(), log),
+    )
+    .await;
+    assert!(!execution.checks.stock_rest_catalog_ready);
+    assert!(!execution.passed());
 }
 
 #[tokio::test]
@@ -337,6 +353,7 @@ impl EngineRunner for FakeRunner {
 #[derive(Clone)]
 struct FakeCatalogConnector {
     catalog: Option<FakeCatalog>,
+    negotiation_catalog: Option<ComponentId>,
     log: OperationLog,
 }
 
@@ -345,28 +362,49 @@ impl FakeCatalogConnector {
         catalog.log = log.clone();
         Self {
             catalog: Some(catalog),
+            negotiation_catalog: None,
+            log,
+        }
+    }
+
+    fn ready_as(
+        mut catalog: FakeCatalog,
+        negotiation_catalog: ComponentId,
+        log: OperationLog,
+    ) -> Self {
+        catalog.log = log.clone();
+        Self {
+            catalog: Some(catalog),
+            negotiation_catalog: Some(negotiation_catalog),
             log,
         }
     }
 
     fn failed(log: OperationLog) -> Self {
-        Self { catalog: None, log }
+        Self {
+            catalog: None,
+            negotiation_catalog: None,
+            log,
+        }
     }
 }
 
 impl EngineCatalogConnector for FakeCatalogConnector {
     type Catalog = FakeCatalog;
 
-    async fn connect(
-        &self,
-        _plan: &InteroperabilityPlan,
-    ) -> EngineCatalogConnection<Self::Catalog> {
+    async fn connect(&self, plan: &InteroperabilityPlan) -> EngineCatalogConnection<Self::Catalog> {
         self.log.push("catalog-connect");
         match &self.catalog {
-            Some(catalog) => EngineCatalogConnection::Ready {
-                negotiation: negotiation(),
-                catalog: catalog.clone(),
-            },
+            Some(catalog) => {
+                let mut negotiation = negotiation(plan);
+                if let Some(catalog_id) = &self.negotiation_catalog {
+                    negotiation.adapter.catalog = catalog_id.clone();
+                }
+                EngineCatalogConnection::Ready {
+                    negotiation,
+                    catalog: catalog.clone(),
+                }
+            }
             None => EngineCatalogConnection::Failed {
                 negotiation: None,
                 failure: EngineCatalogConnectionFailure {
@@ -800,12 +838,12 @@ fn unused_audit() -> TableObjectAuditSnapshot {
     }
 }
 
-fn negotiation() -> CatalogNegotiationEvidence {
-    serde_json::from_value(json!({
+fn negotiation(plan: &InteroperabilityPlan) -> EngineCatalogNegotiationEvidence {
+    let evidence: CatalogNegotiationEvidence = serde_json::from_value(json!({
         "adapter": {
             "catalog": "lakecat",
-            "name": "LakeCat",
-            "version": "test",
+            "name": plan.catalog().name,
+            "version": plan.catalog().version,
             "protocol": "iceberg-rest-v1",
             "request_handling": {"kind": "protocol-native"}
         },
@@ -821,7 +859,8 @@ fn negotiation() -> CatalogNegotiationEvidence {
         },
         "redactions": []
     }))
-    .unwrap()
+    .unwrap();
+    evidence.try_into().unwrap()
 }
 
 fn plan(fixture: &str) -> InteroperabilityPlan {

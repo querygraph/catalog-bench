@@ -6,6 +6,7 @@
 
 mod adapters;
 mod catalog;
+mod negotiation;
 mod policy;
 mod process;
 mod protocol;
@@ -17,6 +18,10 @@ pub use adapters::{RestEngineCatalogConnector, SharedObjectStoreConnector, Stock
 pub use catalog::{
     EngineCatalog, EngineCatalogFailure, EngineCatalogFailureKind, EngineCatalogTable,
     EngineCleanupReceipt, EngineResourcePresence, EngineTableLoad, RestEngineCatalog,
+};
+pub use negotiation::{
+    EngineAuthenticationEvidence, EngineAuthenticationMode, EngineCatalogConfigEvidence,
+    EngineCatalogNegotiationEvidence, EngineNegotiationProjectionFailure, EngineRoutingResolution,
 };
 pub use policy::*;
 pub use process::*;
