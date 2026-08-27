@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C2-04 durable evidence publication seam: replace the duplicated contention
+  and conformance output writers with one shared same-directory, synchronized,
+  hard-link publication primitive. Concurrent writers can publish only one
+  complete file, existing evidence is never overwritten, and fixed failure
+  stages distinguish preparation, writing, synchronization, and publication.
+
 - C2-04 sanitized engine transcript: bind each stock Spark execution to the
   exact profile and scenario bytes, runner/catalog/engine/connector/MinIO
   identities, run-owned fixture, and reconciled execution evidence. The

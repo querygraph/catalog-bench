@@ -1,5 +1,4 @@
-use std::fs::{self, OpenOptions};
-use std::io::Write as _;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -7,7 +6,7 @@ use anyhow::{bail, Context, Result};
 use catalog_bench_commit::sweep::{run_contention_sweep, RunnerObservation, SweepProgress};
 use catalog_bench_commit::transcript::{RankingDisposition, SweepClassification};
 use catalog_bench_common::contract::{parse_contract, ContractDocument, Profile, Scenario};
-use catalog_bench_conformance::{encode_evidence, sha256_hex, ContractDigests};
+use catalog_bench_conformance::{encode_evidence, sha256_hex, write_new_evidence, ContractDigests};
 use clap::Parser;
 
 const BUILD_REVISION: Option<&str> = option_env!("CATALOG_BENCH_SOURCE_REVISION");
@@ -69,7 +68,8 @@ async fn run(cli: Cli) -> Result<bool> {
         SweepClassification::Fail { .. } => "fail",
     };
     let evidence = encode_evidence(&transcript)?;
-    write_new(&cli.output, &evidence)?;
+    write_new_evidence(&cli.output, &evidence)
+        .with_context(|| format!("failed to publish {}", cli.output.display()))?;
     print_ranking(&transcript.ranking);
     println!(
         "wrote {} (sha256={}, classification={classification})",
@@ -135,25 +135,6 @@ fn observed_operating_system() -> &'static str {
         "windows" => "Windows",
         other => other,
     }
-}
-
-fn write_new(path: &Path, bytes: &[u8]) -> Result<()> {
-    if let Some(parent) = path
-        .parent()
-        .filter(|parent| !parent.as_os_str().is_empty())
-    {
-        fs::create_dir_all(parent)
-            .with_context(|| format!("failed to create {}", parent.display()))?;
-    }
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-        .with_context(|| format!("refusing to overwrite transcript {}", path.display()))?;
-    file.write_all(bytes)
-        .with_context(|| format!("failed to write {}", path.display()))?;
-    file.sync_all()
-        .with_context(|| format!("failed to sync {}", path.display()))
 }
 
 fn print_progress(progress: SweepProgress) {

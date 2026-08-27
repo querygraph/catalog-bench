@@ -1,5 +1,4 @@
-use std::fs::{self, OpenOptions};
-use std::io::Write as _;
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -9,7 +8,7 @@ use catalog_bench_common::contract::{
 };
 use catalog_bench_conformance::{
     encode_evidence, run_commit_probe, run_config_probe, run_namespace_probe, run_table_probe,
-    sha256_hex, ContractDigests, ProbeClassification,
+    sha256_hex, write_new_evidence, ContractDigests, ProbeClassification,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -148,7 +147,7 @@ async fn run_config(args: ConfigArgs) -> Result<bool> {
     let passed = transcript.passed();
     let classification = classification_name(&transcript.classification);
     let evidence = encode_evidence(&transcript)?;
-    write_new(&args.output, &evidence)?;
+    publish(&args.output, &evidence)?;
     println!(
         "wrote {} (sha256={}, classification={classification})",
         args.output.display(),
@@ -171,7 +170,7 @@ async fn run_namespace(args: NamespaceArgs) -> Result<bool> {
     let passed = transcript.passed();
     let classification = classification_name(&transcript.classification);
     let evidence = encode_evidence(&transcript)?;
-    write_new(&args.output, &evidence)?;
+    publish(&args.output, &evidence)?;
     println!(
         "wrote {} (sha256={}, classification={classification})",
         args.output.display(),
@@ -194,7 +193,7 @@ async fn run_table(args: TableArgs) -> Result<bool> {
     let passed = transcript.passed();
     let classification = classification_name(&transcript.classification);
     let evidence = encode_evidence(&transcript)?;
-    write_new(&args.output, &evidence)?;
+    publish(&args.output, &evidence)?;
     println!(
         "wrote {} (sha256={}, classification={classification})",
         args.output.display(),
@@ -217,7 +216,7 @@ async fn run_commit(args: CommitArgs) -> Result<bool> {
     let passed = transcript.passed();
     let classification = classification_name(&transcript.classification);
     let evidence = encode_evidence(&transcript)?;
-    write_new(&args.output, &evidence)?;
+    publish(&args.output, &evidence)?;
     println!(
         "wrote {} (sha256={}, classification={classification})",
         args.output.display(),
@@ -263,23 +262,8 @@ fn read_contract(path: &Path) -> Result<Vec<u8>> {
     fs::read(path).with_context(|| format!("failed to read {}", path.display()))
 }
 
-fn write_new(path: &Path, bytes: &[u8]) -> Result<()> {
-    if let Some(parent) = path
-        .parent()
-        .filter(|parent| !parent.as_os_str().is_empty())
-    {
-        fs::create_dir_all(parent)
-            .with_context(|| format!("failed to create {}", parent.display()))?;
-    }
-    let mut file = OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(path)
-        .with_context(|| format!("refusing to overwrite evidence file {}", path.display()))?;
-    file.write_all(bytes)
-        .with_context(|| format!("failed to write {}", path.display()))?;
-    file.sync_all()
-        .with_context(|| format!("failed to sync {}", path.display()))
+fn publish(path: &Path, bytes: &[u8]) -> Result<()> {
+    write_new_evidence(path, bytes).with_context(|| format!("failed to publish {}", path.display()))
 }
 
 fn classification_name(classification: &ProbeClassification) -> &'static str {

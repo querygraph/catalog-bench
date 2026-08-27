@@ -7,6 +7,7 @@
 mod commit;
 mod config;
 mod evidence;
+mod evidence_file;
 mod iceberg;
 mod idempotency;
 mod namespace;
@@ -27,6 +28,7 @@ use sha2::{Digest as _, Sha256};
 pub use commit::*;
 pub use config::*;
 pub use evidence::*;
+pub use evidence_file::*;
 pub use namespace::*;
 pub use runtime::*;
 pub use spec::*;
