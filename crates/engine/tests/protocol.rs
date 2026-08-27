@@ -134,6 +134,42 @@ fn malformed_data_after_trusted_absence_cannot_revoke_cleanup_ownership() {
     assert!(!capture.completed());
 }
 
+#[test]
+fn property_values_outside_the_closed_observation_adt_are_not_retained() {
+    let private = "catalog-controlled-private-value";
+    let mut decoder = EngineEventDecoder::new();
+    decoder.push(&encoded_events(&successful_events()[..4]));
+    let event = json!({
+        "event": "table-ready",
+        "table": {
+            "table_uuid": "00000000-0000-0000-0000-000000000001",
+            "metadata_location": "s3://warehouse/table/metadata/v1.metadata.json",
+            "location": "s3://warehouse/table",
+            "format_version": 2,
+            "last_column_id": 3,
+            "schema": [],
+            "snapshots": 0,
+            "properties": {"catalog-bench.owner": private}
+        }
+    });
+    decoder.push(
+        format!(
+            "{}{}\n",
+            std::str::from_utf8(ENGINE_EVENT_PREFIX).unwrap(),
+            event
+        )
+        .as_bytes(),
+    );
+    let capture = decoder.finish();
+
+    assert_eq!(
+        capture.failure.as_ref().unwrap().kind,
+        EngineProtocolFailureKind::MalformedEvent
+    );
+    assert!(capture.cleanup_authorized());
+    assert!(!serde_json::to_string(&capture).unwrap().contains(private));
+}
+
 fn encoded_events(events: &[EngineEvent]) -> Vec<u8> {
     let mut bytes = Vec::new();
     for event in events {

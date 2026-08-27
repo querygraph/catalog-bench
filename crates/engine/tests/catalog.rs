@@ -5,8 +5,8 @@ use catalog_bench_conformance::{
     connect_catalog_adapter, CatalogConnectionOutcome, CATALOG_RESPONSE_LIMIT_BYTES,
 };
 use catalog_bench_engine::{
-    EngineCatalog, EngineCatalogFailureKind, EngineTableLoad, InteroperabilityPlan,
-    RestEngineCatalog, ENGINE_PROPERTY_MISMATCH,
+    EngineCatalog, EngineCatalogFailureKind, EnginePropertyObservation, EngineTableLoad,
+    InteroperabilityPlan, RestEngineCatalog,
 };
 use serde_json::json;
 
@@ -52,9 +52,19 @@ async fn stock_rest_load_projects_full_state_and_cleanup_never_purges() {
     assert_eq!(state.table.schema[3].name, "note");
     assert_eq!(state.table.snapshots, 2);
     assert_eq!(
-        state.table.properties,
-        plan.spark().scenario.table.properties
+        state.table.properties.keys().collect::<Vec<_>>(),
+        plan.spark()
+            .scenario
+            .table
+            .properties
+            .keys()
+            .collect::<Vec<_>>()
     );
+    assert!(state
+        .table
+        .properties
+        .values()
+        .all(|outcome| *outcome == EnginePropertyObservation::Match));
     assert!(!serde_json::to_string(&load).unwrap().contains(private));
 
     let table_cleanup = catalog.drop_table_without_purge().await.unwrap();
@@ -91,7 +101,7 @@ async fn projection_replaces_wrong_owned_properties_and_discards_unknown_values(
 
     let load = catalog.load_table().await.unwrap();
     let owner = &load.state().unwrap().table.properties["catalog-bench.owner"];
-    assert_eq!(owner, ENGINE_PROPERTY_MISMATCH);
+    assert_eq!(*owner, EnginePropertyObservation::Mismatch);
     assert!(!serde_json::to_string(&load).unwrap().contains(private));
     assert_eq!(server.finish().len(), 2);
 }

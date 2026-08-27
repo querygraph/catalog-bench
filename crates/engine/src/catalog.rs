@@ -15,11 +15,9 @@ use url::Url;
 use uuid::Uuid;
 
 use crate::{
-    EngineFieldObservation, EngineTableObservation, IcebergPrimitiveType, InteroperabilityPlan,
-    ObjectStorePlan,
+    EngineFieldObservation, EnginePropertyObservation, EngineTableObservation,
+    IcebergPrimitiveType, InteroperabilityPlan, ObjectStorePlan,
 };
-
-pub const ENGINE_PROPERTY_MISMATCH: &str = "<mismatch>";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -419,12 +417,12 @@ impl TableProjection {
             .iter()
             .filter_map(|(key, expected)| {
                 metadata.properties.get(key).map(|observed| {
-                    let value = if observed == expected {
-                        expected.clone()
+                    let outcome = if observed == expected {
+                        EnginePropertyObservation::Match
                     } else {
-                        ENGINE_PROPERTY_MISMATCH.to_owned()
+                        EnginePropertyObservation::Mismatch
                     };
-                    (key.clone(), value)
+                    (key.clone(), outcome)
                 })
             })
             .collect();

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-04 bounded engine observations: give the stock Spark renderer the exact
+  profile bucket, validate every emitted table UUID, S3 table root, metadata
+  pointer, field, count, digest, and runtime label before stdout, and represent
+  scenario-property agreement with a closed `match`/`mismatch` ADT instead of
+  copying catalog-controlled property values. Unknown properties remain absent
+  from both engine and independent REST evidence.
+
 - C2-04 shared transcript value audit: extract the contention evidence's
   recursive serialized-value scanner into the common crate so engine and
   contention transcripts share one rule for detecting sensitive runtime values

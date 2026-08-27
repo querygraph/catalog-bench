@@ -278,6 +278,7 @@ pub struct SparkCatalogPlan {
 pub struct SparkFileIoPlan {
     pub implementation: String,
     pub endpoint: String,
+    pub bucket: String,
     pub region: String,
     pub path_style_access: bool,
 }
@@ -441,6 +442,7 @@ impl InteroperabilityPlan {
             file_io: SparkFileIoPlan {
                 implementation: "org.apache.iceberg.aws.s3.S3FileIO".to_owned(),
                 endpoint: object_store.endpoint.clone(),
+                bucket: object_store.bucket.clone(),
                 region: object_store.region.clone(),
                 path_style_access: object_store.path_style_access,
             },

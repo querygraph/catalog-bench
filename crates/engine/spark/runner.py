@@ -15,8 +15,10 @@ import hashlib
 import json
 import os
 import sys
+import uuid
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
+from urllib.parse import SplitResult, urlsplit
 
 
 PLAN_FORMAT = "catalog-bench/spark-engine-plan/v1"
@@ -25,6 +27,7 @@ EVENT_PREFIX = "CATALOG_BENCH_EVENT "
 MAXIMUM_PLAN_BYTES = 256 * 1024
 MAXIMUM_GENERATED_ROWS = 100_000
 MAXIMUM_SPARK_LONG = (1 << 63) - 1
+MAXIMUM_OBSERVATION_TEXT_BYTES = 2048
 COLLISION_EXIT = 3
 FAILURE_EXIT = 2
 OAUTH_CLIENT_ID_ENV = "CATALOG_BENCH_ENGINE_CLIENT_ID"
@@ -71,6 +74,36 @@ def require_unsigned(value: Any, label: str) -> int:
     if not isinstance(value, int) or isinstance(value, bool) or value < 0:
         raise PlanViolation(f"{label} must be an unsigned integer")
     return value
+
+
+def require_bounded_text(value: Any, label: str) -> str:
+    text = require_text(value, label)
+    if len(text.encode("utf-8")) > MAXIMUM_OBSERVATION_TEXT_BYTES:
+        raise PlanViolation(f"{label} exceeds the observation byte limit")
+    if any(not character.isprintable() for character in text):
+        raise PlanViolation(f"{label} contains a control character")
+    return text
+
+
+def require_s3_location(value: Any, label: str, bucket: str) -> SplitResult:
+    location = require_bounded_text(value, label)
+    try:
+        parsed = urlsplit(location)
+    except ValueError as error:
+        raise PlanViolation(f"{label} is not a valid URI") from error
+    if (
+        parsed.scheme != "s3"
+        or parsed.netloc != bucket
+        or not parsed.path
+        or parsed.path == "/"
+        or parsed.query
+        or parsed.fragment
+        or "\\" in parsed.path
+    ):
+        raise PlanViolation(
+            f"{label} must be a credential-free URI in the profile bucket"
+        )
+    return parsed
 
 
 def load_plan(path: Path) -> dict[str, Any]:
@@ -137,10 +170,10 @@ def validate_plan(plan: Mapping[str, Any]) -> None:
     file_io = require_object(plan["file_io"], "file_io")
     require_keys(
         file_io,
-        {"implementation", "endpoint", "region", "path_style_access"},
+        {"implementation", "endpoint", "bucket", "region", "path_style_access"},
         "file_io",
     )
-    for key in ("implementation", "endpoint", "region"):
+    for key in ("implementation", "endpoint", "bucket", "region"):
         require_text(file_io[key], f"file_io.{key}")
     if file_io["implementation"] != S3_FILE_IO:
         raise PlanViolation("unsupported Iceberg file IO")
@@ -472,6 +505,40 @@ def create_table_sql(plan: Mapping[str, Any]) -> str:
     )
 
 
+def validation_observation(
+    plan: Mapping[str, Any], property_mismatch: bool = False
+) -> dict[str, Any]:
+    location = plan["fixture"].get(
+        "requested_location", f"s3://{plan['file_io']['bucket']}/validation/table"
+    )
+    fields = [
+        {
+            "id": field["id"],
+            "name": field["name"],
+            "required": field["required"],
+            "field_type": field["type"],
+        }
+        for field in plan["scenario"]["table"]["schema"]["fields"]
+    ]
+    properties = dict(plan["scenario"]["table"]["properties"])
+    if property_mismatch:
+        first_property = next(iter(properties))
+        properties[first_property] = "validation-only-mismatch"
+    return sanitize_table_observation(
+        {
+            "table_uuid": "00000000-0000-0000-0000-000000000001",
+            "metadata_location": f"{location.rstrip('/')}/metadata/v1.metadata.json",
+            "location": location,
+            "format_version": 2,
+            "last_column_id": max(field["id"] for field in fields),
+            "schema": fields,
+            "snapshots": 0,
+            "properties": properties,
+        },
+        plan,
+    )
+
+
 def validate_oracles(plan: Mapping[str, Any]) -> dict[str, Any]:
     reads = plan["scenario"]["canonical_reads"]
     initial = canonical_identity(generated_rows(plan, include_evolved=False))
@@ -492,6 +559,8 @@ def validate_oracles(plan: Mapping[str, Any]) -> dict[str, Any]:
         "create_sql_sha256": hashlib.sha256(
             create_table_sql(plan).encode("utf-8")
         ).hexdigest(),
+        "observation": validation_observation(plan),
+        "property_mismatch": validation_observation(plan, True)["properties"],
     }
 
 
@@ -558,14 +627,150 @@ def build_spark(plan: Mapping[str, Any]) -> Any:
     return spark
 
 
+def sanitize_runtime_observation(observation: Any) -> dict[str, str]:
+    runtime = require_object(observation, "runtime observation")
+    require_keys(
+        runtime,
+        {
+            "spark_version",
+            "scala_version",
+            "java_version",
+            "operating_system",
+            "architecture",
+        },
+        "runtime observation",
+    )
+    return {
+        key: require_bounded_text(runtime[key], f"runtime.{key}")
+        for key in runtime
+    }
+
+
 def runtime_observation(spark: Any) -> dict[str, str]:
     java = spark._jvm.java.lang.System
+    return sanitize_runtime_observation(
+        {
+            "spark_version": spark.version,
+            "scala_version": spark._jvm.scala.util.Properties.versionNumberString(),
+            "java_version": java.getProperty("java.version"),
+            "operating_system": java.getProperty("os.name"),
+            "architecture": java.getProperty("os.arch"),
+        }
+    )
+
+
+def sanitize_table_observation(
+    observation: Any, plan: Mapping[str, Any]
+) -> dict[str, Any]:
+    table = require_object(observation, "table observation")
+    require_keys(
+        table,
+        {
+            "table_uuid",
+            "metadata_location",
+            "location",
+            "format_version",
+            "last_column_id",
+            "schema",
+            "snapshots",
+            "properties",
+        },
+        "table observation",
+    )
+    try:
+        table_uuid = uuid.UUID(require_bounded_text(table["table_uuid"], "table UUID"))
+    except (ValueError, AttributeError) as error:
+        raise PlanViolation("table UUID is invalid") from error
+    if table_uuid.int == 0:
+        raise PlanViolation("table UUID must not be nil")
+
+    bucket = plan["file_io"]["bucket"]
+    location = require_bounded_text(table["location"], "table location")
+    metadata_location = require_bounded_text(
+        table["metadata_location"], "metadata location"
+    )
+    table_uri = require_s3_location(location, "table location", bucket)
+    metadata_uri = require_s3_location(
+        metadata_location, "metadata location", bucket
+    )
+    table_path = table_uri.path.rstrip("/")
+    if (
+        not metadata_uri.path.startswith(f"{table_path}/")
+        or not metadata_uri.path.endswith(".metadata.json")
+    ):
+        raise PlanViolation("metadata location is outside the table root")
+    requested_location = plan["fixture"].get("requested_location")
+    if requested_location is not None and location != requested_location:
+        raise PlanViolation("table location differs from the requested location")
+
+    format_version = require_unsigned(table["format_version"], "format version")
+    last_column_id = require_unsigned(table["last_column_id"], "last column ID")
+    snapshots = require_unsigned(table["snapshots"], "snapshot count")
+    if format_version != 2 or last_column_id == 0:
+        raise PlanViolation("table observation is not a valid format-v2 table")
+
+    expected_fields = {
+        field["name"]: field for field in plan["scenario"]["table"]["schema"]["fields"]
+    }
+    evolved = dict(plan["scenario"]["schema_evolution"]["field"])
+    evolved["id"] = max(field["id"] for field in expected_fields.values()) + 1
+    expected_fields[evolved["name"]] = evolved
+    fields = table["schema"]
+    if not isinstance(fields, list) or not fields:
+        raise PlanViolation("observed schema must be a nonempty array")
+    field_ids: set[int] = set()
+    field_names: set[str] = set()
+    sanitized_fields = []
+    for raw_field in fields:
+        field = require_object(raw_field, "observed field")
+        require_keys(
+            field,
+            {"id", "name", "required", "field_type"},
+            "observed field",
+        )
+        field_id = require_unsigned(field["id"], "observed field ID")
+        name = require_identifier(field["name"], "observed field name")
+        expected = expected_fields.get(name)
+        if (
+            field_id == 0
+            or field_id in field_ids
+            or name in field_names
+            or expected is None
+            or field_id != expected["id"]
+            or field["required"] is not expected["required"]
+            or field["field_type"] != expected["type"]
+        ):
+            raise PlanViolation("observed field differs from the scenario vocabulary")
+        field_ids.add(field_id)
+        field_names.add(name)
+        sanitized_fields.append(
+            {
+                "id": field_id,
+                "name": name,
+                "required": expected["required"],
+                "field_type": expected["type"],
+            }
+        )
+    if max(field_ids) != last_column_id:
+        raise PlanViolation("last column ID differs from the observed schema")
+
+    expected_properties = plan["scenario"]["table"]["properties"]
+    properties = require_object(table["properties"], "observed properties")
+    if not set(properties).issubset(expected_properties):
+        raise PlanViolation("observed properties contain an unknown key")
+    property_outcomes = {
+        key: "match" if observed == expected_properties[key] else "mismatch"
+        for key, observed in properties.items()
+    }
     return {
-        "spark_version": spark.version,
-        "scala_version": spark._jvm.scala.util.Properties.versionNumberString(),
-        "java_version": java.getProperty("java.version"),
-        "operating_system": java.getProperty("os.name"),
-        "architecture": java.getProperty("os.arch"),
+        "table_uuid": str(table_uuid),
+        "metadata_location": metadata_location,
+        "location": location,
+        "format_version": format_version,
+        "last_column_id": last_column_id,
+        "schema": sanitized_fields,
+        "snapshots": snapshots,
+        "properties": property_outcomes,
     }
 
 
@@ -596,18 +801,23 @@ def observe_table(spark: Any, plan: Mapping[str, Any]) -> dict[str, Any]:
         for key in plan["scenario"]["table"]["properties"]
         if metadata.properties().get(key) is not None
     }
-    return {
-        "table_uuid": str(metadata.uuid()),
-        "metadata_location": (
-            spark._jvm.org.apache.iceberg.TableUtil.metadataFileLocation(table)
-        ),
-        "location": table.location(),
-        "format_version": spark._jvm.org.apache.iceberg.TableUtil.formatVersion(table),
-        "last_column_id": metadata.lastColumnId(),
-        "schema": fields,
-        "snapshots": spark.table(metadata_table_name(plan, "snapshots")).count(),
-        "properties": properties,
-    }
+    return sanitize_table_observation(
+        {
+            "table_uuid": str(metadata.uuid()),
+            "metadata_location": (
+                spark._jvm.org.apache.iceberg.TableUtil.metadataFileLocation(table)
+            ),
+            "location": table.location(),
+            "format_version": spark._jvm.org.apache.iceberg.TableUtil.formatVersion(
+                table
+            ),
+            "last_column_id": metadata.lastColumnId(),
+            "schema": fields,
+            "snapshots": spark.table(metadata_table_name(plan, "snapshots")).count(),
+            "properties": properties,
+        },
+        plan,
+    )
 
 
 def namespace_names(spark: Any, plan: Mapping[str, Any]) -> list[str]:
@@ -654,9 +864,13 @@ def read_rows(spark: Any, plan: Mapping[str, Any], evolved: bool) -> dict[str, A
         .select(*read["columns"])
         .orderBy(*plan["scenario"]["canonical_reads"]["order_by"])
     )
-    return canonical_identity(
+    identity = canonical_identity(
         [[row[column] for column in read["columns"]] for row in frame.collect()]
     )
+    expected = {key: read[key] for key in ("rows", "bytes", "sha256")}
+    if identity != expected:
+        raise PlanViolation("stock-engine rows differ from the canonical scenario read")
+    return expected
 
 
 def run_spark(plan: Mapping[str, Any]) -> int:

@@ -69,6 +69,13 @@ pub struct EngineFieldObservation {
     pub field_type: IcebergPrimitiveType,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum EnginePropertyObservation {
+    Match,
+    Mismatch,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EngineTableObservation {
@@ -79,7 +86,7 @@ pub struct EngineTableObservation {
     pub last_column_id: i32,
     pub schema: Vec<EngineFieldObservation>,
     pub snapshots: u64,
-    pub properties: BTreeMap<String, String>,
+    pub properties: BTreeMap<String, EnginePropertyObservation>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

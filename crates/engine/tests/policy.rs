@@ -33,6 +33,7 @@ fn derives_one_secret_free_stock_spark_plan_for_each_selected_catalog() {
         );
         assert_eq!(plan.spark().catalog.name, "bench");
         assert_eq!(plan.spark().file_io.endpoint, "http://minio:9000");
+        assert_eq!(plan.spark().file_io.bucket, "warehouse");
         assert_eq!(plan.object_store().bucket, "warehouse");
         assert!(plan.object_store().path_style_access);
         assert_eq!(
