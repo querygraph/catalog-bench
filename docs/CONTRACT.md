@@ -377,3 +377,11 @@ The contention profile materialization sidecar is a strict generator
 input rather than a fifth `catalog-bench/v1` document kind; its source digest,
 closed fields, exact image set, labels, platforms, and executable identities are
 validated before the ordinary runnable profile is rendered and validated.
+The generator core is scenario-policy-driven: each wrapper owns an exhaustive
+component and image set plus required in-image artifact media types, while one
+implementation performs source-byte binding, topology narrowing, local-image
+projection, readiness derivation, and deterministic serialization. It narrows
+catalog adapters with retained catalog components and rejects duplicate or
+unselected image policy entries. The contention wrapper still reproduces the
+accepted C110 profile byte-for-byte; Phase 2 engine profiles reuse the core with
+their own explicit policies rather than copying the validation pipeline.

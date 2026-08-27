@@ -6,6 +6,7 @@ mod contention_bundle;
 mod contention_profile;
 mod legacy_commit;
 mod matrix;
+mod profile_materialization;
 mod publication;
 
 use sha2::{Digest as _, Sha256};
@@ -17,6 +18,10 @@ pub use contention_profile::{
 };
 pub use legacy_commit::{check_historical_commit_bundle, write_historical_commit_bundle};
 pub use matrix::render_commit_matrix;
+pub use profile_materialization::{
+    check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactPolicy,
+    BuildExtensionLabelPolicy, ImagePolicy, ScenarioProfilePolicy,
+};
 
 fn sha256_hex(bytes: &[u8]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";

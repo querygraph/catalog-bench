@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C2-02 reusable profile materialization core: extract source-digest checks,
+  component/service/catalog-adapter narrowing, local-image projection, platform
+  and Compose-label validation, embedded-artifact verification, runnable-state
+  derivation, and deterministic serialization behind a scenario policy. The
+  C110 contention module is now a thin policy wrapper and still regenerates its
+  accepted profile byte-for-byte. Added a second synthetic projection proving
+  that catalog adapters narrow with components, standard host and Docker
+  architecture names reconcile, and duplicate, unselected, empty, or ambiguous
+  policy entries fail closed; embedded-artifact media types are explicit policy
+  data. This core is the DRY boundary for Spark, Flink, Trino, and later scenario
+  profiles.
+
 - C2-01 common stock-engine contract: define one catalog-neutral, no-shim
   Iceberg REST write/read/additive-evolution scenario for Spark, Flink, Trino,
   and later engines. The workflow pins exact format-v2 Parquet semantics,
