@@ -171,8 +171,13 @@ attachments, including containers whose recognized Compose label does not
 belong to the current model, before spending resources on either production
 build. Production images are built under the stable ordinary Compose project,
 not the run-scoped evidence project, because Compose project labels are part of
-the exported image config and therefore its local-image digest. It never passes
-`--volumes`, preserving prior state. The explicit network remains
+the exported image config and therefore its local-image digest. The build also
+disables BuildKit's default provenance wrapper: its attestation identity changes
+on each invocation even when the platform manifest and executable bytes are
+identical. Immutable source revisions, OCI revision labels, platform-image
+digests, embedded executable digests, and the checked-in build recipe carry the
+reproducibility evidence instead. The launcher never passes `--volumes`,
+preserving prior state. The explicit network remains
 `catalog-bench-net`, so production evidence runs are intentionally serialized;
 all measured clients, catalogs, and MinIO continue to share that one network.
 After a run, the project and volumes remain available for diagnosis. A rerun

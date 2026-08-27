@@ -125,7 +125,7 @@ fi
 # Compose writes its project/service labels into exported image configs; using
 # the run-scoped project here would make identical production bytes acquire a
 # different local-image digest on every execution.
-"${base_compose[@]}" build lakecat bench
+"${base_compose[@]}" build --provenance=false lakecat bench
 
 set +e
 "${clean_compose[@]}" run --rm bench \
