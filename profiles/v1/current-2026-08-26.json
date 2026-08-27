@@ -158,6 +158,10 @@
           "MINIO_RELEASE": "RELEASE"
         },
         "extensions": {
+          "querygraph/helper-source": {
+            "repository": "https://github.com/querygraph/catalog-bench.git",
+            "revision": "f2f66ee45574a64d1e76330e95e7aa551c3a148b"
+          },
           "querygraph/toolchain-image": "golang:1.24.8-bookworm@sha256:4ed690d6649d63c312b99a6120025ec79ce3b542968a37da53d6236c7c61a848"
         }
       },

@@ -2,13 +2,17 @@
 # 2025-10-15 release. Build that exact upstream source revision with its pinned
 # Go toolchain instead of silently substituting an older binary.
 ARG GO_IMAGE=golang:1.24.8-bookworm@sha256:4ed690d6649d63c312b99a6120025ec79ce3b542968a37da53d6236c7c61a848
+ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=f2f66ee45574a64d1e76330e95e7aa551c3a148b
 
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS tool-build
 ARG TARGETARCH
+ARG CATALOG_BENCH_HELPER_SOURCE_REVISION
 WORKDIR /src/tools
-COPY docker/minio/tools/go.mod docker/minio/tools/go.sum ./
+RUN printf '%s' "$CATALOG_BENCH_HELPER_SOURCE_REVISION" \
+    | grep -Eq '^[0-9a-f]{40}$'
+COPY --from=catalog-bench-helper-source docker/minio/tools/go.mod docker/minio/tools/go.sum ./
 RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked go mod download
-COPY docker/minio/tools/ ./
+COPY --from=catalog-bench-helper-source docker/minio/tools/ ./
 RUN go test ./...
 RUN CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
     go build -trimpath -ldflags="-s -w" -o /out/ensure-bucket ./cmd/ensure-bucket \
@@ -40,12 +44,14 @@ RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
 FROM scratch
 ARG MINIO_TAG=RELEASE.2025-10-15T17-29-55Z
 ARG MINIO_REVISION=9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
+ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=f2f66ee45574a64d1e76330e95e7aa551c3a148b
 LABEL org.opencontainers.image.title="catalog-bench MinIO" \
       org.opencontainers.image.description="Exact source-built MinIO for catalog interoperability evidence" \
       org.opencontainers.image.source="https://github.com/minio/minio" \
       org.opencontainers.image.version="$MINIO_TAG" \
       org.opencontainers.image.revision="$MINIO_REVISION" \
-      org.opencontainers.image.licenses="AGPL-3.0-only"
+      org.opencontainers.image.licenses="AGPL-3.0-only" \
+      io.querygraph.catalog-bench.helper-source-revision="$CATALOG_BENCH_HELPER_SOURCE_REVISION"
 COPY --from=minio-build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY --from=minio-build /src/minio/LICENSE /licenses/minio/LICENSE
 COPY --from=minio-build /out/minio /usr/local/bin/minio

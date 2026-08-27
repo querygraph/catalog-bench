@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C1-09 MinIO helper provenance: copy bucket, health, setup, and readiness
+  helper sources from the immutable public catalog-bench revision
+  `f2f66ee45574a64d1e76330e95e7aa551c3a148b` instead of the mutable local
+  context. The image now records this helper revision independently from its
+  exact upstream MinIO revision, and deployment tests reject local helper COPYs.
+
 - C1-09 stable production image identity: build the source-built MinIO,
   LakeCat, and benchmark images under the ordinary `catalog-bench` Compose
   project before launching a run-scoped evidence project. Compose project labels

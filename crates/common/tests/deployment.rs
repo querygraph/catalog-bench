@@ -418,6 +418,48 @@ fn lakecat_image_is_public_source_pinned_optimized_and_labeled() {
 }
 
 #[test]
+fn minio_helpers_are_built_from_an_immutable_public_source() {
+    let root = repository_root();
+    let compose =
+        fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
+    let dockerfile =
+        fs::read_to_string(root.join("docker/minio/Dockerfile")).expect("read MinIO Dockerfile");
+    let revision = "f2f66ee45574a64d1e76330e95e7aa551c3a148b";
+
+    for required in [
+        format!("CATALOG_BENCH_HELPER_SOURCE_REVISION: {revision}"),
+        format!(
+            "catalog-bench-helper-source: \"https://github.com/querygraph/catalog-bench.git#{revision}\""
+        ),
+    ] {
+        assert!(
+            compose.lines().any(|line| line.trim() == required),
+            "MinIO build must contain `{required}`"
+        );
+    }
+    for required in [
+        "ARG CATALOG_BENCH_HELPER_SOURCE_REVISION",
+        "grep -Eq '^[0-9a-f]{40}$'",
+        "COPY --from=catalog-bench-helper-source docker/minio/tools/go.mod docker/minio/tools/go.sum ./",
+        "COPY --from=catalog-bench-helper-source docker/minio/tools/ ./",
+        "io.querygraph.catalog-bench.helper-source-revision=\"$CATALOG_BENCH_HELPER_SOURCE_REVISION\"",
+    ] {
+        assert!(
+            dockerfile.contains(required),
+            "MinIO Dockerfile must contain `{required}`"
+        );
+    }
+    assert!(
+        !dockerfile.lines().any(|line| {
+            let line = line.trim();
+            line == "COPY docker/minio/tools/ ./"
+                || line.starts_with("COPY docker/minio/tools/go.mod")
+        }),
+        "MinIO helpers must not come from the mutable local build context"
+    );
+}
+
+#[test]
 fn clean_contention_run_rejects_reused_persistent_state() {
     let root = repository_root();
     let overlay = fs::read_to_string(root.join("docker-compose.clean.yml"))

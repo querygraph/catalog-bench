@@ -198,6 +198,12 @@ BuildKit Cargo caches shorten source-only rebuilds, while the shipped executable
 are copied through an ordinary `/out` layer and remain independent of cache
 lifetime.
 
+The MinIO image has two independent source identities. The server is fetched at
+the exact upstream release revision, while bucket initialization, health,
+Lakekeeper/Polaris setup, and readiness helpers are copied from the exact public
+catalog-bench revision declared as a named Docker build context. The image
+records both revisions; no helper source is copied from the mutable host tree.
+
 This is the production build recipe required for final runs, but C1-09 still
 owns artifact materialization: hash the resulting executables and images, create
 a runnable profile containing those identities, and accept measurements only
