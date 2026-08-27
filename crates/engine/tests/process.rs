@@ -379,7 +379,7 @@ fn timeout_script() -> Vec<u8> {
         &mut script,
         json!({"event": "fixture-preflight", "absent": true}),
     );
-    script.push_str("while :; do :; done\n");
+    script.push_str("sleep 30\n");
     script.into_bytes()
 }
 

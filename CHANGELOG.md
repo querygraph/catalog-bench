@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- C2-04 process timeout test stability: exercise descendant termination with a
+  sleeping child instead of an unbounded busy loop, preserving the production
+  timeout and process-group behavior while avoiding scheduler starvation in
+  concurrent debug-profile test runs.
+
 - C2-04 reusable table-object audit: generalize the contention benchmark's
   returned-table-root validator and MinIO auditor without changing its existing
   metadata-only transcript shape. A separate engine-facing audit now counts
