@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- C1-08 profile-driven sweep and ranking: replace the legacy ad hoc commit
+  binary with a closed four-input CLI that accepts only the checked profile,
+  canonical scenario, run-owned fixture ID, and create-new transcript path.
+  The runner verifies its compile-time source revision and Linux/ARM64 runtime
+  before credentials or network access, executes the balanced 30-round schedule
+  through the shared catalog and MinIO ports, retains negotiation failures and
+  every round outcome, and audits serialized values for credentials and raw
+  request identities. Strict aggregation requires one passing conditioning and
+  five passing measured rounds per catalog; the full ranking uses median
+  concurrent accepted throughput, then sequential p50 latency and catalog ID,
+  while failed catalogs remain visible but unranked. Added separate schedule,
+  aggregation, tie-break, sanitization, runtime-gating, and CLI-surface tests.
+
 - C1-08 contention round executor: run collision-safe setup, baseline MinIO
   audit, exact warmup and sequential phases, and barrier-synchronized timed
   writers through injected catalog and object-store ports. Every request that

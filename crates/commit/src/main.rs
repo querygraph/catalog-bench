@@ -1,472 +1,197 @@
-//! Commit-path benchmark for Iceberg REST catalogs.
-//!
-//! Every supported catalog (LakeCat, Apache Polaris, Apache Gravitino, Unity
-//! Catalog OSS) speaks the Iceberg REST Catalog protocol, so this driver talks
-//! pure REST and is catalog-agnostic: point `--base-url`/`--prefix`/`--token`
-//! at any of them.
-//!
-//! It isolates the *catalog commit transaction* by issuing `set-properties`
-//! commits (no data files): each commit still forces the catalog through
-//! update validation, a new metadata write, the metadata-pointer CAS, and
-//! durable persistence — which is exactly the cost LakeCat's design is about,
-//! and the part TPC-style engine benchmarks never measure.
-
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, OnceLock};
-use std::time::{Duration, Instant};
+use std::fs::{self, OpenOptions};
+use std::io::Write as _;
+use std::path::{Path, PathBuf};
+use std::process::ExitCode;
 
 use anyhow::{bail, Context, Result};
-use catalog_bench_common::{BenchReport, BenchStatus, Phase};
+use catalog_bench_commit::sweep::{run_contention_sweep, RunnerObservation, SweepProgress};
+use catalog_bench_commit::transcript::{RankingDisposition, SweepClassification};
+use catalog_bench_common::contract::{parse_contract, ContractDocument, Profile, Scenario};
+use catalog_bench_conformance::{encode_evidence, sha256_hex, ContractDigests};
 use clap::Parser;
-use serde_json::{json, Value};
 
-#[derive(Parser, Debug, Clone)]
-#[command(about = "Iceberg REST catalog commit benchmark")]
-struct Args {
-    /// Base URL up to and including any catalog-specific path prefix, e.g.
-    /// LakeCat: http://127.0.0.1:3000/catalog  Polaris: http://127.0.0.1:8181/api/catalog
+const BUILD_REVISION: Option<&str> = option_env!("CATALOG_BENCH_SOURCE_REVISION");
+
+#[derive(Debug, Parser)]
+#[command(
+    name = "catalog-bench-commit",
+    about = "Run the profile-driven Iceberg REST same-table contention sweep"
+)]
+struct Cli {
+    /// Validated profile containing every catalog and the shared MinIO service.
     #[arg(long)]
-    base_url: String,
-
-    /// Iceberg REST prefix segment (warehouse/catalog/metalake). May be empty.
-    #[arg(long, default_value = "")]
-    prefix: String,
-
-    #[arg(long, default_value = "commit_bench")]
-    namespace: String,
-
-    #[arg(long, default_value = "commits")]
-    table: String,
-
-    /// Optional bearer token (Authorization: Bearer ...).
+    profile: PathBuf,
+    /// Canonical same-table contention scenario contract.
     #[arg(long)]
-    token: Option<String>,
-
-    /// Create the namespace and table before benchmarking.
+    scenario: PathBuf,
+    /// Run-owned suffix: lowercase ASCII letters, digits, or underscores.
     #[arg(long)]
-    create: bool,
-
-    /// Warmup commits (not measured).
-    #[arg(long, default_value_t = 50)]
-    warmup: u64,
-
-    /// Optional explicit table location for createTable (e.g. s3://warehouse/lakecat).
-    /// Lets a catalog that doesn't derive a warehouse location write metadata to
-    /// the same object store as the others (used for LakeCat -> MinIO).
+    fixture_id: String,
+    /// New sanitized transcript file. Existing files are never overwritten.
     #[arg(long)]
-    location: Option<String>,
-
-    /// Sequential commits to measure for the latency phase.
-    #[arg(long, default_value_t = 1000)]
-    iterations: u64,
-
-    /// Concurrent writers for the throughput phase.
-    #[arg(long, default_value_t = 8)]
-    concurrency: u64,
-
-    /// Duration of the concurrent throughput phase, seconds.
-    #[arg(long, default_value_t = 10)]
-    duration_secs: u64,
-
-    /// Send a LakeCat-style Idempotency-Key on each commit (ignored by catalogs
-    /// that do not implement it).
-    #[arg(long)]
-    idempotency: bool,
-
-    /// Path suffix appended to the table URL for a commit. The Iceberg REST spec
-    /// uses a bare `POST .../tables/{table}` (default ""), so Polaris, Gravitino,
-    /// and Unity need no suffix. LakeCat mounts commit at `.../tables/{table}/commit`,
-    /// so pass `--commit-suffix /commit` for it.
-    #[arg(long, default_value = "")]
-    commit_suffix: String,
-
-    /// Emit a machine-readable JSON summary instead of text.
-    #[arg(long)]
-    json: bool,
+    output: PathBuf,
 }
 
-struct Catalog {
-    http: reqwest::Client,
-    base_url: String,
-    prefix: String,
-    token: Option<String>,
-    commit_suffix: String,
-    location: Option<String>,
-}
-
-impl Catalog {
-    fn table_path(&self, ns: &str, table: &str) -> String {
-        self.scoped(&format!("namespaces/{ns}/tables/{table}"))
-    }
-    fn tables_path(&self, ns: &str) -> String {
-        self.scoped(&format!("namespaces/{ns}/tables"))
-    }
-    fn namespaces_path(&self) -> String {
-        self.scoped("namespaces")
-    }
-    fn scoped(&self, tail: &str) -> String {
-        let base = self.base_url.trim_end_matches('/');
-        if self.prefix.is_empty() {
-            format!("{base}/v1/{tail}")
-        } else {
-            format!("{base}/v1/{}/{tail}", self.prefix)
-        }
-    }
-    fn req(&self, rb: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
-        match &self.token {
-            Some(t) => rb.bearer_auth(t),
-            None => rb,
-        }
-    }
-
-    async fn create_namespace(&self, ns: &str) -> Result<()> {
-        let resp = self
-            .req(self.http.post(self.namespaces_path()))
-            .json(&json!({ "namespace": [ns], "properties": {} }))
-            .send()
-            .await?;
-        // 200/201 created, 409 already exists are both fine.
-        if resp.status().is_success() || resp.status().as_u16() == 409 {
-            return Ok(());
-        }
-        bail!(
-            "create namespace failed: {} {}",
-            resp.status(),
-            resp.text().await.unwrap_or_default()
-        );
-    }
-
-    async fn create_table(&self, ns: &str, table: &str) -> Result<()> {
-        let mut body = json!({
-            "name": table,
-            "schema": {
-                "type": "struct",
-                "schema-id": 0,
-                "fields": [
-                    {"id": 1, "name": "id", "required": false, "type": "long"}
-                ]
-            },
-            "properties": {"bench.counter": "0"},
-            // Optional in the spec, but Nessie requires it; harmless elsewhere.
-            "stage-create": false
-        });
-        if let Some(loc) = &self.location {
-            body["location"] = json!(loc);
-        }
-        let resp = self
-            .req(self.http.post(self.tables_path(ns)))
-            .json(&body)
-            .send()
-            .await?;
-        if resp.status().is_success() || resp.status().as_u16() == 409 {
-            return Ok(());
-        }
-        bail!(
-            "create table failed: {} {}",
-            resp.status(),
-            resp.text().await.unwrap_or_default()
-        );
-    }
-
-    async fn load_table_uuid(&self, ns: &str, table: &str) -> Result<String> {
-        let resp = self
-            .req(self.http.get(self.table_path(ns, table)))
-            .send()
-            .await
-            .context("loadTable request")?;
-        if !resp.status().is_success() {
-            bail!(
-                "loadTable failed: {} {}",
-                resp.status(),
-                resp.text().await.unwrap_or_default()
-            );
-        }
-        let v: Value = resp.json().await?;
-        v.pointer("/metadata/table-uuid")
-            .and_then(Value::as_str)
-            .map(str::to_string)
-            .context("response missing metadata.table-uuid")
-    }
-
-    /// Issue one set-properties commit. Returns Ok(true) on success, Ok(false)
-    /// on a 409 commit conflict, Err on anything else.
-    async fn commit(
-        &self,
-        ns: &str,
-        table: &str,
-        uuid: &str,
-        counter: u64,
-        idempotency_scope: Option<&str>,
-    ) -> Result<bool> {
-        let body = json!({
-            "requirements": [{"type": "assert-table-uuid", "uuid": uuid}],
-            "updates": [{
-                "action": "set-properties",
-                "updates": {"bench.counter": counter.to_string()}
-            }]
-        });
-        let url = format!("{}{}", self.table_path(ns, table), self.commit_suffix);
-        let mut rb = self.req(self.http.post(url)).json(&body);
-        if let Some(scope) = idempotency_scope {
-            rb = rb.header("Idempotency-Key", format!("bench-{uuid}-{scope}-{counter}"));
-        }
-        let resp = rb.send().await?;
-        let status = resp.status().as_u16();
-        if (200..300).contains(&status) {
-            Ok(true)
-        } else if status == 409 {
-            Ok(false)
-        } else {
-            bail!(
-                "commit failed: {} {}",
-                status,
-                resp.text().await.unwrap_or_default()
-            );
-        }
-    }
-}
-
-fn percentile(sorted_ms: &[f64], p: f64) -> f64 {
-    if sorted_ms.is_empty() {
-        return 0.0;
-    }
-    let idx = ((p / 100.0) * (sorted_ms.len() as f64 - 1.0)).round() as usize;
-    sorted_ms[idx.min(sorted_ms.len() - 1)]
+struct LoadedContracts {
+    profile: Profile,
+    scenario: Scenario,
+    digests: ContractDigests,
 }
 
 #[tokio::main]
-async fn main() -> Result<()> {
-    let args = Args::parse();
-    let cat = Arc::new(Catalog {
-        http: reqwest::Client::builder()
-            .pool_max_idle_per_host(64)
-            .build()?,
-        base_url: args.base_url.clone(),
-        prefix: args.prefix.clone(),
-        token: args.token.clone(),
-        commit_suffix: args.commit_suffix.clone(),
-        location: args.location.clone(),
-    });
-
-    if args.create {
-        cat.create_namespace(&args.namespace).await?;
-        cat.create_table(&args.namespace, &args.table).await?;
-    }
-    let uuid = cat.load_table_uuid(&args.namespace, &args.table).await?;
-
-    // Warmup.
-    for i in 0..args.warmup {
-        let committed = cat
-            .commit(
-                &args.namespace,
-                &args.table,
-                &uuid,
-                1_000_000 + i,
-                args.idempotency.then_some("warmup"),
-            )
-            .await?;
-        if !committed {
-            bail!("warmup commit {i} unexpectedly conflicted");
+async fn main() -> ExitCode {
+    match run(Cli::parse()).await {
+        Ok(true) => ExitCode::SUCCESS,
+        Ok(false) => ExitCode::from(2),
+        Err(error) => {
+            eprintln!("error: {error:#}");
+            ExitCode::FAILURE
         }
     }
+}
 
-    // --- Sequential latency phase ---
-    let mut lat_ms: Vec<f64> = Vec::with_capacity(args.iterations as usize);
-    let seq_start = Instant::now();
-    for i in 0..args.iterations {
-        let t = Instant::now();
-        let committed = cat
-            .commit(
-                &args.namespace,
-                &args.table,
-                &uuid,
-                i,
-                args.idempotency.then_some("sequential"),
-            )
-            .await?;
-        if !committed {
-            bail!("sequential commit {i} unexpectedly conflicted");
+async fn run(cli: Cli) -> Result<bool> {
+    let contracts = load_contracts(&cli.profile, &cli.scenario)?;
+    let observation = compiled_runner_observation()?;
+    let transcript = run_contention_sweep(
+        &contracts.profile,
+        &contracts.scenario,
+        contracts.digests,
+        &cli.fixture_id,
+        &observation,
+        |name| std::env::var(name).ok(),
+        print_progress,
+    )
+    .await?;
+    let passed = transcript.passed();
+    let classification = match transcript.classification {
+        SweepClassification::Pass => "pass",
+        SweepClassification::Fail { .. } => "fail",
+    };
+    let evidence = encode_evidence(&transcript)?;
+    write_new(&cli.output, &evidence)?;
+    print_ranking(&transcript.ranking);
+    println!(
+        "wrote {} (sha256={}, classification={classification})",
+        cli.output.display(),
+        sha256_hex(&evidence)
+    );
+    Ok(passed)
+}
+
+fn load_contracts(profile_path: &Path, scenario_path: &Path) -> Result<LoadedContracts> {
+    let profile_bytes = read_contract(profile_path)?;
+    let scenario_bytes = read_contract(scenario_path)?;
+    let profile = match parse_contract(&profile_bytes)
+        .with_context(|| format!("invalid profile {}", profile_path.display()))?
+    {
+        ContractDocument::Profile(profile) => profile,
+        document => bail!(
+            "{} is a {}, not a profile",
+            profile_path.display(),
+            document.kind()
+        ),
+    };
+    let scenario = match parse_contract(&scenario_bytes)
+        .with_context(|| format!("invalid scenario {}", scenario_path.display()))?
+    {
+        ContractDocument::Scenario(scenario) => scenario,
+        document => bail!(
+            "{} is a {}, not a scenario",
+            scenario_path.display(),
+            document.kind()
+        ),
+    };
+    Ok(LoadedContracts {
+        profile,
+        scenario,
+        digests: ContractDigests {
+            profile_sha256: sha256_hex(&profile_bytes),
+            scenario_sha256: sha256_hex(&scenario_bytes),
+        },
+    })
+}
+
+fn read_contract(path: &Path) -> Result<Vec<u8>> {
+    fs::read(path).with_context(|| format!("failed to read {}", path.display()))
+}
+
+fn compiled_runner_observation() -> Result<RunnerObservation> {
+    let revision = BUILD_REVISION.context(
+        "binary has no compile-time CATALOG_BENCH_SOURCE_REVISION; use the pinned production Docker build",
+    )?;
+    RunnerObservation::new(
+        observed_operating_system(),
+        std::env::consts::ARCH,
+        revision,
+    )
+    .map_err(anyhow::Error::from)
+}
+
+fn observed_operating_system() -> &'static str {
+    match std::env::consts::OS {
+        "linux" => "Linux",
+        "macos" => "macOS",
+        "windows" => "Windows",
+        other => other,
+    }
+}
+
+fn write_new(path: &Path, bytes: &[u8]) -> Result<()> {
+    if let Some(parent) = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+    {
+        fs::create_dir_all(parent)
+            .with_context(|| format!("failed to create {}", parent.display()))?;
+    }
+    let mut file = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(path)
+        .with_context(|| format!("refusing to overwrite transcript {}", path.display()))?;
+    file.write_all(bytes)
+        .with_context(|| format!("failed to write {}", path.display()))?;
+    file.sync_all()
+        .with_context(|| format!("failed to sync {}", path.display()))
+}
+
+fn print_progress(progress: SweepProgress) {
+    match progress {
+        SweepProgress::Starting {
+            repetition,
+            kind,
+            position,
+            catalog,
+        } => {
+            eprintln!("starting repetition {repetition:02} {kind:?} position {position}: {catalog}")
         }
-        lat_ms.push(t.elapsed().as_secs_f64() * 1000.0);
+        SweepProgress::Completed {
+            repetition,
+            kind,
+            position,
+            catalog,
+            passed,
+        } => eprintln!(
+            "completed repetition {repetition:02} {kind:?} position {position}: {catalog} ({})",
+            if passed { "pass" } else { "fail" }
+        ),
     }
-    let seq_elapsed = seq_start.elapsed().as_secs_f64();
-    lat_ms.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    let seq_throughput = args.iterations as f64 / seq_elapsed;
+}
 
-    // --- Concurrent throughput phase ---
-    let ok = Arc::new(AtomicU64::new(0));
-    let conflict = Arc::new(AtomicU64::new(0));
-    let errors = Arc::new(AtomicU64::new(0));
-    let first_error = Arc::new(OnceLock::<String>::new());
-    let deadline = Instant::now() + Duration::from_secs(args.duration_secs);
-    let conc_start = Instant::now();
-    let mut handles = Vec::new();
-    for w in 0..args.concurrency {
-        let (cat, ns, table, uuid) = (
-            cat.clone(),
-            args.namespace.clone(),
-            args.table.clone(),
-            uuid.clone(),
-        );
-        let (ok, conflict, errors, first_error) = (
-            ok.clone(),
-            conflict.clone(),
-            errors.clone(),
-            first_error.clone(),
-        );
-        let idempotency_scope = args.idempotency.then(|| format!("concurrent-{w}"));
-        handles.push(tokio::spawn(async move {
-            let mut n = w * 10_000_000;
-            while Instant::now() < deadline {
-                n += 1;
-                match cat
-                    .commit(&ns, &table, &uuid, n, idempotency_scope.as_deref())
-                    .await
-                {
-                    Ok(true) => {
-                        ok.fetch_add(1, Ordering::Relaxed);
-                    }
-                    Ok(false) => {
-                        conflict.fetch_add(1, Ordering::Relaxed);
-                    }
-                    Err(error) => {
-                        errors.fetch_add(1, Ordering::Relaxed);
-                        first_error.get_or_init(|| error.to_string());
-                    }
-                }
-            }
-        }));
+fn print_ranking(ranking: &catalog_bench_commit::transcript::ContentionRanking) {
+    println!("concurrent accepted-throughput ranking (median, min..max operations/s):");
+    for entry in &ranking.entries {
+        match &entry.disposition {
+            RankingDisposition::Ranked { rank, score } => println!(
+                "  {rank}. {}: {:.3} ({:.3}..{:.3})",
+                entry.catalog.name, score.median, score.minimum, score.maximum
+            ),
+            RankingDisposition::NotRanked { reasons } => println!(
+                "  — {}: not ranked ({})",
+                entry.catalog.name,
+                reasons.join("; ")
+            ),
+        }
     }
-    for h in handles {
-        h.await.context("concurrent writer task")?;
-    }
-    let conc_elapsed = conc_start.elapsed().as_secs_f64();
-    let ok_n = ok.load(Ordering::Relaxed);
-    let conflict_n = conflict.load(Ordering::Relaxed);
-    let errors_n = errors.load(Ordering::Relaxed);
-    let conc_throughput = ok_n as f64 / conc_elapsed;
-    let conflict_rate = if ok_n + conflict_n > 0 {
-        conflict_n as f64 / (ok_n + conflict_n) as f64
-    } else {
-        0.0
-    };
-    let error_rate = if ok_n + conflict_n + errors_n > 0 {
-        errors_n as f64 / (ok_n + conflict_n + errors_n) as f64
-    } else {
-        0.0
-    };
-
-    // Human-readable / legacy-JSON output goes to STDERR so that stdout carries
-    // only the machine-readable `BenchReport` the driver consumes.
-    if args.json {
-        let out = json!({
-            "target": { "base_url": args.base_url, "prefix": args.prefix,
-                        "namespace": args.namespace, "table": args.table,
-                        "idempotency": args.idempotency },
-            "sequential": {
-                "iterations": args.iterations,
-                "elapsed_secs": seq_elapsed,
-                "throughput_commits_per_s": seq_throughput,
-                "latency_ms": {
-                    "p50": percentile(&lat_ms, 50.0),
-                    "p90": percentile(&lat_ms, 90.0),
-                    "p99": percentile(&lat_ms, 99.0),
-                    "max": lat_ms.last().copied().unwrap_or(0.0),
-                }
-            },
-            "concurrent": {
-                "writers": args.concurrency,
-                "duration_secs": conc_elapsed,
-                "ok": ok_n, "conflicts": conflict_n, "errors": errors_n,
-                "throughput_commits_per_s": conc_throughput,
-                "conflict_rate": conflict_rate,
-                "error_rate": error_rate,
-            }
-        });
-        eprintln!("{}", serde_json::to_string_pretty(&out)?);
-    } else {
-        eprintln!(
-            "catalog-bench-commit  ->  {}  (prefix='{}', table={}/{})",
-            args.base_url, args.prefix, args.namespace, args.table
-        );
-        eprintln!("  idempotency header: {}", args.idempotency);
-        eprintln!();
-        eprintln!("Sequential commit latency ({} commits):", args.iterations);
-        eprintln!("  throughput : {:>8.1} commits/s", seq_throughput);
-        eprintln!("  p50        : {:>8.3} ms", percentile(&lat_ms, 50.0));
-        eprintln!("  p90        : {:>8.3} ms", percentile(&lat_ms, 90.0));
-        eprintln!("  p99        : {:>8.3} ms", percentile(&lat_ms, 99.0));
-        eprintln!(
-            "  max        : {:>8.3} ms",
-            lat_ms.last().copied().unwrap_or(0.0)
-        );
-        eprintln!();
-        eprintln!(
-            "Concurrent throughput ({} writers, {:.1}s):",
-            args.concurrency, conc_elapsed
-        );
-        eprintln!("  committed  : {ok_n}");
-        eprintln!(
-            "  conflicts  : {conflict_n}  (rate {:.2}%)",
-            conflict_rate * 100.0
-        );
-        eprintln!("  errors     : {errors_n}");
-        eprintln!("  error rate : {:>8.2}%", error_rate * 100.0);
-        eprintln!("  throughput : {:>8.1} commits/s", conc_throughput);
-    }
-
-    // Machine-readable suite report -> STDOUT (read by the `catalog-bench` driver).
-    let report = BenchReport {
-        name: "commit".to_string(),
-        status: BenchStatus::Ready,
-        phases: vec![
-            Phase {
-                name: "sequential".to_string(),
-                samples: args.iterations,
-                p50_ms: percentile(&lat_ms, 50.0),
-                p95_ms: percentile(&lat_ms, 95.0),
-                throughput_per_s: seq_throughput,
-                extra: Some(json!({
-                    "p90_ms": percentile(&lat_ms, 90.0),
-                    "p99_ms": percentile(&lat_ms, 99.0),
-                    "max_ms": lat_ms.last().copied().unwrap_or(0.0),
-                })),
-            },
-            Phase {
-                name: "concurrent".to_string(),
-                samples: ok_n,
-                // The concurrent phase measures aggregate throughput, not
-                // per-commit latency, so the latency fields are left at 0.
-                p50_ms: 0.0,
-                p95_ms: 0.0,
-                throughput_per_s: conc_throughput,
-                extra: Some(json!({
-                    "writers": args.concurrency,
-                    "duration_secs": conc_elapsed,
-                    "ok": ok_n,
-                    "conflicts": conflict_n,
-                    "errors": errors_n,
-                    "conflict_rate": conflict_rate,
-                    "error_rate": error_rate,
-                })),
-            },
-        ],
-        notes: Some(format!(
-            "set-properties commits against {} (prefix='{}', table={}/{}); idempotency={}",
-            args.base_url, args.prefix, args.namespace, args.table, args.idempotency
-        )),
-    };
-    report.print_stdout();
-
-    // Preserve the strict integrity gate, but only after emitting the complete
-    // report. Callers can retain and publish a disqualified run's throughput
-    // and error rate without accidentally treating the process as successful.
-    if errors_n > 0 {
-        let first = first_error
-            .get()
-            .map(String::as_str)
-            .unwrap_or("unknown error");
-        bail!("concurrent phase had {errors_n} request errors; first error: {first}");
-    }
-    Ok(())
 }

@@ -4,9 +4,12 @@
 //! benchmark policy, schedule, accounting, and sanitization boundaries pure so
 //! they can be exhaustively tested without a running catalog.
 
+pub mod aggregate;
 pub mod model;
 pub mod policy;
 pub mod protocol;
 pub mod stats;
 pub mod store;
+pub mod sweep;
+pub mod transcript;
 pub mod workflow;

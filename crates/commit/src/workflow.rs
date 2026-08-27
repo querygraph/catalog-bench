@@ -373,7 +373,7 @@ impl RoundExecution {
 
     #[must_use]
     pub fn passed(&self) -> bool {
-        self.classification == RoundClassification::Pass
+        self.classification == RoundClassification::Pass && self.checks.all_passed()
     }
 }
 
