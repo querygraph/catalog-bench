@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C1-08 optimized same-Docker deployment: pin the contention runner to source
+  `efcd6f2123cf9c9107d0e06de64ab97cad67f1e4`, inject that identity only at
+  production compile time, and tag the shared Rust image by revision. The
+  read-only Linux ARM64 runner now drops all capabilities, mounts contracts
+  read-only, writes only create-new evidence, receives the fixed MinIO/Polaris
+  fixture credentials, and waits for protocol-level readiness from MinIO and
+  all five catalogs on `catalog-bench-net`. Added a LakeCat readiness gate,
+  deployment regressions, full operator/methodology documentation, and removed
+  commit contention from the host-spawned legacy `BenchReport` driver so it
+  cannot discard the strict sweep transcript.
+
 - C1-08 profile-driven sweep and ranking: replace the legacy ad hoc commit
   binary with a closed four-input CLI that accepts only the checked profile,
   canonical scenario, run-owned fixture ID, and create-new transcript path.

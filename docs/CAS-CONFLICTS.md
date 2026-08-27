@@ -13,6 +13,13 @@ as designed. Turso's lower-level MVCC contention is retried inside LakeCat; if
 it escaped that retry boundary, the benchmark would count it as a request error,
 not as a conflict. LakeCat had a 0% request-error rate in every measured round.
 
+The numeric values below analyze the published 2026-08-08 historical sweep.
+The current v2 runner preserves the same 50/1,000/eight-writer/six-second shape
+but adds a barrier, complete latency evidence, profile-driven routing, five
+catalogs, direct MinIO growth checks, and strict repeated-round aggregation. It
+also deliberately omits optional idempotency headers from every catalog. See
+[Iceberg REST same-table commit contention](COMMIT-CONTENTION.md).
+
 ## What the benchmark measures
 
 The final public sweep is recorded in [RESULTS.md](../RESULTS.md) and the
@@ -24,15 +31,16 @@ The final public sweep is recorded in [RESULTS.md](../RESULTS.md) and the
 4. starts eight tasks that continuously commit to that one table for six
    seconds.
 
-All eight tasks use the same table UUID, but they generate independent updates
-and idempotency scopes. The driver classifies outcomes in
-[`crates/commit/src/main.rs`](../crates/commit/src/main.rs):
+All eight tasks use the same table UUID and generate independent property
+values. The current driver classifies outcomes in the catalog
+[protocol port](../crates/commit/src/protocol.rs) and preserves them in the
+[request ledger](../crates/commit/src/model.rs):
 
 - an accepted commit increments `ok`;
 - HTTP 409 increments `conflict`; and
 - every other failure increments `errors`.
 
-The published conflict rate is:
+The historical published conflict rate is:
 
 ```text
 conflicts / (accepted commits + conflicts)
@@ -41,6 +49,10 @@ conflicts / (accepted commits + conflicts)
 Errors are deliberately excluded from that denominator and reported
 separately. This distinction prevents a backend failure from looking like valid
 optimistic-concurrency behavior.
+
+The v2 transcript instead reports `conflicts / attempts` and `errors / attempts`
+as complementary rates, while retaining all three counts. For LakeCat's
+zero-error rounds the two conflict-rate formulas are identical.
 
 The measured LakeCat medians were:
 

@@ -252,6 +252,107 @@ fn pyiceberg_image_is_profile_pinned_hash_locked_and_hardened() {
     );
 }
 
+#[test]
+fn contention_runner_is_source_pinned_optimized_and_same_docker() {
+    let root = repository_root();
+    let profile: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("profiles/v1/current-2026-08-26.json"))
+            .expect("read current profile"),
+    )
+    .expect("parse current profile");
+    let runner = profile["components"]
+        .as_array()
+        .expect("profile components are an array")
+        .iter()
+        .find(|component| component["id"] == "catalog-bench-commit")
+        .expect("profile contains contention runner");
+    let revision = runner["source"]["revision"]
+        .as_str()
+        .expect("runner source revision is a string");
+    assert_eq!(runner["version"], revision);
+    assert_eq!(revision.len(), 40);
+    assert!(revision
+        .bytes()
+        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)));
+    assert_eq!(profile["platform"]["operating_system"], "Linux");
+    assert_eq!(profile["platform"]["architecture"], "aarch64");
+    assert_eq!(profile["platform"]["network"], "catalog-bench-net");
+
+    let dockerfile =
+        fs::read_to_string(root.join("docker/bench.Dockerfile")).expect("read bench Dockerfile");
+    for required in [
+        "ARG CATALOG_BENCH_SOURCE_REVISION",
+        "ENV CATALOG_BENCH_SOURCE_REVISION=$CATALOG_BENCH_SOURCE_REVISION",
+        "COPY scenarios ./scenarios",
+        "cargo build --locked --release",
+        "CARGO_PROFILE_RELEASE_OPT_LEVEL=3",
+        "CARGO_PROFILE_RELEASE_LTO=fat",
+        "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1",
+        "CARGO_PROFILE_RELEASE_PANIC=abort",
+        "CARGO_PROFILE_RELEASE_STRIP=symbols",
+        "RUSTFLAGS=\"-Dwarnings -Ctarget-cpu=native\"",
+    ] {
+        assert!(
+            dockerfile.contains(required),
+            "contention Dockerfile must contain `{required}`"
+        );
+    }
+
+    let compose =
+        fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
+    assert!(compose.contains(&format!("CATALOG_BENCH_SOURCE_REVISION: {revision}")));
+    assert!(compose.contains(&format!(
+        "x-bench-image: &bench-image catalog-bench-commit:{}",
+        &revision[..12]
+    )));
+    assert!(!compose.contains("catalog-bench-commit:latest"));
+    for required in [
+        "platform: linux/arm64",
+        "networks: [lakehouse-net]",
+        "read_only: true",
+        "cap_drop: [\"ALL\"]",
+        "security_opt: [\"no-new-privileges:true\"]",
+        "name: catalog-bench-net",
+    ] {
+        assert!(
+            compose.lines().any(|line| line.trim() == required),
+            "contention Compose topology must contain `{required}`"
+        );
+    }
+
+    let service = compose_service(&compose, "bench");
+    for required in [
+        "<<: *rust-runner",
+        "entrypoint: [\"/usr/local/bin/catalog-bench-commit\"]",
+        "- ./profiles:/contracts/profiles:ro",
+        "- ./scenarios:/contracts/scenarios:ro",
+        "CATALOG_BENCH_S3_ACCESS_KEY_ID: admin",
+        "CATALOG_BENCH_S3_SECRET_ACCESS_KEY: password",
+        "CATALOG_BENCH_POLARIS_CLIENT_ID: root",
+        "CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret",
+    ] {
+        assert!(
+            service.lines().any(|line| line.trim() == required),
+            "contention service must contain `{required}`"
+        );
+    }
+    for dependency in [
+        "minio-init",
+        "lakecat-ready",
+        "nessie-ready",
+        "polaris-ready",
+        "gravitino-ready",
+        "lakekeeper-ready",
+    ] {
+        assert!(
+            service.contains(&format!(
+                "{dependency}:\n        condition: service_completed_successfully"
+            )),
+            "contention runner must wait for `{dependency}`"
+        );
+    }
+}
+
 fn repository_root() -> &'static Path {
     Path::new(env!("CARGO_MANIFEST_DIR"))
         .parent()

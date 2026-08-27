@@ -2,7 +2,7 @@
 //!
 //! ```text
 //! catalog-bench list                 # show every bench + its status
-//! catalog-bench run commit -- ...    # run one bench (args after `--` pass through)
+//! catalog-bench run cache-scan -- ... # run one legacy BenchReport benchmark
 //! catalog-bench run all              # run every Ready bench, aggregate the reports
 //! catalog-bench run all --include-scaffold
 //! ```
@@ -28,15 +28,11 @@ struct BenchSpec {
     description: &'static str,
 }
 
-/// The suite registry. Order is the display order.
+/// Legacy `BenchReport` registry. The strict commit-contention sweep writes a
+/// versioned multi-catalog transcript from Docker and therefore has its own CLI.
+/// Treating that output as one host-spawned `BenchReport` would discard rounds,
+/// failures, provenance, and the full ranking.
 const BENCHES: &[BenchSpec] = &[
-    BenchSpec {
-        name: "commit",
-        package: "catalog-bench-commit",
-        status: BenchStatus::Ready,
-        description:
-            "Iceberg REST commit-path latency + throughput (LakeCat/Polaris/Gravitino/Nessie).",
-    },
     BenchSpec {
         name: "write-data",
         package: "catalog-bench-write-data",

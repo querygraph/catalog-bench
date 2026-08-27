@@ -186,6 +186,43 @@ owns artifact materialization: hash the resulting executables and images, create
 a runnable profile containing those identities, and accept measurements only
 from that same Docker environment.
 
+## Same-table contention sweep
+
+The strict commit runner is the `bench` service. Its image embeds the exact
+profile-selected source revision at compile time; startup rejects source,
+operating-system, or architecture drift before reading credentials or making a
+request. The container has a read-only root filesystem, no Linux capabilities,
+and read-only contract mounts. Only `/evidence` is writable.
+
+Activate every catalog profile. The `bench` dependency graph waits for shared
+MinIO initialization plus LakeCat, Lakekeeper, Nessie, Polaris, and Gravitino's
+client-facing readiness gates:
+
+```sh
+export COMPOSE_PROFILES=lakekeeper,nessie,polaris,gravitino,bench
+docker compose config --quiet
+docker compose build lakecat bench
+
+fixture_id="c108_$(date -u +%m%d%H%M%S)"
+docker compose run --rm bench \
+  --profile /contracts/profiles/v1/current-2026-08-26.json \
+  --scenario /contracts/scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json \
+  --fixture-id "$fixture_id" \
+  --output "/evidence/$fixture_id.json"
+```
+
+The benchmark process, all catalogs, readiness helpers, and MinIO communicate
+only through `catalog-bench-net`; host-published catalog ports do not participate
+in measured traffic. The default transcript directory is
+`target/commit-evidence`. Set `CATALOG_BENCH_COMMIT_EVIDENCE_DIR` before running
+Compose to choose another host directory.
+
+The output is create-new and value-sanitized. Exit `0` means all 30 scheduled
+catalog rounds passed, `2` means the complete full-ranking transcript was
+written with one or more catalogs unranked, and `1` means no valid transcript
+could be completed. See [Commit contention](docs/COMMIT-CONTENTION.md) for the
+request, accounting, cleanup, aggregation, ranking, and publication contracts.
+
 ## Stock PyIceberg interoperability
 
 C1-07 adds a separate stock-client image built from

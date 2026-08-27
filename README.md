@@ -23,8 +23,11 @@ must be generated from these records rather than maintained independently.
 | `rust-vs-jvm` | **ready** | **Sail/DataFusion (Rust) vs Apache Spark 3.5.3 (JVM)**, same query/files/MinIO: **1.63×** engine edge with no local cache (Rust 446 ms vs Spark-warm 729 ms p50), **57.5×** with the warm Foyer cache. |
 | `read-write` | **ready** | A **proven stock-client Iceberg round-trip**: a raw pyiceberg 0.11.1 `RestCatalog` (no shim) does init → create_table → `table.append` (a real snapshot) → scan back 1000 rows through LakeCat — plus the Foyer read path (read-warm ~150× cold). |
 
-All five run against the shared MinIO harness and emit a JSON `BenchReport`; see
-**[RESULTS.md](RESULTS.md)** for the full measured numbers and methodology.
+Every workload uses the shared MinIO harness. The four data-path binaries emit
+the legacy JSON `BenchReport`; the stricter multi-catalog commit sweep emits a
+versioned, sanitized 30-round contention transcript with its generated full
+ranking. See **[RESULTS.md](RESULTS.md)** for published measurements and
+[Commit contention](docs/COMMIT-CONTENTION.md) for the current runner contract.
 
 **Honest framing on `rust-vs-jvm`:** the 1.63× is the engine edge with no local
 cache; the 57.5× is the warm RAM (Foyer) cache, not engine speed — and a warm
@@ -41,12 +44,14 @@ canonical endpoints + **listTables** + **H9**, and Sail's add-snapshot in
 
 ```sh
 cargo run -p catalog-bench -- list                 # list benchmarks + status
-cargo run -p catalog-bench -- run commit -- ...     # run one (args after -- pass to the bench)
-cargo run -p catalog-bench -- run all               # run all ready benchmarks, aggregate reports
+cargo run -p catalog-bench -- run cache-scan -- ... # run one legacy BenchReport benchmark
+cargo run -p catalog-bench -- run all               # run all four BenchReport benchmarks
 ```
 
-Each benchmark emits a JSON `BenchReport` that the driver aggregates; `run all`
-runs all five.
+The legacy driver aggregates only the four single-process `BenchReport`
+workloads. Commit contention deliberately has its own profile-driven Docker CLI:
+coercing 30 rotated catalog rounds into one host-spawned report would erase
+failures, provenance, and the unranked rows.
 
 Contract maintenance and validation use the companion CLI:
 
@@ -75,6 +80,8 @@ The executable behavioral scenarios now cover
 [`iceberg-rest.table.behavior`](scenarios/v1/iceberg-rest.table.behavior.json),
 and
 [`iceberg-rest.commit.correctness`](scenarios/v1/iceberg-rest.commit.correctness.json),
+the strict performance scenario
+[`iceberg-rest.commit.same-table-contention` v2](scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json),
 plus the no-shim stock-client oracle
 [`client.pyiceberg.interoperability`](scenarios/v1/client.pyiceberg.interoperability.json).
 Their typed runners negotiate anonymous or OAuth2 client-credentials access,
@@ -101,11 +108,9 @@ internals and lock maintenance are documented in
 
 ## The commit benchmark
 
-A catalog-agnostic benchmark for the **commit path** of Iceberg REST catalogs —
-measured across **LakeCat, Apache Nessie, Apache Gravitino, and Apache Polaris**.
-(Unity Catalog OSS is *not yet measurable*: its Iceberg REST endpoint is read-only
-until the commit endpoints in PR #1618 / 0.6.0 ship — see [RESULTS.md](RESULTS.md)
-→ "Not measured".)
+A catalog-agnostic benchmark for the **commit path** of Iceberg REST catalogs,
+scheduled identically across **LakeCat, Apache Polaris, Apache Gravitino,
+Lakekeeper, and Apache Nessie**.
 
 TPC-DS/TPC-H measure query engines; they touch the catalog only incidentally. The
 `commit` benchmark isolates the part those benchmarks ignore: the catalog **commit
@@ -113,10 +118,11 @@ transaction** — update validation, writing the new `metadata.json`, the
 metadata-pointer compare-and-swap, and the catalog's private-state transition. It
 issues `set-properties` commits (no data files), so each request exercises the
 catalog's commit machinery without engine or data-write noise. Every target
-speaks the same Iceberg REST protocol, so one binary benchmarks all of them; only
-the base URL, prefix, and auth differ.
+speaks the same Iceberg REST protocol, so one binary benchmarks all of them. URL,
+prefix, authentication, shared-table location, and catalog identity come only
+from the validated profile; the CLI has no catalog-specific request knobs.
 
-### Latest concurrent ranking (2026-08-08)
+### Published historical concurrent ranking (2026-08-08)
 
 The canonical [generated concurrent matrix](results/v1/2026-08-08/MATRIX.md)
 ranks only `pass` outcomes by median successful throughput with eight writers.
@@ -145,12 +151,16 @@ failure analysis, and all raw runs/object audits are in [RESULTS.md](RESULTS.md)
 
 ## What it measures
 
-1. **Sequential latency** — `--iterations` commits in series; reports throughput
-   and p50/p90/p99/max latency. The clean per-commit cost.
-2. **Concurrent throughput** — `--concurrency` writers committing for
-   `--duration-secs`; reports committed/s, 409 conflict rate, request-error rate,
-   and a nonzero process status when any request fails. The report is emitted
-   before that strict error gate so an error-voided run remains auditable.
+1. **Sequential latency** — 1,000 commits in series; reports accepted throughput
+   and complete p50/p95/p99/min/max latency. The clean per-commit cost.
+2. **Concurrent throughput** — eight barrier-synchronized writers commit in one
+   six-second window; every started request completes and is classified as
+   accepted, HTTP 409 conflict, or explicit error.
+3. **Repeated evidence** — one conditioning round plus five measured rounds per
+   catalog, with rotate-left execution order and median/min/max aggregation.
+4. **Strict ranking** — only catalogs passing every round are ranked, by median
+   concurrent accepted commits/s. Sequential p50 latency and catalog ID are the
+   deterministic tie-breakers; failed catalogs remain visible but unranked.
 
 ## Impartiality: one object store, one unit of work
 
@@ -169,16 +179,17 @@ the **same storage**. The harness is built around that:
   engine. Verify it with MinIO object counts: growth must cover every accepted
   warmup, sequential, and concurrent commit. Some catalogs also leave objects
   from attempts that later lose the pointer race.
-- **Same parameters, same host/network.** Identical warmup, `--iterations`,
-  `--concurrency`, and `--duration-secs`; six rounds with rotated order; all
+- **Same parameters, same Docker network.** The scenario fixes 50 warmups,
+  1,000 sequential commits, eight writers, and six seconds; six rounds rotate
+  catalog order; all
   containers on one Docker network so latency is not confounded by cross-host RTT.
 - **Strict validity.** Every run records all request errors and its first failure.
   A public row must have zero errors and MinIO object growth of at least warmup +
   sequential accepts + concurrent accepts in every measured round.
 - **Same request shape.** All use the standard `POST namespaces` / `POST tables` /
-  bare `POST tables/{t}` commit. LakeCat takes `--location s3://warehouse/lakecat`
-  because it does not derive an S3 warehouse location on its own; the others get
-  their S3 warehouse from their config.
+  bare `POST tables/{t}` commit. LakeCat's optional
+  `createTable.location=s3://warehouse/lakecat` is profile data; other catalogs
+  obtain their shared warehouse from their standard configuration.
 
 ## Docker setup for impartial runs with MinIO
 
@@ -191,11 +202,8 @@ exact provenance, readiness chain, and commands.
 
 ```
                           catalog-bench-net  (Compose-owned network)
-   ┌───────────┐   ┌──────────┐   ┌───────────┐   ┌──────────┐   ┌──────────────┐
-   │  lakecat  │   │  nessie  │   │ gravitino │   │ polaris  │   │ catalog-     │
-   │  :8181    │   │  :19120  │   │  :9001    │   │  :8181   │   │ bench-commit │
-   └─────┬─────┘   └────┬─────┘   └─────┬─────┘   └────┬─────┘   └──────┬───────┘
-         └──────────────┴───── s3://warehouse ─────────┴────────────────┘
+   LakeCat   Nessie   Gravitino   Polaris   Lakekeeper   catalog-bench-commit
+      └────────────── Iceberg REST + s3://warehouse ────────────────┘
                               ┌──────────────┐
                               │ minio :9000  │   admin / password, path-style
                               └──────────────┘
@@ -249,65 +257,39 @@ build context, then the pinned Rust image compiles the locked `turso-local` +
 `sail-local` production service with fat LTO and fatal warnings. The slim runtime
 receives only the resulting executable—never a mutable host-staged ELF.
 
-### 4. Benchmark launcher status
+### 4. Benchmark launcher
 
-`bench-stack.sh` and the manual recipes below reproduce the earlier commit-only
-development workflow. They are retained for historical diagnostics, but they
-still build or execute part of the workload on the host and therefore cannot
-produce new public Phase 1 evidence. C1-09 replaces them with smoke and full
-commands that materialize and hash optimized production artifacts, then run every
-measured process inside the same Docker environment.
+`bench-stack.sh` and host URL recipes reproduce only the historical development
+workflow. Current contention work runs from the optimized `bench` container on
+`catalog-bench-net`; catalog routing, authentication, workload dimensions, and
+MinIO policy are contract data and cannot be overridden at the command line.
 
-## Build the driver alone
+## Run the current contention sweep
 
-```sh
-cargo build --release
-```
-
-## Manual run recipes
-
-All use the same standard endpoints; they differ only in URL prefix, auth, and
-(for LakeCat) the `--location` that pins writes to MinIO. Identical params:
+The runner, all five catalogs, and MinIO execute in one Docker Compose topology.
+The production image uses Rust 1.97.1, locked dependencies, optimization level
+3, fat LTO, one codegen unit, native CPU features, stripped symbols, and aborting
+panics. It embeds the profile-pinned source revision at compile time and refuses
+to touch credentials or the network if runtime or source identity drifts.
 
 ```sh
-P="--namespace bench --table commits --create --iterations 1000 --concurrency 8 --duration-secs 6"
+export COMPOSE_PROFILES=lakekeeper,nessie,polaris,gravitino,bench
+docker compose build lakecat bench
+fixture_id="c108_$(date -u +%m%d%H%M%S)"
+docker compose run --rm bench \
+  --profile /contracts/profiles/v1/current-2026-08-26.json \
+  --scenario /contracts/scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json \
+  --fixture-id "$fixture_id" \
+  --output "/evidence/$fixture_id.json"
 ```
 
-### LakeCat
-```sh
-catalog-bench-commit --base-url http://127.0.0.1:8181/catalog \
-  --location s3://warehouse/lakecat --idempotency $P
-```
-
-### Apache Nessie
-```sh
-catalog-bench-commit --base-url http://127.0.0.1:19120/iceberg --prefix main $P
-```
-
-### Apache Gravitino
-```sh
-catalog-bench-commit --base-url http://127.0.0.1:9002/iceberg $P
-```
-
-### Apache Polaris
-OAuth2: `polaris-bootstrap.sh` fetches a token and creates an S3 catalog on the
-shared MinIO `warehouse` bucket; the prefix is the catalog name.
-```sh
-TOKEN=$(./polaris-bootstrap.sh)
-catalog-bench-commit --base-url http://127.0.0.1:8185/api/catalog \
-  --prefix bench --token "$TOKEN" $P
-```
-
-### Unity Catalog (OSS) — not yet supported on the commit path
-Released Unity OSS (0.5.0) serves its Iceberg REST endpoint **read-only**, so the
-commit benchmark has nothing to exercise. The commit handler lands only in unmerged
-draft PR [#1618](https://github.com/unitycatalog/unitycatalog/pull/1618) (unreleased
-0.6.0). Against a **write-capable build** of that branch the recipe would be a bearer
-token on the bare commit path:
-```sh
-catalog-bench-commit --base-url http://127.0.0.1:8080/api/2.1/unity-catalog/iceberg \
-  --prefix unity --token "$UC_TOKEN" $P
-```
+The output is create-new: rerunning with the same path is rejected. Exit `0`
+means every catalog passed every round, `2` means the complete transcript was
+written but at least one catalog is unranked, and `1` means invocation,
+provenance, or evidence persistence failed. The current profile remains a draft,
+so this is smoke evidence until the final executable/image hashes are captured
+in a runnable profile and manifest. See
+[Commit contention](docs/COMMIT-CONTENTION.md) and [DOCKER.md](DOCKER.md).
 
 ## Bootstrap caveats (the externals are not turnkey)
 
@@ -350,20 +332,20 @@ catalog-bench-commit --base-url http://127.0.0.1:8080/api/2.1/unity-catalog/iceb
   conflicts, and void its row's rank. See
   [Understanding LakeCat's CAS Conflict Rate](docs/CAS-CONFLICTS.md) for the
   LakeCat/Turso boundary and recommended isolation benchmarks.
-- Put the catalog and the driver on the same host/network for the latency phase;
-  cross-AZ RTT will dominate otherwise.
-- `--idempotency` only affects catalogs that implement an idempotency key
-  (LakeCat); others ignore the header.
+- Every catalog and the driver run on `catalog-bench-net`; host or cross-AZ RTT
+  is outside this comparison.
+- Optional idempotency headers are omitted for every catalog, so implementation-
+  specific replay behavior cannot alter the common measured request.
 
-## Key flags
+## Commit runner inputs
 
-| Flag | Meaning |
+| Input | Meaning |
 |---|---|
-| `--base-url` | Up to and including any catalog-specific prefix path |
-| `--prefix` | Iceberg REST prefix segment (warehouse/catalog/metalake); may be empty |
-| `--location` | Explicit `createTable` location, e.g. `s3://warehouse/lakecat` (points writes at the shared MinIO) |
-| `--create` | Create the namespace + table before benchmarking |
-| `--idempotency` | Send a LakeCat-style `Idempotency-Key` per commit |
-| `--token` | Bearer token (`Authorization: Bearer ...`) |
-| `--iterations` / `--concurrency` / `--duration-secs` | Sequential count / concurrent writers / concurrent duration |
-| `--json` | Machine-readable summary; emitted before a nonzero request-error exit |
+| `--profile` | Validated catalog, routing, runtime, and shared-MinIO profile |
+| `--scenario` | Canonical v2 same-table contention contract |
+| `--fixture-id` | Run-owned lowercase suffix used to derive isolated catalog identifiers |
+| `--output` | New transcript path; existing files are never overwritten |
+
+Base URLs, route prefixes, OAuth bindings, table locations, workload dimensions,
+request shape, and ranking policy are validated contract data rather than CLI
+options.

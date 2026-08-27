@@ -54,10 +54,10 @@
       "id": "catalog-bench-commit",
       "kind": "benchmark-harness",
       "name": "catalog-bench commit driver",
-      "version": "1f4e640566906ded6aa0589d52351eb1c32788f0",
+      "version": "efcd6f2123cf9c9107d0e06de64ab97cad67f1e4",
       "source": {
         "repository": "https://github.com/querygraph/catalog-bench.git",
-        "revision": "1f4e640566906ded6aa0589d52351eb1c32788f0"
+        "revision": "efcd6f2123cf9c9107d0e06de64ab97cad67f1e4"
       },
       "build": {
         "toolchain": "Rust 1.97.1",

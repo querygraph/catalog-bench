@@ -102,6 +102,13 @@ exact engine-specific JAR hashes. The materialization process must:
    their digest scopes;
 5. emit a new `runnable` profile and hash its exact bytes before any measured run.
 
+The C1-08 contention runner source is pinned to
+`efcd6f2123cf9c9107d0e06de64ab97cad67f1e4`. The production Docker recipe embeds
+that revision at compile time and the CLI checks it, Linux, and ARM64 before
+credential access or network I/O. This closes source-selection drift for smoke
+runs; it does not resolve the draft artifact. C1-09 must still record and verify
+the exact optimized executable and image digests in a runnable profile.
+
 The candidate also carries the Phase 1 adapter contract: 36 capability
 definitions and exhaustive bindings for LakeCat, Polaris, Gravitino, Lakekeeper,
 and Nessie. Every binding is protocol-native and cross-checked against its service

@@ -3,8 +3,13 @@
 # Self-contained, production-optimized benchmark and conformance executables.
 FROM rust:1.97.1-bookworm@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 AS build
 WORKDIR /src
+ARG CATALOG_BENCH_SOURCE_REVISION
+RUN printf '%s' "$CATALOG_BENCH_SOURCE_REVISION" \
+    | grep -Eq '^[0-9a-f]{40}$'
+ENV CATALOG_BENCH_SOURCE_REVISION=$CATALOG_BENCH_SOURCE_REVISION
 COPY Cargo.toml Cargo.lock ./
 COPY crates ./crates
+COPY scenarios ./scenarios
 ENV CARGO_INCREMENTAL=0 \
     CARGO_PROFILE_RELEASE_OPT_LEVEL=3 \
     CARGO_PROFILE_RELEASE_LTO=fat \
@@ -24,6 +29,8 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     && install -Dm755 target/release/catalog-bench-conformance /out/catalog-bench-conformance
 
 FROM debian:bookworm-slim@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171
+ARG CATALOG_BENCH_SOURCE_REVISION
+LABEL org.opencontainers.image.revision=$CATALOG_BENCH_SOURCE_REVISION
 RUN apt-get update \
     && apt-get install -y --no-install-recommends ca-certificates \
     && rm -rf /var/lib/apt/lists/*
