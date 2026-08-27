@@ -18,6 +18,7 @@ const CANDIDATE_PROFILE: &[u8] = include_bytes!("../../../profiles/v1/current-20
 const SCENARIO: &[u8] =
     include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 const RENDERER: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/flink.rs");
+const CHILD_ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/flink-runner");
 
 #[test]
 fn renders_the_complete_stock_flink_program_for_every_catalog() {
@@ -229,6 +230,46 @@ fn renderer_contains_no_catalog_branch_or_transport_substitute() {
     assert!(source.contains("ALTER TABLE {qualified_table} ADD"));
     assert!(source.contains("catalog-type"));
     assert!(source.contains("iceberg"));
+}
+
+#[test]
+fn child_decoder_is_java17_pinned_bounded_and_transport_free() {
+    let pom = fs::read_to_string(format!("{CHILD_ROOT}/pom.xml")).unwrap();
+    for pin in [
+        "<maven.compiler.release>17</maven.compiler.release>",
+        "<jackson.version>2.18.2</jackson.version>",
+        "<junit.version>5.11.4</junit.version>",
+        "<project.build.outputTimestamp>2026-08-27T00:00:00Z</project.build.outputTimestamp>",
+        "<minimizeJar>true</minimizeJar>",
+    ] {
+        assert!(pom.contains(pin), "child POM lost `{pin}`");
+    }
+    let model = fs::read_to_string(format!(
+        "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/Program.java"
+    ))
+    .unwrap();
+    let codec = fs::read_to_string(format!(
+        "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/ProgramCodec.java"
+    ))
+    .unwrap();
+    for required in [
+        "STRICT_DUPLICATE_DETECTION",
+        "FAIL_ON_UNKNOWN_PROPERTIES",
+        "FAIL_ON_TRAILING_TOKENS",
+        "MAX_PROGRAM_BYTES = 256 * 1024",
+        "LinkOption.NOFOLLOW_LINKS",
+        "OPERATION_ORDER",
+    ] {
+        assert!(codec.contains(required), "child decoder lost `{required}`");
+    }
+    for source in [&model, &codec] {
+        for catalog in ["lakecat", "polaris", "gravitino", "lakekeeper", "nessie"] {
+            assert!(!source.to_ascii_lowercase().contains(catalog));
+        }
+        for transport in ["java.net.http", "okhttp", "apache.http", "HttpClient"] {
+            assert!(!source.contains(transport));
+        }
+    }
 }
 
 fn contracts() -> (Profile, Scenario) {

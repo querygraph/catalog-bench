@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- C2-06 strict Flink child decoder: add a Java 17 Maven module for the
+  source-bound child artifact with sealed authentication and operation models,
+  a bounded regular-file decoder, duplicate-key/unknown-field/trailing-token
+  rejection, constrained JSON depth/text/numbers, exact eight-operation order,
+  additive-only SQL effect shapes, closed catalog properties, credential-free
+  HTTP/S3 routes, schema and read-oracle agreement, and credential-shaped key
+  rejection. Pin Jackson 2.18.2—the version selected by Flink 2.1.3—plus every
+  build/test plugin, relocate the private Jackson copy, and fix archive output
+  time. Separate JUnit tests cover the valid Rust wire shape and malformed,
+  duplicate, reordered, secret-bearing, unsafe-route, invalid-oracle,
+  oversized, empty, and symlinked inputs. Two clean Java 17 builds produced an
+  identical shaded JAR. This decoder-only unit contains no Flink dependency,
+  engine effect, event emitter, or runtime result.
+
 - C2-06 Flink process adapter: add `FlinkProcessExecutor` and
   `StockFlinkRunner` over the existing engine-neutral process evidence and
   workflow boundary. The adapter verifies all profile artifacts before staging

@@ -255,6 +255,35 @@ argument shape, staged envelope, secret boundary, and fixture-collision mapping.
 They do not exercise Apache Flink and are not publishable engine evidence. The
 source-bound Java child remains the next required unit.
 
+### Strict child decoding
+
+The source-bound child begins with a Java 17 `ProgramCodec` that has no Flink,
+Iceberg, object-store, or HTTP client dependency. It accepts only a nonempty
+regular non-symlink file of at most 256 KiB. Its Jackson factory rejects
+duplicate keys, unknown fields, trailing tokens, excessive nesting, long field
+names or values, and oversized numbers before the model is admitted. The model
+uses sealed authentication and operation hierarchies, so an operation tag
+cannot acquire another variant's fields.
+
+Semantic validation then requires parallelism one, the exact eight-operation
+order, effect-appropriate SQL prefixes, an additive schema operation, the
+closed Iceberg REST/S3FileIO property set, credential-free HTTP and S3 routes,
+unique positive field IDs and names, one new evolved field, valid SHA-256 read
+oracles, and exact agreement between read columns and the initial/evolved
+observation schemas. Credential-, secret-, access-key-, or token-shaped catalog
+and observation property names are rejected. Secrets remain exclusively in the
+process environment and cannot be represented by the child envelope.
+
+The Maven module pins Java 17, Jackson 2.18.2 (matching the exact Flink 2.1.3
+source line), JUnit, compiler, test, enforcer, and shade plugin versions. The
+shaded child relocates its private Jackson classes to avoid classpath collision,
+minimizes the archive, and fixes the archive timestamp. Verification used a
+SHA-512-checked Apache Maven 3.9.16 distribution and the installed Java 17
+toolchain; all four decoder suites passed, and two clean builds produced
+byte-identical JARs. This proves deterministic decoding and packaging only. The
+Flink effect implementation and event emitter remain pending, and the generated
+JAR is not yet a materialized profile artifact.
+
 ## Reusable runtime-identity boundary
 
 Runtime-ready evidence contains a neutral engine version, an exact sorted map of
