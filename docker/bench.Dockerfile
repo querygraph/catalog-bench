@@ -24,9 +24,14 @@ RUN --mount=type=cache,target=/usr/local/cargo/registry \
     cargo build --locked --release \
       -p catalog-bench-commit \
       -p catalog-bench-conformance \
+      -p catalog-bench-engine \
       -j1 \
     && install -Dm755 target/release/catalog-bench-commit /out/catalog-bench-commit \
-    && install -Dm755 target/release/catalog-bench-conformance /out/catalog-bench-conformance
+    && install -Dm755 target/release/catalog-bench-conformance /out/catalog-bench-conformance \
+    && install -Dm755 target/release/catalog-bench-engine /out/catalog-bench-engine \
+    && install -Dm644 /dev/null /out/catalog-bench-source-revision \
+    && printf '%s\n' "$CATALOG_BENCH_SOURCE_REVISION" \
+      > /out/catalog-bench-source-revision
 
 FROM debian:bookworm-slim@sha256:88200866dfff7ea7f5cbcb6ec7c8a701889efe6fe859fe64d6990e4b07ea4171
 ARG CATALOG_BENCH_SOURCE_REVISION
@@ -36,4 +41,6 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 COPY --from=build /out/catalog-bench-commit /usr/local/bin/catalog-bench-commit
 COPY --from=build /out/catalog-bench-conformance /usr/local/bin/catalog-bench-conformance
+COPY --from=build /out/catalog-bench-engine /usr/local/bin/catalog-bench-engine
+COPY --from=build /out/catalog-bench-source-revision /usr/local/share/catalog-bench/source-revision
 ENTRYPOINT ["/usr/local/bin/catalog-bench-commit"]

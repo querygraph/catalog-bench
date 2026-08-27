@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C2-04 optimized engine executable recipe: build and install
+  `catalog-bench-engine` beside the existing contention and conformance runners
+  in the source-pinned production image, retain the common Rust 1.97.1
+  opt-level-3/fat-LTO/single-codegen-unit/stripped/panic-abort recipe, and embed
+  the exact catalog-bench source revision as an independently copyable marker.
+
 - C2-04 contract-only engine CLI: add the `catalog-bench-engine` executable with
   only profile, scenario, catalog, fixture, and output inputs. It emits
   newline-terminated sanitized evidence through the shared no-clobber publisher,

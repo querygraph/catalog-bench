@@ -199,10 +199,12 @@ revision.
 `docker/lakecat/Dockerfile` and `docker/bench.Dockerfile` use the profile-pinned
 Rust 1.97.1 image, locked dependencies, optimization level 3, fat LTO, one
 codegen unit, stripped symbols, aborting panics, disabled incremental builds,
-and the container CPU's native target features. Warnings are fatal. Persistent
-BuildKit Cargo caches shorten source-only rebuilds, while the shipped executables
-are copied through an ordinary `/out` layer and remain independent of cache
-lifetime.
+and the container CPU's native target features. Warnings are fatal. The latter
+builds the contention, conformance, and stock-engine evidence executables with
+that one recipe and carries a separate exact-source-revision marker into the
+runtime image. Persistent BuildKit Cargo caches shorten source-only rebuilds,
+while the shipped executables are copied through an ordinary `/out` layer and
+remain independent of cache lifetime.
 
 The MinIO image has two independent source identities. The server is fetched at
 the exact upstream release revision, while bucket initialization, health,

@@ -397,6 +397,10 @@ fn contention_runner_is_source_pinned_optimized_and_same_docker() {
         "CARGO_PROFILE_RELEASE_PANIC=abort",
         "CARGO_PROFILE_RELEASE_STRIP=symbols",
         "RUSTFLAGS=\"-Dwarnings -Ctarget-cpu=native\"",
+        "-p catalog-bench-engine",
+        "target/release/catalog-bench-engine /out/catalog-bench-engine",
+        "COPY --from=build /out/catalog-bench-engine /usr/local/bin/catalog-bench-engine",
+        "/usr/local/share/catalog-bench/source-revision",
     ] {
         assert!(
             dockerfile.contains(required),
