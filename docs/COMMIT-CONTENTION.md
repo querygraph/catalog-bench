@@ -155,7 +155,8 @@ create-new semantics and is never overwritten.
 
 ## Production Docker execution
 
-The benchmark process does not run on the host. Compose builds
+The benchmark process does not run on the host. Compose resolves the exact
+public runner source commit as its Docker context, then builds the checked-in
 `docker/bench.Dockerfile` from the profile-pinned Rust 1.97.1 image using locked
 dependencies, optimization level 3, fat LTO, one codegen unit, native CPU
 features, stripped symbols, disabled incremental compilation, and aborting
@@ -163,30 +164,28 @@ panics. Warnings are fatal. The slim runtime is read-only, drops all Linux
 capabilities, and receives only the compiled executables and CA roots.
 
 The image embeds source revision
-`efcd6f2123cf9c9107d0e06de64ab97cad67f1e4` at compile time. Before reading
+`e5345a260a42148aa5cd1044fb3f43acfc2232d2` at compile time. Before reading
 credentials or contacting a service, the runner requires that revision and the
 observed Linux/ARM64 runtime to match the selected profile.
 
-Use all catalog profiles so the `bench` service can wait for each protocol-level
-readiness gate:
+Use the fail-closed launcher with a globally new, scenario-safe run ID. It
+validates the merged Compose contract, rejects pre-existing output, containers,
+or state volumes with that ID, safely stops a recognized prior benchmark project
+without deleting its volumes, builds the exact production sources, and lets the
+`bench` service wait for all five protocol-level readiness gates. An unmanaged
+container or unknown Compose project on the benchmark network aborts the run:
 
 ```sh
-export COMPOSE_PROFILES=lakekeeper,nessie,polaris,gravitino,bench
-docker compose config --quiet
-docker compose build lakecat bench
-
-fixture_id="c108_$(date -u +%m%d%H%M%S)"
-docker compose run --rm bench \
-  --profile /contracts/profiles/v1/current-2026-08-26.json \
-  --scenario /contracts/scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json \
-  --fixture-id "$fixture_id" \
-  --output "/evidence/$fixture_id.json"
+docker/run-contention.sh "c108_$(date -u +%m%d%H%M%S)"
 ```
 
 The default host destination is `target/commit-evidence`. Set
 `CATALOG_BENCH_COMMIT_EVIDENCE_DIR` before Compose to bind another output
 directory. The profile and scenario mounts are read-only; only `/evidence` is
-writable.
+writable. `docker-compose.clean.yml` maps the run ID to new LakeCat/Turso,
+Lakekeeper/PostgreSQL, Gravitino/SQLite, and MinIO volumes. It intentionally
+retains those volumes after the process exits so the measured state remains
+available for diagnosis; use a different run ID for every rerun.
 
 Exit codes are:
 

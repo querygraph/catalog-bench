@@ -252,10 +252,11 @@ fully optimized same-Docker artifact pipeline.
 
 **Why LakeCat is built from source.** LakeCat depends on Sail as a Cargo *git*
 dependency on `querygraph/sail#lakecat` (fetched at build time); Grust and TypeSec
-are published crates. Compose passes the adjacent LakeCat checkout as a named
-build context, then the pinned Rust image compiles the locked `turso-local` +
-`sail-local` production service with fat LTO and fatal warnings. The slim runtime
-receives only the resulting executable—never a mutable host-staged ELF.
+are published crates. Compose resolves the exact public LakeCat commit named by
+the profile as a Docker build context, then the pinned Rust image compiles the
+locked `turso-local` + `sail-local` production service with fat LTO and fatal
+warnings. The slim runtime receives only the resulting executable—never a
+mutable sibling checkout or host-staged ELF.
 
 ### 4. Benchmark launcher
 
@@ -273,21 +274,16 @@ panics. It embeds the profile-pinned source revision at compile time and refuses
 to touch credentials or the network if runtime or source identity drifts.
 
 ```sh
-export COMPOSE_PROFILES=lakekeeper,nessie,polaris,gravitino,bench
-docker compose build lakecat bench
-fixture_id="c108_$(date -u +%m%d%H%M%S)"
-docker compose run --rm bench \
-  --profile /contracts/profiles/v1/current-2026-08-26.json \
-  --scenario /contracts/scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json \
-  --fixture-id "$fixture_id" \
-  --output "/evidence/$fixture_id.json"
+docker/run-contention.sh "c108_$(date -u +%m%d%H%M%S)"
 ```
 
-The output is create-new: rerunning with the same path is rejected. Exit `0`
-means every catalog passed every round, `2` means the complete transcript was
-written but at least one catalog is unranked, and `1` means invocation,
-provenance, or evidence persistence failed. The current profile remains a draft,
-so this is smoke evidence until the final executable/image hashes are captured
+The launcher rejects reused output, containers, and run-scoped state volumes,
+then builds and runs the optimized runner, LakeCat, all four other catalogs, and
+MinIO in one Docker topology. The output is create-new. Exit `0` means every
+catalog passed every round, `2` means the complete transcript was written but at
+least one catalog is unranked, and `1` means invocation, provenance, or evidence
+persistence failed. The current profile remains a draft, so this is smoke
+evidence until the final executable/image hashes are captured
 in a runnable profile and manifest. See
 [Commit contention](docs/COMMIT-CONTENTION.md) and [DOCKER.md](DOCKER.md).
 

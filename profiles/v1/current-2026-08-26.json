@@ -54,10 +54,10 @@
       "id": "catalog-bench-commit",
       "kind": "benchmark-harness",
       "name": "catalog-bench commit driver",
-      "version": "efcd6f2123cf9c9107d0e06de64ab97cad67f1e4",
+      "version": "e5345a260a42148aa5cd1044fb3f43acfc2232d2",
       "source": {
         "repository": "https://github.com/querygraph/catalog-bench.git",
-        "revision": "efcd6f2123cf9c9107d0e06de64ab97cad67f1e4"
+        "revision": "e5345a260a42148aa5cd1044fb3f43acfc2232d2"
       },
       "build": {
         "toolchain": "Rust 1.97.1",
@@ -169,10 +169,10 @@
       "id": "lakecat",
       "kind": "catalog",
       "name": "LakeCat",
-      "version": "0.3.0-32-gef94b550",
+      "version": "0.3.0-40-gbccb5075",
       "source": {
         "repository": "https://github.com/querygraph/lakecat.git",
-        "revision": "ef94b5508e94554f51f4764af932cbb819ae3e41"
+        "revision": "bccb5075047f20686519dcb4192359bfe4d39d87"
       },
       "build": {
         "toolchain": "Rust 1.97.1",

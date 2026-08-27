@@ -300,6 +300,9 @@ fn contention_runner_is_source_pinned_optimized_and_same_docker() {
 
     let compose =
         fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
+    assert!(compose.contains(&format!(
+        "context: \"https://github.com/querygraph/catalog-bench.git#{revision}\""
+    )));
     assert!(compose.contains(&format!("CATALOG_BENCH_SOURCE_REVISION: {revision}")));
     assert!(compose.contains(&format!(
         "x-bench-image: &bench-image catalog-bench-commit:{}",
@@ -351,6 +354,115 @@ fn contention_runner_is_source_pinned_optimized_and_same_docker() {
             "contention runner must wait for `{dependency}`"
         );
     }
+}
+
+#[test]
+fn lakecat_image_is_public_source_pinned_optimized_and_labeled() {
+    let root = repository_root();
+    let profile: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("profiles/v1/current-2026-08-26.json"))
+            .expect("read current profile"),
+    )
+    .expect("parse current profile");
+    let lakecat = profile["components"]
+        .as_array()
+        .expect("profile components are an array")
+        .iter()
+        .find(|component| component["id"] == "lakecat")
+        .expect("profile contains LakeCat");
+    let revision = lakecat["source"]["revision"]
+        .as_str()
+        .expect("LakeCat source revision is a string");
+    assert_eq!(revision.len(), 40);
+    assert!(revision
+        .bytes()
+        .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte)));
+
+    let compose =
+        fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
+    let service = compose_service(&compose, "lakecat");
+    for required in [
+        format!("LAKECAT_SOURCE_REVISION: {revision}"),
+        format!("lakecat-source: \"https://github.com/querygraph/lakecat.git#{revision}\""),
+        format!("image: lakecat-service:{}", &revision[..12]),
+    ] {
+        assert!(
+            service.lines().any(|line| line.trim() == required),
+            "LakeCat Compose service must contain `{required}`"
+        );
+    }
+    assert!(
+        !service.contains("../lakecat"),
+        "LakeCat evidence builds must not consume a mutable sibling checkout"
+    );
+
+    let dockerfile = fs::read_to_string(root.join("docker/lakecat/Dockerfile"))
+        .expect("read LakeCat Dockerfile");
+    for required in [
+        "ARG LAKECAT_SOURCE_REVISION",
+        "grep -Eq '^[0-9a-f]{40}$'",
+        "LABEL org.opencontainers.image.revision=$LAKECAT_SOURCE_REVISION",
+        "cargo build --locked --release",
+        "CARGO_PROFILE_RELEASE_OPT_LEVEL=3",
+        "CARGO_PROFILE_RELEASE_LTO=fat",
+        "CARGO_PROFILE_RELEASE_CODEGEN_UNITS=1",
+        "CARGO_PROFILE_RELEASE_PANIC=abort",
+        "CARGO_PROFILE_RELEASE_STRIP=symbols",
+        "RUSTFLAGS=\"-Dwarnings -Ctarget-cpu=native\"",
+    ] {
+        assert!(
+            dockerfile.contains(required),
+            "LakeCat Dockerfile must contain `{required}`"
+        );
+    }
+}
+
+#[test]
+fn clean_contention_run_rejects_reused_persistent_state() {
+    let root = repository_root();
+    let overlay = fs::read_to_string(root.join("docker-compose.clean.yml"))
+        .expect("read fresh-state Compose override");
+    assert!(overlay.contains(
+        "name: ${CATALOG_BENCH_RUN_ID:?set CATALOG_BENCH_RUN_ID to a unique evidence-run ID}"
+    ));
+    for volume in [
+        "gravitino-data",
+        "lakecat-data",
+        "lakekeeper-postgres-data",
+        "minio-data",
+    ] {
+        assert!(
+            overlay.contains(&format!("name: ${{CATALOG_BENCH_RUN_ID}}_{volume}")),
+            "fresh-state override must scope `{volume}` to the run ID"
+        );
+    }
+    assert!(!overlay.contains("external: true"));
+
+    let launcher = fs::read_to_string(root.join("docker/run-contention.sh"))
+        .expect("read contention launcher");
+    for required in [
+        "^[a-z0-9][a-z0-9_]{0,23}$",
+        "docker-compose.clean.yml",
+        "docker volume inspect \"$volume_name\"",
+        "refusing reused state volume",
+        "refusing reused Compose project",
+        "docker ps --all --filter \"$network_filter\"",
+        "refusing to detach unmanaged containers",
+        "refusing unknown Compose project",
+        "CATALOG_BENCH_RUN_ID=\"$project\"",
+        "down --remove-orphans",
+        "build lakecat bench",
+        "run --rm bench",
+    ] {
+        assert!(
+            launcher.contains(required),
+            "fresh-state launcher must contain `{required}`"
+        );
+    }
+    assert!(
+        !launcher.contains("down --volumes") && !launcher.contains("down -v"),
+        "the launcher must preserve prior run volumes"
+    );
 }
 
 fn repository_root() -> &'static Path {

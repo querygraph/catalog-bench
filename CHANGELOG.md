@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C1-08 fresh production rerun contract: advance the optimized contention
+  runner to source `e5345a260a42148aa5cd1044fb3f43acfc2232d2` and LakeCat to
+  `bccb5075047f20686519dcb4192359bfe4d39d87`. LakeCat now builds from that
+  exact public Git commit and records it as the OCI revision instead of trusting
+  a mutable sibling checkout. The runner image likewise consumes its exact
+  public source commit instead of labeling a mutable local context. Added a
+  run-ID-scoped Compose override and one fail-closed launcher that rejects
+  existing evidence, containers, or any of the four persistent state volumes;
+  preserves all prior volumes; builds both Rust executables with the production
+  recipe; and executes all five catalogs, the runner, and MinIO on the same
+  Docker network.
+
 - C1-08 metadata-retention invariant: set Iceberg's standard
   `write.metadata.delete-after-commit.enabled=false` and
   `write.metadata.previous-versions-max=100000` properties identically at table

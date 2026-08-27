@@ -13,12 +13,12 @@ x-minio-build: &minio-build
     MINIO_REVISION: 9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
 x-lakekeeper-image: &lakekeeper-image quay.io/lakekeeper/catalog:v0.13.3@sha256:db2ba6168eb107f22242fb7f2edc4016fa35e57bdcc606894e809c418e32e8dc
 x-gravitino-image: &gravitino-image apache/gravitino-iceberg-rest:1.3.0@sha256:80136ae753ee77735153fc1482a389018f8c2638a54f453cb96967c7194584c7
-x-bench-image: &bench-image catalog-bench-commit:efcd6f2123cf
+x-bench-image: &bench-image catalog-bench-commit:e5345a260a42
 x-bench-build: &bench-build
-  context: .
+  context: "https://github.com/querygraph/catalog-bench.git#e5345a260a42148aa5cd1044fb3f43acfc2232d2"
   dockerfile: docker/bench.Dockerfile
   args:
-    CATALOG_BENCH_SOURCE_REVISION: efcd6f2123cf9c9107d0e06de64ab97cad67f1e4
+    CATALOG_BENCH_SOURCE_REVISION: e5345a260a42148aa5cd1044fb3f43acfc2232d2
 x-rust-runner: &rust-runner
   build: *bench-build
   image: *bench-image
@@ -205,14 +205,17 @@ services:
     healthcheck:
       disable: true
 
-  # Build the adjacent LakeCat checkout directly in Docker with the production
-  # feature set and optimization recipe; no host-staged executable is accepted.
+  # Build the exact public LakeCat commit directly in Docker with the production
+  # feature set and optimization recipe; no sibling checkout or host-staged
+  # executable can change the image contents.
   lakecat:
     build:
       context: ./docker/lakecat
+      args:
+        LAKECAT_SOURCE_REVISION: bccb5075047f20686519dcb4192359bfe4d39d87
       additional_contexts:
-        lakecat-source: ../lakecat
-    image: lakecat-service:bench
+        lakecat-source: "https://github.com/querygraph/lakecat.git#bccb5075047f20686519dcb4192359bfe4d39d87"
+    image: lakecat-service:bccb5075047f
     networks: [lakehouse-net]
     ports: ["8181:8181"]
     environment:

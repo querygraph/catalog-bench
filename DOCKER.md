@@ -151,28 +151,33 @@ Ordinary shutdown preserves MinIO objects and Lakekeeper's PostgreSQL state:
 docker compose --profile lakekeeper down
 ```
 
-An evidence run that requires isolated fresh state must use a run-specific
-Compose project name or explicitly remove only that project's volumes after the
-run artifacts have been captured. Never reuse a persistent developer volume and
-claim clean-state evidence. Example isolation without deletion:
+An evidence run must use `docker-compose.clean.yml`, which requires one new run
+ID as the Compose project and explicitly names every persistent volume from that
+ID. Never reuse a persistent developer or evidence volume and claim clean-state
+evidence. The canonical launcher performs the preflight and does not delete old
+state:
 
 ```sh
-COMPOSE_PROJECT_NAME=catalog-bench-smoke-001 \
-  docker compose --profile lakekeeper up --detach lakekeeper-ready
+docker/run-contention.sh "c108_$(date -u +%m%d%H%M%S)"
 ```
 
-Wait for that project's `lakekeeper-ready` container and require exit code zero
-before collecting evidence, as in the normal startup sequence above.
-
-The explicit network name is stable (`catalog-bench-net`) for the normal local
-project. Concurrent isolated projects therefore need a future per-run network
-override; C1-09 owns that full orchestration. Do not run two ordinary projects
-with this Compose file concurrently until that unit lands.
+Before changing running services, the launcher rejects an existing transcript,
+any container in the requested project, and each expected `<run-id>_<store>`
+volume. It discovers any prior Compose project on `catalog-bench-net`, accepts
+only the ordinary project or a scenario-safe run ID, and stops those containers
+with `down --remove-orphans`; an unmanaged container or unknown project makes
+the run fail closed. It never passes `--volumes`, preserving prior state. The
+explicit network remains `catalog-bench-net`, so production evidence runs are
+intentionally serialized; all measured clients, catalogs, and MinIO continue to
+share that one network. After a run, the project and volumes remain available
+for diagnosis. A rerun must choose another ID.
 
 ## Production-optimized Rust images
 
-Compose builds LakeCat directly from the adjacent source checkout through a
-named Docker build context; no host-built or pre-staged ELF enters the image.
+Compose builds LakeCat directly from its profile-selected public Git commit
+through an immutable named Docker build context; no sibling checkout, host-built,
+or pre-staged ELF enters the image. The final OCI image records that exact source
+revision.
 `docker/lakecat/Dockerfile` and `docker/bench.Dockerfile` use the profile-pinned
 Rust 1.97.1 image, locked dependencies, optimization level 3, fat LTO, one
 codegen unit, stripped symbols, aborting panics, disabled incremental builds,
@@ -188,27 +193,19 @@ from that same Docker environment.
 
 ## Same-table contention sweep
 
-The strict commit runner is the `bench` service. Its image embeds the exact
-profile-selected source revision at compile time; startup rejects source,
-operating-system, or architecture drift before reading credentials or making a
-request. The container has a read-only root filesystem, no Linux capabilities,
-and read-only contract mounts. Only `/evidence` is writable.
+The strict commit runner is the `bench` service. Its image resolves the exact
+profile-selected public source commit as its Docker context and embeds that same
+revision at compile time; startup rejects source, operating-system, or
+architecture drift before reading credentials or making a request. The
+container has a read-only root filesystem, no Linux capabilities, and read-only
+contract mounts. Only `/evidence` is writable.
 
 Activate every catalog profile. The `bench` dependency graph waits for shared
 MinIO initialization plus LakeCat, Lakekeeper, Nessie, Polaris, and Gravitino's
 client-facing readiness gates:
 
 ```sh
-export COMPOSE_PROFILES=lakekeeper,nessie,polaris,gravitino,bench
-docker compose config --quiet
-docker compose build lakecat bench
-
-fixture_id="c108_$(date -u +%m%d%H%M%S)"
-docker compose run --rm bench \
-  --profile /contracts/profiles/v1/current-2026-08-26.json \
-  --scenario /contracts/scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json \
-  --fixture-id "$fixture_id" \
-  --output "/evidence/$fixture_id.json"
+docker/run-contention.sh "c108_$(date -u +%m%d%H%M%S)"
 ```
 
 The benchmark process, all catalogs, readiness helpers, and MinIO communicate

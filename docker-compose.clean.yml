@@ -1,0 +1,14 @@
+# Fresh-state override for evidence runs. The required run ID becomes both the
+# Compose project name and the namespace for every persistent volume. Reusing a
+# run ID is intentionally detectable before startup with `docker volume inspect`.
+name: ${CATALOG_BENCH_RUN_ID:?set CATALOG_BENCH_RUN_ID to a unique evidence-run ID}
+
+volumes:
+  gravitino-data:
+    name: ${CATALOG_BENCH_RUN_ID}_gravitino-data
+  lakecat-data:
+    name: ${CATALOG_BENCH_RUN_ID}_lakecat-data
+  lakekeeper-postgres-data:
+    name: ${CATALOG_BENCH_RUN_ID}_lakekeeper-postgres-data
+  minio-data:
+    name: ${CATALOG_BENCH_RUN_ID}_minio-data

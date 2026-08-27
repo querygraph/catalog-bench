@@ -58,7 +58,7 @@ Versions were selected from official release records and registry metadata on
 
 | Role | Component | Selected identity |
 |---|---|---|
-| Catalog | LakeCat | `0.3.0-32-gef94b550` / `ef94b5508e94554f51f4764af932cbb819ae3e41` |
+| Catalog | LakeCat | `0.3.0-40-gbccb5075` / `bccb5075047f20686519dcb4192359bfe4d39d87` |
 | Catalog | Apache Polaris | 1.7.0 / `4ac2f059…`; index `3495f67f…`, ARM64 `53022013…` |
 | Catalog | Apache Gravitino | 1.3.0 / `40fdf6ab…`; index `80136ae7…`, ARM64 `01cf367b…` |
 | Catalog | Lakekeeper | 0.13.3 / `12bb82fc…`; index `db2ba616…`, ARM64 `ba942413…` |
@@ -103,11 +103,19 @@ exact engine-specific JAR hashes. The materialization process must:
 5. emit a new `runnable` profile and hash its exact bytes before any measured run.
 
 The C1-08 contention runner source is pinned to
-`efcd6f2123cf9c9107d0e06de64ab97cad67f1e4`. The production Docker recipe embeds
-that revision at compile time and the CLI checks it, Linux, and ARM64 before
-credential access or network I/O. This closes source-selection drift for smoke
-runs; it does not resolve the draft artifact. C1-09 must still record and verify
-the exact optimized executable and image digests in a runnable profile.
+`e5345a260a42148aa5cd1044fb3f43acfc2232d2`. The production Docker recipe embeds
+that revision at compile time, resolves the same public commit as its immutable
+build context, and lets the CLI check it, Linux, and ARM64 before credential
+access or network I/O. This closes source-selection drift for smoke runs; it does
+not resolve the draft artifact. C1-09 must still record and verify the exact
+optimized executable and image digests in a runnable profile.
+
+The LakeCat image independently resolves the exact public Git commit named by
+the profile, uses that immutable tree as its Docker build context, and labels
+the resulting image with the same revision. The evidence launcher additionally
+requires a new run ID and fresh run-scoped Turso, PostgreSQL, SQLite, and MinIO
+volumes, preventing durable state from an earlier diagnostic sweep from entering
+a current measurement.
 
 The candidate also carries the Phase 1 adapter contract: 36 capability
 definitions and exhaustive bindings for LakeCat, Polaris, Gravitino, Lakekeeper,
