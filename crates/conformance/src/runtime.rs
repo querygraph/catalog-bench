@@ -71,15 +71,7 @@ pub async fn connect_catalog<F>(
 where
     F: Fn(&str) -> Option<String>,
 {
-    if request_timeout_ms == 0 {
-        bail!("catalog request timeout must be positive");
-    }
-    if maximum_response_bytes != CATALOG_RESPONSE_LIMIT_BYTES {
-        bail!(
-            "shared catalog runtime supports a {}-byte response limit, found {maximum_response_bytes}",
-            CATALOG_RESPONSE_LIMIT_BYTES
-        );
-    }
+    validate_connection_limits(request_timeout_ms, maximum_response_bytes)?;
     let target = ProbeTarget::resolve(profile, scenario, catalog)?;
     if let Some(limitation) = target.first_required_limitation(scenario) {
         bail!(
@@ -87,7 +79,40 @@ where
             limitation.capability
         );
     }
+    connect_target(target, request_timeout_ms, maximum_response_bytes, getenv).await
+}
 
+/// Authenticate, negotiate standard Iceberg REST configuration, and construct
+/// profile-driven routes without classifying scenario capabilities.
+///
+/// This is the reusable boundary for orchestration whose capabilities belong
+/// to a client or engine. Catalog conformance probes must continue to use
+/// [`connect_catalog`], which additionally validates the catalog capability
+/// vocabulary and declared limitations before any network access.
+pub async fn connect_catalog_adapter<F>(
+    profile: &Profile,
+    catalog: &ComponentId,
+    request_timeout_ms: u64,
+    maximum_response_bytes: usize,
+    getenv: F,
+) -> Result<CatalogConnectionAttempt>
+where
+    F: Fn(&str) -> Option<String>,
+{
+    validate_connection_limits(request_timeout_ms, maximum_response_bytes)?;
+    let target = ProbeTarget::resolve_adapter(profile, catalog)?;
+    connect_target(target, request_timeout_ms, maximum_response_bytes, getenv).await
+}
+
+async fn connect_target<F>(
+    target: ProbeTarget<'_>,
+    request_timeout_ms: u64,
+    maximum_response_bytes: usize,
+    getenv: F,
+) -> Result<CatalogConnectionAttempt>
+where
+    F: Fn(&str) -> Option<String>,
+{
     let client = http_client(request_timeout_ms)?;
     let routing = negotiate_routing(&client, target.adapter, &getenv).await?;
     let mut redactions = routing.redactions.clone();
@@ -160,6 +185,22 @@ where
             maximum_response_bytes,
         }))),
     })
+}
+
+fn validate_connection_limits(
+    request_timeout_ms: u64,
+    maximum_response_bytes: usize,
+) -> Result<()> {
+    if request_timeout_ms == 0 {
+        bail!("catalog request timeout must be positive");
+    }
+    if maximum_response_bytes != CATALOG_RESPONSE_LIMIT_BYTES {
+        bail!(
+            "shared catalog runtime supports a {}-byte response limit, found {maximum_response_bytes}",
+            CATALOG_RESPONSE_LIMIT_BYTES
+        );
+    }
+    Ok(())
 }
 
 #[derive(Clone)]

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-04 shared adapter runtime seam: separate profile adapter resolution from
+  scenario capability classification so stock-engine orchestration can reuse
+  the credential-safe Iceberg REST authentication, config negotiation, route
+  construction, response bounds, and redaction path without pretending that
+  engine capabilities belong to the catalog vocabulary. Existing conformance
+  probes retain their strict capability and predeclared-limitation gates.
+
 - C2-03 Spark runtime materialization: build Apache Spark 4.1.3 and Apache
   Iceberg 1.11.0 as separate, inspectable Linux ARM64 Docker artifacts, then
   copy the checksum-locked Spark 4.1/Scala 2.13 runtime and AWS/S3FileIO bundle

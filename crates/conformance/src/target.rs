@@ -13,11 +13,7 @@ pub(crate) struct ProbeTarget<'a> {
 }
 
 impl<'a> ProbeTarget<'a> {
-    pub(crate) fn resolve(
-        profile: &'a Profile,
-        scenario: &Scenario,
-        catalog: &ComponentId,
-    ) -> Result<Self> {
+    pub(crate) fn resolve_adapter(profile: &'a Profile, catalog: &ComponentId) -> Result<Self> {
         let adapter = profile
             .catalog_adapters
             .iter()
@@ -28,6 +24,15 @@ impl<'a> ProbeTarget<'a> {
             .iter()
             .find(|component| component.id == *catalog)
             .with_context(|| format!("profile has no component for catalog `{catalog}`"))?;
+        Ok(Self { adapter, component })
+    }
+
+    pub(crate) fn resolve(
+        profile: &'a Profile,
+        scenario: &Scenario,
+        catalog: &ComponentId,
+    ) -> Result<Self> {
+        let target = Self::resolve_adapter(profile, catalog)?;
         let defined = profile
             .catalog_capabilities
             .iter()
@@ -40,8 +45,12 @@ impl<'a> ProbeTarget<'a> {
                     requirement.capability
                 );
             }
-            if !adapter.capabilities.exercises(&requirement.capability)
-                && adapter
+            if !target
+                .adapter
+                .capabilities
+                .exercises(&requirement.capability)
+                && target
+                    .adapter
                     .capabilities
                     .limitation(&requirement.capability)
                     .is_none()
@@ -52,7 +61,7 @@ impl<'a> ProbeTarget<'a> {
                 );
             }
         }
-        Ok(Self { adapter, component })
+        Ok(target)
     }
 
     pub(crate) fn first_required_limitation(

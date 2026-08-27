@@ -2,8 +2,9 @@ use catalog_bench_common::contract::{
     parse_contract, ComponentId, ContractDocument, Profile, Scenario,
 };
 use catalog_bench_conformance::{
-    connect_catalog, CatalogConnectionOutcome, CatalogNegotiationFailureStage,
-    CatalogRequestFailureKind, NamespaceIdentifier, ResponseCapture, CATALOG_RESPONSE_LIMIT_BYTES,
+    connect_catalog, connect_catalog_adapter, CatalogConnectionOutcome,
+    CatalogNegotiationFailureStage, CatalogRequestFailureKind, NamespaceIdentifier,
+    ResponseCapture, CATALOG_RESPONSE_LIMIT_BYTES,
 };
 use reqwest::Method;
 use serde_json::json;
@@ -15,6 +16,8 @@ use support::{MockResponse, MockServer};
 const PROFILE: &[u8] = include_bytes!("../../../profiles/v1/current-2026-08-26.json");
 const SCENARIO: &[u8] =
     include_bytes!("../../../scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json");
+const ENGINE_SCENARIO: &[u8] =
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
 
 #[tokio::test]
 async fn anonymous_runtime_reuses_negotiated_routing_and_keeps_bodies_private() {
@@ -204,6 +207,48 @@ async fn runtime_fails_closed_on_bad_config_and_oversized_operation_responses() 
     assert_eq!(failure.kind, CatalogRequestFailureKind::ResponseTooLarge);
     assert_eq!(failure.http_status, Some(200));
     assert_eq!(oversized_server.finish().len(), 2);
+}
+
+#[tokio::test]
+async fn adapter_runtime_reuses_routing_without_reclassifying_engine_capabilities() {
+    let server = MockServer::start(vec![MockResponse::json(json!({
+        "defaults": {},
+        "overrides": {}
+    }))]);
+    let (mut profile, _) = contracts();
+    adapter_mut(&mut profile, "lakecat").endpoint.base_url = format!("{}/catalog", server.url());
+
+    let attempt = connect_catalog_adapter(
+        &profile,
+        &ComponentId::from("lakecat"),
+        30_000,
+        CATALOG_RESPONSE_LIMIT_BYTES,
+        |_| None,
+    )
+    .await
+    .unwrap();
+    assert!(matches!(
+        attempt.outcome,
+        CatalogConnectionOutcome::Ready(_)
+    ));
+    assert_eq!(server.finish()[0].target, "/catalog/v1/config");
+
+    let ContractDocument::Scenario(engine_scenario) = parse_contract(ENGINE_SCENARIO).unwrap()
+    else {
+        panic!("engine fixture must be a scenario");
+    };
+    let error = connect_catalog(
+        &profile,
+        &engine_scenario,
+        &ComponentId::from("lakecat"),
+        30_000,
+        CATALOG_RESPONSE_LIMIT_BYTES,
+        |_| None,
+    )
+    .await
+    .err()
+    .expect("catalog conformance runtime must retain capability validation");
+    assert!(error.to_string().contains("engine.iceberg.rest-round-trip"));
 }
 
 fn contracts() -> (Profile, Scenario) {
