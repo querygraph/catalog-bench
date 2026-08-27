@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- C1-08 REST and object-store ports: bind each run-owned fixture to precomputed
+  standard Iceberg REST routes outside measured commit latency; require a
+  committed format-v2 table snapshot; send only `assert-table-uuid` and one
+  unique set-properties update; classify HTTP 200, HTTP 409, and bounded
+  explicit failures separately; and hard-code non-purging cleanup without an
+  arbitrary-header escape hatch. Added a credential-redacting MinIO auditor
+  that recursively consumes every paginated object-list result under the exact
+  returned table root, counts only `.metadata.json` objects, totals bytes, and
+  verifies the transcript-referenced pointer. Separate integration tests cover
+  request shape, route shape, location drift, format drift, oversized bodies,
+  nested metadata, sibling exclusion, missing objects, bucket drift, path
+  escape, and non-metadata pointers.
+
 - Shared profile-driven catalog runtime: let performance runners reuse the
   conformance suite's tested OAuth2, config negotiation, static/negotiated/
   unprefixed routing, and namespace encoding through a clone-cheap session.

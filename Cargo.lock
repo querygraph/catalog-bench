@@ -1321,7 +1321,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "catalog-bench-common",
+ "catalog-bench-conformance",
  "clap",
+ "futures",
+ "object_store 0.11.2",
  "reqwest",
  "serde",
  "serde_json",

@@ -11,8 +11,11 @@ path = "src/main.rs"
 
 [dependencies]
 catalog-bench-common = { workspace = true }
+catalog-bench-conformance = { workspace = true }
 anyhow = { workspace = true }
 clap = { workspace = true }
+futures = { workspace = true }
+object_store = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
