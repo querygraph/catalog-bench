@@ -176,10 +176,11 @@ without deleting its volumes, builds the exact production sources, and lets the
 container or unknown Compose project on the benchmark network aborts the run.
 After stopping recognized projects, the launcher also proves that the network
 has zero remaining container attachments before starting a production build.
-It builds under the stable ordinary Compose project so run IDs cannot enter
-image labels or change the local-image digests recorded by the runnable profile.
-It also disables BuildKit's invocation-specific provenance wrapper while
-retaining source, build-recipe, OCI-label, platform-image, and executable hashes:
+It builds MinIO, LakeCat, and the runner under the stable ordinary Compose
+project so run IDs cannot enter image labels or change the local-image digests
+recorded by the runnable profile. It also disables BuildKit's
+invocation-specific provenance wrapper while retaining source, build-recipe,
+OCI-label, platform-image, and executable hashes:
 
 ```sh
 docker/run-contention.sh "c108_$(date -u +%m%d%H%M%S)"

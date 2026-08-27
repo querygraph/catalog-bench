@@ -2,14 +2,14 @@
 
 ## Unreleased
 
-- C1-09 stable production image identity: build the LakeCat and benchmark
-  images under the ordinary `catalog-bench` Compose project before launching a
-  run-scoped evidence project. Compose project labels are part of the exported
-  image config, and BuildKit's default provenance wrapper changes identity on
-  every invocation; stable project labels plus `--provenance=false` keep those
-  two wrappers from changing an otherwise identical local-image digest. Exact
-  source, build recipe, OCI revision, image, and embedded ELF identities remain
-  recorded independently.
+- C1-09 stable production image identity: build the source-built MinIO,
+  LakeCat, and benchmark images under the ordinary `catalog-bench` Compose
+  project before launching a run-scoped evidence project. Compose project labels
+  are part of the exported image config, and BuildKit's default provenance
+  wrapper changes identity on every invocation; stable project labels plus
+  `--provenance=false` keep those two wrappers from changing an otherwise
+  identical local-image digest. Exact source, build recipe, OCI revision, image,
+  and embedded executable identities remain recorded independently.
 
 - C1-08 LakeCat contention recovery candidate: advance the exact public
   source-built LakeCat image to
