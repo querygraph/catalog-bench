@@ -1,0 +1,465 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "iceberg-rest.commit.same-table-contention",
+  "version": 2,
+  "title": "Iceberg REST same-table commit contention",
+  "description": "Measures sequential and concurrent set-properties commits against one isolated table while requiring profile-driven routing, exact request accounting, final-state attribution, run-owned shared-object-store evidence, non-purging cleanup, repeated rounds, and sanitized no-overwrite transcripts.",
+  "family": "concurrency",
+  "classification": "strict-v1",
+  "tags": [
+    "iceberg-rest",
+    "commit",
+    "optimistic-concurrency",
+    "same-table",
+    "performance",
+    "shared-object-store"
+  ],
+  "capabilities": [
+    {
+      "capability": "iceberg-rest.config.read",
+      "level": "required",
+      "description": "Negotiate the selected catalog configuration before constructing benchmark routes."
+    },
+    {
+      "capability": "iceberg-rest.config.warehouse-routing",
+      "level": "required",
+      "description": "Resolve the profile-declared static, negotiated, or unprefixed route without a catalog-specific launcher branch."
+    },
+    {
+      "capability": "iceberg-rest.namespace.create",
+      "level": "required",
+      "description": "Create one collision-checked namespace through Iceberg REST."
+    },
+    {
+      "capability": "iceberg-rest.namespace.drop",
+      "level": "required",
+      "description": "Drop and verify the run-owned namespace after non-purging table cleanup."
+    },
+    {
+      "capability": "iceberg-rest.table.create",
+      "level": "required",
+      "description": "Create one table whose returned location belongs to the shared object store."
+    },
+    {
+      "capability": "iceberg-rest.table.load",
+      "level": "required",
+      "description": "Load setup and final table state for UUID, metadata-location, property, and cleanup checks."
+    },
+    {
+      "capability": "iceberg-rest.table.drop",
+      "level": "required",
+      "description": "Drop the run-owned table with purge disabled and verify it absent."
+    },
+    {
+      "capability": "iceberg-rest.table.commit.set-properties",
+      "level": "required",
+      "description": "Apply one standard set-properties update per benchmark request."
+    },
+    {
+      "capability": "iceberg-rest.table.commit.requirements",
+      "level": "required",
+      "description": "Require the created table UUID on every update without adding an implementation-specific precondition."
+    },
+    {
+      "capability": "iceberg-rest.concurrency.same-table-contention",
+      "level": "required",
+      "description": "Run multiple writers against one table while preserving accepted, HTTP 409, and error outcomes separately."
+    }
+  ],
+  "parameters": {
+    "fixture_prefix": "cb_c108",
+    "transcript_format": "catalog-bench/contention-transcript/v1",
+    "round_policy": {
+      "conditioning_rounds": 1,
+      "measured_rounds": 5,
+      "catalog_order": "rotate-left",
+      "aggregate": "median-with-min-max",
+      "require_every_round_to_pass": true
+    },
+    "workload": {
+      "warmup_commits": 50,
+      "sequential_commits": 1000,
+      "concurrent_writers": 8,
+      "concurrent_duration_ms": 6000,
+      "commit_property": "catalog-bench.contention.request-id",
+      "requirement": "assert-table-uuid",
+      "idempotency_key": "omitted"
+    },
+    "object_store": {
+      "component": "minio",
+      "endpoint": "http://minio:9000",
+      "bucket": "warehouse",
+      "region": "us-east-1",
+      "allow_http": true,
+      "path_style_access": true,
+      "access_key_env": "CATALOG_BENCH_S3_ACCESS_KEY_ID",
+      "secret_key_env": "CATALOG_BENCH_S3_SECRET_ACCESS_KEY"
+    },
+    "limits": {
+      "request_timeout_ms": 30000,
+      "maximum_response_bytes": 1048576,
+      "maximum_fixture_id_bytes": 24
+    }
+  },
+  "steps": [
+    {
+      "id": "verify-runner",
+      "actor": "harness",
+      "operation": "runtime.verify-profile",
+      "description": "Verify the observed production runner OS and architecture against the selected profile before network access.",
+      "parameters": {
+        "identity_source": "profile component catalog-bench-commit"
+      }
+    },
+    {
+      "id": "negotiate-config",
+      "actor": "catalog",
+      "operation": "config.read-and-resolve-routing",
+      "description": "Acquire profile-declared authentication, read Iceberg REST config, and resolve the effective route prefix.",
+      "depends_on": [
+        "verify-runner"
+      ],
+      "parameters": {
+        "request_source": "profile catalog adapter"
+      }
+    },
+    {
+      "id": "preflight-fixture",
+      "actor": "catalog",
+      "operation": "namespace.verify-absent",
+      "description": "Prove the exact run-owned namespace absent; a collision suppresses every mutation and cleanup request.",
+      "depends_on": [
+        "negotiate-config"
+      ],
+      "parameters": {
+        "unique_per_catalog_round": true
+      }
+    },
+    {
+      "id": "create-namespace",
+      "actor": "catalog",
+      "operation": "namespace.create",
+      "description": "Create the preflighted namespace exactly once.",
+      "depends_on": [
+        "preflight-fixture"
+      ]
+    },
+    {
+      "id": "create-table",
+      "actor": "catalog",
+      "operation": "table.create",
+      "description": "Create one format-v2 table and verify its UUID, metadata location, and shared-object-store table root.",
+      "depends_on": [
+        "create-namespace"
+      ],
+      "parameters": {
+        "format_version": 2,
+        "shared_object_store": true,
+        "stage_create": false,
+        "unique_per_catalog_round": true
+      }
+    },
+    {
+      "id": "baseline-object-audit",
+      "actor": "object-store",
+      "operation": "object.list-table-root",
+      "description": "List the exact returned table root after setup so later growth excludes the initial metadata object.",
+      "depends_on": [
+        "create-table"
+      ],
+      "parameters": {
+        "scope": "returned table location"
+      }
+    },
+    {
+      "id": "warmup",
+      "actor": "harness",
+      "operation": "table.commit.set-properties",
+      "description": "Issue the configured unmeasured commits in series and require every request to be accepted exactly once.",
+      "depends_on": [
+        "baseline-object-audit"
+      ],
+      "parameters": {
+        "commit_count_parameter": "workload.warmup_commits",
+        "measured": false,
+        "request_identity_scope": "catalog/round/warmup/sequence"
+      }
+    },
+    {
+      "id": "sequential",
+      "actor": "harness",
+      "operation": "table.commit.set-properties",
+      "description": "Issue the configured measured commits in series and retain complete finite latency and throughput statistics.",
+      "depends_on": [
+        "warmup"
+      ],
+      "parameters": {
+        "commit_count_parameter": "workload.sequential_commits",
+        "measured": true,
+        "request_identity_scope": "catalog/round/sequential/sequence"
+      }
+    },
+    {
+      "id": "concurrent",
+      "actor": "harness",
+      "operation": "table.commit.set-properties",
+      "description": "Release all configured writers into one shared timed window and classify every completed request as accepted, HTTP 409 conflict, or explicit error.",
+      "depends_on": [
+        "sequential"
+      ],
+      "parameters": {
+        "duration_parameter": "workload.concurrent_duration_ms",
+        "measured": true,
+        "request_identity_scope": "catalog/round/concurrent/writer/sequence",
+        "writer_count_parameter": "workload.concurrent_writers"
+      }
+    },
+    {
+      "id": "load-final-table",
+      "actor": "catalog",
+      "operation": "table.load",
+      "description": "Load final state and prove its request property belongs to an accepted request and its metadata location remains under the setup table root.",
+      "depends_on": [
+        "concurrent"
+      ]
+    },
+    {
+      "id": "audit-object-growth",
+      "actor": "object-store",
+      "operation": "object.list-table-root",
+      "description": "List the same table root and require metadata-object growth to cover every accepted warmup, sequential, and concurrent commit.",
+      "depends_on": [
+        "load-final-table"
+      ],
+      "parameters": {
+        "minimum_formula": "warmup.accepted + sequential.accepted + concurrent.accepted"
+      }
+    },
+    {
+      "id": "cleanup-fixture",
+      "actor": "harness",
+      "operation": "fixture.cleanup-without-purge",
+      "description": "Drop the owned table without purge, verify it absent, drop the namespace, and verify the namespace absent even after an earlier assertion failure.",
+      "depends_on": [
+        "audit-object-growth"
+      ],
+      "parameters": {
+        "purge_requested": false
+      }
+    },
+    {
+      "id": "sanitize-transcript",
+      "actor": "harness",
+      "operation": "evidence.sanitize-and-write-new",
+      "description": "Persist only bounded, value-sanitized, no-overwrite evidence with raw response bodies, credentials, tokens, and request identities omitted or hashed.",
+      "depends_on": [
+        "cleanup-fixture"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "runner-runtime-pinned",
+      "step": "verify-runner",
+      "required": true,
+      "description": "Observed OS and architecture equal the selected profile and the runner component is present.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/profile-runtime-v1",
+        "configuration": {
+          "component": "catalog-bench-commit"
+        }
+      }
+    },
+    {
+      "id": "catalog-auth-config-ready",
+      "step": "negotiate-config",
+      "required": true,
+      "description": "Authentication, config read, route-prefix resolution, and protocol-native adapter checks pass before setup.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/profile-routing-v1",
+        "configuration": {
+          "request_handling": "protocol-native"
+        }
+      }
+    },
+    {
+      "id": "fixture-isolated",
+      "step": "preflight-fixture",
+      "required": true,
+      "description": "The exact namespace is absent before mutation and therefore safe for owned cleanup.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/fixture-isolation-v1",
+        "configuration": {
+          "collision_policy": "no-mutation-no-cleanup"
+        }
+      }
+    },
+    {
+      "id": "setup-succeeded",
+      "step": "create-table",
+      "required": true,
+      "description": "Fresh namespace and table creation return a committed table under shared MinIO.",
+      "check": {
+        "kind": "http-status",
+        "allowed": [
+          200,
+          201
+        ]
+      }
+    },
+    {
+      "id": "warmup-accounted",
+      "step": "warmup",
+      "required": true,
+      "description": "Every configured warmup request is accepted; none conflicts, errors, or disappears.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/serial-request-accounting-v1",
+        "configuration": {
+          "attempts": "workload.warmup_commits",
+          "accepted": "workload.warmup_commits",
+          "conflicts": 0,
+          "errors": 0
+        }
+      }
+    },
+    {
+      "id": "sequential-accounted",
+      "step": "sequential",
+      "required": true,
+      "description": "Every configured sequential request is accepted; none conflicts, errors, or disappears.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/serial-request-accounting-v1",
+        "configuration": {
+          "attempts": "workload.sequential_commits",
+          "accepted": "workload.sequential_commits",
+          "conflicts": 0,
+          "errors": 0
+        }
+      }
+    },
+    {
+      "id": "sequential-latency-complete",
+      "step": "sequential",
+      "required": true,
+      "description": "The latency distribution contains one finite sample per sequential request with monotonic p50, p95, p99, and maximum values.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/latency-distribution-v1",
+        "configuration": {
+          "samples": "workload.sequential_commits",
+          "quantiles": [
+            "p50",
+            "p95",
+            "p99"
+          ]
+        }
+      }
+    },
+    {
+      "id": "all-requests-accounted",
+      "step": "concurrent",
+      "required": true,
+      "description": "Every completed request is classified as accepted, HTTP 409 conflict, or explicit error; no outcome is silently dropped.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/request-accounting-v1",
+        "configuration": {
+          "formula": "attempts = accepted + conflicts + errors",
+          "latency_samples": "attempts"
+        }
+      }
+    },
+    {
+      "id": "zero-request-errors",
+      "step": "concurrent",
+      "required": true,
+      "description": "No concurrent request fails outside accepted commit and HTTP 409 conflict classes.",
+      "check": {
+        "kind": "no-request-errors"
+      }
+    },
+    {
+      "id": "concurrent-progress",
+      "step": "concurrent",
+      "required": true,
+      "description": "At least one concurrent commit is accepted during the timed window.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/concurrent-progress-v1",
+        "configuration": {
+          "accepted": "> 0"
+        }
+      }
+    },
+    {
+      "id": "final-state-accounted",
+      "step": "load-final-table",
+      "required": true,
+      "description": "The final property identifies one accepted request and the final metadata location remains inside the setup table root.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/final-accepted-request-v1",
+        "configuration": {
+          "request_identity_evidence": "sha256-only",
+          "table_root": "create-table response"
+        }
+      }
+    },
+    {
+      "id": "metadata-persisted",
+      "step": "audit-object-growth",
+      "required": true,
+      "description": "Run-owned metadata-object growth covers every accepted commit after the setup baseline.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/accepted-metadata-object-growth-v2",
+        "configuration": {
+          "minimum_formula": "warmup.accepted + sequential.accepted + concurrent.accepted",
+          "scope": "returned table root",
+          "suffix": ".metadata.json"
+        }
+      }
+    },
+    {
+      "id": "fixture-clean",
+      "step": "cleanup-fixture",
+      "required": true,
+      "description": "Non-purging cleanup proves both the table and namespace absent.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/table-cleanup-v1",
+        "configuration": {
+          "purge_requested": false,
+          "verify_absent": true
+        }
+      }
+    },
+    {
+      "id": "transcript-sanitized",
+      "step": "sanitize-transcript",
+      "required": true,
+      "description": "Persisted evidence contains no raw credential, token, response body, or request identity and never overwrites another run.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/sanitized-contention-transcript-v1",
+        "configuration": {
+          "raw_response_body": "omitted",
+          "request_identity": "sha256-only",
+          "write_mode": "create-new"
+        }
+      }
+    }
+  ],
+  "extensions": {
+    "querygraph/historical-predecessor": {
+      "scenario_version": 1,
+      "preservation_reason": "Version 1 remains byte-identical because it is an immutable input to the published 2026-08-08 historical bundle."
+    }
+  }
+}

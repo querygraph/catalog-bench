@@ -102,7 +102,7 @@ exact engine-specific JAR hashes. The materialization process must:
    their digest scopes;
 5. emit a new `runnable` profile and hash its exact bytes before any measured run.
 
-The candidate also carries the Phase 1 adapter contract: 27 capability
+The candidate also carries the Phase 1 adapter contract: 36 capability
 definitions and exhaustive bindings for LakeCat, Polaris, Gravitino, Lakekeeper,
 and Nessie. Every binding is protocol-native and cross-checked against its service
 endpoint. `exercise` schedules a standard operation; it does not predict a pass.
@@ -123,6 +123,12 @@ The runner accepts only endpoint method/path entries defined by those bytes and
 records omission as the specification's implicit default set. OAuth profiles
 name environment-variable bindings only; secret values are runtime inputs and
 never profile data.
+
+The published 2026-08-08 bundle continues to reference the byte-identical
+same-table-contention v1 scenario. Current performance work uses the separately
+versioned v2 scenario, which binds the common workload to profile routing,
+run-owned MinIO evidence, cleanup, sanitization, repeated rounds, and generated
+median-with-range aggregation without changing historical inputs.
 
 Primary release sources: [Polaris](https://polaris.apache.org/downloads/),
 [Gravitino](https://gravitino.apache.org/downloads/),

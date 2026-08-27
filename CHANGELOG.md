@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Catalog community C1-08 contention contract: preserve the historical v1
+  scenario bytes while adding a strict v2 authority for profile-driven routing,
+  collision-safe fixtures, synchronized writers, complete request and latency
+  accounting, final-state attribution, table-root-scoped MinIO growth,
+  non-purging cleanup, sanitized no-overwrite evidence, rotated conditioning
+  and measured rounds, and median-with-range aggregation. The common workload
+  explicitly omits asymmetric idempotency headers. Added focused contract tests
+  and corrected the documented current capability count.
+
 - Catalog community C1-07 acceptance: document the exact commit-built stock
   PyIceberg runtime and production LakeCat artifact, five-catalog required and
   optional matrix, four exact row-state digests, all 135 retained metadata,

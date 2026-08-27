@@ -83,7 +83,7 @@ classify every capability exactly once:
   an explanation, and an optional upstream reference. It must not be inferred
   after an attempted operation fails.
 
-The current candidate deliberately places all 27 Phase 1 capabilities in the
+The current candidate deliberately places all 36 Phase 1 capabilities in the
 `exercise-all` disposition. C1-03 through C1-08 will provide operation evidence;
 if an optional operation is proven absent before execution, a new profile
 revision will move it to an `explicit` exercise/unsupported partition with its

@@ -228,6 +228,26 @@ five-catalog matrix, exact artifact identities, shared-MinIO object proof,
 deployment corrections, and rejected diagnostics in
 [`PYICEBERG-INTEROPERABILITY.md`](PYICEBERG-INTEROPERABILITY.md).
 
+### Same-table contention scenario versions
+
+The original
+[`same-table-contention` v1](../scenarios/v1/iceberg-rest.commit.same-table-contention.json)
+is retained byte-for-byte because its digest is an immutable input to the
+published 2026-08-08 historical bundle. It must not be edited to describe a new
+run.
+
+The current C1-08 authority is
+[`same-table-contention` v2](../scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json).
+It preserves the common 50-warmup, 1,000-sequential, eight-writer, six-second
+workload while making previously procedural validity rules contractual:
+profile-driven config/auth/routing, collision-safe fixtures, one synchronized
+writer window, complete latency and outcome accounting, final-state attribution,
+table-root-scoped MinIO growth, non-purging cleanup, evidence sanitization, one
+discarded conditioning round, five measured rounds, rotated catalog order, and
+median-with-range aggregation. The common workload omits `Idempotency-Key` for
+every catalog; exact retry and content binding remain the separate C1-06
+correctness scenario.
+
 ## Closed fields and extensions
 
 All ordinary records and enum variants deny unknown fields. This turns misspelled
