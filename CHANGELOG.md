@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C1-08 metadata-retention invariant: set Iceberg's standard
+  `write.metadata.delete-after-commit.enabled=false` and
+  `write.metadata.previous-versions-max=100000` properties identically at table
+  creation, codify them in the v2 scenario, and verify the exact wire request.
+  The final MinIO growth check can now distinguish missing persistence from a
+  catalog's otherwise-valid old-metadata cleanup policy.
+
 - C1-08 optimized same-Docker deployment: pin the contention runner to source
   `efcd6f2123cf9c9107d0e06de64ab97cad67f1e4`, inject that identity only at
   production compile time, and tag the shared Rust image by revision. The

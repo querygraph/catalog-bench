@@ -77,6 +77,10 @@
       "aggregate": "median-with-min-max",
       "require_every_round_to_pass": true
     },
+    "metadata_retention": {
+      "delete_after_commit": false,
+      "previous_versions_max": 100000
+    },
     "workload": {
       "warmup_commits": 50,
       "sequential_commits": 1000,
@@ -155,6 +159,10 @@
       ],
       "parameters": {
         "format_version": 2,
+        "metadata_retention": {
+          "delete_after_commit": false,
+          "previous_versions_max": 100000
+        },
         "shared_object_store": true,
         "stage_create": false,
         "unique_per_catalog_round": true
@@ -233,7 +241,8 @@
         "load-final-table"
       ],
       "parameters": {
-        "minimum_formula": "warmup.accepted + sequential.accepted + concurrent.accepted"
+        "minimum_formula": "warmup.accepted + sequential.accepted + concurrent.accepted",
+        "retention_precondition": "create-table.metadata-retention.delete-after-commit=false"
       }
     },
     {

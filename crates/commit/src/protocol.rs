@@ -14,7 +14,10 @@ use serde_json::{json, Value};
 use url::Url;
 
 use crate::model::{RequestErrorKind, RequestIdentity, RequestOutcome, SanitizedRequestError};
-use crate::policy::ContentionFixture;
+use crate::policy::{
+    ContentionFixture, CONTENTION_METADATA_DELETE_AFTER_COMMIT,
+    CONTENTION_METADATA_PREVIOUS_VERSIONS_MAX,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TableSnapshot {
@@ -461,6 +464,8 @@ fn table_location(root: &Url, fixture: &ContentionFixture) -> Result<String> {
 }
 
 fn create_table_request(name: &str, location: Option<&str>) -> Value {
+    let delete_after_commit = CONTENTION_METADATA_DELETE_AFTER_COMMIT.to_string();
+    let previous_versions_max = CONTENTION_METADATA_PREVIOUS_VERSIONS_MAX.to_string();
     let mut body = json!({
         "name": name,
         "schema": {
@@ -473,7 +478,9 @@ fn create_table_request(name: &str, location: Option<&str>) -> Value {
         "stage-create": false,
         "properties": {
             "format-version": "2",
-            "catalog-bench.owner": "catalog-bench"
+            "catalog-bench.owner": "catalog-bench",
+            "write.metadata.delete-after-commit.enabled": delete_after_commit,
+            "write.metadata.previous-versions-max": previous_versions_max
         }
     });
     if let Some(location) = location {

@@ -137,6 +137,14 @@ async fn rest_fixture_uses_standard_routes_requirements_and_nonpurging_cleanup()
     assert_eq!(create_body["stage-create"], false);
     assert_eq!(create_body["location"], location);
     assert_eq!(create_body["properties"]["format-version"], "2");
+    assert_eq!(
+        create_body["properties"]["write.metadata.delete-after-commit.enabled"],
+        "false"
+    );
+    assert_eq!(
+        create_body["properties"]["write.metadata.previous-versions-max"],
+        "100000"
+    );
     let commit_body: Value = serde_json::from_str(&requests[4].body).unwrap();
     assert_eq!(
         commit_body["requirements"],

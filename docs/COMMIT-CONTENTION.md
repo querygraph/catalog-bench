@@ -25,6 +25,14 @@ arbitrary headers, client retries, or behavior-changing proxies in this
 scenario. In particular, the common request omits `Idempotency-Key`: asymmetric
 optional behavior cannot alter one catalog's measured path.
 
+The common create request also sets the standard Iceberg properties
+`write.metadata.delete-after-commit.enabled=false` and
+`write.metadata.previous-versions-max=100000`. This makes the final object-count
+invariant meaningful: a catalog cannot invoke its ordinary old-metadata
+retention policy during the evidence window and then appear to have persisted
+fewer accepted commits. These are table properties, not catalog-specific
+configuration, and every implementation receives the same values.
+
 All five catalogs write Iceberg metadata into the same `s3://warehouse` MinIO
 bucket. Their private state stores remain catalog-specific because advancing a
 catalog pointer is the system under comparison. The object audit prevents a
@@ -87,7 +95,8 @@ A round passes only when all of these checks pass:
 10. final table UUID and location match setup, the final property belongs to an
     accepted request, and the metadata pointer remains inside the setup root;
 11. metadata-object growth covers every accepted warmup, sequential, and
-    concurrent commit, and the exact final pointer exists; and
+    concurrent commit under the fixed no-delete retention properties, and the
+    exact final pointer exists; and
 12. non-purging cleanup proves both table and namespace absent.
 
 HTTP 409 is a valid measured conflict, not a request error. Timeouts, transport

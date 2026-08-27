@@ -14,6 +14,8 @@ pub const CONTENTION_SCENARIO_ID: &str = "iceberg-rest.commit.same-table-content
 pub const CONTENTION_SCENARIO_VERSION: u32 = 2;
 pub const CONTENTION_TRANSCRIPT_FORMAT: &str = "catalog-bench/contention-transcript/v1";
 pub const RUNNER_COMPONENT_ID: &str = "catalog-bench-commit";
+pub const CONTENTION_METADATA_DELETE_AFTER_COMMIT: bool = false;
+pub const CONTENTION_METADATA_PREVIOUS_VERSIONS_MAX: u32 = 100_000;
 
 const CANONICAL_SCENARIO: &[u8] =
     include_bytes!("../../../scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json");
@@ -83,6 +85,13 @@ pub struct WorkloadPolicy {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct MetadataRetentionPolicy {
+    pub delete_after_commit: bool,
+    pub previous_versions_max: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ObjectStorePolicy {
     pub component: ComponentId,
     pub endpoint: String,
@@ -108,6 +117,7 @@ pub struct ContentionParameters {
     pub fixture_prefix: String,
     pub transcript_format: String,
     pub round_policy: RoundPolicy,
+    pub metadata_retention: MetadataRetentionPolicy,
     pub workload: WorkloadPolicy,
     pub object_store: ObjectStorePolicy,
     pub limits: LimitPolicy,
@@ -308,6 +318,17 @@ fn validate_parameters(parameters: &ContentionParameters) -> Result<(), PolicyEr
         return Err(PolicyError::new(
             "strict contention ranking requires every round to pass",
         ));
+    }
+
+    let retention = &parameters.metadata_retention;
+    if retention.delete_after_commit != CONTENTION_METADATA_DELETE_AFTER_COMMIT
+        || retention.previous_versions_max != CONTENTION_METADATA_PREVIOUS_VERSIONS_MAX
+    {
+        return Err(PolicyError::new(format!(
+            "contention metadata retention must set delete-after-commit={} and previous-versions-max={}",
+            CONTENTION_METADATA_DELETE_AFTER_COMMIT,
+            CONTENTION_METADATA_PREVIOUS_VERSIONS_MAX
+        )));
     }
 
     let workload = &parameters.workload;

@@ -70,7 +70,7 @@ fn fixtures_are_unique_per_catalog_and_round_and_reject_unsafe_ids() {
 
 #[test]
 fn scenario_drift_and_behavior_changing_shims_are_rejected() {
-    let (mut profile, mut scenario) = contracts();
+    let (profile, mut scenario) = contracts();
     scenario.parameters.insert(
         "transcript_format".to_owned(),
         serde_json::json!("catalog-bench/contention-transcript/v99"),
@@ -78,7 +78,18 @@ fn scenario_drift_and_behavior_changing_shims_are_rejected() {
     let error = ContentionPlan::from_contracts(&profile, &scenario).unwrap_err();
     assert!(error.to_string().contains("transcript format"));
 
-    let (_, scenario) = contracts();
+    let (profile, mut scenario) = contracts();
+    scenario.parameters.insert(
+        "metadata_retention".to_owned(),
+        serde_json::json!({
+            "delete_after_commit": true,
+            "previous_versions_max": 100
+        }),
+    );
+    let error = ContentionPlan::from_contracts(&profile, &scenario).unwrap_err();
+    assert!(error.to_string().contains("metadata retention"));
+
+    let (mut profile, scenario) = contracts();
     profile.catalog_adapters[0].request_handling = AdapterRequestHandling::BehaviorChangingShim {
         component: ComponentId::from("catalog-bench-commit"),
         description: "test-only mutation".to_owned(),
