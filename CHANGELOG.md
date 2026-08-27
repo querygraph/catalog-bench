@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- C2-04 stock Spark renderer: add one catalog-neutral PySpark implementation of
+  the common workflow using the pinned Iceberg `SparkCatalog`, REST properties,
+  `S3FileIO`, DataFrameWriterV2 appends, SQL DDL, metadata tables, and public
+  Iceberg table utilities. It renders all identifiers and literals safely,
+  regenerates rows solely from scenario parameters, proves canonical hashes in
+  a no-Spark validation mode, reports only the closed event schema, suppresses
+  tracebacks and raw rows, and contains no catalog-name branch or harness HTTP
+  substitute.
+
 - C2-04 runtime and engine-event safety boundary: verify Linux/ARM64 plus every
   profile-pinned engine and connector file by streamed byte count and SHA-256
   before credentials or network access, and decode Spark output through a

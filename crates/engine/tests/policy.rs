@@ -100,6 +100,14 @@ fn derives_only_profile_routing_and_standard_authentication_data() {
         polaris.credential_source(),
         CatalogCredentialSource::OAuth2ClientCredentials { .. }
     ));
+    assert_eq!(
+        serde_json::to_value(&polaris.spark().catalog.authentication).unwrap(),
+        json!({
+            "kind": "oauth2-client-credentials",
+            "oauth2_server_uri": "http://polaris:8181/api/catalog/v1/oauth/tokens",
+            "scope": "PRINCIPAL_ROLE:ALL"
+        })
+    );
 
     let lakekeeper = InteroperabilityPlan::from_contracts(
         &profile,

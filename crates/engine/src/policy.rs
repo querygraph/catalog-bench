@@ -253,6 +253,7 @@ pub struct Fixture {
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
 pub enum SparkAuthentication {
     Anonymous,
+    #[serde(rename = "oauth2-client-credentials")]
     OAuth2ClientCredentials {
         oauth2_server_uri: String,
         scope: String,
@@ -282,8 +283,17 @@ pub struct SparkFileIoPlan {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
+pub struct SparkExecutionSettings {
+    pub master: String,
+    pub shuffle_partitions: u32,
+    pub default_parallelism: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct SparkExecutionPlan {
     pub format: String,
+    pub execution: SparkExecutionSettings,
     pub catalog: SparkCatalogPlan,
     pub file_io: SparkFileIoPlan,
     pub fixture: Fixture,
@@ -415,6 +425,11 @@ impl InteroperabilityPlan {
         let (authentication, credential_source) = authentication(adapter)?;
         let spark = SparkExecutionPlan {
             format: SPARK_PLAN_FORMAT.to_owned(),
+            execution: SparkExecutionSettings {
+                master: "local[2]".to_owned(),
+                shuffle_partitions: 1,
+                default_parallelism: 1,
+            },
             catalog: SparkCatalogPlan {
                 name: SPARK_CATALOG_NAME.to_owned(),
                 uri: adapter.endpoint.base_url.clone(),
