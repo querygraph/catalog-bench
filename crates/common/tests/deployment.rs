@@ -451,6 +451,8 @@ fn clean_contention_run_rejects_reused_persistent_state() {
         "refusing unknown Compose project",
         "CATALOG_BENCH_RUN_ID=\"$project\"",
         "down --remove-orphans",
+        "remaining_containers=",
+        "refusing to build with containers still attached to catalog-bench-net",
         "build lakecat bench",
         "run --rm bench",
     ] {

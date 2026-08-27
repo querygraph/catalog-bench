@@ -106,6 +106,21 @@ done <<< "$active_projects"
 # network filter. This command still omits --volumes.
 "${base_compose[@]}" down --remove-orphans
 
+# A container can carry a recognized Compose project label without belonging to
+# that project's current model. `compose down --remove-orphans` normally catches
+# it, but the fixed benchmark network is an evidence boundary: verify the
+# boundary directly before either build can consume host resources or any new
+# service can start.
+remaining_containers="$(
+  docker ps --all --filter "$network_filter" \
+    --format '{{.ID}} {{.Names}} {{.Label "com.docker.compose.project"}}'
+)"
+if [[ -n "$remaining_containers" ]]; then
+  echo "refusing to build with containers still attached to catalog-bench-net:" >&2
+  echo "$remaining_containers" >&2
+  exit 1
+fi
+
 "${clean_compose[@]}" build lakecat bench
 
 set +e

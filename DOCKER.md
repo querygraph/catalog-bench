@@ -166,11 +166,14 @@ any container in the requested project, and each expected `<run-id>_<store>`
 volume. It discovers any prior Compose project on `catalog-bench-net`, accepts
 only the ordinary project or a scenario-safe run ID, and stops those containers
 with `down --remove-orphans`; an unmanaged container or unknown project makes
-the run fail closed. It never passes `--volumes`, preserving prior state. The
-explicit network remains `catalog-bench-net`, so production evidence runs are
-intentionally serialized; all measured clients, catalogs, and MinIO continue to
-share that one network. After a run, the project and volumes remain available
-for diagnosis. A rerun must choose another ID.
+the run fail closed. It then verifies that the network has no remaining
+attachments, including containers whose recognized Compose label does not
+belong to the current model, before spending resources on either production
+build. It never passes `--volumes`, preserving prior state. The explicit network
+remains `catalog-bench-net`, so production evidence runs are intentionally
+serialized; all measured clients, catalogs, and MinIO continue to share that
+one network. After a run, the project and volumes remain available for
+diagnosis. A rerun must choose another ID.
 
 ## Production-optimized Rust images
 

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C1-08 rerun isolation hardening: after stopping every recognized benchmark
+  project without deleting its volumes, the fail-closed launcher now verifies
+  that `catalog-bench-net` has zero remaining container attachments before
+  starting either production build. This also catches an orphan carrying a
+  plausible Compose project label but absent from that project's current model.
+
 - C1-08 fresh production rerun contract: advance the optimized contention
   runner to source `e5345a260a42148aa5cd1044fb3f43acfc2232d2` and LakeCat to
   `bccb5075047f20686519dcb4192359bfe4d39d87`. LakeCat now builds from that
