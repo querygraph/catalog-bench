@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C2-06 source-bound Flink runner policy: require every runnable Flink profile
+  to contain both the stock engine-owned `/opt/flink/bin/flink` CLI and one
+  byte-identical copy of the catalog-bench Flink runner JAR in the selected
+  engine and source-bound runner images. Generalize runner artifact correlation
+  from one ELF to a nonempty set while preserving the exact optimized Rust ELF
+  requirement. The JAR must be a nonempty Java archive at its fixed image path
+  and attributed to exactly the runner and selected engine; missing runner
+  provenance, missing copies, media-type drift, and byte drift fail during plan
+  construction, before credentials or a child process. Synthetic materialized
+  profile tests cover these gates. No JAR or runnable Flink image is
+  materialized by this policy-only unit.
+
 - C2-06 catalog-neutral Flink renderer: translate the closed Flink plan into a
   typed, secret-free catalog setup and an ordered stock Flink SQL program for
   namespace/table creation, both deterministic appends and reads, additive

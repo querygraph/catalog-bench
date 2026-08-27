@@ -37,6 +37,7 @@ pub const FLINK_COMPONENT_VERSION: &str = "2.1.3";
 pub const FLINK_SCALA_VERSION: &str = "2.12.20";
 pub const FLINK_JAVA_VERSION: &str = "17.0.20";
 pub const FLINK_CLI_LOCATION: &str = "/opt/flink/bin/flink";
+pub const FLINK_RUNNER_LOCATION: &str = "/opt/catalog-bench/catalog-bench-flink-runner.jar";
 pub const S3_ACCESS_KEY_ENV: &str = "CATALOG_BENCH_S3_ACCESS_KEY_ID";
 pub const S3_SECRET_KEY_ENV: &str = "CATALOG_BENCH_S3_SECRET_ACCESS_KEY";
 pub const ENGINE_OAUTH_CLIENT_ID_ENV: &str = "CATALOG_BENCH_ENGINE_CLIENT_ID";
@@ -557,7 +558,12 @@ impl InteroperabilityPlan {
         )?;
         let runtime_artifacts =
             runtime_artifacts(runner_component, engine_component, connector_component)?;
-        validate_execution_artifact(&runtime_artifacts, &engine_component.id, &execution)?;
+        validate_execution_artifact(
+            &runtime_artifacts,
+            runner_component,
+            &engine_component.id,
+            &execution,
+        )?;
         if let Some(runner) = runner_component {
             validate_runner_artifact(&runtime_artifacts, &runner.id, &engine_component.id)?;
         }
@@ -703,6 +709,7 @@ fn execution_plan(
 
 fn validate_execution_artifact(
     artifacts: &[RuntimeArtifactExpectation],
+    runner: Option<&Component>,
     engine: &ComponentId,
     execution: &EngineExecutionPlan,
 ) -> Result<(), PolicyError> {
@@ -726,6 +733,30 @@ fn validate_execution_artifact(
         return Err(PolicyError::new(format!(
             "{label} artifact must be a nonempty engine-owned shell script"
         )));
+    }
+    if matches!(execution, EngineExecutionPlan::Flink(_)) {
+        let runner = runner.ok_or_else(|| {
+            PolicyError::new("Flink execution requires a source-bound engine runner component")
+        })?;
+        let matches = artifacts
+            .iter()
+            .filter(|artifact| artifact.location == FLINK_RUNNER_LOCATION)
+            .collect::<Vec<_>>();
+        let [artifact] = matches.as_slice() else {
+            return Err(PolicyError::new(format!(
+                "Flink runtime must contain exactly one `{FLINK_RUNNER_LOCATION}` artifact"
+            )));
+        };
+        let mut expected_components = vec![runner.id.clone(), engine.clone()];
+        expected_components.sort();
+        if artifact.media_type != "application/java-archive"
+            || artifact.bytes == 0
+            || artifact.components != expected_components
+        {
+            return Err(PolicyError::new(
+                "Flink runner must be one nonempty source-bound runner-and-engine-owned JAR",
+            ));
+        }
     }
     Ok(())
 }
@@ -1245,30 +1276,32 @@ fn runtime_artifacts(
     }
     if let Some(runner) = runner {
         let runner_artifacts = embedded_artifacts(runner)?;
-        let [runner_artifact] = runner_artifacts else {
+        if runner_artifacts.is_empty() {
             return Err(PolicyError::new(
-                "engine runner image must declare exactly one embedded executable",
+                "engine runner image must declare at least one embedded artifact",
             ));
-        };
-        let runner_expectation = expectation(runner_artifact, vec![runner.id.clone()])?;
-        let matches = expectations
-            .iter()
-            .enumerate()
-            .filter_map(|(index, expectation)| {
-                (expectation.location == runner_expectation.location
-                    && same_artifact(expectation, &runner_expectation))
-                .then_some(index)
-            })
-            .collect::<Vec<_>>();
-        let [matched_index] = matches.as_slice() else {
-            return Err(PolicyError::new(
-                "engine runner executable must have exactly one byte-identical copy at the same path in the engine image",
-            ));
-        };
-        let matched = &mut expectations[*matched_index];
-        matched.components.push(runner.id.clone());
-        matched.components.sort();
-        matched.components.dedup();
+        }
+        for runner_artifact in runner_artifacts {
+            let runner_expectation = expectation(runner_artifact, vec![runner.id.clone()])?;
+            let matches = expectations
+                .iter()
+                .enumerate()
+                .filter_map(|(index, expectation)| {
+                    (expectation.location == runner_expectation.location
+                        && same_artifact(expectation, &runner_expectation))
+                    .then_some(index)
+                })
+                .collect::<Vec<_>>();
+            let [matched_index] = matches.as_slice() else {
+                return Err(PolicyError::new(
+                    "each engine runner artifact must have exactly one byte-identical copy at the same path in the engine image",
+                ));
+            };
+            let matched = &mut expectations[*matched_index];
+            matched.components.push(runner.id.clone());
+            matched.components.sort();
+            matched.components.dedup();
+        }
     }
     expectations.sort_by(|left, right| left.location.cmp(&right.location));
     Ok(expectations)

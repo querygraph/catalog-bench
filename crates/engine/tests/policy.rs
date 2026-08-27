@@ -269,6 +269,48 @@ fn flink_selection_rejects_runtime_and_artifact_drift() {
     )
     .unwrap_err();
     assert!(error.to_string().contains("`/opt/flink/bin/flink`"));
+
+    let (mut missing_runner_jar, _) = runnable_flink_contracts();
+    let runner = missing_runner_jar
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == ENGINE_RUNNER_COMPONENT_ID)
+        .unwrap();
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut runner.artifact
+    else {
+        panic!("runner fixture must be an image");
+    };
+    embedded_artifacts.retain(|artifact| {
+        artifact.location != "image:/opt/catalog-bench/catalog-bench-flink-runner.jar"
+    });
+    let error = InteroperabilityPlan::from_contracts(
+        &missing_runner_jar,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "flink02",
+    )
+    .unwrap_err();
+    assert!(
+        error
+            .to_string()
+            .contains("source-bound runner-and-engine-owned JAR"),
+        "{error}"
+    );
+
+    let (mut no_source_binding, _) = runnable_flink_contracts();
+    remove_engine_runner(&mut no_source_binding);
+    let error = InteroperabilityPlan::from_contracts(
+        &no_source_binding,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "flink02",
+    )
+    .unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("requires a source-bound engine runner component"));
 }
 
 #[test]

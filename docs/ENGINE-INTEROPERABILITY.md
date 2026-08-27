@@ -195,6 +195,28 @@ route, file-IO, fixture, identifier, and generator drift. No Flink process was
 launched, so these tests are not interoperability evidence and do not add a
 ranking row.
 
+### Source-bound Flink child artifact
+
+A future runnable Flink profile must declare three distinct executable
+authorities inside the one container that performs the run: the stock
+`/opt/flink/bin/flink` CLI owned by the selected Apache Flink component, the
+optimized `/usr/local/bin/catalog-bench-engine` ELF owned byte-for-byte by both
+the source-bound benchmark-runner component and selected engine image, and the
+`/opt/catalog-bench/catalog-bench-flink-runner.jar` child artifact with the same
+runner/engine dual ownership. The JAR is not treated as an Apache Flink or
+Iceberg artifact: its byte identity must originate in the catalog-bench runner
+component and be copied unchanged into the executed Flink image.
+
+Runner artifact correlation now accepts a nonempty set so the Rust ELF and
+engine-specific child can coexist, but every declared runner artifact must have
+exactly one same-path, same-media-type, same-digest, same-size copy in the
+engine image. Flink additionally requires exactly one nonempty Java archive at
+the fixed child path. Plan construction rejects an absent source-bound runner,
+an engine-only JAR, duplicate identity, wrong media type, or byte drift before
+runtime verification can open credential or process effects. The current
+candidate profile remains draft and contains no such materialized JAR; this is
+an admission policy, not evidence that the artifact has been built or run.
+
 ## Reusable runtime-identity boundary
 
 Runtime-ready evidence contains a neutral engine version, an exact sorted map of
