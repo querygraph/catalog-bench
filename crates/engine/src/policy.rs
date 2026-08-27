@@ -13,9 +13,11 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use url::Url;
 
+use crate::protocol::EngineRuntimeObservation;
+
 pub const ENGINE_SCENARIO_ID: &str = "engine.iceberg.write-read-evolution";
-pub const ENGINE_SCENARIO_VERSION: u32 = 1;
-pub const ENGINE_TRANSCRIPT_FORMAT: &str = "catalog-bench/engine-interoperability-transcript/v1";
+pub const ENGINE_SCENARIO_VERSION: u32 = 2;
+pub const ENGINE_TRANSCRIPT_FORMAT: &str = "catalog-bench/engine-interoperability-transcript/v2";
 pub const ENGINE_RUNNER_COMPONENT_ID: &str = "catalog-bench-engine";
 pub const ENGINE_RUNNER_ROLE: &str = "engine-runner";
 pub const ENGINE_RUNNER_LOCATION: &str = "/usr/local/bin/catalog-bench-engine";
@@ -35,7 +37,7 @@ pub const ENGINE_OAUTH_CLIENT_SECRET_ENV: &str = "CATALOG_BENCH_ENGINE_CLIENT_SE
 
 const FIXTURE_TABLE_NAME: &str = "events";
 const CANONICAL_SCENARIO: &[u8] =
-    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PolicyError(String);
@@ -332,6 +334,24 @@ impl EngineExecutionPlan {
     pub fn spark(&self) -> Option<&SparkExecutionPlan> {
         match self {
             Self::Spark(plan) => Some(plan),
+        }
+    }
+
+    #[must_use]
+    pub fn runtime_identity_matches(&self, observation: &EngineRuntimeObservation) -> bool {
+        match self {
+            Self::Spark(_) => {
+                observation.engine_version == SPARK_COMPONENT_VERSION
+                    && observation.dependencies.len() == 2
+                    && observation
+                        .dependencies
+                        .get("java")
+                        .is_some_and(|version| version == SPARK_JAVA_VERSION)
+                    && observation
+                        .dependencies
+                        .get("scala")
+                        .is_some_and(|version| version == SPARK_SCALA_VERSION)
+            }
         }
     }
 }

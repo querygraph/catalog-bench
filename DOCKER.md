@@ -288,17 +288,20 @@ mismatched evidence makes the whole run incomplete with exit 1. These files are
 sanitized raw evidence, not public result records until the independent bundle
 import and validation unit accepts all four.
 
-Before any import, independently bind the exact raw directory back to its
-contracts and profile-derived catalog set:
+The checked-in launcher and immutable Spark profile preserve the v1 runner and
+scenario for reproducibility. Current source admits only the v2 runtime-identity
+wire, so that launcher is not eligible for a new publication run. Before the
+next run, a separate verified unit must materialize a fresh optimized v2 runner
+and combined image, pin its observed bytes in a v2 profile, and advance the
+launcher atomically. The future admission command will then bind raw evidence to
+that exact profile:
 
 ```sh
-run_id="spark_$(date -u +%m%d%H%M%S)"
-docker/run-spark-interoperability.sh "$run_id"
 cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
-  --profile profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
-  --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
-  --evidence-directory "target/spark-evidence/$run_id" \
-  --fixture-id "$run_id"
+  --profile profiles/v1/SOURCE_BOUND_V2_ENGINE_PROFILE.json \
+  --scenario scenarios/v1/engine.iceberg.write-read-evolution.v2.json \
+  --evidence-directory "target/spark-evidence/<run-id>" \
+  --fixture-id "<run-id>"
 ```
 
 Admission derives expected file names from the profile instead of accepting a

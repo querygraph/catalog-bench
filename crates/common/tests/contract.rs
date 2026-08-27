@@ -293,6 +293,8 @@ fn checked_in_profiles_and_scenarios_validate() {
         include_bytes!("../../../scenarios/v1/iceberg-rest.table.behavior.json").as_slice(),
         include_bytes!("../../../scenarios/v1/client.pyiceberg.interoperability.json").as_slice(),
         include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json").as_slice(),
+        include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json")
+            .as_slice(),
     ];
     let documents = bytes.map(|document| parse_contract(document).unwrap());
 

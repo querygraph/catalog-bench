@@ -2,7 +2,7 @@
 
 Phase 2 compares interoperability, not query-engine speed. The first authority is
 the versioned
-[`engine.iceberg.write-read-evolution`](../scenarios/v1/engine.iceberg.write-read-evolution.json)
+[`engine.iceberg.write-read-evolution` v2](../scenarios/v1/engine.iceberg.write-read-evolution.v2.json)
 scenario. A pinned stock engine must execute one identical semantic workflow
 through a profile-selected Iceberg REST catalog and the shared MinIO data plane.
 Spark is implemented first; Flink and Trino must consume the same scenario and
@@ -111,9 +111,9 @@ evidence. The generic workflow consumes it to decide whether fixture ownership
 authorizes independent REST/MinIO reconciliation and cleanup. Flink and Trino
 must implement the same boundary and event protocol; they may not fork the
 classification rules or introduce engine-specific transcript meanings. This
-refactor does not claim either runtime is implemented yet—the remaining runtime
-observation, plan, renderer, and artifact policies must still be generalized in
-separate verified units.
+refactor does not claim either runtime is implemented yet—the remaining
+renderer and artifact policies must still be generalized in separate verified
+units.
 
 ## Reusable execution-policy boundary
 
@@ -126,10 +126,36 @@ contains the existing closed `SparkExecutionPlan`.
 The Spark process adapter must explicitly select that Spark variant before it
 can serialize `plan.json`. An adapter paired with the wrong execution-plan
 variant fails preparation with a closed `execution-plan-mismatch` category; it
-cannot reinterpret another engine's settings or panic. This refactor does not
-change the serialized Spark plan or transcript wire formats. Flink and Trino
-will add their own variants and adapters in later independently verified units,
-while reusing the same scenario, fixture, evidence, and classification policy.
+cannot reinterpret another engine's settings or panic. Flink and Trino will add
+their own variants and adapters in later independently verified units, while
+reusing the same scenario, fixture, evidence, and classification policy.
+
+## Reusable runtime-identity boundary
+
+Runtime-ready evidence contains a neutral engine version, an exact sorted map of
+runtime dependencies, and the observed operating system and architecture. The
+common reconciler delegates engine and dependency matching to the selected
+`EngineExecutionPlan`; it separately compares normalized platform names with the
+profile. It therefore contains no Spark, Scala, Java, Flink, or Trino field-name
+branches.
+
+The Spark variant requires engine version `4.1.3` and exactly `java=21.0.11`
+plus `scala=2.13.17`. Its renderer rejects missing or extra dependency names,
+legacy `spark_version`/`scala_version`/`java_version` shapes, non-text values,
+and unbounded text before emitting an event. Future engine variants own their
+own exact dependency sets without weakening the common vocabulary.
+
+This event change deliberately advances the scenario revision and transcript
+format to v2. The decoder does not use an untagged legacy alternative whose
+shape could become ambiguous as engines are added. The checked-in immutable
+Spark profile remains scoped to v1 because its source-bound runner bytes predate
+this change; its [v1 scenario](../scenarios/v1/engine.iceberg.write-read-evolution.json)
+is retained byte-for-byte rather than overwritten. Relabeling those bytes would
+falsify provenance. A fresh optimized runner and combined Spark image must be
+materialized, observed, and pinned before any v2 production execution. No
+production Spark result using v1 had been published, so there is no published
+result migration or rewritten evidence; any pre-publication v1 transcript must
+be rerun with that future source-bound v2 profile.
 
 ## Independent evidence
 
@@ -330,8 +356,8 @@ The independent admission command is the first half of that boundary:
 
 ```sh
 cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
-  --profile profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
-  --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
+  --profile profiles/v1/SOURCE_BOUND_V2_ENGINE_PROFILE.json \
+  --scenario scenarios/v1/engine.iceberg.write-read-evolution.v2.json \
   --evidence-directory target/spark-evidence/<run-id> \
   --fixture-id <run-id>
 ```
@@ -343,6 +369,12 @@ transcript must identify the catalog implied by its file name and the common
 fixture, bind the exact profile and scenario digests, reproduce all derived
 execution checks and classification, and pass the value-safety audit again.
 Only the resulting typed set is available to the result materializer.
+
+The placeholder is intentional: the checked-in source-bound Spark profile and
+launcher preserve the v1 runner and scenario for reproducibility, but current
+source admits only v2 evidence. They are not a publication path together. A
+fresh optimized v2 runner/image materialization must replace the placeholder
+and advance the launcher in one verified unit before the next production run.
 
 ## Reviewed live-run envelope
 
@@ -471,9 +503,11 @@ materializes result records, exact source copies, an immutable manifest, and the
 unranked correctness matrix from only that typed validated input. The remaining
 C2-05 work is the fresh optimized production run, review, and publication.
 C2-06 first extracts engine-neutral process evidence and then separates common
-scenario and fixture semantics from renderer-specific execution policy. Spark
-remains the only implemented execution-plan variant and production adapter;
-Flink and Trino are not yet claimed.
+scenario and fixture semantics from renderer-specific execution policy. It also
+versions the evidence contract while replacing Spark-named runtime fields with
+plan-owned neutral runtime identity. Spark remains the only implemented
+execution-plan variant and production adapter; Flink and Trino are not yet
+claimed.
 
 The remaining independently committed units will:
 

@@ -11,7 +11,7 @@ use tempfile::tempdir;
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const SCENARIO: &[u8] =
-    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 const RENDERER: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/spark/runner.py");
 
 #[test]
@@ -177,6 +177,55 @@ fn renderer_projects_property_agreement_and_rejects_unsafe_table_values() {
 }
 
 #[test]
+fn renderer_emits_a_closed_engine_neutral_runtime_identity() {
+    let observation = json!({
+        "engine_version": "4.1.3",
+        "dependencies": {
+            "java": "21.0.11",
+            "scala": "2.13.17"
+        },
+        "operating_system": "Linux",
+        "architecture": "aarch64"
+    });
+    let output = sanitize_runtime(&observation);
+    assert!(output.status.success());
+    assert_eq!(
+        serde_json::from_slice::<serde_json::Value>(&output.stdout).unwrap(),
+        observation
+    );
+
+    for drifted in [
+        json!({
+            "spark_version": "4.1.3",
+            "scala_version": "2.13.17",
+            "java_version": "21.0.11",
+            "operating_system": "Linux",
+            "architecture": "aarch64"
+        }),
+        json!({
+            "engine_version": "4.1.3",
+            "dependencies": {"java": "21.0.11"},
+            "operating_system": "Linux",
+            "architecture": "aarch64"
+        }),
+        json!({
+            "engine_version": "4.1.3",
+            "dependencies": {
+                "java": "21.0.11",
+                "scala": "2.13.17",
+                "python": "3.13"
+            },
+            "operating_system": "Linux",
+            "architecture": "aarch64"
+        }),
+    ] {
+        let output = sanitize_runtime(&drifted);
+        assert!(!output.status.success());
+        assert!(output.stdout.is_empty());
+    }
+}
+
+#[test]
 fn renderer_has_no_catalog_branch_http_substitute_or_raw_exception_path() {
     let source = fs::read_to_string(RENDERER).unwrap();
     for catalog in ["lakecat", "polaris", "gravitino", "lakekeeper", "nessie"] {
@@ -263,6 +312,35 @@ print(json.dumps(sanitized, separators=(",", ":"), sort_keys=True))
         .arg(SANITIZE)
         .arg(RENDERER)
         .arg(plan_path)
+        .arg(observation_path)
+        .env("PYTHONDONTWRITEBYTECODE", "1")
+        .stdin(Stdio::null())
+        .stderr(Stdio::null())
+        .output()
+        .unwrap()
+}
+
+fn sanitize_runtime(observation: &serde_json::Value) -> std::process::Output {
+    const SANITIZE: &str = r#"
+import importlib.util
+import json
+import sys
+
+spec = importlib.util.spec_from_file_location("catalog_bench_spark_runner", sys.argv[1])
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+with open(sys.argv[2], "rb") as stream:
+    observation = json.load(stream)
+sanitized = module.sanitize_runtime_observation(observation)
+print(json.dumps(sanitized, separators=(",", ":"), sort_keys=True))
+"#;
+    let directory = tempdir().unwrap();
+    let observation_path = directory.path().join("runtime.json");
+    fs::write(&observation_path, serde_json::to_vec(observation).unwrap()).unwrap();
+    Command::new("python3")
+        .arg("-c")
+        .arg(SANITIZE)
+        .arg(RENDERER)
         .arg(observation_path)
         .env("PYTHONDONTWRITEBYTECODE", "1")
         .stdin(Stdio::null())

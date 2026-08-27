@@ -22,7 +22,7 @@ use tempfile::{tempdir, TempDir};
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const SCENARIO: &[u8] =
-    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 const ACCESS_VALUE: &str = "process-access-value";
 const SECRET_VALUE: &str = "process-secret-value";
 const CLIENT_ID_VALUE: &str = "process-client-id";
@@ -495,9 +495,11 @@ fn runtime_ready() -> serde_json::Value {
     json!({
         "event": "runtime-ready",
         "runtime": {
-            "spark_version": "4.1.3",
-            "scala_version": "2.13.17",
-            "java_version": "21.0.11",
+            "engine_version": "4.1.3",
+            "dependencies": {
+                "java": "21.0.11",
+                "scala": "2.13.17"
+            },
             "operating_system": "Linux",
             "architecture": "aarch64"
         }

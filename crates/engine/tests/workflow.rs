@@ -26,7 +26,7 @@ use serde_json::json;
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const SCENARIO: &[u8] =
-    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 
 #[tokio::test]
 async fn complete_workflow_reconciles_all_three_authorities_before_cleanup() {
@@ -768,9 +768,11 @@ fn passing_runtime_verification(plan: &InteroperabilityPlan) -> RuntimeVerificat
 
 fn runtime_event() -> EngineRuntimeObservation {
     EngineRuntimeObservation {
-        spark_version: "4.1.3".to_owned(),
-        scala_version: "2.13.17".to_owned(),
-        java_version: "21.0.11".to_owned(),
+        engine_version: "4.1.3".to_owned(),
+        dependencies: BTreeMap::from([
+            ("java".to_owned(), "21.0.11".to_owned()),
+            ("scala".to_owned(), "2.13.17".to_owned()),
+        ]),
         operating_system: "Linux".to_owned(),
         architecture: "aarch64".to_owned(),
     }

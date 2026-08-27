@@ -17,7 +17,7 @@ const PROFILE: &[u8] = include_bytes!("../../../profiles/v1/current-2026-08-26.j
 const SCENARIO: &[u8] =
     include_bytes!("../../../scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json");
 const ENGINE_SCENARIO: &[u8] =
-    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 
 #[tokio::test]
 async fn anonymous_runtime_reuses_negotiated_routing_and_keeps_bodies_private() {

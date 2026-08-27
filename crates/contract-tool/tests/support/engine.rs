@@ -32,7 +32,7 @@ use tempfile::TempDir;
 const PROFILE: &[u8] =
     include_bytes!("../../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 pub const SCENARIO: &[u8] =
-    include_bytes!("../../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+    include_bytes!("../../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 pub const FIXTURE_ID: &str = "evidence01";
 pub const CATALOGS: [&str; 4] = ["lakecat", "polaris", "gravitino", "lakekeeper"];
 pub const PROFILE_LOCATION: &str = "profiles/v1/profile.json";
@@ -363,9 +363,11 @@ fn runtime_observation(
     transcript: &EngineTranscript,
 ) -> EngineRuntimeObservation {
     EngineRuntimeObservation {
-        spark_version: transcript.components.engine.version.clone(),
-        scala_version: SPARK_SCALA_VERSION.to_owned(),
-        java_version: SPARK_JAVA_VERSION.to_owned(),
+        engine_version: transcript.components.engine.version.clone(),
+        dependencies: BTreeMap::from([
+            ("java".to_owned(), SPARK_JAVA_VERSION.to_owned()),
+            ("scala".to_owned(), SPARK_SCALA_VERSION.to_owned()),
+        ]),
         operating_system: contracts.profile().platform.operating_system.clone(),
         architecture: contracts.profile().platform.architecture.clone(),
     }

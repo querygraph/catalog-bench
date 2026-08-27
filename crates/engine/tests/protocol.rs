@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use catalog_bench_engine::{
     EngineEvent, EngineEventDecoder, EngineFailureCategory, EngineProtocolFailureKind, EngineStage,
     ENGINE_EVENT_PREFIX, MAXIMUM_ENGINE_EVENT_BYTES, MAXIMUM_ENGINE_STDOUT_BYTES,
@@ -198,9 +200,11 @@ fn successful_events() -> Vec<EngineEvent> {
     vec![
         EngineEvent::RuntimeReady {
             runtime: EngineRuntimeObservation {
-                spark_version: "4.1.3".to_owned(),
-                scala_version: "2.13.17".to_owned(),
-                java_version: "21.0.11".to_owned(),
+                engine_version: "4.1.3".to_owned(),
+                dependencies: BTreeMap::from([
+                    ("java".to_owned(), "21.0.11".to_owned()),
+                    ("scala".to_owned(), "2.13.17".to_owned()),
+                ]),
                 operating_system: "Linux".to_owned(),
                 architecture: "aarch64".to_owned(),
             },

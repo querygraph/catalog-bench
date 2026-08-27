@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- C2-06 engine-neutral runtime identity: replace Spark-, Scala-, and Java-named
+  event fields with an engine version plus an exact dependency map, and move
+  expected runtime matching behind the selected `EngineExecutionPlan` variant.
+  Shared reconciliation now knows only the selected plan and normalized
+  platform; the Spark renderer alone requires and emits the closed `java` and
+  `scala` dependency set. Missing, extra, legacy-shaped, or version-drifted
+  identities fail closed. Because this intentionally changes persisted event
+  JSON, advance the common scenario and transcript format to v2 instead of
+  accepting an ambiguous untagged compatibility shape. The immutable runnable
+  profile remains honestly scoped to v1 until a fresh optimized v2 runner image
+  is materialized and verified. No v1 production Spark result had been
+  published, and this unit does not claim a new runtime result.
+
 - C2-06 engine-neutral execution policy: store renderer-specific policy in the
   `EngineExecutionPlan` algebraic data type and expose common fixture and
   scenario views from `InteroperabilityPlan`. Catalog projection, independent

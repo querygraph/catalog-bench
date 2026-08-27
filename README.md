@@ -73,8 +73,8 @@ cargo run -p catalog-bench-contract --locked -- profile check-spark \
   --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
   --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
 cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
-  --profile profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
-  --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
+  --profile profiles/v1/SOURCE_BOUND_V2_ENGINE_PROFILE.json \
+  --scenario scenarios/v1/engine.iceberg.write-read-evolution.v2.json \
   --evidence-directory target/spark-evidence/<run-id> \
   --fixture-id <run-id>
 cargo run -p catalog-bench-contract --locked -- engine-evidence validate-review \
@@ -84,6 +84,11 @@ cargo run -p catalog-bench-contract --locked -- engine-import check \
   --root . \
   --review results/source/engine/<run-id>/review.json
 ```
+
+`SOURCE_BOUND_V2_ENGINE_PROFILE.json` is deliberately a placeholder. The checked-in
+Spark profile preserves immutable v1 runner bytes; it must not be paired with
+the v2 scenario for publication. A fresh optimized v2 image/profile
+materialization will replace the placeholder before the next production run.
 
 See **[RESULTS.md](RESULTS.md)** for measured results.
 
@@ -105,7 +110,7 @@ the strict performance scenario
 plus the no-shim stock-client oracle
 [`client.pyiceberg.interoperability`](scenarios/v1/client.pyiceberg.interoperability.json),
 and the Phase 2 stock-engine authority
-[`engine.iceberg.write-read-evolution`](scenarios/v1/engine.iceberg.write-read-evolution.json).
+[`engine.iceberg.write-read-evolution` v2](scenarios/v1/engine.iceberg.write-read-evolution.v2.json).
 Their typed runners negotiate anonymous or OAuth2 client-credentials access,
 validate config and prefix resolution, then exercise isolated namespace and
 table lifecycles with hierarchy, immutable metadata updates, errors, pagination,

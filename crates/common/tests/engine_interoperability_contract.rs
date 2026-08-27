@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use sha2::{Digest as _, Sha256};
 
 const SCENARIO_BYTES: &[u8] =
-    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 
 fn scenario() -> Scenario {
     let ContractDocument::Scenario(scenario) = parse_contract(SCENARIO_BYTES).unwrap() else {
@@ -111,7 +111,7 @@ fn common_engine_scenario_is_catalog_and_runtime_neutral() {
     let scenario = scenario();
 
     assert_eq!(scenario.id.as_str(), "engine.iceberg.write-read-evolution");
-    assert_eq!(scenario.version, 1);
+    assert_eq!(scenario.version, 2);
     assert!(scenario.steps.iter().all(|step| matches!(
         step.actor,
         ActorRole::Harness | ActorRole::Engine | ActorRole::ObjectStore

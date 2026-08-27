@@ -13,7 +13,7 @@ use crate::{
     EngineCatalogTable, EngineEvent, EngineFieldObservation, EngineProcessExecution,
     EnginePropertyObservation, EngineRuntimeObservation, EngineTableLoad, EngineTableObservation,
     IcebergField, InteroperabilityPlan, RowReadObservation, RuntimeArtifactOutcome,
-    RuntimeVerification, SPARK_JAVA_VERSION, SPARK_SCALA_VERSION,
+    RuntimeVerification,
 };
 
 #[derive(Default)]
@@ -164,9 +164,7 @@ fn catalog_connection_matches(plan: &InteroperabilityPlan, execution: &EngineExe
 }
 
 fn runtime_matches(plan: &InteroperabilityPlan, runtime: &EngineRuntimeObservation) -> bool {
-    runtime.spark_version == plan.engine().version
-        && runtime.scala_version == SPARK_SCALA_VERSION
-        && runtime.java_version == SPARK_JAVA_VERSION
+    plan.execution().runtime_identity_matches(runtime)
         && operating_system_matches(
             &plan.runtime_platform().operating_system,
             &runtime.operating_system,

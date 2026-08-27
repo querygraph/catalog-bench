@@ -4,12 +4,11 @@ use std::fmt::Write;
 
 use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{AssertionOutcome, EvidenceId, Provenance, ResultOutcome};
+use catalog_bench_engine::{ENGINE_SCENARIO_ID, ENGINE_SCENARIO_VERSION};
 
 use crate::matrix::{display_version, markdown_text, outcome_label, published_path};
 use crate::{ValidatedBundle, ValidatedResult};
 
-const ENGINE_SCENARIO_ID: &str = "engine.iceberg.write-read-evolution";
-const ENGINE_SCENARIO_VERSION: u32 = 1;
 const TRANSCRIPT_EVIDENCE_ID: &str = "engine-transcript";
 
 /// Render a correctness matrix exclusively from validated stock-engine results.
@@ -22,7 +21,9 @@ pub fn render_engine_matrix(bundle: &ValidatedBundle) -> Result<String> {
         || scenario.scenario().id.as_str() != ENGINE_SCENARIO_ID
         || scenario.scenario().version != ENGINE_SCENARIO_VERSION
     {
-        bail!("engine matrix requires the stock-engine interoperability v1 scenario");
+        bail!(
+            "engine matrix requires the stock-engine interoperability v{ENGINE_SCENARIO_VERSION} scenario"
+        );
     }
 
     let mut results = bundle.results().iter().collect::<Vec<_>>();

@@ -18,7 +18,7 @@ use support::{MockResponse, MockServer};
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const SCENARIO: &[u8] =
-    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 
 #[tokio::test]
 async fn stock_rest_load_projects_full_state_and_cleanup_never_purges() {

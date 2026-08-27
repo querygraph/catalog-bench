@@ -22,7 +22,7 @@ from urllib.parse import SplitResult, urlsplit
 
 
 PLAN_FORMAT = "catalog-bench/spark-engine-plan/v1"
-TRANSCRIPT_FORMAT = "catalog-bench/engine-interoperability-transcript/v1"
+TRANSCRIPT_FORMAT = "catalog-bench/engine-interoperability-transcript/v2"
 EVENT_PREFIX = "CATALOG_BENCH_EVENT "
 MAXIMUM_PLAN_BYTES = 256 * 1024
 MAXIMUM_GENERATED_ROWS = 100_000
@@ -627,32 +627,52 @@ def build_spark(plan: Mapping[str, Any]) -> Any:
     return spark
 
 
-def sanitize_runtime_observation(observation: Any) -> dict[str, str]:
+def sanitize_runtime_observation(observation: Any) -> dict[str, Any]:
     runtime = require_object(observation, "runtime observation")
     require_keys(
         runtime,
         {
-            "spark_version",
-            "scala_version",
-            "java_version",
+            "engine_version",
+            "dependencies",
             "operating_system",
             "architecture",
         },
         "runtime observation",
     )
     return {
-        key: require_bounded_text(runtime[key], f"runtime.{key}")
-        for key in runtime
+        "engine_version": require_bounded_text(
+            runtime["engine_version"], "runtime.engine_version"
+        ),
+        "dependencies": {
+            key: require_bounded_text(value, f"runtime.dependencies.{key}")
+            for key, value in require_exact_runtime_dependencies(
+                runtime["dependencies"]
+            ).items()
+        },
+        "operating_system": require_bounded_text(
+            runtime["operating_system"], "runtime.operating_system"
+        ),
+        "architecture": require_bounded_text(
+            runtime["architecture"], "runtime.architecture"
+        ),
     }
 
 
-def runtime_observation(spark: Any) -> dict[str, str]:
+def require_exact_runtime_dependencies(value: Any) -> Mapping[str, Any]:
+    dependencies = require_object(value, "runtime dependencies")
+    require_keys(dependencies, {"java", "scala"}, "runtime dependencies")
+    return dependencies
+
+
+def runtime_observation(spark: Any) -> dict[str, Any]:
     java = spark._jvm.java.lang.System
     return sanitize_runtime_observation(
         {
-            "spark_version": spark.version,
-            "scala_version": spark._jvm.scala.util.Properties.versionNumberString(),
-            "java_version": java.getProperty("java.version"),
+            "engine_version": spark.version,
+            "dependencies": {
+                "java": java.getProperty("java.version"),
+                "scala": spark._jvm.scala.util.Properties.versionNumberString(),
+            },
             "operating_system": java.getProperty("os.name"),
             "architecture": java.getProperty("os.arch"),
         }

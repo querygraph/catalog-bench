@@ -1,10 +1,12 @@
+use std::collections::BTreeMap;
+
 use catalog_bench_common::contract::{
     parse_contract, AdapterRequestHandling, ArtifactReference, ComponentId, ContractDocument,
     Profile, RuntimeArtifact, Scenario,
 };
 use catalog_bench_engine::{
-    CatalogCredentialSource, EngineExecutionPlan, InteroperabilityPlan, SparkAuthentication,
-    ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE,
+    CatalogCredentialSource, EngineExecutionPlan, EngineRuntimeObservation, InteroperabilityPlan,
+    SparkAuthentication, ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE,
     ENGINE_TRANSCRIPT_FORMAT, ICEBERG_CONNECTOR_VERSION, SPARK_COMPONENT_VERSION,
     SPARK_PLAN_FORMAT,
 };
@@ -17,7 +19,7 @@ use support::{remove_engine_runner, RUNNER_REVISION};
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const SCENARIO: &[u8] =
-    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 const RUNNER_DIGEST: &str = "44e0aad6f2519678d335d6a437073da9674bb5a378df4b6d92fe88dfae038f5b";
 
 #[test]
@@ -75,6 +77,50 @@ fn execution_plan_exposes_engine_neutral_scenario_and_fixture_views() {
     assert_eq!(plan.fixture(), &spark.fixture);
     assert_eq!(plan.scenario(), &spark.scenario);
     assert_eq!(plan.spark(), Some(spark));
+}
+
+#[test]
+fn execution_plan_matches_only_its_exact_runtime_identity() {
+    let (profile, scenario) = contracts();
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "identity01",
+    )
+    .unwrap();
+    let runtime = EngineRuntimeObservation {
+        engine_version: "4.1.3".to_owned(),
+        dependencies: BTreeMap::from([
+            ("java".to_owned(), "21.0.11".to_owned()),
+            ("scala".to_owned(), "2.13.17".to_owned()),
+        ]),
+        operating_system: "Linux".to_owned(),
+        architecture: "aarch64".to_owned(),
+    };
+
+    assert!(plan.execution().runtime_identity_matches(&runtime));
+    for drifted in [
+        EngineRuntimeObservation {
+            engine_version: "4.1.4".to_owned(),
+            ..runtime.clone()
+        },
+        EngineRuntimeObservation {
+            dependencies: BTreeMap::from([("java".to_owned(), "21.0.11".to_owned())]),
+            ..runtime.clone()
+        },
+        EngineRuntimeObservation {
+            dependencies: runtime
+                .dependencies
+                .iter()
+                .map(|(name, version)| (name.clone(), version.clone()))
+                .chain([("python".to_owned(), "3.13".to_owned())])
+                .collect(),
+            ..runtime.clone()
+        },
+    ] {
+        assert!(!plan.execution().runtime_identity_matches(&drifted));
+    }
 }
 
 #[test]

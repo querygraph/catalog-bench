@@ -251,11 +251,21 @@ correctness scenario.
 ### Stock-engine interoperability transcripts
 
 The C2-01
-[`engine.iceberg.write-read-evolution`](../scenarios/v1/engine.iceberg.write-read-evolution.json)
-scenario is the common Phase 2 workflow for Spark, Flink, Trino, and any later
-stock engine. It uses the existing `engine` actor and records the executed engine
-in a result's `client` component slot; bundle validation already accepts profile
-components of kind `engine` there. No contract-shape change is required.
+[`engine.iceberg.write-read-evolution` v2](../scenarios/v1/engine.iceberg.write-read-evolution.v2.json)
+scenario, now at revision 2, is the common Phase 2 workflow for Spark, Flink,
+Trino, and any later stock engine. It uses the existing `engine` actor and
+records the executed engine in a result's `client` component slot; bundle
+validation already accepts profile components of kind `engine` there. No result
+contract-shape change is required.
+
+Revision 2 replaces Spark-specific runtime event fields with `engine_version`,
+an exact dependency map, and normalized platform evidence. Expected engine and
+dependency versions belong to the selected execution-plan variant rather than
+the shared reconciler. The transcript format advances to v2 with the scenario;
+legacy event JSON is rejected instead of admitted through an ambiguous
+compatibility shape. The immutable Spark profile remains scoped to v1 until a
+fresh optimized v2 runner image is materialized and verified. No revision-1
+production engine result was published.
 
 One scenario-owned generator yields 16 initial rows and four evolved rows. Each
 engine must create the same unpartitioned format-v2 Parquet table, append and
@@ -378,8 +388,8 @@ cargo run -p catalog-bench-contract --locked -- validate path/to/documents
 
 # Admit exactly one canonical stock-engine transcript per profile catalog.
 cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
-  --profile profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
-  --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
+  --profile profiles/v1/SOURCE_BOUND_V2_ENGINE_PROFILE.json \
+  --scenario scenarios/v1/engine.iceberg.write-read-evolution.v2.json \
   --evidence-directory target/spark-evidence/<run-id> \
   --fixture-id <run-id>
 

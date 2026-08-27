@@ -53,9 +53,8 @@ pub enum EngineFailureCategory {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EngineRuntimeObservation {
-    pub spark_version: String,
-    pub scala_version: String,
-    pub java_version: String,
+    pub engine_version: String,
+    pub dependencies: BTreeMap<String, String>,
     pub operating_system: String,
     pub architecture: String,
 }
