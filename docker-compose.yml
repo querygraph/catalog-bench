@@ -1,4 +1,4 @@
-# Catalog-neutral, Linux ARM64 Phase 1 topology.
+# Catalog-neutral, Linux ARM64 Phase 1 and Phase 2 topology.
 #
 # The network, object store, and state volumes are owned by this Compose project.
 # Nothing depends on ~/src/boat, a host process, or a pre-created Docker network.
@@ -22,13 +22,23 @@ x-bench-build: &bench-build
   dockerfile: docker/bench.Dockerfile
   args:
     CATALOG_BENCH_SOURCE_REVISION: e5345a260a42148aa5cd1044fb3f43acfc2232d2
+x-engine-runner-image: &engine-runner-image catalog-bench-engine:45e0f82d7bfb
+x-engine-runner-build: &engine-runner-build
+  context: "https://github.com/querygraph/catalog-bench.git#45e0f82d7bfb17b2d6da9918e89bcc146938addd"
+  dockerfile: docker/bench.Dockerfile
+  args:
+    CATALOG_BENCH_SOURCE_REVISION: 45e0f82d7bfb17b2d6da9918e89bcc146938addd
+x-spark-image: &spark-image catalog-bench/spark:4.1.3-iceberg1.11.0
 x-spark-build: &spark-build
   context: .
   dockerfile: docker/spark/Dockerfile
   args:
+    CATALOG_BENCH_SOURCE_REVISION: 45e0f82d7bfb17b2d6da9918e89bcc146938addd
     SPARK_BASE_IMAGE: catalog-bench/spark-base:4.1.3-arm64-bf9d035a
     SPARK_SOURCE_REVISION: 77bbf77e86ad48f58b5dfbc6ac882b3e70cf1989
     ICEBERG_SOURCE_REVISION: 6976e020b894f6a6777704df2b8c4458cb291ae9
+  additional_contexts:
+    catalog-bench-engine-runner: "service:engine-runner-image"
 x-rust-runner: &rust-runner
   build: *bench-build
   image: *bench-image
@@ -40,6 +50,24 @@ x-rust-runner: &rust-runner
   security_opt: ["no-new-privileges:true"]
   tmpfs:
     - /tmp:size=64m,mode=1777
+x-spark-runtime: &spark-runtime
+  image: *spark-image
+  platform: linux/arm64
+  networks: [lakehouse-net]
+  profiles: ["spark"]
+  init: true
+  read_only: true
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs:
+    - /tmp:size=512m,mode=1777
+  volumes:
+    - ./profiles:/contracts/profiles:ro
+    - ./scenarios:/contracts/scenarios:ro
+    - ${CATALOG_BENCH_SPARK_EVIDENCE_DIR:-./target/spark-evidence}:/evidence
+  depends_on:
+    minio-init:
+      condition: service_completed_successfully
 x-lakekeeper-environment: &lakekeeper-environment
   LAKEKEEPER__AUTHZ_BACKEND: allowall
   LAKEKEEPER__ENABLE_DEFAULT_PROJECT: "true"
@@ -497,32 +525,42 @@ services:
     networks: [lakehouse-net]
     profiles: ["spark"]
 
+  # Exact source-pinned donor for the optimized Rust harness. The executed
+  # Spark image copies and verifies these bytes; this service is independently
+  # inspectable but is not part of a measured process tree.
+  engine-runner-image:
+    build: *engine-runner-build
+    image: *engine-runner-image
+    platform: linux/arm64
+    profiles: ["spark"]
+    network_mode: none
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    entrypoint: ["/usr/local/bin/catalog-bench-engine"]
+    command: ["--help"]
+
   # Stock Apache Spark plus only the two Iceberg 1.11.0 artifacts selected by
   # the profile. The service is a hardened one-shot runner on the same network
   # and MinIO substrate as every catalog.
   spark:
+    <<: *spark-runtime
     build:
       <<: *spark-build
       target: runtime
-    image: catalog-bench/spark:4.1.3-iceberg1.11.0
-    platform: linux/arm64
-    networks: [lakehouse-net]
-    profiles: ["spark"]
-    init: true
-    read_only: true
-    cap_drop: ["ALL"]
-    security_opt: ["no-new-privileges:true"]
-    tmpfs:
-      - /tmp:size=512m,mode=1777
     entrypoint: ["/opt/spark/bin/spark-submit"]
     command: ["--version"]
-    volumes:
-      - ./profiles:/contracts/profiles:ro
-      - ./scenarios:/contracts/scenarios:ro
-      - ${CATALOG_BENCH_SPARK_EVIDENCE_DIR:-./target/spark-evidence}:/evidence
-    depends_on:
-      minio-init:
-        condition: service_completed_successfully
+
+  # The harness and stock Spark child execute from this one immutable image.
+  spark-engine:
+    <<: *spark-runtime
+    entrypoint: ["/usr/local/bin/catalog-bench-engine"]
+    command: ["--help"]
+    environment:
+      CATALOG_BENCH_S3_ACCESS_KEY_ID: admin
+      CATALOG_BENCH_S3_SECRET_ACCESS_KEY: password
+      CATALOG_BENCH_POLARIS_CLIENT_ID: root
+      CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret
 
 volumes:
   gravitino-data:

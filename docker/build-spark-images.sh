@@ -8,12 +8,10 @@ base_reference="apache/spark:4.1.3@sha256:bf9d035a7c32a8ca46aa58d6348182ffd7d2df
 base_local_reference="catalog-bench/spark-base:4.1.3-arm64-bf9d035a"
 expected_index_digest="sha256:bf9d035a7c32a8ca46aa58d6348182ffd7d2dff6409206ecfbb3915ff1fef211"
 
-for command in docker; do
-  if ! command -v "$command" >/dev/null 2>&1; then
-    echo "required command is unavailable: $command" >&2
-    exit 1
-  fi
-done
+if ! command -v docker >/dev/null 2>&1; then
+  echo "required command is unavailable: docker" >&2
+  exit 1
+fi
 
 if ! docker image inspect "$base_reference" >/dev/null 2>&1; then
   docker pull "$base_reference"
@@ -47,4 +45,4 @@ fi
 COMPOSE_PROFILES=spark docker compose \
   --project-directory "$repository_root" \
   --file "$repository_root/docker-compose.yml" \
-  build --provenance=false iceberg-spark-runtime spark
+  build --provenance=false engine-runner-image iceberg-spark-runtime spark

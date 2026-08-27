@@ -22,6 +22,9 @@ ADD --checksum=sha256:38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d569
 # `docker create` needs a command even though this evidence image is never run.
 CMD ["/opt/iceberg/iceberg-spark-runtime-4.1_2.13-1.11.0.jar"]
 
+# Named Compose build context backed by the exact public catalog-bench commit.
+FROM catalog-bench-engine-runner AS engine-runner
+
 # The materialization launcher creates this local indirection only after proving
 # it resolves to the broad profile's exact index on Linux ARM64. This avoids a
 # second registry lookup while keeping the identity check outside mutable tags.
@@ -29,10 +32,23 @@ FROM ${SPARK_BASE_IMAGE} AS runtime
 
 ARG SPARK_SOURCE_REVISION
 ARG ICEBERG_SOURCE_REVISION
+ARG CATALOG_BENCH_SOURCE_REVISION
 USER root
-RUN printf '%s\n' "$SPARK_SOURCE_REVISION" "$ICEBERG_SOURCE_REVISION" \
+RUN printf '%s\n' \
+      "$SPARK_SOURCE_REVISION" \
+      "$ICEBERG_SOURCE_REVISION" \
+      "$CATALOG_BENCH_SOURCE_REVISION" \
     | grep -Ecx '[0-9a-f]{40}' \
-    | grep -qx '2'
+    | grep -qx '3'
+
+COPY --from=engine-runner --chown=185:185 \
+    /usr/local/bin/catalog-bench-engine \
+    /usr/local/bin/catalog-bench-engine
+COPY --from=engine-runner --chown=185:185 \
+    /usr/local/share/catalog-bench/source-revision \
+    /usr/local/share/catalog-bench/source-revision
+RUN test "$(cat /usr/local/share/catalog-bench/source-revision)" \
+      = "$CATALOG_BENCH_SOURCE_REVISION"
 
 COPY --from=connector --chown=185:185 \
     /opt/iceberg/iceberg-spark-runtime-4.1_2.13-1.11.0.jar \
@@ -47,6 +63,7 @@ LABEL org.opencontainers.image.title="catalog-bench Spark interoperability runti
       org.opencontainers.image.revision="$SPARK_SOURCE_REVISION" \
       org.opencontainers.image.base.name="docker.io/apache/spark:4.1.3" \
       org.opencontainers.image.base.digest="sha256:f6831c619d0f6f07fe41912a5be499f6a7c0c1e9f18322d0c703ff21d2f30cd1" \
+      io.querygraph.catalog-bench.runner-source-revision="$CATALOG_BENCH_SOURCE_REVISION" \
       io.querygraph.catalog-bench.iceberg-source-revision="$ICEBERG_SOURCE_REVISION"
 
 USER 185:185

@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-04 single-container Spark harness topology: build the optimized engine
+  runner from exact public revision `45e0f82d7bfb17b2d6da9918e89bcc146938addd`,
+  copy its ELF and source marker into the pinned Spark/Iceberg image, and add a
+  hardened `spark-engine` service. The Rust workflow and its stock
+  `spark-submit` child now execute in one container on the existing catalog and
+  shared-MinIO Docker network.
+
 - C2-04 optimized engine executable recipe: build and install
   `catalog-bench-engine` beside the existing contention and conformance runners
   in the source-pinned production image, retain the common Rust 1.97.1

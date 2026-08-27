@@ -278,8 +278,12 @@ fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
         fs::read_to_string(root.join("docker/spark/Dockerfile")).expect("read Spark Dockerfile");
     for required in [
         "FROM scratch AS connector",
+        "FROM catalog-bench-engine-runner AS engine-runner",
         "ARG SPARK_BASE_IMAGE",
         "FROM ${SPARK_BASE_IMAGE} AS runtime",
+        "/usr/local/bin/catalog-bench-engine",
+        "/usr/local/share/catalog-bench/source-revision",
+        "io.querygraph.catalog-bench.runner-source-revision=\"$CATALOG_BENCH_SOURCE_REVISION\"",
         "ADD --checksum=sha256:d6ea6c5d099288daeb7d5a92061bd3d7d8f296492632b42378e5f2f0e3066242",
         "ADD --checksum=sha256:38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f",
         "iceberg-spark-runtime-4.1_2.13-1.11.0.jar",
@@ -313,6 +317,9 @@ fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
     assert!(compose.contains("SPARK_BASE_IMAGE: catalog-bench/spark-base:4.1.3-arm64-bf9d035a"));
     let connector = compose_service(&compose, "iceberg-spark-runtime");
     let runtime = compose_service(&compose, "spark");
+    let engine_runner = compose_service(&compose, "engine-runner-image");
+    let engine = compose_service(&compose, "spark-engine");
+    let runtime_defaults = compose_extension(&compose, "x-spark-runtime");
     for required in [
         "target: connector",
         "image: catalog-bench/iceberg-spark-runtime:1.11.0-spark4.1_2.13",
@@ -324,23 +331,67 @@ fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
         );
     }
     for required in [
+        "<<: *spark-runtime",
         "target: runtime",
-        "image: catalog-bench/spark:4.1.3-iceberg1.11.0",
-        "platform: linux/arm64",
-        "networks: [lakehouse-net]",
-        "read_only: true",
-        "cap_drop: [\"ALL\"]",
-        "security_opt: [\"no-new-privileges:true\"]",
         "entrypoint: [\"/opt/spark/bin/spark-submit\"]",
-        "- ./profiles:/contracts/profiles:ro",
-        "- ./scenarios:/contracts/scenarios:ro",
+        "command: [\"--version\"]",
     ] {
         assert!(
             runtime.lines().any(|line| line.trim() == required),
             "Spark service must contain `{required}`"
         );
     }
-    assert!(runtime.contains("minio-init:\n        condition: service_completed_successfully"));
+    for required in [
+        "image: *spark-image",
+        "platform: linux/arm64",
+        "networks: [lakehouse-net]",
+        "read_only: true",
+        "cap_drop: [\"ALL\"]",
+        "security_opt: [\"no-new-privileges:true\"]",
+        "- ./profiles:/contracts/profiles:ro",
+        "- ./scenarios:/contracts/scenarios:ro",
+    ] {
+        assert!(
+            runtime_defaults.lines().any(|line| line.trim() == required),
+            "shared Spark runtime must contain `{required}`"
+        );
+    }
+    assert!(
+        runtime_defaults.contains("minio-init:\n      condition: service_completed_successfully")
+    );
+    for required in [
+        "image: *engine-runner-image",
+        "platform: linux/arm64",
+        "network_mode: none",
+        "read_only: true",
+        "cap_drop: [\"ALL\"]",
+        "security_opt: [\"no-new-privileges:true\"]",
+        "entrypoint: [\"/usr/local/bin/catalog-bench-engine\"]",
+        "command: [\"--help\"]",
+    ] {
+        assert!(
+            engine_runner.lines().any(|line| line.trim() == required),
+            "engine donor service must contain `{required}`"
+        );
+    }
+    for required in [
+        "<<: *spark-runtime",
+        "entrypoint: [\"/usr/local/bin/catalog-bench-engine\"]",
+        "command: [\"--help\"]",
+        "CATALOG_BENCH_S3_ACCESS_KEY_ID: admin",
+        "CATALOG_BENCH_S3_SECRET_ACCESS_KEY: password",
+        "CATALOG_BENCH_POLARIS_CLIENT_ID: root",
+        "CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret",
+    ] {
+        assert!(
+            engine.lines().any(|line| line.trim() == required),
+            "single-container engine service must contain `{required}`"
+        );
+    }
+    assert!(compose.contains("catalog-bench-engine-runner: \"service:engine-runner-image\""));
+    assert!(compose.contains(
+        "context: \"https://github.com/querygraph/catalog-bench.git#45e0f82d7bfb17b2d6da9918e89bcc146938addd\""
+    ));
 
     let builder = fs::read_to_string(root.join("docker/build-spark-images.sh"))
         .expect("read Spark image builder");
@@ -349,7 +400,7 @@ fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
         "{{.Descriptor.digest}}",
         "expected linux/arm64",
         "docker tag \"$base_reference\" \"$base_local_reference\"",
-        "build --provenance=false iceberg-spark-runtime spark",
+        "build --provenance=false engine-runner-image iceberg-spark-runtime spark",
     ] {
         assert!(
             builder.contains(required),
@@ -672,6 +723,21 @@ fn compose_service(compose: &str, name: &str) -> String {
         .take_while(|line| {
             !(line.starts_with("  ") && !line.starts_with("    ") && line.trim_end().ends_with(':'))
         })
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+fn compose_extension(compose: &str, name: &str) -> String {
+    let marker = format!("{name}:");
+    let mut lines = compose
+        .lines()
+        .skip_while(|line| !line.starts_with(&marker))
+        .skip(1)
+        .peekable();
+    assert!(lines.peek().is_some(), "compose extension `{name}` exists");
+
+    lines
+        .take_while(|line| line.starts_with(' ') || line.is_empty())
         .collect::<Vec<_>>()
         .join("\n")
 }

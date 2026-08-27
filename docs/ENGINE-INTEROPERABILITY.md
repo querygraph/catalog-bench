@@ -218,6 +218,15 @@ process returns status 2; a verified fixture collision is written before status
 3. Contract, policy, sanitization, encoding, or publication failures return
 status 1 and cannot create a claimed transcript.
 
+The production Compose topology does not split that executable from the engine
+it governs. `engine-runner-image` builds the optimized ELF from an exact public
+catalog-bench revision; the Spark image copies the ELF and revision marker from
+that named build context, verifies the marker, and records the revision as an
+image label. `spark-engine` starts that ELF in the resulting Spark/Iceberg image,
+so its `spark-submit` child, contracts, catalogs, and MinIO all remain inside the
+declared Docker topology. The donor image exists only to make the source-built
+artifact independently inspectable.
+
 ## Phase 2 unit boundaries
 
 C2-01 owns only the common write/read/evolution contract. It intentionally does
