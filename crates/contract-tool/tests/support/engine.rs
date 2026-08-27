@@ -19,11 +19,11 @@ use catalog_bench_engine::{
     EngineBehaviorChecks, EngineBehaviorClassification, EngineCatalogConfigEvidence,
     EngineCatalogConnectionEvidence, EngineCatalogNegotiationEvidence, EngineCatalogTable,
     EngineCleanupEvidence, EngineCleanupReceipt, EngineContracts, EngineEvent, EngineEventCapture,
-    EngineFieldObservation, EngineOperationEvidence, EnginePropertyObservation,
-    EngineProtocolFailure, EngineProtocolFailureKind, EngineResourcePresence,
-    EngineRoutingResolution, EngineRuntimeObservation, EngineSkipReason, EngineTableLoad,
-    EngineTableObservation, EngineTranscript, InteroperabilityPlan, RowReadObservation,
-    RuntimeArtifactOutcome, SecretRead, SecretSource, SparkProcessOutcome, SPARK_JAVA_VERSION,
+    EngineFieldObservation, EngineOperationEvidence, EngineProcessOutcome,
+    EnginePropertyObservation, EngineProtocolFailure, EngineProtocolFailureKind,
+    EngineResourcePresence, EngineRoutingResolution, EngineRuntimeObservation, EngineSkipReason,
+    EngineTableLoad, EngineTableObservation, EngineTranscript, InteroperabilityPlan,
+    RowReadObservation, RuntimeArtifactOutcome, SecretRead, SecretSource, SPARK_JAVA_VERSION,
     SPARK_SCALA_VERSION,
 };
 use serde_json::{json, Value};
@@ -204,7 +204,7 @@ fn make_harness_failure(transcript: &mut EngineTranscript) {
     capture.failure = Some(EngineProtocolFailure {
         kind: EngineProtocolFailureKind::MissingTerminal,
     });
-    transcript.execution.process.outcome = SparkProcessOutcome::ProtocolRejected {
+    transcript.execution.process.outcome = EngineProcessOutcome::ProtocolRejected {
         kind: EngineProtocolFailureKind::MissingTerminal,
     };
     transcript.execution.process.exit_code = None;
@@ -214,7 +214,7 @@ fn make_harness_failure(transcript: &mut EngineTranscript) {
 fn make_collision(contracts: &EngineContracts, transcript: &mut EngineTranscript) {
     let plan = plan(contracts, transcript);
     make_runtime_match(transcript);
-    transcript.execution.process.outcome = SparkProcessOutcome::FixtureCollision;
+    transcript.execution.process.outcome = EngineProcessOutcome::FixtureCollision {};
     transcript.execution.process.capture = Some(EngineEventCapture {
         events: vec![
             EngineEvent::RuntimeReady {
@@ -255,7 +255,7 @@ fn make_passing(contracts: &EngineContracts, transcript: &mut EngineTranscript) 
     let plan = plan(contracts, transcript);
     let (initial, evolved, final_table) = table_observations(&plan);
     make_runtime_match(transcript);
-    transcript.execution.process.outcome = SparkProcessOutcome::Completed;
+    transcript.execution.process.outcome = EngineProcessOutcome::Completed {};
     transcript.execution.process.capture = Some(EngineEventCapture {
         events: vec![
             EngineEvent::RuntimeReady {

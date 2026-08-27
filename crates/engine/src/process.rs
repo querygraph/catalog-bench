@@ -5,7 +5,6 @@ use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
 
-use serde::{Deserialize, Serialize};
 use tempfile::{Builder as TempDirBuilder, TempDir};
 use tokio::io::AsyncReadExt;
 use tokio::process::{Child, ChildStdout, Command};
@@ -14,9 +13,12 @@ use tokio::task::JoinHandle;
 use tokio::time::timeout;
 use zeroize::Zeroize as _;
 
+use crate::execution::{
+    EngineCredentialFailure, EngineCredentialFailureKind, EngineCredentialKind,
+    EnginePreparationFailureKind, EngineProcessExecution, EngineProcessOutcome,
+};
 use crate::{
-    CatalogCredentialSource, EngineEventCapture, EngineEventDecoder, EngineFailureCategory,
-    EngineProtocolFailureKind, EngineStage, InteroperabilityPlan, RuntimeVerification,
+    CatalogCredentialSource, EngineEventCapture, EngineEventDecoder, InteroperabilityPlan,
     RuntimeVerifier, ENGINE_OAUTH_CLIENT_ID_ENV, ENGINE_OAUTH_CLIENT_SECRET_ENV,
     SPARK_SUBMIT_LOCATION,
 };
@@ -25,9 +27,6 @@ const SPARK_RENDERER: &[u8] = include_bytes!("../spark/runner.py");
 const DEFAULT_PROCESS_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 const PROCESS_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
 const PROCESS_KILL_TIMEOUT: Duration = Duration::from_secs(5);
-const SPARK_SUCCESS_EXIT: i32 = 0;
-const SPARK_FAILURE_EXIT: i32 = 2;
-const SPARK_COLLISION_EXIT: i32 = 3;
 const FALLBACK_PATH: &str =
     "/opt/spark/bin:/opt/spark/sbin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin";
 const PUBLIC_ENVIRONMENT_ALLOWLIST: &[&str] = &[
@@ -40,30 +39,6 @@ const PUBLIC_ENVIRONMENT_ALLOWLIST: &[&str] = &[
     "SPARK_HOME",
     "TZ",
 ];
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum SparkCredentialKind {
-    ObjectStoreAccessKey,
-    ObjectStoreSecretKey,
-    CatalogClientId,
-    CatalogClientSecret,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum SparkCredentialFailureKind {
-    Missing,
-    Empty,
-    Unreadable,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct SparkCredentialFailure {
-    pub credential: SparkCredentialKind,
-    pub kind: SparkCredentialFailureKind,
-}
 
 pub enum SecretRead {
     Missing,
@@ -128,16 +103,16 @@ impl SparkSecrets {
     fn load(
         plan: &InteroperabilityPlan,
         source: &(impl SecretSource + ?Sized),
-    ) -> Result<Self, SparkCredentialFailure> {
+    ) -> Result<Self, EngineCredentialFailure> {
         let object_store_access_key = read_required(
             source,
             &plan.object_store().access_key_env,
-            SparkCredentialKind::ObjectStoreAccessKey,
+            EngineCredentialKind::ObjectStoreAccessKey,
         )?;
         let object_store_secret_key = read_required(
             source,
             &plan.object_store().secret_key_env,
-            SparkCredentialKind::ObjectStoreSecretKey,
+            EngineCredentialKind::ObjectStoreSecretKey,
         )?;
         let catalog_oauth = match plan.credential_source() {
             CatalogCredentialSource::Anonymous => None,
@@ -145,11 +120,11 @@ impl SparkSecrets {
                 client_id_env,
                 client_secret_env,
             } => Some((
-                read_required(source, client_id_env, SparkCredentialKind::CatalogClientId)?,
+                read_required(source, client_id_env, EngineCredentialKind::CatalogClientId)?,
                 read_required(
                     source,
                     client_secret_env,
-                    SparkCredentialKind::CatalogClientSecret,
+                    EngineCredentialKind::CatalogClientSecret,
                 )?,
             )),
         };
@@ -178,23 +153,23 @@ impl Debug for SparkSecrets {
 fn read_required(
     source: &(impl SecretSource + ?Sized),
     name: &str,
-    credential: SparkCredentialKind,
-) -> Result<SecretValue, SparkCredentialFailure> {
+    credential: EngineCredentialKind,
+) -> Result<SecretValue, EngineCredentialFailure> {
     match source.read_secret(name) {
-        SecretRead::Missing => Err(SparkCredentialFailure {
+        SecretRead::Missing => Err(EngineCredentialFailure {
             credential,
-            kind: SparkCredentialFailureKind::Missing,
+            kind: EngineCredentialFailureKind::Missing,
         }),
-        SecretRead::Unreadable => Err(SparkCredentialFailure {
+        SecretRead::Unreadable => Err(EngineCredentialFailure {
             credential,
-            kind: SparkCredentialFailureKind::Unreadable,
+            kind: EngineCredentialFailureKind::Unreadable,
         }),
         SecretRead::Value(value) => {
             let value = SecretValue(value);
             if value.expose().is_empty() {
-                Err(SparkCredentialFailure {
+                Err(EngineCredentialFailure {
                     credential,
-                    kind: SparkCredentialFailureKind::Empty,
+                    kind: EngineCredentialFailureKind::Empty,
                 })
             } else {
                 Ok(value)
@@ -214,96 +189,6 @@ impl std::fmt::Display for SparkProcessConfigurationError {
 
 impl std::error::Error for SparkProcessConfigurationError {}
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "kebab-case")]
-pub enum SparkPreparationFailureKind {
-    TemporaryDirectory,
-    EncodePlan,
-    WritePlan,
-    WriteRenderer,
-    CreateLocalDirectory,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "status", rename_all = "kebab-case", deny_unknown_fields)]
-pub enum SparkProcessOutcome {
-    RuntimeRejected,
-    CredentialRejected {
-        failure: SparkCredentialFailure,
-    },
-    PreparationFailed {
-        kind: SparkPreparationFailureKind,
-    },
-    SpawnFailed,
-    TimedOut,
-    StdoutFailed,
-    WaitFailed,
-    ProtocolRejected {
-        kind: EngineProtocolFailureKind,
-    },
-    ExitProtocolMismatch,
-    Completed,
-    FixtureCollision,
-    EngineFailed {
-        stage: EngineStage,
-        category: EngineFailureCategory,
-    },
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
-pub struct SparkProcessExecution {
-    pub runtime: RuntimeVerification,
-    pub outcome: SparkProcessOutcome,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub capture: Option<EngineEventCapture>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub exit_code: Option<i32>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub process_elapsed_micros: Option<u64>,
-}
-
-impl SparkProcessExecution {
-    #[must_use]
-    pub fn passed(&self) -> bool {
-        matches!(self.outcome, SparkProcessOutcome::Completed)
-            && self.exit_code == Some(SPARK_SUCCESS_EXIT)
-            && self
-                .capture
-                .as_ref()
-                .is_some_and(EngineEventCapture::completed)
-    }
-
-    #[must_use]
-    pub fn cleanup_authorized(&self) -> bool {
-        !matches!(self.outcome, SparkProcessOutcome::FixtureCollision)
-            && self
-                .capture
-                .as_ref()
-                .is_some_and(EngineEventCapture::cleanup_authorized)
-    }
-
-    #[must_use]
-    pub fn fixture_collision(&self) -> bool {
-        matches!(self.outcome, SparkProcessOutcome::FixtureCollision)
-            && self.exit_code == Some(SPARK_COLLISION_EXIT)
-            && self
-                .capture
-                .as_ref()
-                .is_some_and(EngineEventCapture::fixture_collision)
-    }
-
-    fn before_process(runtime: RuntimeVerification, outcome: SparkProcessOutcome) -> Self {
-        Self {
-            runtime,
-            outcome,
-            capture: None,
-            exit_code: None,
-            process_elapsed_micros: None,
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct SparkProcessExecutor {
     process_timeout: Duration,
@@ -321,7 +206,7 @@ impl SparkProcessExecutor {
         &self,
         plan: &InteroperabilityPlan,
         verifier: &RuntimeVerifier,
-    ) -> SparkProcessExecution {
+    ) -> EngineProcessExecution {
         self.execute_with_source(plan, verifier, &ProcessEnvironment)
             .await
     }
@@ -331,30 +216,30 @@ impl SparkProcessExecutor {
         plan: &InteroperabilityPlan,
         verifier: &RuntimeVerifier,
         secrets: &(impl SecretSource + ?Sized),
-    ) -> SparkProcessExecution {
+    ) -> EngineProcessExecution {
         let runtime = verifier.verify(plan);
         if !runtime.passed() {
-            return SparkProcessExecution::before_process(
+            return EngineProcessExecution::before_process(
                 runtime,
-                SparkProcessOutcome::RuntimeRejected,
+                EngineProcessOutcome::RuntimeRejected {},
             );
         }
 
         let staged = match StagedSparkInput::create(plan) {
             Ok(staged) => staged,
             Err(kind) => {
-                return SparkProcessExecution::before_process(
+                return EngineProcessExecution::before_process(
                     runtime,
-                    SparkProcessOutcome::PreparationFailed { kind },
+                    EngineProcessOutcome::PreparationFailed { kind },
                 );
             }
         };
         let secrets = match SparkSecrets::load(plan, secrets) {
             Ok(secrets) => secrets,
             Err(failure) => {
-                return SparkProcessExecution::before_process(
+                return EngineProcessExecution::before_process(
                     runtime,
-                    SparkProcessOutcome::CredentialRejected { failure },
+                    EngineProcessOutcome::CredentialRejected { failure },
                 );
             }
         };
@@ -367,18 +252,18 @@ impl SparkProcessExecutor {
         let mut child = match spawned {
             Ok(child) => child,
             Err(_) => {
-                return SparkProcessExecution::before_process(
+                return EngineProcessExecution::before_process(
                     runtime,
-                    SparkProcessOutcome::SpawnFailed,
+                    EngineProcessOutcome::SpawnFailed {},
                 );
             }
         };
         let started = Instant::now();
         let Some(stdout) = child.stdout.take() else {
             terminate_child(&mut child).await;
-            return SparkProcessExecution {
+            return EngineProcessExecution {
                 runtime,
-                outcome: SparkProcessOutcome::StdoutFailed,
+                outcome: EngineProcessOutcome::StdoutFailed {},
                 capture: None,
                 exit_code: None,
                 process_elapsed_micros: Some(elapsed_micros(started)),
@@ -413,7 +298,7 @@ impl SparkProcessExecutor {
         };
         let outcome = classify_process(wait, stdout_failed, &capture);
 
-        SparkProcessExecution {
+        EngineProcessExecution {
             runtime,
             outcome,
             capture: Some(capture),
@@ -439,21 +324,21 @@ struct StagedSparkInput {
 }
 
 impl StagedSparkInput {
-    fn create(plan: &InteroperabilityPlan) -> Result<Self, SparkPreparationFailureKind> {
+    fn create(plan: &InteroperabilityPlan) -> Result<Self, EnginePreparationFailureKind> {
         let directory = TempDirBuilder::new()
             .prefix("catalog-bench-spark-")
             .tempdir()
-            .map_err(|_| SparkPreparationFailureKind::TemporaryDirectory)?;
+            .map_err(|_| EnginePreparationFailureKind::TemporaryDirectory)?;
         let renderer = directory.path().join("runner.py");
         let plan_path = directory.path().join("plan.json");
         let local = directory.path().join("local");
         let encoded = serde_json::to_vec(plan.spark())
-            .map_err(|_| SparkPreparationFailureKind::EncodePlan)?;
-        std::fs::write(&plan_path, encoded).map_err(|_| SparkPreparationFailureKind::WritePlan)?;
+            .map_err(|_| EnginePreparationFailureKind::EncodePlan)?;
+        std::fs::write(&plan_path, encoded).map_err(|_| EnginePreparationFailureKind::WritePlan)?;
         std::fs::write(&renderer, SPARK_RENDERER)
-            .map_err(|_| SparkPreparationFailureKind::WriteRenderer)?;
+            .map_err(|_| EnginePreparationFailureKind::WriteRenderer)?;
         std::fs::create_dir(&local)
-            .map_err(|_| SparkPreparationFailureKind::CreateLocalDirectory)?;
+            .map_err(|_| EnginePreparationFailureKind::CreateLocalDirectory)?;
         Ok(Self {
             directory,
             renderer,
@@ -530,40 +415,30 @@ fn classify_process(
     wait: WaitObservation,
     stdout_failed: bool,
     capture: &EngineEventCapture,
-) -> SparkProcessOutcome {
+) -> EngineProcessOutcome {
     match wait {
-        WaitObservation::TimedOut => return SparkProcessOutcome::TimedOut,
-        WaitObservation::Failed => return SparkProcessOutcome::WaitFailed,
+        WaitObservation::TimedOut => return EngineProcessOutcome::TimedOut {},
+        WaitObservation::Failed => return EngineProcessOutcome::WaitFailed {},
         WaitObservation::ReaderStopped(ReaderIssue::Stdout) => {
-            return SparkProcessOutcome::StdoutFailed;
+            return EngineProcessOutcome::StdoutFailed {};
         }
         WaitObservation::ReaderStopped(ReaderIssue::Protocol) => {
             return capture
                 .failure
                 .as_ref()
-                .map(|failure| SparkProcessOutcome::ProtocolRejected { kind: failure.kind })
-                .unwrap_or(SparkProcessOutcome::StdoutFailed);
+                .map(|failure| EngineProcessOutcome::ProtocolRejected { kind: failure.kind })
+                .unwrap_or(EngineProcessOutcome::StdoutFailed {});
         }
-        WaitObservation::Exited(_) if stdout_failed => return SparkProcessOutcome::StdoutFailed,
+        WaitObservation::Exited(_) if stdout_failed => return EngineProcessOutcome::StdoutFailed {},
         WaitObservation::Exited(_) => {}
     }
     if let Some(failure) = &capture.failure {
-        return SparkProcessOutcome::ProtocolRejected { kind: failure.kind };
+        return EngineProcessOutcome::ProtocolRejected { kind: failure.kind };
     }
     let WaitObservation::Exited(status) = wait else {
         unreachable!("non-exit process states returned above")
     };
-    match status.code() {
-        Some(SPARK_SUCCESS_EXIT) if capture.completed() => SparkProcessOutcome::Completed,
-        Some(SPARK_COLLISION_EXIT) if capture.fixture_collision() => {
-            SparkProcessOutcome::FixtureCollision
-        }
-        Some(SPARK_FAILURE_EXIT) => capture
-            .engine_failure()
-            .map(|(stage, category)| SparkProcessOutcome::EngineFailed { stage, category })
-            .unwrap_or(SparkProcessOutcome::ExitProtocolMismatch),
-        Some(_) | None => SparkProcessOutcome::ExitProtocolMismatch,
-    }
+    EngineProcessOutcome::from_terminal(status.code(), capture)
 }
 
 async fn drain_stdout(

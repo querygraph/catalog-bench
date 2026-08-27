@@ -13,7 +13,7 @@ use catalog_bench_common::contract::{
     ResultId, ResultOutcome, ResultRecord, RunIdentity, ScenarioReference, Validate,
 };
 use catalog_bench_engine::{
-    EngineBehaviorClassification, EngineTranscript, EngineTranscriptComponent, SparkProcessOutcome,
+    EngineBehaviorClassification, EngineProcessOutcome, EngineTranscript, EngineTranscriptComponent,
 };
 
 use crate::engine_matrix::render_engine_matrix;
@@ -560,20 +560,20 @@ fn classification_label(classification: EngineBehaviorClassification) -> &'stati
     }
 }
 
-fn process_outcome_label(outcome: &SparkProcessOutcome) -> &'static str {
+fn process_outcome_label(outcome: &EngineProcessOutcome) -> &'static str {
     match outcome {
-        SparkProcessOutcome::RuntimeRejected => "runtime-rejected",
-        SparkProcessOutcome::CredentialRejected { .. } => "credential-rejected",
-        SparkProcessOutcome::PreparationFailed { .. } => "preparation-failed",
-        SparkProcessOutcome::SpawnFailed => "spawn-failed",
-        SparkProcessOutcome::TimedOut => "timed-out",
-        SparkProcessOutcome::StdoutFailed => "stdout-failed",
-        SparkProcessOutcome::WaitFailed => "wait-failed",
-        SparkProcessOutcome::ProtocolRejected { .. } => "protocol-rejected",
-        SparkProcessOutcome::ExitProtocolMismatch => "exit-protocol-mismatch",
-        SparkProcessOutcome::Completed => "completed",
-        SparkProcessOutcome::FixtureCollision => "fixture-collision",
-        SparkProcessOutcome::EngineFailed { .. } => "engine-failed",
+        EngineProcessOutcome::RuntimeRejected {} => "runtime-rejected",
+        EngineProcessOutcome::CredentialRejected { .. } => "credential-rejected",
+        EngineProcessOutcome::PreparationFailed { .. } => "preparation-failed",
+        EngineProcessOutcome::SpawnFailed {} => "spawn-failed",
+        EngineProcessOutcome::TimedOut {} => "timed-out",
+        EngineProcessOutcome::StdoutFailed {} => "stdout-failed",
+        EngineProcessOutcome::WaitFailed {} => "wait-failed",
+        EngineProcessOutcome::ProtocolRejected { .. } => "protocol-rejected",
+        EngineProcessOutcome::ExitProtocolMismatch {} => "exit-protocol-mismatch",
+        EngineProcessOutcome::Completed {} => "completed",
+        EngineProcessOutcome::FixtureCollision {} => "fixture-collision",
+        EngineProcessOutcome::EngineFailed { .. } => "engine-failed",
     }
 }
 

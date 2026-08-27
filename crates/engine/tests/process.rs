@@ -10,10 +10,10 @@ use catalog_bench_common::contract::{
     parse_contract, ComponentId, ContractDocument, Profile, RuntimeArtifact, Scenario,
 };
 use catalog_bench_engine::{
-    CatalogCredentialSource, EngineFailureCategory, EngineProtocolFailureKind, EngineStage,
-    RuntimeVerifier, SecretRead, SecretSource, SparkCredentialFailure, SparkCredentialFailureKind,
-    SparkCredentialKind, SparkProcessExecutor, SparkProcessOutcome, ENGINE_EVENT_PREFIX,
-    SPARK_SUBMIT_LOCATION,
+    CatalogCredentialSource, EngineCredentialFailure, EngineCredentialFailureKind,
+    EngineCredentialKind, EngineFailureCategory, EngineProcessOutcome, EngineProtocolFailureKind,
+    EngineStage, RuntimeVerifier, SecretRead, SecretSource, SparkProcessExecutor,
+    ENGINE_EVENT_PREFIX, SPARK_SUBMIT_LOCATION,
 };
 use serde_json::json;
 use sha2::{Digest as _, Sha256};
@@ -39,7 +39,7 @@ async fn verified_collision_maps_secrets_only_to_child_environment() {
 
     assert!(matches!(
         execution.outcome,
-        SparkProcessOutcome::FixtureCollision
+        EngineProcessOutcome::FixtureCollision {}
     ));
     assert_eq!(execution.exit_code, Some(3));
     assert!(execution.fixture_collision());
@@ -68,7 +68,10 @@ async fn complete_event_stream_and_engine_failure_map_to_closed_outcomes() {
         .unwrap()
         .execute_with_source(&runtime.plan, &runtime.verifier, &source)
         .await;
-    assert!(matches!(completed.outcome, SparkProcessOutcome::Completed));
+    assert!(matches!(
+        completed.outcome,
+        EngineProcessOutcome::Completed {}
+    ));
     assert!(completed.passed());
     assert!(completed.cleanup_authorized());
     assert_eq!(completed.exit_code, Some(0));
@@ -81,7 +84,7 @@ async fn complete_event_stream_and_engine_failure_map_to_closed_outcomes() {
         .await;
     assert!(matches!(
         failed.outcome,
-        SparkProcessOutcome::EngineFailed {
+        EngineProcessOutcome::EngineFailed {
             stage: EngineStage::CreateNamespace,
             category: EngineFailureCategory::Catalog,
         }
@@ -107,7 +110,7 @@ async fn runtime_rejection_happens_before_any_secret_read_or_process_start() {
 
     assert!(matches!(
         execution.outcome,
-        SparkProcessOutcome::RuntimeRejected
+        EngineProcessOutcome::RuntimeRejected {}
     ));
     assert!(execution.capture.is_none());
     assert!(execution.process_elapsed_micros.is_none());
@@ -125,7 +128,7 @@ async fn malformed_stream_after_owned_preflight_preserves_cleanup_authority() {
 
     assert!(matches!(
         execution.outcome,
-        SparkProcessOutcome::ProtocolRejected {
+        EngineProcessOutcome::ProtocolRejected {
             kind: EngineProtocolFailureKind::MalformedEvent
         }
     ));
@@ -142,7 +145,10 @@ async fn timeout_kills_the_child_but_retains_prior_fixture_ownership() {
         .execute_with_source(&runtime.plan, &runtime.verifier, &source)
         .await;
 
-    assert!(matches!(execution.outcome, SparkProcessOutcome::TimedOut));
+    assert!(matches!(
+        execution.outcome,
+        EngineProcessOutcome::TimedOut {}
+    ));
     assert!(execution.cleanup_authorized(), "{execution:#?}");
     assert_eq!(execution.exit_code, None);
     assert!(matches!(
@@ -162,7 +168,10 @@ async fn timeout_terminates_descendants_in_the_isolated_process_group() {
         .execute_with_source(&runtime.plan, &runtime.verifier, &source)
         .await;
 
-    assert!(matches!(execution.outcome, SparkProcessOutcome::TimedOut));
+    assert!(matches!(
+        execution.outcome,
+        EngineProcessOutcome::TimedOut {}
+    ));
     tokio::time::sleep(Duration::from_millis(1_200)).await;
     assert!(!marker.exists(), "a timed-out descendant survived");
 }
@@ -176,10 +185,10 @@ async fn missing_credentials_and_nonexecutable_runtime_have_fixed_categories() {
         .await;
     assert_eq!(
         execution.outcome,
-        SparkProcessOutcome::CredentialRejected {
-            failure: SparkCredentialFailure {
-                credential: SparkCredentialKind::ObjectStoreAccessKey,
-                kind: SparkCredentialFailureKind::Missing,
+        EngineProcessOutcome::CredentialRejected {
+            failure: EngineCredentialFailure {
+                credential: EngineCredentialKind::ObjectStoreAccessKey,
+                kind: EngineCredentialFailureKind::Missing,
             }
         }
     );
@@ -191,7 +200,7 @@ async fn missing_credentials_and_nonexecutable_runtime_have_fixed_categories() {
         .await;
     assert!(matches!(
         execution.outcome,
-        SparkProcessOutcome::SpawnFailed
+        EngineProcessOutcome::SpawnFailed {}
     ));
     assert!(execution.capture.is_none());
 }

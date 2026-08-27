@@ -7,9 +7,9 @@ use catalog_bench_common::contract::{
 };
 use catalog_bench_engine::{
     run_engine_workflow, EngineCatalogConnection, EngineCatalogConnectionFailureKind,
-    EngineCatalogConnector, EngineObjectStoreConnector, InteroperabilityPlan,
+    EngineCatalogConnector, EngineObjectStoreConnector, EngineProcessOutcome, InteroperabilityPlan,
     RestEngineCatalogConnector, RuntimeVerifier, SecretRead, SecretSource,
-    SharedObjectStoreConnector, SparkProcessExecutor, SparkProcessOutcome, StockSparkRunner,
+    SharedObjectStoreConnector, SparkProcessExecutor, StockSparkRunner,
 };
 use serde_json::json;
 use tempfile::tempdir;
@@ -51,7 +51,7 @@ async fn runtime_rejection_keeps_every_production_connector_closed() {
 
     assert!(matches!(
         execution.process.outcome,
-        SparkProcessOutcome::RuntimeRejected
+        EngineProcessOutcome::RuntimeRejected {}
     ));
     assert!(secrets.reads().is_empty());
     assert!(!execution.passed());

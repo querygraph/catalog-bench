@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- C2-06 engine-neutral process evidence: extract credential and preparation
+  failures, terminal outcomes, runtime verification, event capture, exit code,
+  and elapsed-time evidence from the Spark process adapter into a reusable
+  `EngineProcessExecution` algebraic data type. The common `EngineRunner`,
+  reconciliation workflow, transcript, and result materializer now depend only
+  on that neutral boundary; `SparkProcessExecutor` is one producer rather than
+  the owner of the evidence vocabulary. The shared event protocol centrally
+  owns its `0`/`2`/`3` terminal mapping, existing JSON labels remain unchanged,
+  and formerly unit-shaped terminal variants now reject stray fields. A focused
+  wire-format test freezes every no-detail status plus bounded credential,
+  preparation, and engine-failure shapes. This is a structural prerequisite for
+  Flink and Trino, not an interoperability result for either engine.
+
 - C2-05 deterministic Spark result materialization: add create-new
   `engine-import write` and exact `engine-import check` commands that accept
   only a reviewed profile, scenario, sidecar, and complete transcript set

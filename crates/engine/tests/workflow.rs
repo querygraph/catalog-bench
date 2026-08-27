@@ -15,11 +15,11 @@ use catalog_bench_engine::{
     EngineCatalogFailureKind, EngineCatalogNegotiationEvidence, EngineCatalogTable,
     EngineCleanupReceipt, EngineEvent, EngineEventCapture, EngineFailureCategory,
     EngineFieldObservation, EngineObjectStoreConnector, EngineOperationEvidence,
-    EnginePropertyObservation, EngineProtocolFailure, EngineProtocolFailureKind,
-    EngineResourcePresence, EngineRunner, EngineRuntimeObservation, EngineStage, EngineTableLoad,
-    EngineTableObservation, InteroperabilityPlan, RowReadObservation, RuntimeArtifactObservation,
-    RuntimeArtifactOutcome, RuntimePlatformObservation, RuntimeVerification, SparkProcessExecution,
-    SparkProcessOutcome,
+    EngineProcessExecution, EngineProcessOutcome, EnginePropertyObservation, EngineProtocolFailure,
+    EngineProtocolFailureKind, EngineResourcePresence, EngineRunner, EngineRuntimeObservation,
+    EngineStage, EngineTableLoad, EngineTableObservation, InteroperabilityPlan, RowReadObservation,
+    RuntimeArtifactObservation, RuntimeArtifactOutcome, RuntimePlatformObservation,
+    RuntimeVerification,
 };
 use serde_json::json;
 
@@ -92,7 +92,7 @@ async fn contradictory_collision_claim_is_terminal_and_fails_closed() {
     let fixture = PassingFixture::new(&plan);
     let log = OperationLog::default();
     let mut process = fixture.process(&plan);
-    process.outcome = SparkProcessOutcome::FixtureCollision;
+    process.outcome = EngineProcessOutcome::FixtureCollision {};
     process.exit_code = Some(3);
 
     let execution = run_engine_workflow(
@@ -210,7 +210,7 @@ async fn complete_semantics_cannot_override_an_untrusted_process_terminal() {
     capture.failure = Some(EngineProtocolFailure {
         kind: EngineProtocolFailureKind::MissingTerminal,
     });
-    process.outcome = SparkProcessOutcome::ProtocolRejected {
+    process.outcome = EngineProcessOutcome::ProtocolRejected {
         kind: EngineProtocolFailureKind::MissingTerminal,
     };
     process.exit_code = None;
@@ -333,18 +333,18 @@ impl OperationLog {
 
 #[derive(Clone)]
 struct FakeRunner {
-    execution: SparkProcessExecution,
+    execution: EngineProcessExecution,
     log: OperationLog,
 }
 
 impl FakeRunner {
-    fn new(execution: SparkProcessExecution, log: OperationLog) -> Self {
+    fn new(execution: EngineProcessExecution, log: OperationLog) -> Self {
         Self { execution, log }
     }
 }
 
 impl EngineRunner for FakeRunner {
-    async fn execute(&self, _plan: &InteroperabilityPlan) -> SparkProcessExecution {
+    async fn execute(&self, _plan: &InteroperabilityPlan) -> EngineProcessExecution {
         self.log.push("engine");
         self.execution.clone()
     }
@@ -570,7 +570,7 @@ impl PassingFixture {
         }
     }
 
-    fn process(&self, plan: &InteroperabilityPlan) -> SparkProcessExecution {
+    fn process(&self, plan: &InteroperabilityPlan) -> EngineProcessExecution {
         let events = vec![
             EngineEvent::RuntimeReady {
                 runtime: runtime_event(),
@@ -601,7 +601,7 @@ impl PassingFixture {
         ];
         process(
             plan,
-            SparkProcessOutcome::Completed,
+            EngineProcessOutcome::Completed {},
             Some(capture(events, None)),
         )
     }
@@ -639,24 +639,24 @@ impl PassingFixture {
 
 fn process(
     plan: &InteroperabilityPlan,
-    outcome: SparkProcessOutcome,
+    outcome: EngineProcessOutcome,
     capture: Option<EngineEventCapture>,
-) -> SparkProcessExecution {
+) -> EngineProcessExecution {
     let exit_code = match &outcome {
-        SparkProcessOutcome::Completed => Some(0),
-        SparkProcessOutcome::FixtureCollision => Some(3),
-        SparkProcessOutcome::EngineFailed { .. } => Some(2),
-        SparkProcessOutcome::RuntimeRejected
-        | SparkProcessOutcome::CredentialRejected { .. }
-        | SparkProcessOutcome::PreparationFailed { .. }
-        | SparkProcessOutcome::SpawnFailed
-        | SparkProcessOutcome::TimedOut
-        | SparkProcessOutcome::StdoutFailed
-        | SparkProcessOutcome::WaitFailed
-        | SparkProcessOutcome::ProtocolRejected { .. }
-        | SparkProcessOutcome::ExitProtocolMismatch => None,
+        EngineProcessOutcome::Completed {} => Some(0),
+        EngineProcessOutcome::FixtureCollision {} => Some(3),
+        EngineProcessOutcome::EngineFailed { .. } => Some(2),
+        EngineProcessOutcome::RuntimeRejected {}
+        | EngineProcessOutcome::CredentialRejected { .. }
+        | EngineProcessOutcome::PreparationFailed { .. }
+        | EngineProcessOutcome::SpawnFailed {}
+        | EngineProcessOutcome::TimedOut {}
+        | EngineProcessOutcome::StdoutFailed {}
+        | EngineProcessOutcome::WaitFailed {}
+        | EngineProcessOutcome::ProtocolRejected { .. }
+        | EngineProcessOutcome::ExitProtocolMismatch {} => None,
     };
-    SparkProcessExecution {
+    EngineProcessExecution {
         runtime: passing_runtime_verification(plan),
         outcome,
         capture,
@@ -665,10 +665,10 @@ fn process(
     }
 }
 
-fn collision_process(plan: &InteroperabilityPlan) -> SparkProcessExecution {
+fn collision_process(plan: &InteroperabilityPlan) -> EngineProcessExecution {
     process(
         plan,
-        SparkProcessOutcome::FixtureCollision,
+        EngineProcessOutcome::FixtureCollision {},
         Some(capture(
             vec![
                 EngineEvent::RuntimeReady {
@@ -682,16 +682,16 @@ fn collision_process(plan: &InteroperabilityPlan) -> SparkProcessExecution {
     )
 }
 
-fn runtime_rejected_process(plan: &InteroperabilityPlan) -> SparkProcessExecution {
-    let mut execution = process(plan, SparkProcessOutcome::RuntimeRejected, None);
+fn runtime_rejected_process(plan: &InteroperabilityPlan) -> EngineProcessExecution {
+    let mut execution = process(plan, EngineProcessOutcome::RuntimeRejected {}, None);
     execution.runtime.platform.operating_system_matches = false;
     execution
 }
 
-fn engine_failed_process(plan: &InteroperabilityPlan) -> SparkProcessExecution {
+fn engine_failed_process(plan: &InteroperabilityPlan) -> EngineProcessExecution {
     process(
         plan,
-        SparkProcessOutcome::EngineFailed {
+        EngineProcessOutcome::EngineFailed {
             stage: EngineStage::CreateNamespace,
             category: EngineFailureCategory::Catalog,
         },
@@ -712,10 +712,10 @@ fn engine_failed_process(plan: &InteroperabilityPlan) -> SparkProcessExecution {
     )
 }
 
-fn protocol_failed_process(plan: &InteroperabilityPlan) -> SparkProcessExecution {
+fn protocol_failed_process(plan: &InteroperabilityPlan) -> EngineProcessExecution {
     process(
         plan,
-        SparkProcessOutcome::ProtocolRejected {
+        EngineProcessOutcome::ProtocolRejected {
             kind: EngineProtocolFailureKind::MalformedEvent,
         },
         Some(capture(

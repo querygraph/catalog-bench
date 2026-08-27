@@ -10,8 +10,8 @@ use catalog_bench_conformance::{
 use crate::{
     EngineCatalogConnection, EngineCatalogConnectionFailure, EngineCatalogConnectionFailureKind,
     EngineCatalogConnector, EngineCatalogNegotiationEvidence, EngineObjectStoreConnector,
-    EngineRunner, InteroperabilityPlan, RestEngineCatalog, RuntimeVerifier, SecretRead,
-    SecretSource, SparkProcessExecution, SparkProcessExecutor,
+    EngineProcessExecution, EngineRunner, InteroperabilityPlan, RestEngineCatalog, RuntimeVerifier,
+    SecretRead, SecretSource, SparkProcessExecutor,
 };
 
 const CATALOG_REQUEST_TIMEOUT_MS: u64 = 30_000;
@@ -60,7 +60,7 @@ impl<S> EngineRunner for StockSparkRunner<S>
 where
     S: SecretSource + Send + Sync + 'static,
 {
-    async fn execute(&self, plan: &InteroperabilityPlan) -> SparkProcessExecution {
+    async fn execute(&self, plan: &InteroperabilityPlan) -> EngineProcessExecution {
         self.executor
             .execute_with_source(plan, &self.verifier, self.secrets.as_ref())
             .await

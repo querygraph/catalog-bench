@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 use crate::reconcile::evaluate_checks;
 use crate::{
     EngineCatalog, EngineCatalogFailure, EngineCatalogNegotiationEvidence, EngineCleanupReceipt,
-    EngineResourcePresence, EngineTableLoad, InteroperabilityPlan, SparkProcessExecution,
+    EngineProcessExecution, EngineResourcePresence, EngineTableLoad, InteroperabilityPlan,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -102,7 +102,7 @@ pub trait EngineRunner: Clone + Send + Sync + 'static {
     fn execute(
         &self,
         plan: &InteroperabilityPlan,
-    ) -> impl Future<Output = SparkProcessExecution> + Send;
+    ) -> impl Future<Output = EngineProcessExecution> + Send;
 }
 
 pub trait EngineCatalogConnector: Clone + Send + Sync + 'static {
@@ -220,7 +220,7 @@ impl EngineBehaviorChecks {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct EngineExecution {
-    pub process: SparkProcessExecution,
+    pub process: EngineProcessExecution,
     pub catalog_connection: EngineCatalogConnectionEvidence,
     pub catalog_state: EngineOperationEvidence<EngineTableLoad>,
     pub object_state: EngineOperationEvidence<TableObjectAuditSnapshot>,
@@ -230,7 +230,7 @@ pub struct EngineExecution {
 }
 
 impl EngineExecution {
-    fn pending(process: SparkProcessExecution) -> Self {
+    fn pending(process: EngineProcessExecution) -> Self {
         let reason = if process.fixture_collision() {
             EngineSkipReason::FixtureCollision
         } else {

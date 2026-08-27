@@ -3,7 +3,7 @@ use std::path::Path;
 use std::process::Command;
 
 use catalog_bench_engine::{
-    EngineBehaviorClassification, EngineContracts, EngineTranscript, SparkProcessOutcome,
+    EngineBehaviorClassification, EngineContracts, EngineProcessOutcome, EngineTranscript,
 };
 use serde_json::Value;
 
@@ -76,7 +76,7 @@ fn fail_transcript_is_published_before_nonzero_exit_without_clobbering() {
     );
     assert!(matches!(
         transcript.execution.process.outcome,
-        SparkProcessOutcome::RuntimeRejected
+        EngineProcessOutcome::RuntimeRejected {}
     ));
 
     let second = run_engine(&profile_path, &scenario_path, &output_path);

@@ -10,10 +10,10 @@ use crate::workflow::{
     EngineBehaviorChecks, EngineCatalogConnectionEvidence, EngineExecution, EngineOperationEvidence,
 };
 use crate::{
-    EngineCatalogTable, EngineEvent, EngineFieldObservation, EnginePropertyObservation,
-    EngineRuntimeObservation, EngineTableLoad, EngineTableObservation, IcebergField,
-    InteroperabilityPlan, RowReadObservation, RuntimeArtifactOutcome, RuntimeVerification,
-    SparkProcessExecution, SPARK_JAVA_VERSION, SPARK_SCALA_VERSION,
+    EngineCatalogTable, EngineEvent, EngineFieldObservation, EngineProcessExecution,
+    EnginePropertyObservation, EngineRuntimeObservation, EngineTableLoad, EngineTableObservation,
+    IcebergField, InteroperabilityPlan, RowReadObservation, RuntimeArtifactOutcome,
+    RuntimeVerification, SPARK_JAVA_VERSION, SPARK_SCALA_VERSION,
 };
 
 #[derive(Default)]
@@ -32,7 +32,7 @@ struct EventObservations<'a> {
 }
 
 impl<'a> EventObservations<'a> {
-    fn from_execution(execution: &'a SparkProcessExecution) -> Self {
+    fn from_execution(execution: &'a EngineProcessExecution) -> Self {
         let mut observations = Self::default();
         let Some(capture) = &execution.capture else {
             return observations;

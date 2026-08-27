@@ -6,6 +6,7 @@
 
 mod adapters;
 mod catalog;
+mod execution;
 mod negotiation;
 mod policy;
 mod process;
@@ -20,6 +21,7 @@ pub use catalog::{
     EngineCatalog, EngineCatalogFailure, EngineCatalogFailureKind, EngineCatalogTable,
     EngineCleanupReceipt, EngineResourcePresence, EngineTableLoad, RestEngineCatalog,
 };
+pub use execution::*;
 pub use negotiation::{
     EngineAuthenticationEvidence, EngineAuthenticationMode, EngineCatalogConfigEvidence,
     EngineCatalogNegotiationEvidence, EngineNegotiationProjectionFailure, EngineRoutingResolution,

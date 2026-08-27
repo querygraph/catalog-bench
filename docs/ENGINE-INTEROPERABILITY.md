@@ -89,6 +89,32 @@ Catalog-specific routing is data, not code. The existing profile adapter owns:
 Secret values enter only as runtime environment values and never enter a profile,
 scenario, command transcript, query text, or result artifact.
 
+## Reusable process evidence boundary
+
+The common workflow does not depend on a Spark process type. Every
+`EngineRunner` returns the same `EngineProcessExecution` algebraic data type:
+verified runtime artifacts, one closed terminal outcome, an optional bounded
+event capture, an optional exit code, and optional process elapsed time. Closed
+credential-read and preparation failures retain only categories; they cannot
+carry a credential value, command line, exception, or backend message.
+
+The `0`/`2`/`3` mapping means completed, behavioral failure, and fixture
+collision in the harness event protocol. It is not a Spark convention. The
+neutral process layer combines an exit code with the decoded terminal event so
+an engine cannot claim success, failure, or collision through status alone.
+Timeout, stdout, wait, protocol, credential, preparation, and runtime failures
+remain separate ADT variants. No-detail variants use empty closed shapes, which
+preserve their existing JSON representation while rejecting stray fields.
+
+`SparkProcessExecutor` is currently the sole production adapter that emits this
+evidence. The generic workflow consumes it to decide whether fixture ownership
+authorizes independent REST/MinIO reconciliation and cleanup. Flink and Trino
+must implement the same boundary and event protocol; they may not fork the
+classification rules or introduce engine-specific transcript meanings. This
+refactor does not claim either runtime is implemented yet—the remaining runtime
+observation, plan, renderer, and artifact policies must still be generalized in
+separate verified units.
+
 ## Independent evidence
 
 An engine reporting query success is necessary but insufficient. The runner also
