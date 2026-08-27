@@ -4,6 +4,7 @@
 //! closed, secret-free plan and may translate that behavior only into the
 //! selected engine's stock public syntax.
 
+mod adapters;
 mod catalog;
 mod policy;
 mod process;
@@ -12,6 +13,7 @@ mod reconcile;
 mod runtime;
 mod workflow;
 
+pub use adapters::{RestEngineCatalogConnector, SharedObjectStoreConnector, StockSparkRunner};
 pub use catalog::{
     EngineCatalog, EngineCatalogFailure, EngineCatalogFailureKind, EngineCatalogTable,
     EngineCleanupReceipt, EngineResourcePresence, EngineTableLoad, RestEngineCatalog,

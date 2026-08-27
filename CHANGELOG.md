@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-04 production engine adapters: compose the verified stock Spark executor,
+  bounded profile-driven Iceberg REST negotiation, independent REST projection,
+  and shared MinIO auditor behind the generic engine workflow. All three
+  adapters share one opaque credential source, discard backend failure detail
+  at the evidence boundary, and preserve the runtime-rejection guarantee that
+  no secret, catalog, or object-store access occurs before artifact admission.
+
 - C2-04 engine evidence workflow core: run the stock engine before every
   harness REST or object-store effect, preserve collision as a no-cleanup
   terminal state, and authorize reconciliation only after the engine's trusted
