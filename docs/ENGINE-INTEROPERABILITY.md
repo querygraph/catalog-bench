@@ -123,6 +123,15 @@ consume only its neutral `fixture` and `scenario` views. Renderer-specific
 settings live in the `EngineExecutionPlan` algebraic data type; its first variant
 contains the existing closed `SparkExecutionPlan`.
 
+Runnable profiles with one `stock-engine` use the singular convenience
+constructor. Candidate profiles may contain several engines, so they must call
+the explicit engine constructor. It accepts an engine only when exactly one
+`stock-engine` service selects that component ID; merely naming an unrelated
+profile component is insufficient. The selected component then passes the same
+renderer version, connector, immutable artifact, and runner-copy checks. This
+keeps engine choice in typed profile data and prevents component order or an
+implicit “first engine” rule from affecting execution.
+
 The Spark process adapter must explicitly select that Spark variant before it
 can serialize `plan.json`. An adapter paired with the wrong execution-plan
 variant fails preparation with a closed `execution-plan-mismatch` category; it

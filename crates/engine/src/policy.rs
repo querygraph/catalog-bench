@@ -446,6 +446,19 @@ impl InteroperabilityPlan {
         catalog: &ComponentId,
         fixture_id: &str,
     ) -> Result<Self, PolicyError> {
+        let engine = role_component(profile, "stock-engine", ComponentKind::Engine)?
+            .id
+            .clone();
+        Self::from_contracts_for_engine(profile, scenario, catalog, &engine, fixture_id)
+    }
+
+    pub fn from_contracts_for_engine(
+        profile: &Profile,
+        scenario: &Scenario,
+        catalog: &ComponentId,
+        engine: &ComponentId,
+        fixture_id: &str,
+    ) -> Result<Self, PolicyError> {
         validate_canonical_scenario(scenario)?;
         let parameters = decode_parameters(scenario)?;
         validate_parameters(&parameters)?;
@@ -467,7 +480,8 @@ impl InteroperabilityPlan {
         }
         let catalog_component = component(profile, catalog, ComponentKind::Catalog)?;
         let runner_component = optional_engine_runner(profile)?;
-        let engine_component = role_component(profile, "stock-engine", ComponentKind::Engine)?;
+        let engine_component =
+            selected_role_component(profile, "stock-engine", engine, ComponentKind::Engine)?;
         let connector_component =
             role_component(profile, "engine-connector", ComponentKind::Connector)?;
         validate_supported_runtime(engine_component, connector_component)?;
@@ -795,6 +809,25 @@ fn role_component<'a>(
     let [service] = services.as_slice() else {
         return Err(PolicyError::new(format!(
             "profile must contain exactly one `{role}` service"
+        )));
+    };
+    component(profile, &service.component, kind)
+}
+
+fn selected_role_component<'a>(
+    profile: &'a Profile,
+    role: &str,
+    selected: &ComponentId,
+    kind: ComponentKind,
+) -> Result<&'a Component, PolicyError> {
+    let services = profile
+        .services
+        .iter()
+        .filter(|service| service.role == role && service.component == *selected)
+        .collect::<Vec<_>>();
+    let [service] = services.as_slice() else {
+        return Err(PolicyError::new(format!(
+            "profile must select `{selected}` through exactly one `{role}` service"
         )));
     };
     component(profile, &service.component, kind)

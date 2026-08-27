@@ -20,6 +20,7 @@ const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const SCENARIO: &[u8] =
     include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
+const CANDIDATE_PROFILE: &[u8] = include_bytes!("../../../profiles/v1/current-2026-08-27.json");
 const RUNNER_DIGEST: &str = "44e0aad6f2519678d335d6a437073da9674bb5a378df4b6d92fe88dfae038f5b";
 
 #[test]
@@ -121,6 +122,75 @@ fn execution_plan_matches_only_its_exact_runtime_identity() {
     ] {
         assert!(!plan.execution().runtime_identity_matches(&drifted));
     }
+}
+
+#[test]
+fn explicit_engine_selection_is_role_bound_and_unambiguous() {
+    let (mut profile, scenario) = contracts();
+    let ContractDocument::Profile(candidate) = parse_contract(CANDIDATE_PROFILE).unwrap() else {
+        panic!("candidate fixture must be a profile");
+    };
+    profile.components.push(
+        candidate
+            .components
+            .iter()
+            .find(|component| component.id.as_str() == "flink")
+            .unwrap()
+            .clone(),
+    );
+    profile.services.push(
+        candidate
+            .services
+            .iter()
+            .find(|service| service.component.as_str() == "flink")
+            .unwrap()
+            .clone(),
+    );
+
+    let singular = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "select01",
+    )
+    .unwrap_err();
+    assert!(singular
+        .to_string()
+        .contains("exactly one `stock-engine` service"));
+
+    let selected = InteroperabilityPlan::from_contracts_for_engine(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        &ComponentId::from("spark-4.1"),
+        "select01",
+    )
+    .unwrap();
+    assert_eq!(selected.engine().id.as_str(), "spark-4.1");
+
+    let unsupported = InteroperabilityPlan::from_contracts_for_engine(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        &ComponentId::from("flink"),
+        "select01",
+    )
+    .unwrap_err();
+    assert!(unsupported
+        .to_string()
+        .contains("Spark renderer supports Apache Spark 4.1.3"));
+
+    let not_selected = InteroperabilityPlan::from_contracts_for_engine(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        &ComponentId::from("lakecat"),
+        "select01",
+    )
+    .unwrap_err();
+    assert!(not_selected
+        .to_string()
+        .contains("through exactly one `stock-engine` service"));
 }
 
 #[test]

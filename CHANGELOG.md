@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C2-06 explicit engine selection: add a role-validated
+  `InteroperabilityPlan::from_contracts_for_engine` constructor for candidate
+  profiles that intentionally contain several `stock-engine` services. The
+  existing constructor remains the unambiguous convenience path for runnable
+  single-engine profiles. Explicit selection requires exactly one service that
+  binds the requested engine ID and still passes renderer-specific version,
+  connector, artifact, and runner-copy policy; unrelated components cannot be
+  selected by ID alone. Focused tests cover singular-profile rejection,
+  successful Spark selection from a multi-engine profile, unsupported Flink
+  dispatch, and non-engine-role rejection. This is selection infrastructure,
+  not a Flink or Trino runtime claim.
+
 - C2-06 engine-neutral runtime identity: replace Spark-, Scala-, and Java-named
   event fields with an engine version plus an exact dependency map, and move
   expected runtime matching behind the selected `EngineExecutionPlan` variant.
