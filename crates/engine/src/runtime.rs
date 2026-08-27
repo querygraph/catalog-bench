@@ -249,7 +249,7 @@ fn hex(bytes: &[u8]) -> String {
         .collect()
 }
 
-fn operating_system_matches(expected: &str, observed: &str) -> bool {
+pub(crate) fn operating_system_matches(expected: &str, observed: &str) -> bool {
     normalize_operating_system(expected) == normalize_operating_system(observed)
 }
 
@@ -260,7 +260,7 @@ fn normalize_operating_system(value: &str) -> String {
     }
 }
 
-fn architecture_matches(expected: &str, observed: &str) -> bool {
+pub(crate) fn architecture_matches(expected: &str, observed: &str) -> bool {
     normalize_architecture(expected) == normalize_architecture(observed)
 }
 

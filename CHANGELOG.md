@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- C2-04 engine evidence workflow core: run the stock engine before every
+  harness REST or object-store effect, preserve collision as a no-cleanup
+  terminal state, and authorize reconciliation only after the engine's trusted
+  absence event. The generic orchestration core retains bounded catalog and
+  MinIO outcomes, attempts every non-purging cleanup and absence check after
+  ownership, and derives all thirteen behavioral assertions from exact runtime,
+  schema, snapshot, canonical-row, REST-correlation, object, and cleanup state.
+
 - C2-04 verified engine cleanup: extend the engine-bound REST port with bounded
   table and namespace presence observations so orchestration can prove both
   run-owned resources absent after non-purging cleanup instead of inferring

@@ -267,18 +267,30 @@ impl SparkProcessExecution {
     #[must_use]
     pub fn passed(&self) -> bool {
         matches!(self.outcome, SparkProcessOutcome::Completed)
+            && self.exit_code == Some(SPARK_SUCCESS_EXIT)
+            && self
+                .capture
+                .as_ref()
+                .is_some_and(EngineEventCapture::completed)
     }
 
     #[must_use]
     pub fn cleanup_authorized(&self) -> bool {
-        self.capture
-            .as_ref()
-            .is_some_and(EngineEventCapture::cleanup_authorized)
+        !matches!(self.outcome, SparkProcessOutcome::FixtureCollision)
+            && self
+                .capture
+                .as_ref()
+                .is_some_and(EngineEventCapture::cleanup_authorized)
     }
 
     #[must_use]
     pub fn fixture_collision(&self) -> bool {
         matches!(self.outcome, SparkProcessOutcome::FixtureCollision)
+            && self.exit_code == Some(SPARK_COLLISION_EXIT)
+            && self
+                .capture
+                .as_ref()
+                .is_some_and(EngineEventCapture::fixture_collision)
     }
 
     fn before_process(runtime: RuntimeVerification, outcome: SparkProcessOutcome) -> Self {
