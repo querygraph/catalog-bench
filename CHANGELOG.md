@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C1-08 contention benchmark core: add a typed, canonical scenario/profile
+  boundary; balanced rotate-left conditioning and measured-round planning;
+  collision-safe per-catalog/per-round fixtures; deterministic finite latency,
+  throughput, quantile, median, and range statistics; and complete
+  accepted/conflict/error accounting. Raw request identities now live only in
+  redacted, non-serializable in-memory types, while final-state evidence retains
+  validated SHA-256 values. Duplicate identities, malformed hashes, unaccounted
+  requests, regressed metadata counts, zero elapsed time, non-finite samples,
+  behavior-changing shims, and shared-object-store drift all fail closed in
+  focused integration tests kept outside the implementation modules.
+
 - Catalog community C1-08 contention contract: preserve the historical v1
   scenario bytes while adding a strict v2 authority for profile-driven routing,
   collision-safe fixtures, synchronized writers, complete request and latency
