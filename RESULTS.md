@@ -1,15 +1,75 @@
 # Commit-path results
 
-Final public sweep: **2026-08-08 (America/Los_Angeles)**. Every request was sent
+Current production sweep: **2026-08-27 05:06:18–05:15:12 UTC**. The benchmark
+runner, all five catalogs, their private state stores, and MinIO ran as containers
+on one Docker Desktop Linux/ARM64 network. The runner and LakeCat were fully
+optimized, source-pinned production executables; their image IDs, embedded ELF
+hashes, and exact build settings are in the
+[runnable profile](profiles/v1/contention-2026-08-27.json).
+
+## Current concurrent ranking
+
+The canonical [generated C110 matrix](results/v1/2026-08-27/MATRIX.md) ranks only
+catalogs whose conditioning round and all five measured rounds passed every
+required assertion. It orders those passes by median concurrent **accepted**
+commits per second:
+
+1. **LakeCat — 147.536/s** (144.110–153.391)
+2. **Apache Polaris — 58.110/s** (56.171–68.431)
+3. **Apache Gravitino — 56.823/s** (55.285–58.049)
+4. **Lakekeeper — unranked `fail`**
+5. **Apache Nessie — unranked `fail`**
+
+LakeCat completed 32,408 measured concurrent requests: 4,474 accepted commits,
+27,934 HTTP 409 conflicts, and **zero request errors**. Its median sequential
+p50 was 4.094 ms, median concurrent accepted throughput was 147.536/s, and the
+median conflict rate was 85.919%. A 409 is an expected stale-state rejection
+under eight writers racing on one table; it is not a Turso failure. See
+[Understanding LakeCat's CAS Conflict Rate](docs/CAS-CONFLICTS.md).
+
+Lakekeeper completed setup, serial work, final-state attribution, MinIO growth,
+and cleanup in every round, but returned 58 PostgreSQL deadlock-backed HTTP 503
+responses: 11 in conditioning and 47 in measured rounds. Apache Nessie likewise
+completed every non-error check, but returned 106 HTTP 500 responses: 18 in
+conditioning and 88 in measured rounds. Its server logs identify an inactive
+Quarkus request context while `CatalogProducers.objectIO` performs an async
+`writeObject`. Both rows retain diagnostic throughput and latency, but neither
+can receive a numeric rank. See
+[Lakekeeper's failed result](docs/LAKEKEEPER-ERROR.md) and
+[Nessie's failed result](docs/NESSIE-ERROR.md).
+
+The current evidence is deliberately not a chart-only publication:
+
+- [Generated ranking and non-pass explanations](results/v1/2026-08-27/MATRIX.md)
+- [Immutable result-bundle manifest](results/v1/2026-08-27/manifest.json)
+- [Complete sanitized 30-round transcript](results/contention-2026-08-27-transcript.json)
+- [Reviewed environment and failure attribution](results/contention-2026-08-27-review.json)
+
+The contract importer pins both source-evidence hashes, rebuilds the scenario
+schedule from the profile, independently recomputes aggregates and rank order,
+emits all 14 assertion evaluations per catalog, preserves failed measurements,
+and verifies every bundle artifact. Reproduce that derivation without running
+Docker:
+
+```sh
+cargo run -p catalog-bench-contract --locked -- contention-import check --root .
+```
+
+## Historical reference sweep: 2026-08-08
+
+The sections below preserve the previous **2026-08-08
+(America/Los_Angeles)** report and its independently validated historical
+bundle. They are retained for provenance and optimization history; they are not
+the current ranking. Every request in that sweep was sent
 from one Linux ARM64 Docker container to catalogs on the same Docker network and
 the same MinIO instance. Each accepted `set-properties` commit validates the
 request, writes a fresh Iceberg `metadata.json` to `s3://warehouse`, and advances
 the catalog pointer; there are no data files or query-engine work in this test.
 
-## Concurrent ranking
+## Historical concurrent ranking
 
 The canonical [generated matrix](results/v1/2026-08-08/MATRIX.md) ranks `pass`
-outcomes by median successful concurrent throughput. A numeric rank requires
+outcomes by median accepted concurrent throughput. A numeric rank requires
 zero request errors in every measured round. An HTTP 500 is neither a success
 nor a conflict, so Nessie's failed zero-request-errors assertion is represented
 as an unranked `fail` outcome with all diagnostic measurements preserved.

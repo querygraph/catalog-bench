@@ -12,6 +12,8 @@ path = "src/main.rs"
 [dependencies]
 anyhow = { workspace = true }
 catalog-bench-common = { workspace = true }
+catalog-bench-commit = { workspace = true }
+catalog-bench-conformance = { workspace = true }
 clap = { workspace = true }
 csv = { workspace = true }
 serde = { workspace = true }

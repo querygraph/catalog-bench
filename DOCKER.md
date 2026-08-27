@@ -250,6 +250,15 @@ written with one or more catalogs unranked, and `1` means no valid transcript
 could be completed. See [Commit contention](docs/COMMIT-CONTENTION.md) for the
 request, accounting, cleanup, aggregation, ranking, and publication contracts.
 
+The accepted C110 transcript has been reviewed and materialized as the current
+[immutable result bundle](results/v1/2026-08-27/manifest.json). Verify its exact
+source hashes, recomputed aggregates, typed records, cross-document links, and
+generated matrix with:
+
+```sh
+cargo run -p catalog-bench-contract --locked -- contention-import check --root .
+```
+
 ## Stock PyIceberg interoperability
 
 C1-07 adds a separate stock-client image built from

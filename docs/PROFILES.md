@@ -135,8 +135,10 @@ The C1-05 smoke acceptance rebuilt and hashed the candidate conformance runner
 and LakeCat production executable, then proved all five catalog metadata paths
 against shared MinIO. Those observed local artifacts do not resolve this draft:
 the contention profile uses a later production build and applies only to the v2
-contention scenario. C1-09 still must wrap final transcripts in an immutable
-result bundle before publication.
+contention scenario. C1-09 has now wrapped the accepted C110 transcript in an
+[immutable result bundle](../results/v1/2026-08-27/manifest.json), with its
+[generated matrix](../results/v1/2026-08-27/MATRIX.md), exact source evidence,
+environment capture, and reviewed failure attribution.
 Exact hashes and the behavioral matrix are in
 [`TABLE-CONFORMANCE.md`](TABLE-CONFORMANCE.md).
 
@@ -152,7 +154,9 @@ The published 2026-08-08 bundle continues to reference the byte-identical
 same-table-contention v1 scenario. Current performance work uses the separately
 versioned v2 scenario, which binds the common workload to profile routing,
 run-owned MinIO evidence, cleanup, sanitization, repeated rounds, and generated
-median-with-range aggregation without changing historical inputs.
+median-with-range aggregation without changing historical inputs. The published
+2026-08-27 C110 bundle is the first immutable result bundle backed by that v2
+scenario and the runnable profile below.
 
 ## Runnable contention profile
 

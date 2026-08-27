@@ -2,8 +2,9 @@
 
 ## Short answer
 
-LakeCat's 85.42% conflict rate in the concurrent commit benchmark is primarily
-the expected result of eight writers racing to update the same Iceberg table.
+LakeCat's 85.919% median conflict rate in the current concurrent commit
+benchmark is primarily the expected result of eight writers racing to update
+the same Iceberg table.
 It is not evidence that Turso is returning failures for 85% of requests.
 
 The benchmark reports an HTTP 409 when a request reaches LakeCat with an
@@ -13,17 +14,19 @@ as designed. Turso's lower-level MVCC contention is retried inside LakeCat; if
 it escaped that retry boundary, the benchmark would count it as a request error,
 not as a conflict. LakeCat had a 0% request-error rate in every measured round.
 
-The numeric values below analyze the published 2026-08-08 historical sweep.
-The current v2 runner preserves the same 50/1,000/eight-writer/six-second shape
-but adds a barrier, complete latency evidence, profile-driven routing, five
-catalogs, direct MinIO growth checks, and strict repeated-round aggregation. It
-also deliberately omits optional idempotency headers from every catalog. See
+The numeric values below analyze the published 2026-08-27 C110 production
+sweep. The v2 runner uses the same 50/1,000/eight-writer/six-second shape as the
+historical sweep and adds a barrier, complete latency evidence, profile-driven
+routing, five catalogs, direct MinIO growth checks, and strict repeated-round
+aggregation. It deliberately omits optional idempotency headers from every
+catalog. See
 [Iceberg REST same-table commit contention](COMMIT-CONTENTION.md).
 
 ## What the benchmark measures
 
-The final public sweep is recorded in [RESULTS.md](../RESULTS.md) and the
-[median summary](../results/commit-2026-08-08-summary.tsv). Each catalog run:
+The current public sweep is recorded in [RESULTS.md](../RESULTS.md), the
+[generated matrix](../results/v1/2026-08-27/MATRIX.md), and LakeCat's
+[typed result](../results/v1/2026-08-27/lakecat.json). Each catalog run:
 
 1. creates a fresh namespace and table;
 2. performs 50 unmeasured warm-up commits;
@@ -40,7 +43,7 @@ values. The current driver classifies outcomes in the catalog
 - HTTP 409 increments `conflict`; and
 - every other failure increments `errors`.
 
-The historical published conflict rate is:
+The historical report used:
 
 ```text
 conflicts / (accepted commits + conflicts)
@@ -50,18 +53,21 @@ Errors are deliberately excluded from that denominator and reported
 separately. This distinction prevents a backend failure from looking like valid
 optimistic-concurrency behavior.
 
-The v2 transcript instead reports `conflicts / attempts` and `errors / attempts`
-as complementary rates, while retaining all three counts. For LakeCat's
-zero-error rounds the two conflict-rate formulas are identical.
+The v2 transcript reports `conflicts / attempts` and `errors / attempts` as
+complementary rates, while retaining all three counts. For LakeCat's zero-error
+rounds the two conflict-rate formulas are identical; the C110 value above is the
+v2 transcript's `conflicts / attempts`.
 
-The measured LakeCat medians were:
+The measured C110 LakeCat values were:
 
 | Metric | Result |
 | --- | ---: |
-| Successful concurrent commits | 153.0/s |
-| Conflict rate | 85.42% |
+| Accepted concurrent commits | 147.536/s |
+| Attempted concurrent operations | 1,083.487/s |
+| Conflict rate | 85.919% |
 | Request-error rate | 0% |
 | Request errors across measured rounds | 0 |
+| Measured attempts / accepted / conflicts | 32,408 / 4,474 / 27,934 |
 
 ## Why eight same-table writers conflict so often
 
@@ -85,7 +91,7 @@ others must not silently overwrite it.
 In a perfectly synchronized group of eight contenders, one winner and seven
 stale writers would produce a 7/8, or 87.5%, conflict rate. The benchmark is a
 continuous loop rather than synchronized batches, so writers drift in and out
-of overlap. Its 85.42% median is consistent with roughly that contention shape;
+of overlap. Its 85.919% median is consistent with roughly that contention shape;
 it is not itself proof of groups of exactly eight.
 
 The high rate is therefore also evidence that LakeCat enforces a strict pointer
@@ -99,12 +105,12 @@ result. The Iceberg `metadata.json` objects measured by this benchmark are still
 written to the shared MinIO instance.
 
 At the benchmarked LakeCat revision
-[`3cca8d1c`](https://github.com/querygraph/lakecat/tree/3cca8d1c749fcf1c7cbd30661ba2bd4805b256d3),
+[`962f43cb`](https://github.com/querygraph/lakecat/tree/962f43cb2d2f345addf188e63be0cf6059bc26b0),
 the Turso path has two distinct kinds of concurrency outcome:
 
 ### 1. Physical MVCC contention: retry internally
 
-[`write_txn`](https://github.com/querygraph/lakecat/blob/3cca8d1c749fcf1c7cbd30661ba2bd4805b256d3/crates/lakecat-store/src/turso_store/mod.rs#L130)
+[`write_txn`](https://github.com/querygraph/lakecat/blob/962f43cb2d2f345addf188e63be0cf6059bc26b0/crates/lakecat-store/src/turso_store/mod.rs#L93)
 uses `journal_mode=mvcc` and `BEGIN CONCURRENT`. It retries these transient
 outcomes with capped exponential backoff:
 
@@ -130,7 +136,7 @@ After any safe physical retry, LakeCat re-runs the transaction body on a fresh
 snapshot. The commit checks the expected metadata location and uses a
 conditional table update guarded by both the prior version and prior pointer.
 See
-[`commit_table_transaction`](https://github.com/querygraph/lakecat/blob/3cca8d1c749fcf1c7cbd30661ba2bd4805b256d3/crates/lakecat-store/src/turso_store/mod.rs#L2197).
+[`commit_table`](https://github.com/querygraph/lakecat/blob/962f43cb2d2f345addf188e63be0cf6059bc26b0/crates/lakecat-store/src/turso_store/mod.rs#L1121).
 
 If another writer has advanced the table, the requirement check or conditional
 update fails and LakeCat returns a terminal logical `Conflict` (HTTP 409). That

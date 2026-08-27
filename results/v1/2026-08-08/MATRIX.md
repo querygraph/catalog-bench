@@ -6,9 +6,9 @@ This is a **historical import** of the 2026-08-08 (America/Los_Angeles) evidence
 
 Scenario: `iceberg-rest.commit.same-table-contention` v1 · profile: `commit-2026-08-08-linux-arm64` · [manifest](manifest.json).
 
-Numeric ranks include only `pass` outcomes and sort by median successful concurrent throughput. Failed, unsupported, and not-tested rows retain any available diagnostic measurements but are never ranked.
+Numeric ranks include only `pass` outcomes and sort by median accepted concurrent throughput. Failed, unsupported, and not-tested rows retain any available diagnostic measurements but are never ranked.
 
-| Rank | Catalog | Outcome | Valid rounds | Concurrent | Sequential | p50 | p99 | Conflict rate | Error rate | Errors |
+| Rank | Catalog | Outcome | Valid rounds | Concurrent accepted | Sequential accepted | Sequential p50 | Sequential p99 | Conflict rate | Error rate | Errors |
 |:---:|---|:---:|:---:|---:|---:|---:|---:|---:|---:|---:|
 | 1 | LakeCat 3cca8d1c | `pass` | 5 / 5 | 153.0/s (130.0–166.5) | 335.5/s (285.2–342.6) | 2.697 ms (2.628–3.156) | 5.641 ms (5.257–6.063) | 85.422% (85.347–85.514) | 0.000% (0.000–0.000) | 0 |
 | 2 | Apache Polaris 1.5.0 | `pass` | 5 / 5 | 129.1/s (103.0–135.6) | 135.0/s (103.7–153.4) | 7.115 ms (5.958–8.954) | 11.533 ms (9.556–21.969) | 4.044% (3.559–6.456) | 0.000% (0.000–0.000) | 0 |

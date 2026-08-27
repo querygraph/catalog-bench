@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- C1-09 production contention publication: preserve the complete sanitized C110
+  transcript as immutable source evidence and pair it with a minimal reviewed
+  environment and server-failure sidecar. Added a deterministic importer that
+  hash-pins both inputs, reuses the runner's closed transcript ADTs and
+  scenario-derived aggregation policy, requires exact aggregate/ranking
+  agreement, evaluates all 14 assertions per catalog, and emits five validated
+  result records, one manifest, and the generated pass-only matrix. LakeCat ranks
+  first among passing catalogs at 147.536 accepted commits/s, followed by Apache
+  Polaris at 58.110/s and Apache Gravitino at 56.823/s; Lakekeeper and Apache
+  Nessie retain complete diagnostics but remain unranked after PostgreSQL
+  deadlock-backed HTTP 503 and Quarkus request-context HTTP 500 errors. Added
+  tamper/drift tests, full reproduction commands, current result reporting, and
+  dedicated forensic documentation for both non-pass outcomes.
+
 - C1-09 runnable contention profile: deterministically narrow the broad current
   candidate to the ten components used by same-table contention, retain all five
   neutral catalog adapters, and replace the runner, LakeCat, and MinIO
@@ -330,9 +344,9 @@
 - C1-04 provenance pin: advanced the draft current profile to the independently
   verified namespace-runner revision `catalog-bench@1f4e640` and corrected
   LakeCat namespace implementation `lakecat@c821a0dc`. Both source builds retain
-  the exact stable Rust 1.97.1 production recipe; C1-09 still owns resolved
-  executable/image artifacts and conversion of smoke transcripts into a
-  publishable immutable bundle.
+  the exact stable Rust 1.97.1 production recipe; publication was intentionally
+  deferred so C1-09 could own resolved executable/image artifacts and conversion
+  of smoke transcripts into a publishable immutable bundle.
 
 - Catalog community C1-04 runner: added a strict Iceberg REST namespace
   lifecycle probe covering isolated create/list/load, multipart hierarchy,
@@ -375,7 +389,7 @@
   and isolated-state readiness gates; typed/tested MinIO and Lakekeeper setup
   helpers that reconcile current state and fail on configuration drift; and
   current operations documentation. The final public benchmark artifact
-  pipeline remains explicitly assigned to C1-09.
+  pipeline was explicitly deferred to C1-09.
 - Contract test portability: embedded checked-in profiles, scenarios, and schemas
   in the integration-test binary so a shared Cargo target directory cannot reuse
   stale absolute paths from a removed clean worktree.

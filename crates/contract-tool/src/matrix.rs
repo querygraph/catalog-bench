@@ -1,4 +1,5 @@
 use std::fmt::Write;
+use std::path::{Component, Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{
@@ -7,7 +8,7 @@ use catalog_bench_common::contract::{
 
 use crate::ValidatedBundle;
 
-/// Render the historical commit matrix exclusively from validated result records.
+/// Render a commit matrix exclusively from validated result records.
 pub fn render_commit_matrix(bundle: &ValidatedBundle) -> Result<String> {
     if bundle.scenarios().len() != 1 {
         bail!(
@@ -20,13 +21,27 @@ pub fn render_commit_matrix(bundle: &ValidatedBundle) -> Result<String> {
         .results()
         .iter()
         .filter(|record| matches!(&record.result().outcome, ResultOutcome::Pass { .. }))
-        .map(|record| throughput(record.result()).map(|value| (record, value)))
+        .map(|record| {
+            Ok((
+                record,
+                throughput(record.result())?,
+                sequential_p50(record.result())?,
+            ))
+        })
         .collect::<Result<Vec<_>>>()?;
-    pass_rows.sort_by(|(left, left_value), (right, right_value)| {
-        right_value
-            .total_cmp(left_value)
-            .then_with(|| left.result().catalog.name.cmp(&right.result().catalog.name))
-    });
+    pass_rows.sort_by(
+        |(left, left_throughput, left_latency), (right, right_throughput, right_latency)| {
+            right_throughput
+                .total_cmp(left_throughput)
+                .then_with(|| left_latency.total_cmp(right_latency))
+                .then_with(|| {
+                    left.result()
+                        .catalog
+                        .profile_component
+                        .cmp(&right.result().catalog.profile_component)
+                })
+        },
+    );
     let mut non_pass_rows = bundle
         .results()
         .iter()
@@ -74,18 +89,18 @@ pub fn render_commit_matrix(bundle: &ValidatedBundle) -> Result<String> {
     )?;
     writeln!(
         output,
-        "Numeric ranks include only `pass` outcomes and sort by median successful concurrent throughput. Failed, unsupported, and not-tested rows retain any available diagnostic measurements but are never ranked.\n"
+        "Numeric ranks include only `pass` outcomes and sort by median accepted concurrent throughput. Failed, unsupported, and not-tested rows retain any available diagnostic measurements but are never ranked.\n"
     )?;
     writeln!(
         output,
-        "| Rank | Catalog | Outcome | Valid rounds | Concurrent | Sequential | p50 | p99 | Conflict rate | Error rate | Errors |"
+        "| Rank | Catalog | Outcome | Valid rounds | Concurrent accepted | Sequential accepted | Sequential p50 | Sequential p99 | Conflict rate | Error rate | Errors |"
     )?;
     writeln!(
         output,
         "|:---:|---|:---:|:---:|---:|---:|---:|---:|---:|---:|---:|"
     )?;
 
-    for (index, (record, _)) in pass_rows.iter().enumerate() {
+    for (index, (record, _, _)) in pass_rows.iter().enumerate() {
         write_row(&mut output, &(index + 1).to_string(), record.result(), true)?;
     }
     for record in &non_pass_rows {
@@ -131,11 +146,10 @@ pub fn render_commit_matrix(bundle: &ValidatedBundle) -> Result<String> {
         output,
         "cargo run -p catalog-bench-contract --locked -- matrix check \\"
     )?;
-    writeln!(
-        output,
-        "  --manifest results/v1/2026-08-08/manifest.json \\"
-    )?;
-    writeln!(output, "  --output results/v1/2026-08-08/MATRIX.md")?;
+    let manifest_path = published_path(bundle.manifest_path());
+    let matrix_path = manifest_path.with_file_name("MATRIX.md");
+    writeln!(output, "  --manifest {} \\", manifest_path.display())?;
+    writeln!(output, "  --output {}", matrix_path.display())?;
     writeln!(output, "```")?;
     Ok(output)
 }
@@ -209,6 +223,10 @@ fn write_row(
 
 fn throughput(result: &ResultRecord) -> Result<f64> {
     distribution_metric(result, "concurrent", "successful-throughput").and_then(distribution_median)
+}
+
+fn sequential_p50(result: &ResultRecord) -> Result<f64> {
+    distribution_metric(result, "sequential", "p50-latency").and_then(distribution_median)
 }
 
 fn format_distribution_metric(
@@ -341,4 +359,19 @@ fn display_version(version: &str) -> &str {
     } else {
         version
     }
+}
+
+fn published_path(path: &Path) -> PathBuf {
+    let components = path.components().collect::<Vec<_>>();
+    let Some(results_index) = components.iter().rposition(
+        |component| matches!(component, Component::Normal(value) if *value == "results"),
+    ) else {
+        return path.to_owned();
+    };
+    components[results_index..]
+        .iter()
+        .fold(PathBuf::new(), |mut relative, component| {
+            relative.push(component.as_os_str());
+            relative
+        })
 }

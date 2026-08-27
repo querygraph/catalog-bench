@@ -169,9 +169,10 @@ contract, or I/O failure.
 ## Deliberate non-claims and follow-up
 
 - These transcripts are ignored smoke evidence, not checked-in
-  `catalog-bench/v1` result records. C1-09 owns immutable bundle materialization,
-  environment capture, manual redaction review, secret scanning, and site/report
-  generation.
+  `catalog-bench/v1` result records. C1-09 later applied immutable bundle
+  materialization, environment capture, redaction review, and generated reporting
+  to the separate production contention run; it did not retroactively publish
+  these C1-04 smoke transcripts.
 - C1-04 records behavior only. It does not change the generated concurrent
   throughput ranking and does not compare latency, CPU, or memory.
 - The fixture grammar is intentionally portable across the five catalogs. It

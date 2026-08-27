@@ -306,15 +306,19 @@ cargo run -p catalog-bench-contract --locked -- profile check-contention \
 
 # Verify exact bytes and every cross-document link in one result bundle.
 cargo run -p catalog-bench-contract --locked -- bundle validate \
-  --manifest results/v1/2026-08-08/manifest.json
+  --manifest results/v1/2026-08-27/manifest.json
 
 # Recompute the historical JSON records from the hash-pinned source TSVs.
 cargo run -p catalog-bench-contract --locked -- historical-import check --root .
 
+# Recompute the current production records, manifest, and matrix from the
+# hash-pinned C110 transcript plus reviewed environment/failure sidecar.
+cargo run -p catalog-bench-contract --locked -- contention-import check --root .
+
 # Detect drift in the human matrix generated from the validated records.
 cargo run -p catalog-bench-contract --locked -- matrix check \
-  --manifest results/v1/2026-08-08/manifest.json \
-  --output results/v1/2026-08-08/MATRIX.md
+  --manifest results/v1/2026-08-27/manifest.json \
+  --output results/v1/2026-08-27/MATRIX.md
 ```
 
 `validate` recurses through directories and examines `.json` files. Schema files
@@ -323,7 +327,20 @@ importer also verifies the source hashes, exact round/catalog dimensions, summar
 arithmetic, request-rate arithmetic, expected and observed MinIO growth, and
 legacy rank fields before emitting v1 records. `matrix check` first runs full
 bundle validation and ranks only `pass` outcomes; non-pass measurements remain
-visible but unranked. The contention materialization sidecar is a strict generator
+visible but unranked.
+
+The C110 contention importer deserializes the production transcript through the
+same closed ADTs used by the runner, reconstructs the scenario-derived schedule,
+and reruns the benchmark aggregation and tie-breaking policy. It requires exact
+agreement with the transcript's aggregates, ranking, and sweep classification;
+verifies profile, scenario, runner, runtime, sanitization, and evidence digests;
+checks the reviewed environment and HTTP error totals; and requires causal
+failure coverage for exactly the failed catalogs. It emits distributions for
+failed rows as diagnostics but the result outcome keeps them unranked. Tampering
+with either source, a result, a manifest reference, or the generated matrix is
+covered by external tests.
+
+The contention profile materialization sidecar is a strict generator
 input rather than a fifth `catalog-bench/v1` document kind; its source digest,
 closed fields, exact image set, labels, platforms, and executable identities are
 validated before the ordinary runnable profile is rendered and validated.

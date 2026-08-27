@@ -353,9 +353,9 @@ evidence persistence failed.
 - Files under `target/pyiceberg-evidence` are ignored, mutable smoke evidence.
   They are not checked-in `catalog-bench/v1` results.
 
-C1-09 owns publication: materialize immutable artifacts, produce a runnable
-profile with their distributable identities, copy only reviewed sanitized
-evidence into a no-overwrite result bundle, capture the complete execution
-environment, hash exact bytes, and pass bundle validation plus redaction review.
-This report records reviewed C1-07 acceptance without pretending that later
-publication work has already happened.
+C1-09 later materialized immutable production contention artifacts, produced a
+runnable profile, captured the execution environment, and published the reviewed
+[C110 result bundle](../results/v1/2026-08-27/manifest.json) after exact-byte,
+bundle, and redaction checks. This report remains the reviewed C1-07 stock-client
+acceptance record: that later contention publication does not turn its ignored
+PyIceberg smoke transcripts into result records or add performance claims here.

@@ -5,8 +5,9 @@ use std::process::ExitCode;
 use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
-    check_contention_profile, check_historical_commit_bundle, load_bundle, render_commit_matrix,
-    write_contention_profile, write_historical_commit_bundle,
+    check_contention_profile, check_contention_result_bundle, check_historical_commit_bundle,
+    load_bundle, render_commit_matrix, write_contention_profile, write_contention_result_bundle,
+    write_historical_commit_bundle,
 };
 use clap::{Parser, Subcommand};
 
@@ -52,6 +53,11 @@ enum Command {
     HistoricalImport {
         #[command(subcommand)]
         command: HistoricalImportCommand,
+    },
+    /// Materialize the canonical C110 production contention result bundle.
+    ContentionImport {
+        #[command(subcommand)]
+        command: ContentionImportCommand,
     },
 }
 
@@ -132,6 +138,20 @@ enum HistoricalImportCommand {
     },
 }
 
+#[derive(Debug, Subcommand)]
+enum ContentionImportCommand {
+    /// Recompute and write records, manifest, and generated matrix.
+    Write {
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
+    /// Fail if records or the generated matrix differ from reviewed evidence.
+    Check {
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
+}
+
 fn main() -> ExitCode {
     match run(Cli::parse()) {
         Ok(()) => ExitCode::SUCCESS,
@@ -183,6 +203,16 @@ fn run(cli: Cli) -> Result<()> {
             }
             HistoricalImportCommand::Check { root } => {
                 let manifest = check_historical_commit_bundle(&root)?;
+                validate_bundle(&manifest)
+            }
+        },
+        Command::ContentionImport { command } => match command {
+            ContentionImportCommand::Write { root } => {
+                let manifest = write_contention_result_bundle(&root)?;
+                validate_bundle(&manifest)
+            }
+            ContentionImportCommand::Check { root } => {
+                let manifest = check_contention_result_bundle(&root)?;
                 validate_bundle(&manifest)
             }
         },

@@ -1,0 +1,136 @@
+{
+  "format": "catalog-bench/contention-result-review/v1",
+  "bundle": {
+    "id": "contention-2026-08-27-c110",
+    "title": "2026-08-27 production same-table contention ranking",
+    "output_directory": "results/v1/2026-08-27",
+    "created_at": "2026-08-27T05:24:26Z"
+  },
+  "run": {
+    "fixture_id": "c110_0827050618",
+    "transcript": {
+      "location": "results/contention-2026-08-27-transcript.json",
+      "sha256": "af8057846da68036723ce96de09965e3fc18381b949f4c34e078749c26cae71e",
+      "bytes": 434978
+    },
+    "sanitized_invocation": "docker/run-contention.sh c110_0827050618",
+    "started_at": "2026-08-27T05:06:18Z",
+    "started_at_basis": "The create-new fixture identifier supplied to docker/run-contention.sh encodes the UTC month, day, hour, minute, and second at launch.",
+    "completed_at": "2026-08-27T05:15:12Z",
+    "completed_at_basis": "Filesystem modification time of the complete create-new transcript before it was copied into the immutable bundle source evidence."
+  },
+  "environment": {
+    "operating_system": "Linux",
+    "architecture": "aarch64",
+    "cpu_model": {
+      "precision": "unknown",
+      "explanation": "Docker Desktop did not expose a CPU model through the Linux containers; no host model is substituted for the container execution environment."
+    },
+    "logical_cpus": {
+      "precision": "exact",
+      "value": 10
+    },
+    "memory_bytes": {
+      "precision": "exact",
+      "value": 8321712128
+    },
+    "network": "catalog-bench-net: one Docker bridge network shared by every benchmark, catalog, state-store, and MinIO container",
+    "container_runtime": {
+      "precision": "exact",
+      "value": "Docker Engine 29.4.3; Docker Desktop 4.73.0 (226246); LinuxKit 6.12.76; containerd v2.2.3; runc 1.3.5"
+    },
+    "runtime_flags": {
+      "conditioning_rounds": "1",
+      "container_resource_limits": "none configured; inspected NanoCpus, CPU quota, cpuset, and memory limits were zero or empty",
+      "docker_compose": "v5.1.3",
+      "measured_rounds": "5",
+      "metadata_delete_after_commit": "false",
+      "metadata_previous_versions_max": "100000",
+      "runner_build": "Rust 1.97.1; --release; opt-level=3; fat LTO; codegen-units=1; target-cpu=native; panic=abort; stripped",
+      "same_docker_boundary": "all catalogs, state stores, MinIO, helpers, and benchmark processes",
+      "warmup_commits": "50",
+      "sequential_commits": "1000",
+      "concurrent_writers": "8",
+      "concurrent_duration_ms": "6000"
+    },
+    "extensions": {
+      "querygraph/environment-capture": {
+        "captured_at": "2026-08-27T05:20:39Z",
+        "docker_server_architecture": "aarch64",
+        "docker_server_operating_system": "linux",
+        "resource_limit_observation": "c110_0827050618-lakecat-1 HostConfig.Resources; the merged Compose model applies no per-service CPU or memory limit"
+      }
+    }
+  },
+  "failures": [
+    {
+      "catalog": "lakekeeper",
+      "category": "catalog",
+      "summary": "Lakekeeper returned PostgreSQL deadlock-backed HTTP 503 errors in every contention round.",
+      "detail": "All six rounds completed setup, warmup, sequential commits, final-state attribution, MinIO object-growth audit, and cleanup, but every round violated zero-request-errors. The transcript records 58 HTTP 503 responses: 11 in conditioning and 47 across the five measured rounds. Reviewed Lakekeeper logs attribute the responses to CatalogBackendError after PostgreSQL reported a deadlock while setting table properties. PostgreSQL logs show concurrent DELETE plus INSERT ON CONFLICT UPDATE statements on table_properties waiting on transaction ShareLocks. Expected stale Iceberg races are classified separately as HTTP 409 conflicts; these 503 responses are catalog backend failures and therefore remain unranked. This Lakekeeper path uses PostgreSQL and is unrelated to LakeCat's Turso state store.",
+      "retryable": false,
+      "conditioning_errors": 11,
+      "measured_errors": 47,
+      "http_status_counts": {
+        "503": 58
+      },
+      "log_observations": [
+        {
+          "component": "lakekeeper",
+          "observed_at": "2026-08-27T05:07:56.926610Z",
+          "signature": "CatalogBackendError, HTTP 503: database deadlock detected at line 1130",
+          "context": [
+            "Failed to set table properties",
+            "Error committing table changes in catalog",
+            "A later warning reports the operation failed after two attempts"
+          ]
+        },
+        {
+          "component": "postgresql",
+          "observed_at": "2026-08-27T05:07:56.923Z",
+          "signature": "ERROR: deadlock detected; two transactions each waited for a ShareLock held by the other",
+          "context": [
+            "The statement builds new_props, deletes obsolete table_properties rows, then inserts with ON CONFLICT UPDATE",
+            "PostgreSQL reported the lock context while inserting an index tuple in table_properties"
+          ]
+        }
+      ]
+    },
+    {
+      "catalog": "nessie",
+      "category": "catalog",
+      "summary": "Nessie returned request-context HTTP 500 errors in every contention round.",
+      "detail": "All six rounds completed setup, warmup, sequential commits, final-state attribution, MinIO object-growth audit, and cleanup, but every round violated zero-request-errors. The transcript records 106 HTTP 500 responses: 18 in conditioning and 88 across the five measured rounds. Reviewed Nessie logs show jakarta.enterprise.context.ContextNotActiveException because the RequestScoped context was inactive while resolving CatalogProducers' objectIO producer during an asynchronous writeObject call from CatalogServiceImpl.storeSnapshot. These responses are non-conflict catalog errors under concurrent writes, so the strict result remains visible but unranked.",
+      "retryable": false,
+      "conditioning_errors": 18,
+      "measured_errors": 88,
+      "http_status_counts": {
+        "500": 106
+      },
+      "log_observations": [
+        {
+          "component": "nessie",
+          "observed_at": "2026-08-27T05:08:17.412624Z",
+          "signature": "jakarta.enterprise.context.ContextNotActiveException: RequestScoped context was not active",
+          "context": [
+            "The inactive producer is org.projectnessie.server.catalog.CatalogProducers objectIO",
+            "The failing call is objectIO.writeObject from CatalogServiceImpl.storeSnapshot",
+            "The same causal signature repeats during the concurrent phase"
+          ]
+        }
+      ]
+    }
+  ],
+  "redaction": {
+    "reviewed": true,
+    "policy": "The source transcript already applies catalog-bench/value-safe-contention-v1. This review sidecar retains only causal server-log fields and removes runtime identifiers that are unnecessary to reproduce the classification.",
+    "removed_fields": [
+      "OAuth client credentials and response tokens",
+      "authorization request headers",
+      "raw commit request identities",
+      "server request and error identifiers",
+      "warehouse, table, transaction, process, and fixture identifiers from server logs",
+      "unrelated stack frames and per-request audit events"
+    ]
+  }
+}

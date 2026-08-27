@@ -327,12 +327,13 @@ The CLI refuses to overwrite an evidence file or mutate a colliding fixture.
 
 - These exact transcripts live under ignored `target/conformance-evidence` and
   are acceptance smoke evidence, not checked-in `catalog-bench/v1` results.
-- The current profile remains `draft` because source-built executables are not
-  yet represented as immutable digest-resolved profile artifacts.
-- C1-09 owns rebuilding all final production artifacts, immutable result and
-  manifest materialization, complete environment capture, manual redaction
-  review, secret scanning, generated matrices/reports, and adversari.al
-  publication.
+- This report's candidate profile remains `draft` because its source-built
+  executables are not represented as immutable digest-resolved artifacts in that
+  smoke profile.
+- C1-09 later rebuilt the production contention artifacts and published the
+  reviewed [C110 result bundle](../results/v1/2026-08-27/manifest.json). That
+  bundle does not retroactively convert these table-lifecycle smoke transcripts
+  into result records or change this C1-05 matrix.
 - C1-05 changes no concurrent ranking and makes no claim about throughput,
   latency, memory, authorization, views, stale commits, retry behavior, or
   idempotency. Commit semantics begin in C1-06.

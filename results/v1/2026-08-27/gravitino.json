@@ -1,0 +1,693 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "result",
+  "id": "contention-2026-08-27-c110-gravitino",
+  "scenario": {
+    "id": "iceberg-rest.commit.same-table-contention",
+    "version": 2,
+    "digest": {
+      "algorithm": "sha256",
+      "value": "3fef0c91ddeddc1a09fa64affe505b8b3f2a6e75216b30fc1bfa8c4b4fbdb9da"
+    }
+  },
+  "profile": {
+    "id": "catalog-community-contention-2026-08-27-linux-arm64",
+    "digest": {
+      "algorithm": "sha256",
+      "value": "8d63c1d74c6761b4f46724807eef8f3edaf8780ae0ba45eb9116662ff632741d"
+    }
+  },
+  "catalog": {
+    "profile_component": "gravitino",
+    "name": "Apache Gravitino",
+    "version": "1.3.0"
+  },
+  "run": {
+    "kind": "aggregate",
+    "id": "c110_0827050618-gravitino-measured",
+    "period": "2026-08-27T05:06:18Z/2026-08-27T05:15:12Z",
+    "included_repetitions": [
+      2,
+      3,
+      4,
+      5,
+      6
+    ],
+    "excluded_repetitions": [
+      1
+    ],
+    "aggregation": "Performance distributions use measured repetitions 2 through 6 with full range, population moments, and deterministic quantiles. Strict classification additionally requires conditioning repetition 1 and every measured repetition to pass."
+  },
+  "outcome": {
+    "status": "pass",
+    "summary": "Conditioning repetition 1 and all five measured repetitions passed every required assertion; median concurrent accepted throughput was 56.822861 operations/s."
+  },
+  "environment": {
+    "operating_system": "Linux",
+    "architecture": "aarch64",
+    "cpu_model": {
+      "precision": "unknown",
+      "explanation": "Docker Desktop did not expose a CPU model through the Linux containers; no host model is substituted for the container execution environment."
+    },
+    "logical_cpus": {
+      "precision": "exact",
+      "value": 10
+    },
+    "memory_bytes": {
+      "precision": "exact",
+      "value": 8321712128
+    },
+    "network": "catalog-bench-net: one Docker bridge network shared by every benchmark, catalog, state-store, and MinIO container",
+    "container_runtime": {
+      "precision": "exact",
+      "value": "Docker Engine 29.4.3; Docker Desktop 4.73.0 (226246); LinuxKit 6.12.76; containerd v2.2.3; runc 1.3.5"
+    },
+    "runtime_flags": {
+      "concurrent_duration_ms": "6000",
+      "concurrent_writers": "8",
+      "conditioning_rounds": "1",
+      "container_resource_limits": "none configured; inspected NanoCpus, CPU quota, cpuset, and memory limits were zero or empty",
+      "docker_compose": "v5.1.3",
+      "measured_rounds": "5",
+      "metadata_delete_after_commit": "false",
+      "metadata_previous_versions_max": "100000",
+      "runner_build": "Rust 1.97.1; --release; opt-level=3; fat LTO; codegen-units=1; target-cpu=native; panic=abort; stripped",
+      "same_docker_boundary": "all catalogs, state stores, MinIO, helpers, and benchmark processes",
+      "sequential_commits": "1000",
+      "warmup_commits": "50"
+    },
+    "extensions": {
+      "querygraph/environment-capture": {
+        "captured_at": "2026-08-27T05:20:39Z",
+        "docker_server_architecture": "aarch64",
+        "docker_server_operating_system": "linux",
+        "resource_limit_observation": "c110_0827050618-lakecat-1 HostConfig.Resources; the merged Compose model applies no per-service CPU or memory limit"
+      }
+    }
+  },
+  "assertions": [
+    {
+      "assertion": "runner-runtime-pinned",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "catalog-auth-config-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "setup-succeeded",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "warmup-accounted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "sequential-accounted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "sequential-latency-complete",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "all-requests-accounted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "zero-request-errors",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "concurrent-progress",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "final-state-accounted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "metadata-persisted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "contention-transcript"
+      ]
+    }
+  ],
+  "measurements": [
+    {
+      "name": "sequential",
+      "elapsed_ms": 12488.588755,
+      "operations": 1000,
+      "metrics": [
+        {
+          "name": "successful-throughput",
+          "unit": "operations/s",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 66.98576262221285,
+              "maximum": 98.84667466392212,
+              "mean": 81.46061028881223,
+              "standard_deviation": 12.275419844815238,
+              "quantiles": {
+                "p50": 80.07309869977378,
+                "p95": 98.84667466392212,
+                "p99": 98.84667466392212
+              }
+            }
+          }
+        },
+        {
+          "name": "p50-latency",
+          "unit": "ms",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 9.933875,
+              "maximum": 13.424292,
+              "mean": 11.8328584,
+              "standard_deviation": 1.4435738387504264,
+              "quantiles": {
+                "p50": 12.022041000000002,
+                "p95": 13.424292,
+                "p99": 13.424292
+              }
+            }
+          }
+        },
+        {
+          "name": "p95-latency",
+          "unit": "ms",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 13.373959,
+              "maximum": 23.117125,
+              "mean": 17.4313082,
+              "standard_deviation": 3.4412828407908247,
+              "quantiles": {
+                "p50": 15.973375,
+                "p95": 23.117125,
+                "p99": 23.117125
+              }
+            }
+          }
+        },
+        {
+          "name": "p99-latency",
+          "unit": "ms",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 17.77325,
+              "maximum": 33.832208,
+              "mean": 26.864325,
+              "standard_deviation": 5.799972596237951,
+              "quantiles": {
+                "p50": 27.678333,
+                "p95": 33.832208,
+                "p99": 33.832208
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "concurrent",
+      "elapsed_ms": 6720.155461,
+      "metrics": [
+        {
+          "name": "successful-throughput",
+          "unit": "operations/s",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 55.28451678519108,
+              "maximum": 58.04900677508259,
+              "mean": 56.79063641948584,
+              "standard_deviation": 1.0277989713592106,
+              "quantiles": {
+                "p50": 56.822860899828235,
+                "p95": 58.04900677508259,
+                "p99": 58.04900677508259
+              }
+            }
+          }
+        },
+        {
+          "name": "attempted-throughput",
+          "unit": "operations/s",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 56.666629704820856,
+              "maximum": 59.22482036461329,
+              "mean": 58.18864122512318,
+              "standard_deviation": 1.087742238088931,
+              "quantiles": {
+                "p50": 58.72223229480856,
+                "p95": 59.22482036461329,
+                "p99": 59.22482036461329
+              }
+            }
+          }
+        },
+        {
+          "name": "p50-latency",
+          "unit": "ms",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 13.108,
+              "maximum": 16.646583,
+              "mean": 15.0282666,
+              "standard_deviation": 1.162779725085125,
+              "quantiles": {
+                "p50": 15.037083,
+                "p95": 16.646583,
+                "p99": 16.646583
+              }
+            }
+          }
+        },
+        {
+          "name": "p95-latency",
+          "unit": "ms",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 785.81625,
+              "maximum": 820.9003339999999,
+              "mean": 802.6434919999999,
+              "standard_deviation": 11.126253740480745,
+              "quantiles": {
+                "p50": 801.798042,
+                "p95": 820.9003339999999,
+                "p99": 820.9003339999999
+              }
+            }
+          }
+        },
+        {
+          "name": "p99-latency",
+          "unit": "ms",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 1672.7824180000002,
+              "maximum": 1720.601876,
+              "mean": 1685.4445842,
+              "standard_deviation": 17.797157300890927,
+              "quantiles": {
+                "p50": 1677.226001,
+                "p95": 1720.601876,
+                "p99": 1720.601876
+              }
+            }
+          }
+        },
+        {
+          "name": "request-attempts-per-round",
+          "unit": "requests/round",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 371.0,
+              "maximum": 454.0,
+              "mean": 403.0,
+              "standard_deviation": 28.774989139876315,
+              "quantiles": {
+                "p50": 398.0,
+                "p95": 454.0,
+                "p99": 454.0
+              }
+            }
+          }
+        },
+        {
+          "name": "successful-commits",
+          "unit": "commits/round",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 359.0,
+              "maximum": 445.0,
+              "mean": 393.4,
+              "standard_deviation": 29.17944481994132,
+              "quantiles": {
+                "p50": 388.0,
+                "p95": 445.0,
+                "p99": 445.0
+              }
+            }
+          }
+        },
+        {
+          "name": "conflicts-per-round",
+          "unit": "conflicts/round",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 7.0,
+              "maximum": 12.0,
+              "mean": 9.6,
+              "standard_deviation": 1.6248076809271923,
+              "quantiles": {
+                "p50": 10.0,
+                "p95": 12.0,
+                "p99": 12.0
+              }
+            }
+          }
+        },
+        {
+          "name": "errors-per-round",
+          "unit": "errors/round",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 0.0,
+              "maximum": 0.0,
+              "mean": 0.0,
+              "standard_deviation": 0.0,
+              "quantiles": {
+                "p50": 0.0,
+                "p95": 0.0,
+                "p99": 0.0
+              }
+            }
+          }
+        },
+        {
+          "name": "conflict-rate",
+          "unit": "percent",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 1.832460732984293,
+              "maximum": 3.234501347708895,
+              "mean": 2.4001856279265983,
+              "standard_deviation": 0.4913438425081289,
+              "quantiles": {
+                "p50": 2.4390243902439024,
+                "p95": 3.234501347708895,
+                "p99": 3.234501347708895
+              }
+            }
+          }
+        },
+        {
+          "name": "error-rate",
+          "unit": "percent",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 0.0,
+              "maximum": 0.0,
+              "mean": 0.0,
+              "standard_deviation": 0.0,
+              "quantiles": {
+                "p50": 0.0,
+                "p95": 0.0,
+                "p99": 0.0
+              }
+            }
+          }
+        },
+        {
+          "name": "metadata-object-growth",
+          "unit": "objects/round",
+          "value": {
+            "kind": "distribution",
+            "distribution": {
+              "samples": 5,
+              "minimum": 1578.0,
+              "maximum": 1673.0,
+              "mean": 1611.0,
+              "standard_deviation": 32.649655434629025,
+              "quantiles": {
+                "p50": 1603.0,
+                "p95": 1673.0,
+                "p99": 1673.0
+              }
+            }
+          }
+        },
+        {
+          "name": "request-attempts",
+          "unit": "count",
+          "value": {
+            "kind": "counter",
+            "value": 2015
+          }
+        },
+        {
+          "name": "accepted-commits",
+          "unit": "count",
+          "value": {
+            "kind": "counter",
+            "value": 1967
+          }
+        },
+        {
+          "name": "conflicts",
+          "unit": "count",
+          "value": {
+            "kind": "counter",
+            "value": 48
+          }
+        },
+        {
+          "name": "request-errors",
+          "unit": "count",
+          "value": {
+            "kind": "counter",
+            "value": 0
+          }
+        },
+        {
+          "name": "valid-rounds",
+          "unit": "count",
+          "value": {
+            "kind": "counter",
+            "value": 5
+          }
+        },
+        {
+          "name": "measured-rounds",
+          "unit": "count",
+          "value": {
+            "kind": "counter",
+            "value": 5
+          }
+        }
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "contention-transcript",
+      "kind": "http-transcript",
+      "artifact": {
+        "location": "../../contention-2026-08-27-transcript.json",
+        "media_type": "application/json",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "af8057846da68036723ce96de09965e3fc18381b949f4c34e078749c26cae71e"
+        },
+        "bytes": 434978,
+        "description": "Complete sanitized 30-round production contention transcript."
+      },
+      "sanitized": true,
+      "redactions": [
+        "rounds.1.negotiation.authentication.oauth2-request-credentials",
+        "rounds.1.negotiation.authentication.oauth2-response-token",
+        "rounds.1.negotiation.config.request.headers.authorization",
+        "rounds.14.negotiation.authentication.oauth2-request-credentials",
+        "rounds.14.negotiation.authentication.oauth2-response-token",
+        "rounds.14.negotiation.config.request.headers.authorization",
+        "rounds.18.negotiation.authentication.oauth2-request-credentials",
+        "rounds.18.negotiation.authentication.oauth2-response-token",
+        "rounds.18.negotiation.config.request.headers.authorization",
+        "rounds.22.negotiation.authentication.oauth2-request-credentials",
+        "rounds.22.negotiation.authentication.oauth2-response-token",
+        "rounds.22.negotiation.config.request.headers.authorization",
+        "rounds.26.negotiation.authentication.oauth2-request-credentials",
+        "rounds.26.negotiation.authentication.oauth2-response-token",
+        "rounds.26.negotiation.config.request.headers.authorization",
+        "rounds.5.negotiation.authentication.oauth2-request-credentials",
+        "rounds.5.negotiation.authentication.oauth2-response-token",
+        "rounds.5.negotiation.config.request.headers.authorization"
+      ],
+      "extensions": {
+        "querygraph/transcript-format": "catalog-bench/contention-transcript/v1"
+      }
+    },
+    {
+      "id": "materialization-review",
+      "kind": "log",
+      "artifact": {
+        "location": "../../contention-2026-08-27-review.json",
+        "media_type": "application/json",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "9f225fd562b114ac41655de43649a074a3a4d5ea8b348489a9a632d7c1d4fe95"
+        },
+        "bytes": 7199,
+        "description": "Reviewed runtime capture and sanitized server-side failure attribution."
+      },
+      "sanitized": true,
+      "redactions": [
+        "OAuth client credentials and response tokens",
+        "authorization request headers",
+        "raw commit request identities",
+        "server request and error identifiers",
+        "warehouse, table, transaction, process, and fixture identifiers from server logs",
+        "unrelated stack frames and per-request audit events"
+      ],
+      "extensions": {
+        "querygraph/reviewed": true
+      }
+    }
+  ],
+  "extensions": {
+    "querygraph/measured-request-errors": 0,
+    "querygraph/ranking-disposition": {
+      "rank": 3,
+      "score": {
+        "maximum": 58.04900677508259,
+        "median": 56.822860899828235,
+        "minimum": 55.28451678519108,
+        "samples": 5
+      },
+      "status": "ranked"
+    },
+    "querygraph/request-handling": {
+      "behavior_changing_shim": false,
+      "protocol": "iceberg-rest-v1"
+    },
+    "querygraph/rounds": {
+      "conditioning": {
+        "executed": 1,
+        "passed": 1,
+        "scheduled": 1
+      },
+      "failed_required_assertions": [],
+      "measured": {
+        "executed": 5,
+        "passed": 5,
+        "scheduled": 5
+      }
+    }
+  }
+}

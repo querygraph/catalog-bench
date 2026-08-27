@@ -220,3 +220,42 @@ The profile closes artifact materialization, not result publication. A final
 transcript must still pass its complete contract, sanitization and environment
 review, then be converted into `catalog-bench/v1` result records under an
 immutable manifest before it can replace a published ranking.
+
+## Published C110 bundle
+
+The 2026-08-27 C110 run completed all 30 scheduled rounds and exited `2`
+because Lakekeeper and Nessie failed the required `zero-request-errors`
+assertion. The strict pass-only ranking is:
+
+1. LakeCat — 147.536 accepted commits/s;
+2. Apache Polaris — 58.110/s; and
+3. Apache Gravitino — 56.823/s.
+
+Lakekeeper's 58 HTTP 503 responses are attributed by its own logs to PostgreSQL
+`table_properties` deadlocks. Nessie's 106 HTTP 500 responses are attributed
+by its logs to an inactive Quarkus `RequestScoped` context while
+`CatalogProducers.objectIO` executes `writeObject`. Both catalogs completed
+all other checks, retain their complete diagnostic measurements, and remain
+visible without numeric ranks. The full explanations are in
+[LAKEKEEPER-ERROR.md](LAKEKEEPER-ERROR.md) and
+[NESSIE-ERROR.md](NESSIE-ERROR.md).
+
+Publication is deterministic:
+
+```sh
+cargo run -p catalog-bench-contract --locked -- contention-import check --root .
+cargo run -p catalog-bench-contract --locked -- bundle validate \
+  --manifest results/v1/2026-08-27/manifest.json
+cargo run -p catalog-bench-contract --locked -- matrix check \
+  --manifest results/v1/2026-08-27/manifest.json \
+  --output results/v1/2026-08-27/MATRIX.md
+```
+
+The importer hash-pins the
+[complete sanitized transcript](../results/contention-2026-08-27-transcript.json)
+and [review sidecar](../results/contention-2026-08-27-review.json), reconstructs
+the scenario-derived schedule, independently recomputes aggregates and ranking,
+generates all five typed records plus the matrix, and then runs full bundle
+validation. The resulting
+[manifest](../results/v1/2026-08-27/manifest.json) binds exact profile, scenario,
+result, and source-evidence bytes.

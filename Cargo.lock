@@ -1364,7 +1364,9 @@ name = "catalog-bench-contract"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "catalog-bench-commit",
  "catalog-bench-common",
+ "catalog-bench-conformance",
  "clap",
  "csv",
  "serde",

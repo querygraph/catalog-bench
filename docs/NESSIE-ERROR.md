@@ -1,22 +1,32 @@
 # Why Nessie's result is an unranked `fail`
 
-Apache Nessie posts the fastest raw successful concurrent throughput in the
-final sweep — and its row carries no rank. Its outcome is `fail` because in every
-measured round the server returned HTTP 500 responses, and a round with request
-errors is not rank-eligible. This document is the complete account: what failed,
-how we know it is the server and not the harness, why the result is `fail` rather
-than "disqualified", why an earlier public row looked healthy, and what would
-restore a numeric rank.
+Apache Nessie posts the fastest raw diagnostic concurrent accepted throughput in
+the C110 production sweep — and its row carries no rank. Its outcome is `fail`
+because in every measured round the server returned HTTP 500 responses, and a
+round with request errors is not rank-eligible. This document is the complete
+account: what failed, how we know it is the server and not the harness, why the
+result is `fail` rather than "disqualified", why an earlier public row looked
+healthy, and what would restore a numeric rank.
 
 ## What happened
 
-In all five measured rounds of the 2026-08-08 final sweep, Nessie 0.108.4
-returned a total of **97 HTTP 500 responses** (median error rate 0.366%)
-alongside 190.0/s of successful commits. The benchmark's validity rule —
-declared before the sweep, applied identically to every catalog — is that a
-numeric rank requires **zero request errors in every measured round**. LakeCat,
-Polaris, and Gravitino each completed 5/5 valid rounds with zero errors;
-Nessie completed 0/5.
+In all five measured rounds of the 2026-08-27 C110 sweep, Nessie 0.108.4
+returned **88 HTTP 500 responses** (median error rate 0.387%) alongside
+153.870/s of accepted commits. Its conditioning round returned another 18 HTTP
+500 responses, for **106 total** across all six rounds. The benchmark's validity
+rule — declared before the sweep, applied identically to every catalog — is that
+a numeric rank requires **zero request errors in every measured round**.
+LakeCat, Polaris, and Gravitino each completed 5/5 valid rounds with zero errors;
+Nessie completed 0/5. Setup, warmup, sequential accounting, final-state
+attribution, MinIO metadata growth, and cleanup still passed in every round, so
+the result isolates the failed assertion rather than discarding the run.
+
+The previous 2026-08-08 bundle recorded 97 measured HTTP 500 responses and a
+190.0/s diagnostic accepted-throughput median. C110 uses a new fully pinned
+production runner, fresh state, a stricter v2 scenario, and a new result profile;
+it independently reproduces the same server-side failure class. The changed raw
+rate is ordinary cross-run/version variation, not evidence of a newly introduced
+Nessie regression.
 
 An HTTP 500 is not a conflict. A 409 conflict is the catalog *working*: a
 stale writer correctly losing compare-and-swap. A 500 is the catalog
@@ -29,11 +39,12 @@ numbers, count the errors, and withhold the rank.
 
 ## The failure, precisely
 
-Server logs across the rounds consistently identify a Quarkus
-`ContextNotActiveException`: Nessie's asynchronous catalog work accesses
-request-scoped state — `ObjectIO` / `S3ClientSupplier`, or
-`SecurityIdentityProxy` — after the originating HTTP request's context has
-been torn down. The relevant producers are explicitly `@RequestScoped` in
+Reviewed C110 server logs consistently identify a Quarkus
+`ContextNotActiveException`: the `RequestScoped` context is inactive while
+Nessie's asynchronous catalog work resolves the
+`CatalogProducers.objectIO` producer. The observed stack enters
+`objectIO.writeObject` from `CatalogServiceImpl.storeSnapshot`. The relevant
+producers are explicitly `@RequestScoped` in
 [Nessie 0.108.4's source](https://github.com/projectnessie/nessie/blob/nessie-0.108.4/servers/quarkus-catalog/src/main/java/org/projectnessie/server/catalog/CatalogProducers.java):
 an async `CompletableFuture` outliving its request races the container's
 context teardown.
@@ -97,8 +108,9 @@ silently dropped are now counted, and they void a round.
 
 ## What this is not
 
-- **Not a claim that Nessie is slow.** Its 190.0/s median counts only
-  successful commits and remains the fastest raw concurrent value measured.
+- **Not a claim that Nessie is slow.** Its C110 153.870/s median counts only
+  accepted commits and remains the fastest raw diagnostic concurrent value in
+  that sweep.
 - **Not a claim that Nessie always fails.** Sequential warmup and measurement
   phases completed; the failure concentrates under concurrent load.
 - **Not a permanent verdict.** The moment a Nessie release survives the same
@@ -140,10 +152,19 @@ Two clarifications to head off misreadings:
 
 ## Reproduce it
 
-The full protocol, immutable image digests, binary hashes, build commands, and
-per-run evidence (including the error counts) are in
-[RESULTS.md](../RESULTS.md); the canonical generated ranking, typed result
+The full current protocol, immutable image and executable identities, exact
+round evidence, and reviewed causal signature are linked from
+[RESULTS.md](../RESULTS.md). The canonical generated ranking, typed result
 records, and immutable manifest are under
-[`results/v1/2026-08-08/`](../results/v1/2026-08-08/), while the preserved raw
-TSVs remain directly under [`results/`](../results/). The stack is
-Docker-composed; one command reruns the sweep against the official Nessie image.
+[`results/v1/2026-08-27/`](../results/v1/2026-08-27/). The complete
+[sanitized C110 transcript](../results/contention-2026-08-27-transcript.json)
+and [review sidecar](../results/contention-2026-08-27-review.json) remain beside
+the historical TSV evidence under [`results/`](../results/).
+
+```sh
+cargo run -p catalog-bench-contract --locked -- contention-import check --root .
+```
+
+That command hash-checks both source artifacts, independently recomputes all
+aggregates and ranks, regenerates Nessie's failed result with all 14 assertion
+evaluations, and rejects any stale matrix or cross-document link.

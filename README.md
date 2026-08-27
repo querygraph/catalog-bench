@@ -17,7 +17,7 @@ must be generated from these records rather than maintained independently.
 
 | Name | Status | What it measures |
 | --- | --- | --- |
-| `commit` | **ready** | Iceberg REST **commit-path** latency + throughput across catalogs — the impartial, catalog-only comparison (detailed below). LakeCat ranks **#1 among passing catalogs** in the 2026-08-08 concurrent sweep; Nessie is faster raw but failed the zero-request-errors assertion and is unranked. |
+| `commit` | **ready** | Iceberg REST **commit-path** latency + throughput across catalogs — the impartial, catalog-only comparison (detailed below). LakeCat ranks **#1 among passing catalogs** in the 2026-08-27 production sweep at 147.536 accepted commits/s; Lakekeeper and Nessie remain visible but unranked after non-conflict request errors. |
 | `write-data` | **ready** | Realistic **writes**: a real Parquet data file → the same MinIO bucket, then a LakeCat commit. Write throughput under realistic payloads. |
 | `cache-scan` | **ready** | **Cold vs warm Parquet scan** via Sail's [Foyer object-store cache](https://github.com/lakehq/sail/issues/1015): measured **~26×** warm-vs-cold (per-file p50 warm 1.81 ms vs cold/no-cache ~47.5 ms; 87 MB dataset). |
 | `rust-vs-jvm` | **ready** | **Sail/DataFusion (Rust) vs Apache Spark 3.5.3 (JVM)**, same query/files/MinIO: **1.63×** engine edge with no local cache (Rust 446 ms vs Spark-warm 729 ms p50), **57.5×** with the warm Foyer cache. |
@@ -56,14 +56,15 @@ failures, provenance, and the unranked rows.
 Contract maintenance and validation use the companion CLI:
 
 ```sh
-cargo run -p catalog-bench-contract -- schemas check
-cargo run -p catalog-bench-contract -- validate profiles/v1 scenarios/v1 results/v1
-cargo run -p catalog-bench-contract -- bundle validate \
-  --manifest results/v1/2026-08-08/manifest.json
-cargo run -p catalog-bench-contract -- matrix check \
-  --manifest results/v1/2026-08-08/manifest.json \
-  --output results/v1/2026-08-08/MATRIX.md
-cargo run -p catalog-bench-contract -- profile check-contention \
+cargo run -p catalog-bench-contract --locked -- schemas check
+cargo run -p catalog-bench-contract --locked -- validate profiles/v1 scenarios/v1 results/v1
+cargo run -p catalog-bench-contract --locked -- bundle validate \
+  --manifest results/v1/2026-08-27/manifest.json
+cargo run -p catalog-bench-contract --locked -- contention-import check --root .
+cargo run -p catalog-bench-contract --locked -- matrix check \
+  --manifest results/v1/2026-08-27/manifest.json \
+  --output results/v1/2026-08-27/MATRIX.md
+cargo run -p catalog-bench-contract --locked -- profile check-contention \
   --source-profile profiles/v1/current-2026-08-26.json \
   --materialization materializations/v1/contention-2026-08-27.json \
   --output profiles/v1/contention-2026-08-27.json
@@ -126,18 +127,20 @@ speaks the same Iceberg REST protocol, so one binary benchmarks all of them. URL
 prefix, authentication, shared-table location, and catalog identity come only
 from the validated profile; the CLI has no catalog-specific request knobs.
 
-### Published historical concurrent ranking (2026-08-08)
+### Published production concurrent ranking (2026-08-27)
 
-The canonical [generated concurrent matrix](results/v1/2026-08-08/MATRIX.md)
-ranks only `pass` outcomes by median successful throughput with eight writers.
+The canonical [generated concurrent matrix](results/v1/2026-08-27/MATRIX.md)
+ranks only `pass` outcomes by median accepted throughput with eight writers.
 It is rendered from the immutable result records and checked against them in
 tests; it is not a separately maintained table. Round 1 of six is explicitly
-recorded as conditioning. Nessie's faster raw measurements remain visible, but
-its failed zero-request-errors assertion makes the row unranked.
+recorded as conditioning. LakeCat ranks first at 147.536 accepted commits/s,
+followed by Apache Polaris at 58.110/s and Apache Gravitino at 56.823/s.
+Lakekeeper's and Nessie's diagnostic measurements remain visible, but their
+failed zero-request-errors assertions make both rows unranked.
 
 #### Why did Nessie pass the previous benchmark?
 
-It did not prove that it was error-free. The previous public row used Nessie
+It did not prove that it was error-free. The earlier public row used Nessie
 0.107.5 and came from one retained reference sweep. At that point the concurrent
 worker discarded every request failure other than an HTTP 409 as “transient,” so
 HTTP 500 responses were neither counted nor allowed to fail the process. The new
@@ -145,13 +148,15 @@ driver records them and requires zero request errors in every measured round.
 
 Strict preflights reproduced the same Quarkus request-context failure on Nessie
 0.107.5, 0.107.6, and 0.108.4. The version update therefore does not explain the
-new failed result: the benchmark's observability and validity rules changed. Nessie
-remains the fastest raw concurrent row at 190.0 successful commits/s, but 97 HTTP 500s
-across the five measured rounds make it ineligible for a numeric rank. The full
-forensic explanation is in [RESULTS.md](RESULTS.md#why-nessie-appeared-to-pass-previously).
+failed result: the benchmark's observability and validity rules changed. In
+C110, Nessie remains the fastest raw diagnostic concurrent row at 153.870
+accepted commits/s, but 88 measured HTTP 500 responses (106 including
+conditioning) make it ineligible for a numeric rank. The full forensic
+explanation is in [Nessie's failed result](docs/NESSIE-ERROR.md).
 
 The complete latency table, min–max ranges, production artifact hashes, Nessie
-failure analysis, and all raw runs/object audits are in [RESULTS.md](RESULTS.md).
+and Lakekeeper failure analysis, and the complete sanitized transcript are in
+[RESULTS.md](RESULTS.md).
 
 ## What it measures
 
@@ -250,9 +255,10 @@ docker compose --profile polaris up --detach polaris-ready
 docker compose --profile gravitino up --detach gravitino-ready
 ```
 
-Starting an image is not a conformance result. New public measurements wait for
-C1-03 through C1-09 to provide operation assertions, generated evidence, and the
-fully optimized same-Docker artifact pipeline.
+Starting an image is not a conformance result. C1-03 through C1-07 establish
+operation-level outcomes, while the C1-09 production pipeline now publishes the
+strict contention result only after generated assertions, exact artifact checks,
+environment capture, and redaction review.
 
 **Why LakeCat is built from source.** LakeCat depends on Sail as a Cargo *git*
 dependency on `querygraph/sail#lakecat` (fetched at build time); Grust and TypeSec
@@ -290,7 +296,10 @@ runs all five catalogs in the same Docker topology. The output is create-new.
 Exit `0` means every catalog passed every round, `2` means the complete
 transcript was written but at least one catalog is unranked, and `1` means
 invocation, provenance, or evidence persistence failed. A transcript becomes
-publishable only after immutable result/manifest materialization and review. See
+publishable only after immutable result/manifest materialization and review. The
+accepted C110 transcript is materialized as the
+[2026-08-27 bundle](results/v1/2026-08-27/manifest.json), and
+`contention-import check` deterministically verifies it. See
 [Commit contention](docs/COMMIT-CONTENTION.md) and [DOCKER.md](DOCKER.md).
 
 ## Bootstrap caveats (the externals are not turnkey)
@@ -313,10 +322,15 @@ publishable only after immutable result/manifest materialization and review. See
   in [DOCKER.md](DOCKER.md) protect that boundary. A dedicated one-shot prepares
   the fresh state volume for UID 1000 before the catalog starts, so the server
   itself does not need to run as root.
+- **Lakekeeper 0.13.3** is reproducible through its profile, but its
+  eight-writer commit path returned PostgreSQL deadlock-backed HTTP 503s in all
+  six C110 rounds. Its diagnostic measurements remain visible in the generated
+  matrix without a numeric rank; see
+  [the failure analysis](docs/LAKEKEEPER-ERROR.md).
 - **Nessie 0.108.4** is reproducible through its profile, but its eight-writer
   commit path failed the final integrity gate in all five measured rounds with
   Quarkus request-context HTTP 500s. It remains in the generated matrix as an
-  unranked `fail` outcome.
+  unranked `fail` outcome; see [the failure analysis](docs/NESSIE-ERROR.md).
 - **Unity (OSS)** released builds (≤ 0.5.0) serve Iceberg REST **read-only** — no
   external `updateTable` commit handler exists, so it is left out of the comparison.
   Commit support is in unmerged PR #1618 (unreleased 0.6.0); build from that branch

@@ -4,16 +4,16 @@ use std::path::{Path, PathBuf};
 
 use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{
-    ArtifactReference, AssertionEvaluation, AssertionOutcome, Captured, Component,
-    ContractDocument, ContractVersion, Digest, DigestAlgorithm, Distribution, EnvironmentManifest,
-    Evidence, EvidenceKind, ExecutedComponent, Extensions, Failure, FailureCategory,
-    ManifestDocumentKind, MeasuredPhase, Metric, MetricValue, Profile, ProfileReference,
-    Provenance, RedactionStatement, ResultBundleManifest, ResultDocumentKind, ResultId,
-    ResultOutcome, ResultRecord, RunIdentity, Scenario, ScenarioReference, Validate,
+    ArtifactReference, AssertionEvaluation, AssertionOutcome, Captured, Component, ContractVersion,
+    Digest, Distribution, EnvironmentManifest, Evidence, EvidenceKind, ExecutedComponent,
+    Extensions, Failure, FailureCategory, ManifestDocumentKind, MeasuredPhase, Metric, MetricValue,
+    Profile, ProfileReference, Provenance, RedactionStatement, ResultBundleManifest,
+    ResultDocumentKind, ResultId, ResultOutcome, ResultRecord, RunIdentity, Scenario,
+    ScenarioReference, Validate,
 };
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 
-use crate::sha256_hex;
+use crate::publication::{artifact, parse_profile, parse_scenario, pretty_json, read_hashed};
 
 const OUTPUT_DIRECTORY: &str = "results/v1/2026-08-08";
 const SUMMARY_PATH: &str = "results/commit-2026-08-08-summary.tsv";
@@ -120,9 +120,9 @@ pub fn check_historical_commit_bundle(repository_root: &Path) -> Result<PathBuf>
 }
 
 fn generate(repository_root: &Path) -> Result<GeneratedBundle> {
-    let summary_bytes = read_hashed(repository_root.join(SUMMARY_PATH), SUMMARY_SHA256)?;
-    let runs_bytes = read_hashed(repository_root.join(RUNS_PATH), RUNS_SHA256)?;
-    let audit_bytes = read_hashed(repository_root.join(AUDIT_PATH), AUDIT_SHA256)?;
+    let summary_bytes = read_hashed(&repository_root.join(SUMMARY_PATH), SUMMARY_SHA256)?;
+    let runs_bytes = read_hashed(&repository_root.join(RUNS_PATH), RUNS_SHA256)?;
+    let audit_bytes = read_hashed(&repository_root.join(AUDIT_PATH), AUDIT_SHA256)?;
     let profile_bytes = fs::read(repository_root.join(PROFILE_PATH))?;
     let scenario_bytes = fs::read(repository_root.join(SCENARIO_PATH))?;
 
@@ -746,51 +746,6 @@ fn parse_tsv<T: for<'de> Deserialize<'de>>(bytes: &[u8]) -> Result<Vec<T>> {
         .context("failed to parse TSV evidence")
 }
 
-fn parse_profile(bytes: &[u8]) -> Result<Profile> {
-    match catalog_bench_common::contract::parse_contract(bytes)? {
-        ContractDocument::Profile(profile) => Ok(profile),
-        document => bail!("expected profile, found {}", document.kind()),
-    }
-}
-
-fn parse_scenario(bytes: &[u8]) -> Result<Scenario> {
-    match catalog_bench_common::contract::parse_contract(bytes)? {
-        ContractDocument::Scenario(scenario) => Ok(scenario),
-        document => bail!("expected scenario, found {}", document.kind()),
-    }
-}
-
-fn read_hashed(path: PathBuf, expected_sha256: &str) -> Result<Vec<u8>> {
-    let bytes = fs::read(&path).with_context(|| format!("failed to read {}", path.display()))?;
-    let actual = sha256(&bytes);
-    if actual != expected_sha256 {
-        bail!(
-            "{} hash mismatch: expected {expected_sha256}, got {actual}",
-            path.display()
-        );
-    }
-    Ok(bytes)
-}
-
-fn artifact(
-    location: &str,
-    media_type: &str,
-    bytes: &[u8],
-    description: &str,
-) -> ArtifactReference {
-    ArtifactReference {
-        location: location.to_owned(),
-        media_type: media_type.to_owned(),
-        digest: Digest {
-            algorithm: DigestAlgorithm::Sha256,
-            value: sha256(bytes),
-        },
-        bytes: Some(bytes.len() as u64),
-        description: Some(description.to_owned()),
-        extensions: Extensions::new(),
-    }
-}
-
 fn evidence(id: &str, kind: EvidenceKind, artifact: &ArtifactReference) -> Evidence {
     Evidence {
         id: id.into(),
@@ -809,14 +764,4 @@ fn assertion(id: &str, outcome: AssertionOutcome, evidence: &[&str]) -> Assertio
         outcome,
         evidence: evidence.iter().map(|id| (*id).into()).collect(),
     }
-}
-
-fn pretty_json(value: &impl Serialize) -> Result<Vec<u8>> {
-    let mut bytes = serde_json::to_vec_pretty(value)?;
-    bytes.push(b'\n');
-    Ok(bytes)
-}
-
-fn sha256(bytes: &[u8]) -> String {
-    sha256_hex(bytes)
 }

@@ -1,0 +1,138 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "manifest",
+  "id": "contention-2026-08-27-c110",
+  "title": "2026-08-27 production same-table contention ranking",
+  "created_at": "2026-08-27T05:24:26Z",
+  "provenance": {
+    "kind": "live-run",
+    "runner": "catalog-bench-commit",
+    "sanitized_invocation": "docker/run-contention.sh c110_0827050618",
+    "started_at": "2026-08-27T05:06:18Z",
+    "completed_at": "2026-08-27T05:15:12Z"
+  },
+  "profile": {
+    "location": "../../../profiles/v1/contention-2026-08-27.json",
+    "media_type": "application/json",
+    "digest": {
+      "algorithm": "sha256",
+      "value": "8d63c1d74c6761b4f46724807eef8f3edaf8780ae0ba45eb9116662ff632741d"
+    },
+    "bytes": 31458,
+    "description": "Runnable production contention profile with exact source, image, and executable identities."
+  },
+  "scenarios": [
+    {
+      "location": "../../../scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "3fef0c91ddeddc1a09fa64affe505b8b3f2a6e75216b30fc1bfa8c4b4fbdb9da"
+      },
+      "bytes": 16141,
+      "description": "Canonical same-table contention v2 scenario."
+    }
+  ],
+  "results": [
+    {
+      "location": "lakecat.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "36df4598a1d94d9ad7520fe0a6434283dfd1a8aad9c74603a80eebef816fb29c"
+      },
+      "bytes": 19507,
+      "description": "Production contention aggregate for LakeCat."
+    },
+    {
+      "location": "polaris.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "8a5c1e731d5496de79820ddf0305acff526156ee7bbf9ae9b3ba9aa82f04f218"
+      },
+      "bytes": 19569,
+      "description": "Production contention aggregate for Apache Polaris."
+    },
+    {
+      "location": "gravitino.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "c1e621958a597b349ed78ce6b8de81ed65aa23a4625b2de7b763f64a02a483df"
+      },
+      "bytes": 19540,
+      "description": "Production contention aggregate for Apache Gravitino."
+    },
+    {
+      "location": "lakekeeper.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "58e48490e1f01b55bbae6a77552473926ae04362f5f42ab87c0067ac63bcb3ab"
+      },
+      "bytes": 20645,
+      "description": "Production contention aggregate for Lakekeeper."
+    },
+    {
+      "location": "nessie.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "cd46104b696751c53bf530355b92d41c7279d2c5db5f579312227076abaa9fc7"
+      },
+      "bytes": 20558,
+      "description": "Production contention aggregate for Apache Nessie."
+    }
+  ],
+  "source_evidence": [
+    {
+      "location": "../../contention-2026-08-27-transcript.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "af8057846da68036723ce96de09965e3fc18381b949f4c34e078749c26cae71e"
+      },
+      "bytes": 434978,
+      "description": "Complete sanitized 30-round production contention transcript."
+    },
+    {
+      "location": "../../contention-2026-08-27-review.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "9f225fd562b114ac41655de43649a074a3a4d5ea8b348489a9a632d7c1d4fe95"
+      },
+      "bytes": 7199,
+      "description": "Reviewed runtime capture and sanitized server-side failure attribution."
+    }
+  ],
+  "redaction": {
+    "reviewed": true,
+    "policy": "The source transcript already applies catalog-bench/value-safe-contention-v1. This review sidecar retains only causal server-log fields and removes runtime identifiers that are unnecessary to reproduce the classification.",
+    "removed_fields": [
+      "OAuth client credentials and response tokens",
+      "authorization request headers",
+      "raw commit request identities",
+      "server request and error identifiers",
+      "warehouse, table, transaction, process, and fixture identifiers from server logs",
+      "unrelated stack frames and per-request audit events"
+    ]
+  },
+  "extensions": {
+    "querygraph/fixture-id": "c110_0827050618",
+    "querygraph/ranking": {
+      "basis": "concurrent-accepted-throughput-per-second",
+      "strict_pass_only": true,
+      "tie_breakers": [
+        "sequential-latency-p50-ascending",
+        "catalog-id-ascending"
+      ]
+    },
+    "querygraph/transcript": {
+      "format": "catalog-bench/contention-transcript/v1",
+      "rounds": 30,
+      "sha256": "af8057846da68036723ce96de09965e3fc18381b949f4c34e078749c26cae71e"
+    }
+  }
+}

@@ -249,8 +249,8 @@ passed. The five probes then invoked the exact hashed runner with `docker exec`
 from the same container and bridge against that image. No host-built or debug
 binary was substituted. The executable digests, source revisions, toolchain,
 build flags, profile digest, scenario digest, and every transcript digest above
-are the acceptance identity; C1-09 will materialize a fresh immutable runner
-image and a runnable profile for publication.
+are the acceptance identity. C1-09 subsequently materialized a fresh immutable
+runner image and runnable profile for the separate production contention run.
 
 ## Shared-MinIO proof
 
@@ -381,13 +381,14 @@ evidence or mutate a colliding fixture.
 - These exact transcripts live under ignored `target/conformance-evidence` and
   are reviewed acceptance smoke evidence, not checked-in `catalog-bench/v1`
   result records.
-- The candidate profile remains `draft`: its conformance-runner source pin
+- This report's candidate profile remains `draft`: its conformance-runner source pin
   predates the accepted C1-06 implementation, and source-built artifacts are not
-  yet represented by immutable executable/image digests in a runnable profile.
-- C1-09 owns rebuilding the final production artifacts, creating that runnable
-  profile, immutable result and manifest materialization, full environment
-  capture, manual redaction review, secret scanning, generated matrices/reports,
-  and adversari.al publication.
+  represented by immutable executable/image digests in that smoke profile.
+- C1-09 later rebuilt the production contention artifacts, created the runnable
+  profile, and published the reviewed
+  [C110 result bundle](../results/v1/2026-08-27/manifest.json). That bundle does
+  not retroactively convert these operation-level smoke transcripts into result
+  records or change this C1-06 correctness matrix.
 - C1-06 changes no concurrent ranking and makes no claim about throughput,
   latency, variance, RSS, recovery from ambiguous writes, multi-writer
   serializability, authorization, views, or stock-client interoperability.
