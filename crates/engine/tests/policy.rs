@@ -7,8 +7,8 @@ use catalog_bench_common::contract::{
 use catalog_bench_engine::{
     CatalogCredentialSource, EngineExecutionPlan, EngineRuntimeObservation, InteroperabilityPlan,
     SparkAuthentication, ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE,
-    ENGINE_TRANSCRIPT_FORMAT, ICEBERG_CONNECTOR_VERSION, SPARK_COMPONENT_VERSION,
-    SPARK_PLAN_FORMAT,
+    ENGINE_TRANSCRIPT_FORMAT, FLINK_COMPONENT_VERSION, FLINK_JAVA_VERSION, FLINK_PLAN_FORMAT,
+    FLINK_SCALA_VERSION, ICEBERG_CONNECTOR_VERSION, SPARK_COMPONENT_VERSION, SPARK_PLAN_FORMAT,
 };
 use serde_json::json;
 
@@ -73,7 +73,9 @@ fn execution_plan_exposes_engine_neutral_scenario_and_fixture_views() {
         "neutral01",
     )
     .unwrap();
-    let EngineExecutionPlan::Spark(spark) = plan.execution();
+    let EngineExecutionPlan::Spark(spark) = plan.execution() else {
+        panic!("Spark profile selected a non-Spark plan");
+    };
 
     assert_eq!(plan.fixture(), &spark.fixture);
     assert_eq!(plan.scenario(), &spark.scenario);
@@ -168,7 +170,7 @@ fn explicit_engine_selection_is_role_bound_and_unambiguous() {
     .unwrap();
     assert_eq!(selected.engine().id.as_str(), "spark-4.1");
 
-    let unsupported = InteroperabilityPlan::from_contracts_for_engine(
+    let unmaterialized = InteroperabilityPlan::from_contracts_for_engine(
         &profile,
         &scenario,
         &ComponentId::from("lakecat"),
@@ -176,9 +178,9 @@ fn explicit_engine_selection_is_role_bound_and_unambiguous() {
         "select01",
     )
     .unwrap_err();
-    assert!(unsupported
+    assert!(unmaterialized
         .to_string()
-        .contains("Spark renderer supports Apache Spark 4.1.3"));
+        .contains("engine and connector images must declare embedded runtime artifacts"));
 
     let not_selected = InteroperabilityPlan::from_contracts_for_engine(
         &profile,
@@ -191,6 +193,82 @@ fn explicit_engine_selection_is_role_bound_and_unambiguous() {
     assert!(not_selected
         .to_string()
         .contains("through exactly one `stock-engine` service"));
+}
+
+#[test]
+fn derives_a_closed_flink_plan_from_a_materialized_profile() {
+    let (profile, scenario) = runnable_flink_contracts();
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "flink01",
+    )
+    .unwrap();
+    let flink = plan.flink().unwrap();
+
+    assert_eq!(plan.engine().version, FLINK_COMPONENT_VERSION);
+    assert_eq!(flink.format, FLINK_PLAN_FORMAT);
+    assert_eq!(flink.execution.parallelism, 1);
+    assert_eq!(flink.catalog.name, "bench");
+    assert_eq!(flink.file_io.endpoint, "http://minio:9000");
+    assert_eq!(flink.fixture.namespace, "cb_c201_lakecat_flink01");
+    assert!(plan.spark().is_none());
+    assert!(plan
+        .execution()
+        .runtime_identity_matches(&EngineRuntimeObservation {
+            engine_version: FLINK_COMPONENT_VERSION.to_owned(),
+            dependencies: BTreeMap::from([
+                ("java".to_owned(), FLINK_JAVA_VERSION.to_owned()),
+                ("scala".to_owned(), FLINK_SCALA_VERSION.to_owned()),
+            ]),
+            operating_system: "Linux".to_owned(),
+            architecture: "aarch64".to_owned(),
+        }));
+}
+
+#[test]
+fn flink_selection_rejects_runtime_and_artifact_drift() {
+    let (profile, scenario) = runnable_flink_contracts();
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "flink02",
+    )
+    .unwrap();
+    let runtime = EngineRuntimeObservation {
+        engine_version: FLINK_COMPONENT_VERSION.to_owned(),
+        dependencies: BTreeMap::from([
+            ("java".to_owned(), FLINK_JAVA_VERSION.to_owned()),
+            ("scala".to_owned(), "2.12.19".to_owned()),
+        ]),
+        operating_system: "Linux".to_owned(),
+        architecture: "aarch64".to_owned(),
+    };
+    assert!(!plan.execution().runtime_identity_matches(&runtime));
+
+    let mut missing_cli = profile;
+    let flink = missing_cli
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == "flink")
+        .unwrap();
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut flink.artifact
+    else {
+        panic!("Flink fixture must be an image");
+    };
+    embedded_artifacts.retain(|artifact| artifact.location != "image:/opt/flink/bin/flink");
+    let error = InteroperabilityPlan::from_contracts(
+        &missing_cli,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "flink02",
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains("`/opt/flink/bin/flink`"));
 }
 
 #[test]
@@ -563,7 +641,7 @@ fn rejects_shared_store_and_supported_runtime_drift() {
     )
     .unwrap_err()
     .to_string()
-    .contains("supports Apache Spark 4.1.3"));
+    .contains("no stock renderer supports Apache Spark 4.2.0"));
 }
 
 fn contracts() -> (Profile, Scenario) {
@@ -573,6 +651,78 @@ fn contracts() -> (Profile, Scenario) {
     let ContractDocument::Scenario(scenario) = parse_contract(SCENARIO).unwrap() else {
         panic!("scenario fixture must be a scenario");
     };
+    (profile, scenario)
+}
+
+fn runnable_flink_contracts() -> (Profile, Scenario) {
+    let (mut profile, scenario) = contracts();
+    remove_engine_runner(&mut profile);
+    let ContractDocument::Profile(candidate) = parse_contract(CANDIDATE_PROFILE).unwrap() else {
+        panic!("candidate fixture must be a profile");
+    };
+    let mut flink = candidate
+        .components
+        .iter()
+        .find(|component| component.id.as_str() == "flink")
+        .unwrap()
+        .clone();
+    let spark_index = profile
+        .components
+        .iter()
+        .position(|component| component.id.as_str() == "spark-4.1")
+        .unwrap();
+    flink.artifact = profile.components.remove(spark_index).artifact;
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut flink.artifact
+    else {
+        panic!("materialized engine fixture must be an image");
+    };
+    embedded_artifacts.retain_mut(|artifact| {
+        if artifact.location == "image:/opt/spark/bin/spark-submit" {
+            artifact.location = "image:/opt/flink/bin/flink".to_owned();
+            true
+        } else if artifact.location.contains("iceberg-spark-runtime-4.1_2.13") {
+            artifact.location =
+                "image:/opt/flink/lib/iceberg-flink-runtime-2.1-1.11.0.jar".to_owned();
+            true
+        } else if artifact.location.contains("iceberg-aws-bundle") {
+            artifact.location = "image:/opt/flink/lib/iceberg-aws-bundle-1.11.0.jar".to_owned();
+            true
+        } else {
+            false
+        }
+    });
+    profile.components.push(flink);
+    profile
+        .services
+        .retain(|service| service.component.as_str() != "spark-4.1");
+    profile.services.push(
+        candidate
+            .services
+            .iter()
+            .find(|service| service.component.as_str() == "flink")
+            .unwrap()
+            .clone(),
+    );
+
+    let connector = profile
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == "iceberg-java")
+        .unwrap();
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut connector.artifact
+    else {
+        panic!("connector fixture must be an image");
+    };
+    for artifact in embedded_artifacts {
+        if artifact.location.contains("iceberg-spark-runtime-4.1_2.13") {
+            artifact.location =
+                "image:/opt/iceberg/iceberg-flink-runtime-2.1-1.11.0.jar".to_owned();
+        }
+    }
     (profile, scenario)
 }
 

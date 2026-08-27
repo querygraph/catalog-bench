@@ -120,8 +120,10 @@ units.
 `InteroperabilityPlan` separates common semantics from renderer policy. Shared
 catalog projection, reconciliation, transcript, sanitization, and workflow code
 consume only its neutral `fixture` and `scenario` views. Renderer-specific
-settings live in the `EngineExecutionPlan` algebraic data type; its first variant
-contains the existing closed `SparkExecutionPlan`.
+settings live in the `EngineExecutionPlan` algebraic data type. Its closed
+variants contain `SparkExecutionPlan` and `FlinkExecutionPlan`; both reuse the
+same catalog-neutral REST catalog, authentication, S3FileIO, fixture, and
+scenario values while retaining only genuinely engine-specific settings.
 
 Runnable profiles with one `stock-engine` use the singular convenience
 constructor. Candidate profiles may contain several engines, so they must call
@@ -135,9 +137,34 @@ implicit “first engine” rule from affecting execution.
 The Spark process adapter must explicitly select that Spark variant before it
 can serialize `plan.json`. An adapter paired with the wrong execution-plan
 variant fails preparation with a closed `execution-plan-mismatch` category; it
-cannot reinterpret another engine's settings or panic. Flink and Trino will add
-their own variants and adapters in later independently verified units, while
-reusing the same scenario, fixture, evidence, and classification policy.
+cannot reinterpret another engine's settings or panic. Flink now has a policy
+variant but not yet a renderer or process adapter; Trino has neither. Those
+adapters must reuse the same scenario, fixture, evidence, and classification
+policy.
+
+### Pinned Flink capability decision
+
+The selected line is Apache Flink 2.1.3 with the Apache Iceberg 1.11.0 Flink
+2.1 runtime. The checked-in candidate profile pins exact upstream source
+revisions and the official image index; a future runnable profile must also pin
+and observe every copied runtime artifact before execution is admitted. The
+policy requires the stock `/opt/flink/bin/flink` CLI, engine `2.1.3`, Java
+`17.0.20`, and Scala `2.12.20`. Java comes from the Linux ARM64 config selected
+by that pinned image index; Scala comes from the exact Flink source revision's
+root POM. A missing or extra dependency fails runtime verification.
+
+There is an important discrepancy in the pinned upstream material. The
+[Iceberg 1.11 Flink DDL page](https://github.com/apache/iceberg/blob/6976e020b894f6a6777704df2b8c4458cb291ae9/docs/docs/flink-ddl.md#alter-table)
+still describes alteration as property-only. However, the exact
+[Iceberg 1.11 `FlinkCatalog`](https://github.com/apache/iceberg/blob/6976e020b894f6a6777704df2b8c4458cb291ae9/flink/v2.1/flink/src/main/java/org/apache/iceberg/flink/FlinkCatalog.java#L559-L613)
+implements Flink's change-list `alterTable` overload, and the exact
+[`FlinkAlterTableUtil`](https://github.com/apache/iceberg/blob/6976e020b894f6a6777704df2b8c4458cb291ae9/flink/v2.1/flink/src/main/java/org/apache/iceberg/flink/util/FlinkAlterTableUtil.java#L117-L164)
+maps a physical `TableChange.AddColumn` to `UpdateSchema.addColumn` or
+`addRequiredColumn` and commits it transactionally. Additive schema evolution
+is therefore a supported stock connector operation for this pinned
+combination. The forthcoming renderer must exercise that Flink catalog API and
+may not substitute a direct REST or standalone Iceberg client call. This policy
+unit is not runtime evidence and creates no Flink result or ranking row.
 
 ## Reusable runtime-identity boundary
 
@@ -151,8 +178,10 @@ branches.
 The Spark variant requires engine version `4.1.3` and exactly `java=21.0.11`
 plus `scala=2.13.17`. Its renderer rejects missing or extra dependency names,
 legacy `spark_version`/`scala_version`/`java_version` shapes, non-text values,
-and unbounded text before emitting an event. Future engine variants own their
-own exact dependency sets without weakening the common vocabulary.
+and unbounded text before emitting an event. The Flink policy variant requires
+engine version `2.1.3` and exactly `java=17.0.20` plus `scala=2.12.20`; its future
+renderer must enforce that shape before emitting an event. Each engine variant
+owns its exact dependency set without weakening the common vocabulary.
 
 This event change deliberately advances the scenario revision and transcript
 format to v2. The decoder does not use an untagged legacy alternative whose

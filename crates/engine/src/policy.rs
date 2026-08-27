@@ -30,6 +30,13 @@ pub const SPARK_JAVA_VERSION: &str = "21.0.11";
 pub const ICEBERG_CONNECTOR_NAME: &str = "Apache Iceberg Java engine runtimes";
 pub const ICEBERG_CONNECTOR_VERSION: &str = "1.11.0";
 pub const SPARK_SUBMIT_LOCATION: &str = "/opt/spark/bin/spark-submit";
+pub const FLINK_PLAN_FORMAT: &str = "catalog-bench/flink-engine-plan/v1";
+pub const FLINK_CATALOG_NAME: &str = "bench";
+pub const FLINK_COMPONENT_NAME: &str = "Apache Flink";
+pub const FLINK_COMPONENT_VERSION: &str = "2.1.3";
+pub const FLINK_SCALA_VERSION: &str = "2.12.20";
+pub const FLINK_JAVA_VERSION: &str = "17.0.20";
+pub const FLINK_CLI_LOCATION: &str = "/opt/flink/bin/flink";
 pub const S3_ACCESS_KEY_ENV: &str = "CATALOG_BENCH_S3_ACCESS_KEY_ID";
 pub const S3_SECRET_KEY_ENV: &str = "CATALOG_BENCH_S3_SECRET_ACCESS_KEY";
 pub const ENGINE_OAUTH_CLIENT_ID_ENV: &str = "CATALOG_BENCH_ENGINE_CLIENT_ID";
@@ -259,7 +266,7 @@ pub struct Fixture {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "kebab-case", deny_unknown_fields)]
-pub enum SparkAuthentication {
+pub enum EngineCatalogAuthentication {
     Anonymous,
     #[serde(rename = "oauth2-client-credentials")]
     OAuth2ClientCredentials {
@@ -270,19 +277,19 @@ pub enum SparkAuthentication {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct SparkCatalogPlan {
+pub struct RestCatalogPlan {
     pub name: String,
     pub uri: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub warehouse: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prefix: Option<String>,
-    pub authentication: SparkAuthentication,
+    pub authentication: EngineCatalogAuthentication,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct SparkFileIoPlan {
+pub struct S3FileIoPlan {
     pub implementation: String,
     pub endpoint: String,
     pub bucket: String,
@@ -303,8 +310,29 @@ pub struct SparkExecutionSettings {
 pub struct SparkExecutionPlan {
     pub format: String,
     pub execution: SparkExecutionSettings,
-    pub catalog: SparkCatalogPlan,
-    pub file_io: SparkFileIoPlan,
+    pub catalog: RestCatalogPlan,
+    pub file_io: S3FileIoPlan,
+    pub fixture: Fixture,
+    pub scenario: EngineScenarioParameters,
+}
+
+pub type SparkAuthentication = EngineCatalogAuthentication;
+pub type SparkCatalogPlan = RestCatalogPlan;
+pub type SparkFileIoPlan = S3FileIoPlan;
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FlinkExecutionSettings {
+    pub parallelism: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FlinkExecutionPlan {
+    pub format: String,
+    pub execution: FlinkExecutionSettings,
+    pub catalog: RestCatalogPlan,
+    pub file_io: S3FileIoPlan,
     pub fixture: Fixture,
     pub scenario: EngineScenarioParameters,
 }
@@ -313,6 +341,7 @@ pub struct SparkExecutionPlan {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EngineExecutionPlan {
     Spark(SparkExecutionPlan),
+    Flink(FlinkExecutionPlan),
 }
 
 impl EngineExecutionPlan {
@@ -320,6 +349,7 @@ impl EngineExecutionPlan {
     pub fn fixture(&self) -> &Fixture {
         match self {
             Self::Spark(plan) => &plan.fixture,
+            Self::Flink(plan) => &plan.fixture,
         }
     }
 
@@ -327,6 +357,7 @@ impl EngineExecutionPlan {
     pub fn scenario(&self) -> &EngineScenarioParameters {
         match self {
             Self::Spark(plan) => &plan.scenario,
+            Self::Flink(plan) => &plan.scenario,
         }
     }
 
@@ -334,6 +365,15 @@ impl EngineExecutionPlan {
     pub fn spark(&self) -> Option<&SparkExecutionPlan> {
         match self {
             Self::Spark(plan) => Some(plan),
+            Self::Flink(_) => None,
+        }
+    }
+
+    #[must_use]
+    pub fn flink(&self) -> Option<&FlinkExecutionPlan> {
+        match self {
+            Self::Spark(_) => None,
+            Self::Flink(plan) => Some(plan),
         }
     }
 
@@ -351,6 +391,18 @@ impl EngineExecutionPlan {
                         .dependencies
                         .get("scala")
                         .is_some_and(|version| version == SPARK_SCALA_VERSION)
+            }
+            Self::Flink(_) => {
+                observation.engine_version == FLINK_COMPONENT_VERSION
+                    && observation.dependencies.len() == 2
+                    && observation
+                        .dependencies
+                        .get("java")
+                        .is_some_and(|version| version == FLINK_JAVA_VERSION)
+                    && observation
+                        .dependencies
+                        .get("scala")
+                        .is_some_and(|version| version == FLINK_SCALA_VERSION)
             }
         }
     }
@@ -484,7 +536,7 @@ impl InteroperabilityPlan {
             selected_role_component(profile, "stock-engine", engine, ComponentKind::Engine)?;
         let connector_component =
             role_component(profile, "engine-connector", ComponentKind::Connector)?;
-        validate_supported_runtime(engine_component, connector_component)?;
+        validate_supported_connector(connector_component)?;
 
         let object_store = object_store_plan(profile)?;
         let fixture = fixture(
@@ -495,33 +547,17 @@ impl InteroperabilityPlan {
             &object_store,
         )?;
         let (authentication, credential_source) = authentication(adapter)?;
-        let spark = SparkExecutionPlan {
-            format: SPARK_PLAN_FORMAT.to_owned(),
-            execution: SparkExecutionSettings {
-                master: "local[2]".to_owned(),
-                shuffle_partitions: 1,
-                default_parallelism: 1,
-            },
-            catalog: SparkCatalogPlan {
-                name: SPARK_CATALOG_NAME.to_owned(),
-                uri: adapter.endpoint.base_url.clone(),
-                warehouse: config_warehouse(adapter)?,
-                prefix: configured_prefix(adapter),
-                authentication,
-            },
-            file_io: SparkFileIoPlan {
-                implementation: "org.apache.iceberg.aws.s3.S3FileIO".to_owned(),
-                endpoint: object_store.endpoint.clone(),
-                bucket: object_store.bucket.clone(),
-                region: object_store.region.clone(),
-                path_style_access: object_store.path_style_access,
-            },
+        let execution = execution_plan(
+            engine_component,
+            adapter,
+            authentication,
+            &object_store,
             fixture,
-            scenario: parameters,
-        };
+            parameters,
+        )?;
         let runtime_artifacts =
             runtime_artifacts(runner_component, engine_component, connector_component)?;
-        validate_execution_artifact(&runtime_artifacts, &engine_component.id)?;
+        validate_execution_artifact(&runtime_artifacts, &engine_component.id, &execution)?;
         if let Some(runner) = runner_component {
             validate_runner_artifact(&runtime_artifacts, &runner.id, &engine_component.id)?;
         }
@@ -538,7 +574,7 @@ impl InteroperabilityPlan {
                 architecture: profile.platform.architecture.clone(),
             },
             runtime_artifacts,
-            execution: EngineExecutionPlan::Spark(spark),
+            execution,
         })
     }
 
@@ -601,28 +637,95 @@ impl InteroperabilityPlan {
     pub fn spark(&self) -> Option<&SparkExecutionPlan> {
         self.execution.spark()
     }
+
+    #[must_use]
+    pub fn flink(&self) -> Option<&FlinkExecutionPlan> {
+        self.execution.flink()
+    }
+}
+
+fn execution_plan(
+    engine: &Component,
+    adapter: &CatalogAdapter,
+    authentication: EngineCatalogAuthentication,
+    object_store: &ObjectStorePlan,
+    fixture: Fixture,
+    scenario: EngineScenarioParameters,
+) -> Result<EngineExecutionPlan, PolicyError> {
+    let catalog = |name: &str, authentication| -> Result<RestCatalogPlan, PolicyError> {
+        Ok(RestCatalogPlan {
+            name: name.to_owned(),
+            uri: adapter.endpoint.base_url.clone(),
+            warehouse: config_warehouse(adapter)?,
+            prefix: configured_prefix(adapter),
+            authentication,
+        })
+    };
+    let file_io = || S3FileIoPlan {
+        implementation: "org.apache.iceberg.aws.s3.S3FileIO".to_owned(),
+        endpoint: object_store.endpoint.clone(),
+        bucket: object_store.bucket.clone(),
+        region: object_store.region.clone(),
+        path_style_access: object_store.path_style_access,
+    };
+
+    match (engine.name.as_str(), engine.version.as_str()) {
+        (SPARK_COMPONENT_NAME, SPARK_COMPONENT_VERSION) => {
+            Ok(EngineExecutionPlan::Spark(SparkExecutionPlan {
+                format: SPARK_PLAN_FORMAT.to_owned(),
+                execution: SparkExecutionSettings {
+                    master: "local[2]".to_owned(),
+                    shuffle_partitions: 1,
+                    default_parallelism: 1,
+                },
+                catalog: catalog(SPARK_CATALOG_NAME, authentication)?,
+                file_io: file_io(),
+                fixture,
+                scenario,
+            }))
+        }
+        (FLINK_COMPONENT_NAME, FLINK_COMPONENT_VERSION) => {
+            Ok(EngineExecutionPlan::Flink(FlinkExecutionPlan {
+                format: FLINK_PLAN_FORMAT.to_owned(),
+                execution: FlinkExecutionSettings { parallelism: 1 },
+                catalog: catalog(FLINK_CATALOG_NAME, authentication)?,
+                file_io: file_io(),
+                fixture,
+                scenario,
+            }))
+        }
+        _ => Err(PolicyError::new(format!(
+            "no stock renderer supports {} {}",
+            engine.name, engine.version
+        ))),
+    }
 }
 
 fn validate_execution_artifact(
     artifacts: &[RuntimeArtifactExpectation],
     engine: &ComponentId,
+    execution: &EngineExecutionPlan,
 ) -> Result<(), PolicyError> {
+    let (location, label) = match execution {
+        EngineExecutionPlan::Spark(_) => (SPARK_SUBMIT_LOCATION, "Spark submission"),
+        EngineExecutionPlan::Flink(_) => (FLINK_CLI_LOCATION, "Flink CLI"),
+    };
     let matches = artifacts
         .iter()
-        .filter(|artifact| artifact.location == SPARK_SUBMIT_LOCATION)
+        .filter(|artifact| artifact.location == location)
         .collect::<Vec<_>>();
     let [artifact] = matches.as_slice() else {
         return Err(PolicyError::new(format!(
-            "engine runtime must contain exactly one `{SPARK_SUBMIT_LOCATION}` artifact"
+            "engine runtime must contain exactly one `{location}` artifact"
         )));
     };
     if artifact.media_type != "application/x-shellscript"
         || artifact.bytes == 0
         || artifact.components.as_slice() != std::slice::from_ref(engine)
     {
-        return Err(PolicyError::new(
-            "Spark submission artifact must be a nonempty engine-owned shell script",
-        ));
+        return Err(PolicyError::new(format!(
+            "{label} artifact must be a nonempty engine-owned shell script"
+        )));
     }
     Ok(())
 }
@@ -867,19 +970,10 @@ fn optional_engine_runner(profile: &Profile) -> Result<Option<&Component>, Polic
     Ok(Some(runner))
 }
 
-fn validate_supported_runtime(
-    engine: &Component,
-    connector: &Component,
-) -> Result<(), PolicyError> {
-    if engine.name != SPARK_COMPONENT_NAME || engine.version != SPARK_COMPONENT_VERSION {
-        return Err(PolicyError::new(format!(
-            "Spark renderer supports {SPARK_COMPONENT_NAME} {SPARK_COMPONENT_VERSION}, found {} {}",
-            engine.name, engine.version
-        )));
-    }
+fn validate_supported_connector(connector: &Component) -> Result<(), PolicyError> {
     if connector.name != ICEBERG_CONNECTOR_NAME || connector.version != ICEBERG_CONNECTOR_VERSION {
         return Err(PolicyError::new(format!(
-            "Spark renderer supports {ICEBERG_CONNECTOR_NAME} {ICEBERG_CONNECTOR_VERSION}, found {} {}",
+            "stock renderers support {ICEBERG_CONNECTOR_NAME} {ICEBERG_CONNECTOR_VERSION}, found {} {}",
             connector.name, connector.version
         )));
     }
@@ -1092,7 +1186,7 @@ fn config_warehouse(adapter: &CatalogAdapter) -> Result<Option<String>, PolicyEr
         .any(|key| key != "warehouse")
     {
         return Err(PolicyError::new(
-            "Spark REST binding supports only the standard `warehouse` config query",
+            "engine REST binding supports only the standard `warehouse` config query",
         ));
     }
     Ok(adapter.endpoint.config.query.get("warehouse").cloned())

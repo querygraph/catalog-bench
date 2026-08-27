@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- C2-06 closed Flink execution policy: extend the engine execution-plan ADT
+  with an Apache Flink 2.1.3 variant while sharing the catalog-neutral REST,
+  authentication, S3FileIO, fixture, and scenario representations already used
+  by Spark. Profile dispatch now selects only the exact supported engine and
+  Iceberg 1.11.0 connector, requires a nonempty engine-owned stock Flink CLI,
+  and matches the closed Flink/Java/Scala runtime identity. Focused tests derive
+  a secret-free Flink plan from a synthetic materialized profile and reject
+  dependency and artifact drift. Pinned Iceberg source confirms that its Flink
+  2.1 catalog converts `TableChange.AddColumn` into an Iceberg `UpdateSchema`,
+  despite the pinned DDL prose still describing property-only alteration. This
+  unit establishes policy and provenance only; it does not add a renderer,
+  process adapter, materialized profile, or interoperability result.
+
 - C2-06 explicit engine selection: add a role-validated
   `InteroperabilityPlan::from_contracts_for_engine` constructor for candidate
   profiles that intentionally contain several `stock-engine` services. The
