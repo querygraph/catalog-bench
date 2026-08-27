@@ -256,8 +256,8 @@ fn pyiceberg_image_is_profile_pinned_hash_locked_and_hardened() {
 fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
     let root = repository_root();
     let profile: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root.join("profiles/v1/current-2026-08-26.json"))
-            .expect("read current profile"),
+        &fs::read_to_string(root.join("profiles/v1/current-2026-08-27.json"))
+            .expect("read stock-engine source profile"),
     )
     .expect("parse current profile");
     let components = profile["components"]
@@ -271,6 +271,7 @@ fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
     };
     let spark = component("spark-4.1");
     let iceberg = component("iceberg-java");
+    let runner = component("catalog-bench-engine");
     assert_eq!(spark["version"], "4.1.3");
     assert_eq!(iceberg["version"], "1.11.0");
 
@@ -389,9 +390,20 @@ fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
         );
     }
     assert!(compose.contains("catalog-bench-engine-runner: \"service:engine-runner-image\""));
-    assert!(compose.contains(
-        "context: \"https://github.com/querygraph/catalog-bench.git#45e0f82d7bfb17b2d6da9918e89bcc146938addd\""
-    ));
+    let runner_revision = runner["source"]["revision"]
+        .as_str()
+        .expect("engine runner source revision is a string");
+    assert_eq!(runner["version"], runner_revision);
+    assert_eq!(runner["build"]["profile"], "release");
+    assert_eq!(runner["build"]["locked"], true);
+    assert!(compose.contains(&format!(
+        "x-engine-runner-image: &engine-runner-image catalog-bench-engine:{}",
+        &runner_revision[..12]
+    )));
+    assert!(compose.contains(&format!(
+        "context: \"https://github.com/querygraph/catalog-bench.git#{runner_revision}\""
+    )));
+    assert!(compose.contains(&format!("CATALOG_BENCH_SOURCE_REVISION: {runner_revision}")));
 
     let builder = fs::read_to_string(root.join("docker/build-spark-images.sh"))
         .expect("read Spark image builder");

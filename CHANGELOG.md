@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-04 source-bound engine profile: preserve the published contention source
+  profile and add a separate stock-engine candidate that pins
+  `catalog-bench-engine` to public revision
+  `5e10f36e7e99815df273c7b567e466749f04d4be` with the full optimized Rust
+  production recipe. The donor and combined Spark builds now consume that same
+  revision, with deployment tests deriving the pin from the profile.
+
 - C2-04 runner artifact correlation: recognize the singular `engine-runner`
   service only when it selects `catalog-bench-engine`, bind its source identity
   into the execution plan and transcript, and require exactly one runner ELF

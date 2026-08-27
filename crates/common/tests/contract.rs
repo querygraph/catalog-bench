@@ -283,6 +283,7 @@ fn checked_in_profiles_and_scenarios_validate() {
     let bytes = [
         include_bytes!("../../../profiles/v1/reproduction-2026-08-08.json").as_slice(),
         include_bytes!("../../../profiles/v1/current-2026-08-26.json").as_slice(),
+        include_bytes!("../../../profiles/v1/current-2026-08-27.json").as_slice(),
         include_bytes!("../../../scenarios/v1/iceberg-rest.commit.same-table-contention.json")
             .as_slice(),
         include_bytes!("../../../scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json")
@@ -356,7 +357,39 @@ fn checked_in_profiles_and_scenarios_validate() {
         ])
     );
 
-    assert!(documents[2..]
+    let ContractDocument::Profile(engine_current) = &documents[2] else {
+        panic!("third document must be the stock-engine source profile");
+    };
+    let ProfileReadiness::Draft {
+        unresolved_artifacts,
+        ..
+    } = &engine_current.readiness
+    else {
+        panic!("stock-engine source profile must stay draft until images are observed");
+    };
+    assert_eq!(unresolved_artifacts.len(), 7);
+    assert!(unresolved_artifacts
+        .iter()
+        .any(|component| component.as_str() == "catalog-bench-engine"));
+    let runner = engine_current
+        .components
+        .iter()
+        .find(|component| component.id.as_str() == "catalog-bench-engine")
+        .expect("stock-engine source profile must contain its runner");
+    assert_eq!(runner.kind, ComponentKind::BenchmarkHarness);
+    assert_eq!(
+        runner.version,
+        runner
+            .source
+            .as_ref()
+            .expect("stock-engine runner must be source bound")
+            .revision
+    );
+    assert!(engine_current.services.iter().any(|service| {
+        service.component.as_str() == "catalog-bench-engine" && service.role == "engine-runner"
+    }));
+
+    assert!(documents[3..]
         .iter()
         .all(|document| matches!(document, ContractDocument::Scenario(_))));
 }

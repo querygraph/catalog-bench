@@ -3,25 +3,32 @@
 Profiles separate environment selection from benchmark results. A profile says
 what would run; only a result plus its immutable manifest says what did run.
 
-Three v1 profiles preserve the Phase 0 boundary and carry Phase 1 forward:
+Five v1 profiles preserve the Phase 0 boundary and carry the measured work
+forward:
 
 - [`reproduction-2026-08-08.json`](../profiles/v1/reproduction-2026-08-08.json)
   reconstructs the exact production artifacts used by the published commit sweep.
   It is `runnable` because all participating artifacts and the shared object-store
   image have immutable digests. Its purpose is historical reproduction; the
   profile itself does not claim a new execution.
-- [`current-2026-08-26.json`](../profiles/v1/current-2026-08-26.json) is the input
-  pinset for subsequent conformance and performance work. It is `draft`, lists
-  every unresolved artifact, and cannot back a result until those artifacts are
-  built or downloaded, hashed, and represented in a new runnable profile.
+- [`current-2026-08-26.json`](../profiles/v1/current-2026-08-26.json) is the
+  preserved source pinset for the published contention materialization. It is
+  not edited when later runners advance.
+- [`current-2026-08-27.json`](../profiles/v1/current-2026-08-27.json) is the
+  stock-engine source pinset. It adds the exact `catalog-bench-engine` source and
+  optimized production build recipe while remaining a `draft` until every
+  selected image and executable is independently observed.
 - [`contention-2026-08-27.json`](../profiles/v1/contention-2026-08-27.json) is
   the generated, `runnable` Linux ARM64 performance profile for the same-table
   contention v2 scenario only. It retains all five catalog adapters but removes
   unrelated client and engine components, and replaces the runner, MinIO, and
   LakeCat source-build placeholders with the exact observed local images and
   embedded production executables.
+- [`spark-4.1.3-iceberg-1.11.0-2026-08-27.json`](../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
+  is the current runnable Spark/Iceberg projection. It remains infrastructure
+  evidence rather than a claim that the interoperability scenario passed.
 
-All three target Linux ARM64 and one Docker network. All catalog, client, engine,
+All five target Linux ARM64 and one Docker network. All catalog, client, engine,
 and benchmark processes must run in that container environment against the same
 MinIO warehouse. Each catalog may have only its necessary private state backend.
 
