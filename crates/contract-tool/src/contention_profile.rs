@@ -7,8 +7,9 @@ use catalog_bench_common::contract::ProfilePurpose;
 
 use crate::profile_materialization::{
     check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactPolicy,
-    BuildExtensionLabelPolicy, ImagePolicy, ScenarioProfilePolicy,
+    ImagePolicy, ScenarioProfilePolicy,
 };
+use crate::profile_runtime_policy::{LAKECAT_IMAGE, MINIO_IMAGE};
 
 const MATERIALIZED_COMPONENTS: &[&str] = &[
     "rust-runner",
@@ -27,60 +28,16 @@ const BENCH_ARTIFACTS: &[ArtifactPolicy] = &[ArtifactPolicy {
     location: "image:/usr/local/bin/catalog-bench-commit",
     media_type: "application/vnd.elf",
 }];
-const MINIO_ARTIFACTS: &[ArtifactPolicy] = &[
-    ArtifactPolicy {
-        location: "image:/usr/local/bin/minio",
-        media_type: "application/vnd.elf",
-    },
-    ArtifactPolicy {
-        location: "image:/usr/local/bin/ensure-bucket",
-        media_type: "application/vnd.elf",
-    },
-    ArtifactPolicy {
-        location: "image:/usr/local/bin/healthcheck",
-        media_type: "application/vnd.elf",
-    },
-    ArtifactPolicy {
-        location: "image:/usr/local/bin/lakekeeper-setup",
-        media_type: "application/vnd.elf",
-    },
-    ArtifactPolicy {
-        location: "image:/usr/local/bin/polaris-setup",
-        media_type: "application/vnd.elf",
-    },
-    ArtifactPolicy {
-        location: "image:/usr/local/bin/wait-http",
-        media_type: "application/vnd.elf",
-    },
-];
-const LAKECAT_ARTIFACTS: &[ArtifactPolicy] = &[ArtifactPolicy {
-    location: "image:/usr/local/bin/lakecat-service",
-    media_type: "application/vnd.elf",
-}];
-
 const MATERIALIZED_IMAGES: &[ImagePolicy] = &[
     ImagePolicy {
         component: "catalog-bench-commit",
         compose_service: "bench",
         required_artifacts: BENCH_ARTIFACTS,
+        required_labels: &[],
         build_extension_label: None,
     },
-    ImagePolicy {
-        component: "minio",
-        compose_service: "minio",
-        required_artifacts: MINIO_ARTIFACTS,
-        build_extension_label: Some(BuildExtensionLabelPolicy {
-            label: "io.querygraph.catalog-bench.helper-source-revision",
-            extension: "querygraph/helper-source",
-            field: "revision",
-        }),
-    },
-    ImagePolicy {
-        component: "lakecat",
-        compose_service: "lakecat",
-        required_artifacts: LAKECAT_ARTIFACTS,
-        build_extension_label: None,
-    },
+    MINIO_IMAGE,
+    LAKECAT_IMAGE,
 ];
 
 const POLICY: ScenarioProfilePolicy = ScenarioProfilePolicy {

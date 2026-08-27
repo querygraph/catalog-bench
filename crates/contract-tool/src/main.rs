@@ -6,10 +6,10 @@ use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
     check_contention_profile, check_contention_result_bundle, check_historical_commit_bundle,
-    load_bundle, render_commit_matrix, write_contention_profile, write_contention_result_bundle,
-    write_historical_commit_bundle,
+    check_spark_profile, load_bundle, render_commit_matrix, write_contention_profile,
+    write_contention_result_bundle, write_historical_commit_bundle, write_spark_profile,
 };
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[command(
@@ -105,23 +105,23 @@ enum MatrixCommand {
 #[derive(Debug, Subcommand)]
 enum ProfileCommand {
     /// Derive a runnable contention profile from a draft and image observations.
-    MaterializeContention {
-        #[arg(long)]
-        source_profile: PathBuf,
-        #[arg(long)]
-        materialization: PathBuf,
-        #[arg(long)]
-        output: PathBuf,
-    },
+    MaterializeContention(ProfileFiles),
     /// Check that a runnable contention profile exactly matches its inputs.
-    CheckContention {
-        #[arg(long)]
-        source_profile: PathBuf,
-        #[arg(long)]
-        materialization: PathBuf,
-        #[arg(long)]
-        output: PathBuf,
-    },
+    CheckContention(ProfileFiles),
+    /// Derive the runnable Spark interoperability profile.
+    MaterializeSpark(ProfileFiles),
+    /// Check that the Spark interoperability profile exactly matches its inputs.
+    CheckSpark(ProfileFiles),
+}
+
+#[derive(Debug, Args)]
+struct ProfileFiles {
+    #[arg(long)]
+    source_profile: PathBuf,
+    #[arg(long)]
+    materialization: PathBuf,
+    #[arg(long)]
+    output: PathBuf,
 }
 
 #[derive(Debug, Subcommand)]
@@ -177,21 +177,39 @@ fn run(cli: Cli) -> Result<()> {
             MatrixCommand::Check { manifest, output } => check_matrix(&manifest, &output),
         },
         Command::Profile { command } => match command {
-            ProfileCommand::MaterializeContention {
+            ProfileCommand::MaterializeContention(ProfileFiles {
                 source_profile,
                 materialization,
                 output,
-            } => {
+            }) => {
                 write_contention_profile(&source_profile, &materialization, &output)?;
                 println!("wrote {}", output.display());
                 Ok(())
             }
-            ProfileCommand::CheckContention {
+            ProfileCommand::CheckContention(ProfileFiles {
                 source_profile,
                 materialization,
                 output,
-            } => {
+            }) => {
                 check_contention_profile(&source_profile, &materialization, &output)?;
+                println!("{} matches its materialization inputs", output.display());
+                Ok(())
+            }
+            ProfileCommand::MaterializeSpark(ProfileFiles {
+                source_profile,
+                materialization,
+                output,
+            }) => {
+                write_spark_profile(&source_profile, &materialization, &output)?;
+                println!("wrote {}", output.display());
+                Ok(())
+            }
+            ProfileCommand::CheckSpark(ProfileFiles {
+                source_profile,
+                materialization,
+                output,
+            }) => {
+                check_spark_profile(&source_profile, &materialization, &output)?;
                 println!("{} matches its materialization inputs", output.display());
                 Ok(())
             }

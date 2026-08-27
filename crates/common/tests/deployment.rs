@@ -253,6 +253,112 @@ fn pyiceberg_image_is_profile_pinned_hash_locked_and_hardened() {
 }
 
 #[test]
+fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
+    let root = repository_root();
+    let profile: serde_json::Value = serde_json::from_str(
+        &fs::read_to_string(root.join("profiles/v1/current-2026-08-26.json"))
+            .expect("read current profile"),
+    )
+    .expect("parse current profile");
+    let components = profile["components"]
+        .as_array()
+        .expect("profile components are an array");
+    let component = |id: &str| {
+        components
+            .iter()
+            .find(|component| component["id"] == id)
+            .unwrap_or_else(|| panic!("profile contains component `{id}`"))
+    };
+    let spark = component("spark-4.1");
+    let iceberg = component("iceberg-java");
+    assert_eq!(spark["version"], "4.1.3");
+    assert_eq!(iceberg["version"], "1.11.0");
+
+    let dockerfile =
+        fs::read_to_string(root.join("docker/spark/Dockerfile")).expect("read Spark Dockerfile");
+    for required in [
+        "FROM scratch AS connector",
+        "ARG SPARK_BASE_IMAGE",
+        "FROM ${SPARK_BASE_IMAGE} AS runtime",
+        "ADD --checksum=sha256:d6ea6c5d099288daeb7d5a92061bd3d7d8f296492632b42378e5f2f0e3066242",
+        "ADD --checksum=sha256:38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f",
+        "iceberg-spark-runtime-4.1_2.13-1.11.0.jar",
+        "iceberg-aws-bundle-1.11.0.jar",
+        "USER 185:185",
+    ] {
+        assert!(
+            dockerfile.contains(required),
+            "Spark Dockerfile must contain `{required}`"
+        );
+    }
+    for (component, argument) in [
+        (spark, "SPARK_SOURCE_REVISION"),
+        (iceberg, "ICEBERG_SOURCE_REVISION"),
+    ] {
+        let revision = component["source"]["revision"]
+            .as_str()
+            .expect("component source revision is a string");
+        assert!(dockerfile.contains(&format!(
+            "org.opencontainers.image.revision=\"${argument}\""
+        )));
+        assert!(dockerfile.contains(&format!("ARG {argument}")));
+
+        let compose =
+            fs::read_to_string(root.join("docker-compose.yml")).expect("read Docker Compose");
+        assert!(compose.contains(&format!("{argument}: {revision}")));
+    }
+
+    let compose =
+        fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
+    assert!(compose.contains("SPARK_BASE_IMAGE: catalog-bench/spark-base:4.1.3-arm64-bf9d035a"));
+    let connector = compose_service(&compose, "iceberg-spark-runtime");
+    let runtime = compose_service(&compose, "spark");
+    for required in [
+        "target: connector",
+        "image: catalog-bench/iceberg-spark-runtime:1.11.0-spark4.1_2.13",
+        "platform: linux/arm64",
+    ] {
+        assert!(
+            connector.lines().any(|line| line.trim() == required),
+            "Iceberg connector service must contain `{required}`"
+        );
+    }
+    for required in [
+        "target: runtime",
+        "image: catalog-bench/spark:4.1.3-iceberg1.11.0",
+        "platform: linux/arm64",
+        "networks: [lakehouse-net]",
+        "read_only: true",
+        "cap_drop: [\"ALL\"]",
+        "security_opt: [\"no-new-privileges:true\"]",
+        "entrypoint: [\"/opt/spark/bin/spark-submit\"]",
+        "- ./profiles:/contracts/profiles:ro",
+        "- ./scenarios:/contracts/scenarios:ro",
+    ] {
+        assert!(
+            runtime.lines().any(|line| line.trim() == required),
+            "Spark service must contain `{required}`"
+        );
+    }
+    assert!(runtime.contains("minio-init:\n        condition: service_completed_successfully"));
+
+    let builder = fs::read_to_string(root.join("docker/build-spark-images.sh"))
+        .expect("read Spark image builder");
+    for required in [
+        "apache/spark:4.1.3@sha256:bf9d035a7c32a8ca46aa58d6348182ffd7d2dff6409206ecfbb3915ff1fef211",
+        "{{.Descriptor.digest}}",
+        "expected linux/arm64",
+        "docker tag \"$base_reference\" \"$base_local_reference\"",
+        "build --provenance=false iceberg-spark-runtime spark",
+    ] {
+        assert!(
+            builder.contains(required),
+            "Spark image builder must contain `{required}`"
+        );
+    }
+}
+
+#[test]
 fn contention_runner_is_source_pinned_optimized_and_same_docker() {
     let root = repository_root();
     let profile: serde_json::Value = serde_json::from_str(
@@ -514,14 +620,18 @@ fn clean_contention_run_rejects_reused_persistent_state() {
 
 #[test]
 fn contention_artifact_verifier_checks_images_labels_and_executables() {
-    let verifier =
-        fs::read_to_string(repository_root().join("docker/verify-contention-artifacts.sh"))
-            .expect("read contention artifact verifier");
+    let root = repository_root();
+    let wrapper = fs::read_to_string(root.join("docker/verify-contention-artifacts.sh"))
+        .expect("read contention artifact-verifier wrapper");
+    assert!(wrapper.contains("exec \"$script_dir/verify-profile-artifacts.sh\" \"$@\""));
+
+    let verifier = fs::read_to_string(root.join("docker/verify-profile-artifacts.sh"))
+        .expect("read shared profile artifact verifier");
 
     for required in [
         "source profile digest mismatch",
         "materialization digest mismatch",
-        "runnable profile does not exactly project its contention materialization",
+        "runnable profile does not exactly project its materialization",
         "docker image inspect --format '{{.Id}}'",
         "docker image inspect --format '{{json .Config.Labels}}'",
         "docker create \"$reference\"",
@@ -533,7 +643,7 @@ fn contention_artifact_verifier_checks_images_labels_and_executables() {
     ] {
         assert!(
             verifier.contains(required),
-            "contention artifact verifier must contain `{required}`"
+            "shared profile artifact verifier must contain `{required}`"
         );
     }
 }

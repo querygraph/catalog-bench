@@ -128,21 +128,71 @@ additive-column operations](https://github.com/trinodb/trino/blob/50b0b50b75abd4
 These pinned sources, rather than moving `latest` pages, govern the runtime
 implementation.
 
+## Spark runtime materialization
+
+The first runnable engine profile is generated from the broad candidate and the
+audited
+[`spark-4.1.3-iceberg-1.11.0-2026-08-27`](../materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
+image sidecar. It retains exactly Spark, the Java connector, shared MinIO,
+LakeCat, Polaris, Gravitino, Lakekeeper, their required private-state
+components, and the four corresponding protocol-native catalog adapters. Nessie
+is not silently added to the Phase 2 four-catalog requirement.
+
+The Docker build separates two identities:
+
+- `catalog-bench/iceberg-spark-runtime:1.11.0-spark4.1_2.13` contains only the
+  Maven Central Iceberg Spark runtime and AWS bundle. BuildKit admits each URL
+  only when its expected SHA-256 matches.
+- `catalog-bench/spark:4.1.3-iceberg1.11.0` starts from the broad profile's
+  immutable Spark index, selected as Linux ARM64, and copies those exact JAR
+  bytes into `/opt/spark/jars`. Its labels bind the audited ARM64 child manifest
+  and both Spark and Iceberg source revisions.
+
+| Artifact | Bytes | SHA-256 |
+| --- | ---: | --- |
+| `iceberg-spark-runtime-4.1_2.13-1.11.0.jar` | 47,959,591 | `d6ea6c5d099288daeb7d5a92061bd3d7d8f296492632b42378e5f2f0e3066242` |
+| `iceberg-aws-bundle-1.11.0.jar` | 63,613,165 | `38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f` |
+| `spark-sql_2.13-4.1.3.jar` | 13,604,536 | `6002f0e4430c36909db950a0b0863502260050ca2cc65ff8ca89baf404edb345` |
+| `spark-submit` | 1,040 | `98e6f3b89b9092938a0b163a656c2b9051099821966fc7ab5ef9888fa9f62c6a` |
+
+The connector local-image ID is
+`c6fd71411aaffbf5b0d805a7e49886a97252a5d3297586ba79151f7ddc3a15a7`;
+the executed Spark image ID is
+`7dbce16ad888b932f52e5f7db424f9b2ba364076899780cf498c2a4802d5183b`.
+The source index is `bf9d035a...`; the selected ARM64 child is
+`f6831c619d0f...`. A Compose smoke reports Spark 4.1.3, Scala 2.13.17,
+OpenJDK 21.0.11, and Spark revision `77bbf77e86ad...` from inside that image.
+
+The materialization SHA-256 is
+`15835d6a505b6b78993b2a8ef8288f2f31bd117528cdb5cfc56195814c7cd7c0`;
+the generated
+[`runnable profile`](../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
+SHA-256 is
+`5669b61d42e76b33f17dac21194dcfbbacfa8ebe5131bcef07569fcb507b18c2`.
+The shared Docker verifier independently copies every recorded artifact from
+stopped containers and rejects image, platform, label, digest, or byte-count
+drift.
+
+This unit proves runtime identity and readiness only. It does not claim that any
+catalog passed the common workflow; only the next runner and result bundle may
+make that claim.
+
 ## Phase 2 unit boundaries
 
 C2-01 owns only the common write/read/evolution contract. It intentionally does
 not claim a runtime result.
 
-The following independently committed units will:
+C2-02 owns the reusable scenario-profile derivation and fail-closed image policy.
+C2-03 owns the Spark/Iceberg production images and runnable profile above.
 
-1. materialize the exact Spark runtime and profile, including every Iceberg and
-   object-store JAR digest;
-2. implement one profile/scenario-driven Spark runner and sanitized transcript;
-3. execute Spark against LakeCat, Polaris, Gravitino, and Lakekeeper;
-4. add Flink and Trino renderers against the same scenario;
-5. define a separate deterministic conflict scenario with an honest
+The remaining independently committed units will:
+
+1. implement one profile/scenario-driven Spark runner and sanitized transcript;
+2. execute Spark against LakeCat, Polaris, Gravitino, and Lakekeeper;
+3. add Flink and Trino renderers against the same scenario;
+4. define a separate deterministic conflict scenario with an honest
    synchronization boundary; and
-6. define OpenLineage correlation only for engines whose pinned integrations can
+5. define OpenLineage correlation only for engines whose pinned integrations can
    emit and identify the required events.
 
 Each unit updates the changelog, runs focused tests plus contract/schema checks,

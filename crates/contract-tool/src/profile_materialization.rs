@@ -41,6 +41,15 @@ pub struct BuildExtensionLabelPolicy {
     pub field: &'static str,
 }
 
+/// Exact image-label value required by a scenario policy.
+#[derive(Debug, Clone, Copy)]
+pub struct RequiredLabelPolicy {
+    /// Image label to validate.
+    pub label: &'static str,
+    /// Exact required value.
+    pub value: &'static str,
+}
+
 /// Immutable image requirements for one selected profile component.
 #[derive(Debug, Clone, Copy)]
 pub struct ImagePolicy {
@@ -50,6 +59,8 @@ pub struct ImagePolicy {
     pub compose_service: &'static str,
     /// In-image artifacts that must be digest- and size-addressed.
     pub required_artifacts: &'static [ArtifactPolicy],
+    /// Scenario-specific immutable labels beyond the component revision.
+    pub required_labels: &'static [RequiredLabelPolicy],
     /// Optional source-derived label beyond the ordinary component revision.
     pub build_extension_label: Option<BuildExtensionLabelPolicy>,
 }
@@ -354,6 +365,26 @@ fn validate_policy(policy: &ScenarioProfilePolicy) -> Result<ValidatedPolicy> {
             }
         }
 
+        let required_labels = image
+            .required_labels
+            .iter()
+            .map(|label| label.label)
+            .collect::<BTreeSet<_>>();
+        if required_labels.len() != image.required_labels.len() {
+            bail!(
+                "{} image policy contains duplicate required labels",
+                image.component
+            );
+        }
+        for label in image.required_labels {
+            if label.label.trim().is_empty() || label.value.trim().is_empty() {
+                bail!(
+                    "{} required image-label name and value must not be empty",
+                    image.component
+                );
+            }
+        }
+
         if let Some(label) = image.build_extension_label {
             if [label.label, label.extension, label.field]
                 .iter()
@@ -499,6 +530,10 @@ fn validate_image(
         .as_ref()
         .with_context(|| format!("component `{}` has no source revision", component.id))?;
     require_label(image, "org.opencontainers.image.revision", &source.revision)?;
+
+    for label in policy.required_labels {
+        require_label(image, label.label, label.value)?;
+    }
 
     if let Some(label_policy) = policy.build_extension_label {
         let helper_revision = component

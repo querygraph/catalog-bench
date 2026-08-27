@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- C2-03 Spark runtime materialization: build Apache Spark 4.1.3 and Apache
+  Iceberg 1.11.0 as separate, inspectable Linux ARM64 Docker artifacts, then
+  copy the checksum-locked Spark 4.1/Scala 2.13 runtime and AWS/S3FileIO bundle
+  into the executed Spark image. The build preflights the profile-pinned Spark
+  index and audited ARM64 child, rejects Maven byte drift, records source and
+  Compose labels, runs unprivileged with a read-only root, and stays on the
+  common Docker/MinIO network. Added a deterministic runnable profile for
+  LakeCat, Polaris, Gravitino, and Lakekeeper; exact image/JAR/entry-point
+  evidence; a shared runtime artifact verifier; fail-closed profile tests; and a
+  stock `spark-submit --version` smoke proving Spark 4.1.3, Scala 2.13.17,
+  OpenJDK 21.0.11, and source revision `77bbf77e...`. This unit makes no
+  interoperability-result claim; the profile/scenario-driven workflow runner is
+  the next unit.
+
 - C2-02 reusable profile materialization core: extract source-digest checks,
   component/service/catalog-adapter narrowing, local-image projection, platform
   and Compose-label validation, embedded-artifact verification, runnable-state

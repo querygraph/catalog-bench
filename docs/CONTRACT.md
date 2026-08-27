@@ -382,6 +382,9 @@ component and image set plus required in-image artifact media types, while one
 implementation performs source-byte binding, topology narrowing, local-image
 projection, readiness derivation, and deterministic serialization. It narrows
 catalog adapters with retained catalog components and rejects duplicate or
-unselected image policy entries. The contention wrapper still reproduces the
-accepted C110 profile byte-for-byte; Phase 2 engine profiles reuse the core with
-their own explicit policies rather than copying the validation pipeline.
+unselected image policy entries. Scenario policies may additionally require
+exact immutable labels, such as a base platform digest or connector coordinate;
+duplicate, empty, or mismatched label requirements fail closed. The contention
+wrapper still reproduces the accepted C110 profile byte-for-byte; Phase 2 engine
+profiles reuse the core with their own explicit policies rather than copying the
+validation pipeline.

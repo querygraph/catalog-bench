@@ -200,11 +200,62 @@ cargo run -p catalog-bench-contract -- profile check-contention \
 
 The production launcher performs a second, independent runtime gate after every
 build. [`verify-contention-artifacts.sh`](../docker/verify-contention-artifacts.sh)
+delegates to the shared
+[`verify-profile-artifacts.sh`](../docker/verify-profile-artifacts.sh), which
 compares the profile projection with the sidecar, checks each actual Docker image
-ID, platform, and recorded label, then copies every selected executable out of a
+ID, platform, and recorded label, then copies every selected artifact out of a
 stopped container and verifies its byte count and SHA-256. A matching profile is
-therefore necessary but not sufficient: locally rebuilt image and ELF drift also
-abort before any measured service starts.
+therefore necessary but not sufficient: locally rebuilt image and artifact drift
+also abort before any measured service starts.
+
+## Runnable Spark interoperability profile
+
+The generated
+[`Spark profile`](../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
+narrows the candidate to Spark 4.1.3, Iceberg 1.11.0, shared MinIO, LakeCat,
+Polaris, Gravitino, Lakekeeper, and required state components. Its authoritative
+[`materialization sidecar`](../materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
+records exact Linux/ARM64 images and in-image artifacts:
+
+| Component | Local image SHA-256 | Embedded artifact evidence |
+| --- | --- | --- |
+| Iceberg connector | `c6fd71411aaffbf5b0d805a7e49886a97252a5d3297586ba79151f7ddc3a15a7` | Spark runtime JAR `d6ea6c5d...` (47,959,591 bytes); AWS/S3FileIO bundle `38f01da7...` (63,613,165 bytes) |
+| Executed Spark runtime | `7dbce16ad888b932f52e5f7db424f9b2ba364076899780cf498c2a4802d5183b` | `spark-submit` `98e6f3b8...`; Spark SQL `6002f0e4...`; byte-identical copies of both Iceberg JARs |
+| LakeCat | `f10c056cd9c9534bdc4b9547c89501c44ebe9a0460cd2ed71440ef2fb061e41d` | Optimized `lakecat-service` `ca2e4b6f...` |
+| MinIO | `6ed436d0b5030603da533ab6747c01451cdd890e75e4cee7169efe476838cd5b` | Exact MinIO server plus all six typed helper identities |
+
+The Spark base index is
+`bf9d035a7c32a8ca46aa58d6348182ffd7d2dff6409206ecfbb3915ff1fef211`;
+its audited ARM64 child is
+`f6831c619d0f6f07fe41912a5be499f6a7c0c1e9f18322d0c703ff21d2f30cd1`.
+The build script verifies that exact local base before creating a stable local
+indirection for BuildKit, so an unrelated mutable tag cannot enter the runtime.
+The materialization SHA-256 is
+`15835d6a505b6b78993b2a8ef8288f2f31bd117528cdb5cfc56195814c7cd7c0`;
+the output profile SHA-256 is
+`5669b61d42e76b33f17dac21194dcfbbacfa8ebe5131bcef07569fcb507b18c2`.
+
+Build, regenerate, and independently verify it with:
+
+```sh
+docker/build-spark-images.sh
+cargo run -p catalog-bench-contract --locked -- profile materialize-spark \
+  --source-profile profiles/v1/current-2026-08-26.json \
+  --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
+cargo run -p catalog-bench-contract --locked -- profile check-spark \
+  --source-profile profiles/v1/current-2026-08-26.json \
+  --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
+docker/verify-profile-artifacts.sh \
+  profiles/v1/current-2026-08-26.json \
+  materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
+```
+
+`runnable` means every selected runtime artifact has an immutable identity. It
+does not mean the common workflow has passed; no Spark interoperability result
+is published until the separately committed runner produces validated evidence.
 
 Primary release sources: [Polaris](https://polaris.apache.org/downloads/),
 [Gravitino](https://gravitino.apache.org/downloads/),

@@ -1,6 +1,7 @@
 # Docker harness
 
-The Phase 1 harness owns its execution substrate. `docker-compose.yml` creates
+The catalog interoperability harness owns its execution substrate.
+`docker-compose.yml` creates
 the `catalog-bench-net` bridge, the shared MinIO process and `warehouse` bucket,
 and catalog-private state volumes. It does not depend on `~/src/boat`, an
 external Docker network, host MinIO ports, or a host-built benchmark process.
@@ -10,8 +11,10 @@ is the broad authority for selected versions and provenance. Compose references
 are digest-pinned for Linux ARM64. The generated
 [runnable contention profile](profiles/v1/contention-2026-08-27.json) narrows
 that pinset to the same-table contention topology and records the exact optimized
-runner, LakeCat, MinIO, and helper artifacts. The broad candidate correctly
-remains `draft` for its unresolved conformance, client, and engine artifacts.
+runner, LakeCat, MinIO, and helper artifacts. The generated
+[Spark interoperability profile](profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
+separately resolves the selected Spark/Iceberg runtime. The broad candidate
+correctly remains `draft` for artifacts not resolved by either scenario.
 
 ## Phase 1 topology
 
@@ -98,6 +101,7 @@ docker compose \
   --profile gravitino \
   --profile bench \
   --profile pyiceberg \
+  --profile spark \
   config --quiet
 
 (cd docker/minio/tools && gofmt -d . && go mod tidy -diff && go vet ./... && go test ./...)
@@ -214,6 +218,48 @@ sidecar. After every production build, the launcher verifies the actual local
 image IDs, Linux/ARM64 platform, relevant OCI and Compose labels, and the digest
 and size of every selected executable copied directly from a stopped container.
 Any mismatch aborts before the evidence project starts.
+
+## Spark interoperability runtime
+
+The Phase 2 Spark profile uses two production Docker targets from
+[`docker/spark/Dockerfile`](docker/spark/Dockerfile): an independently
+inspectable Iceberg connector image and the stock Spark image that executes
+byte-identical copies of those connector JARs. Nothing runs in a host JVM or
+downloads a connector at startup.
+
+Materialize the images through the checked preflight:
+
+```sh
+docker/build-spark-images.sh
+```
+
+The script resolves the exact Spark 4.1.3 index selected by the broad profile,
+requires Linux/ARM64, verifies the descriptor before creating BuildKit's local
+base indirection, and builds with provenance wrappers disabled. The Dockerfile's
+remote `ADD --checksum` instructions admit only the selected Iceberg 1.11.0
+Spark 4.1/Scala 2.13 runtime and AWS/S3FileIO bundle.
+
+Verify the deterministic profile and the actual local image bytes:
+
+```sh
+cargo run -p catalog-bench-contract --locked -- profile check-spark \
+  --source-profile profiles/v1/current-2026-08-26.json \
+  --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
+
+docker/verify-profile-artifacts.sh \
+  profiles/v1/current-2026-08-26.json \
+  materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
+
+COMPOSE_PROFILES=spark docker compose run --rm --no-deps spark --version
+```
+
+The Spark service runs as UID/GID 185 with a read-only root, no Linux
+capabilities, `no-new-privileges`, read-only contract mounts, and only tmpfs plus
+the evidence directory writable. It uses `catalog-bench-net` and shared MinIO,
+the same execution boundary as the catalogs. The version smoke proves the stock
+Spark binary and revision; it is not an interoperability result.
 
 ## Same-table contention sweep
 

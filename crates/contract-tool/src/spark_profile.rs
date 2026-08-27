@@ -1,0 +1,164 @@
+//! Spark-specific policy for the shared scenario-profile materializer.
+
+use std::path::Path;
+
+use anyhow::Result;
+use catalog_bench_common::contract::ProfilePurpose;
+
+use crate::profile_materialization::{
+    check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactPolicy,
+    ImagePolicy, RequiredLabelPolicy, ScenarioProfilePolicy,
+};
+use crate::profile_runtime_policy::{LAKECAT_IMAGE, MINIO_IMAGE};
+
+const SPARK_BASE_PLATFORM_DIGEST: &str =
+    "sha256:f6831c619d0f6f07fe41912a5be499f6a7c0c1e9f18322d0c703ff21d2f30cd1";
+const ICEBERG_SOURCE_REVISION: &str = "6976e020b894f6a6777704df2b8c4458cb291ae9";
+
+const MATERIALIZED_COMPONENTS: &[&str] = &[
+    "rust-runner",
+    "minio",
+    "lakecat",
+    "lakecat-turso",
+    "polaris",
+    "gravitino",
+    "lakekeeper",
+    "postgresql",
+    "iceberg-java",
+    "spark-4.1",
+];
+
+const ICEBERG_ARTIFACTS: &[ArtifactPolicy] = &[
+    ArtifactPolicy {
+        location: "image:/opt/iceberg/iceberg-spark-runtime-4.1_2.13-1.11.0.jar",
+        media_type: "application/java-archive",
+    },
+    ArtifactPolicy {
+        location: "image:/opt/iceberg/iceberg-aws-bundle-1.11.0.jar",
+        media_type: "application/java-archive",
+    },
+];
+
+const SPARK_ARTIFACTS: &[ArtifactPolicy] = &[
+    ArtifactPolicy {
+        location: "image:/opt/spark/bin/spark-submit",
+        media_type: "application/x-shellscript",
+    },
+    ArtifactPolicy {
+        location: "image:/opt/spark/jars/spark-sql_2.13-4.1.3.jar",
+        media_type: "application/java-archive",
+    },
+    ArtifactPolicy {
+        location: "image:/opt/spark/jars/iceberg-spark-runtime-4.1_2.13-1.11.0.jar",
+        media_type: "application/java-archive",
+    },
+    ArtifactPolicy {
+        location: "image:/opt/spark/jars/iceberg-aws-bundle-1.11.0.jar",
+        media_type: "application/java-archive",
+    },
+];
+
+const ICEBERG_LABELS: &[RequiredLabelPolicy] = &[
+    RequiredLabelPolicy {
+        label: "org.opencontainers.image.version",
+        value: "1.11.0",
+    },
+    RequiredLabelPolicy {
+        label: "io.querygraph.catalog-bench.iceberg-spark-runtime-coordinate",
+        value: "org.apache.iceberg:iceberg-spark-runtime-4.1_2.13:1.11.0",
+    },
+    RequiredLabelPolicy {
+        label: "io.querygraph.catalog-bench.iceberg-aws-bundle-coordinate",
+        value: "org.apache.iceberg:iceberg-aws-bundle:1.11.0",
+    },
+];
+
+const SPARK_LABELS: &[RequiredLabelPolicy] = &[
+    RequiredLabelPolicy {
+        label: "org.opencontainers.image.version",
+        value: "4.1.3",
+    },
+    RequiredLabelPolicy {
+        label: "org.opencontainers.image.base.digest",
+        value: SPARK_BASE_PLATFORM_DIGEST,
+    },
+    RequiredLabelPolicy {
+        label: "io.querygraph.catalog-bench.iceberg-source-revision",
+        value: ICEBERG_SOURCE_REVISION,
+    },
+];
+
+const MATERIALIZED_IMAGES: &[ImagePolicy] = &[
+    MINIO_IMAGE,
+    LAKECAT_IMAGE,
+    ImagePolicy {
+        component: "iceberg-java",
+        compose_service: "iceberg-spark-runtime",
+        required_artifacts: ICEBERG_ARTIFACTS,
+        required_labels: ICEBERG_LABELS,
+        build_extension_label: None,
+    },
+    ImagePolicy {
+        component: "spark-4.1",
+        compose_service: "spark",
+        required_artifacts: SPARK_ARTIFACTS,
+        required_labels: SPARK_LABELS,
+        build_extension_label: None,
+    },
+];
+
+const POLICY: ScenarioProfilePolicy = ScenarioProfilePolicy {
+    name: "Spark interoperability",
+    materialization_format: "catalog-bench/spark-profile-materialization/v1",
+    scope: "engine.iceberg.write-read-evolution/v1",
+    purpose: ProfilePurpose::Conformance,
+    selected_components: MATERIALIZED_COMPONENTS,
+    images: MATERIALIZED_IMAGES,
+};
+
+/// Render the runnable Spark interoperability profile.
+///
+/// # Errors
+///
+/// Returns an error when source, image, connector, topology, or output evidence
+/// violates the Spark scenario policy or common profile contract.
+pub fn render_spark_profile(
+    source_profile_bytes: &[u8],
+    materialization_bytes: &[u8],
+) -> Result<Vec<u8>> {
+    render_scenario_profile(source_profile_bytes, materialization_bytes, &POLICY)
+}
+
+/// Write the deterministically rendered Spark interoperability profile.
+///
+/// # Errors
+///
+/// Returns an error when an input cannot be read or validated or output cannot
+/// be written.
+pub fn write_spark_profile(
+    source_profile: &Path,
+    materialization: &Path,
+    output: &Path,
+) -> Result<()> {
+    write_scenario_profile(source_profile, materialization, output, &POLICY)
+}
+
+/// Check a Spark interoperability profile against its authoritative inputs.
+///
+/// # Errors
+///
+/// Returns an error when an input is invalid or the checked-in output has
+/// drifted by even one byte.
+pub fn check_spark_profile(
+    source_profile: &Path,
+    materialization: &Path,
+    output: &Path,
+) -> Result<()> {
+    check_scenario_profile(
+        source_profile,
+        materialization,
+        output,
+        &POLICY,
+        "catalog-bench-contract profile materialize-spark",
+    )
+}

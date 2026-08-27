@@ -7,7 +7,7 @@ use catalog_bench_common::contract::{
 };
 use catalog_bench_contract::{
     render_scenario_profile, ArtifactPolicy, BuildExtensionLabelPolicy, ImagePolicy,
-    ScenarioProfilePolicy,
+    RequiredLabelPolicy, ScenarioProfilePolicy,
 };
 use serde_json::{json, Value};
 use sha2::{Digest as _, Sha256};
@@ -51,6 +51,7 @@ const IMAGES: &[ImagePolicy] = &[
         component: "minio",
         compose_service: "minio",
         required_artifacts: MINIO_ARTIFACTS,
+        required_labels: &[],
         build_extension_label: Some(BuildExtensionLabelPolicy {
             label: "io.querygraph.catalog-bench.helper-source-revision",
             extension: "querygraph/helper-source",
@@ -61,6 +62,7 @@ const IMAGES: &[ImagePolicy] = &[
         component: "lakecat",
         compose_service: "lakecat",
         required_artifacts: LAKECAT_ARTIFACTS,
+        required_labels: &[],
         build_extension_label: None,
     },
 ];
@@ -174,6 +176,7 @@ fn policy_rejects_duplicate_unselected_or_ambiguous_entries() -> Result<()> {
         component: "minio",
         compose_service: "minio",
         required_artifacts: DUPLICATE_ARTIFACTS,
+        required_labels: &[],
         build_extension_label: None,
     }];
     const DUPLICATE_ARTIFACT_POLICY: ScenarioProfilePolicy = ScenarioProfilePolicy {
@@ -186,6 +189,31 @@ fn policy_rejects_duplicate_unselected_or_ambiguous_entries() -> Result<()> {
     assert!(error
         .to_string()
         .contains("duplicate required artifact locations"));
+
+    const DUPLICATE_LABELS: &[RequiredLabelPolicy] = &[
+        RequiredLabelPolicy {
+            label: "example.label",
+            value: "one",
+        },
+        RequiredLabelPolicy {
+            label: "example.label",
+            value: "two",
+        },
+    ];
+    const DUPLICATE_LABEL_IMAGES: &[ImagePolicy] = &[ImagePolicy {
+        component: "minio",
+        compose_service: "minio",
+        required_artifacts: MINIO_ARTIFACTS,
+        required_labels: DUPLICATE_LABELS,
+        build_extension_label: None,
+    }];
+    const DUPLICATE_LABEL_POLICY: ScenarioProfilePolicy = ScenarioProfilePolicy {
+        images: DUPLICATE_LABEL_IMAGES,
+        ..POLICY
+    };
+    let error = render_scenario_profile(SOURCE_PROFILE, &materialization, &DUPLICATE_LABEL_POLICY)
+        .expect_err("duplicate required labels must fail closed");
+    assert!(error.to_string().contains("duplicate required labels"));
     Ok(())
 }
 

@@ -68,6 +68,10 @@ cargo run -p catalog-bench-contract --locked -- profile check-contention \
   --source-profile profiles/v1/current-2026-08-26.json \
   --materialization materializations/v1/contention-2026-08-27.json \
   --output profiles/v1/contention-2026-08-27.json
+cargo run -p catalog-bench-contract --locked -- profile check-spark \
+  --source-profile profiles/v1/current-2026-08-26.json \
+  --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
 ```
 
 See **[RESULTS.md](RESULTS.md)** for measured results.
@@ -115,8 +119,11 @@ internals and lock maintenance are documented in
 The engine-neutral operation vocabulary, deterministic row oracle, shim boundary,
 and independent REST/MinIO evidence requirements are documented in
 [Stock Engine Interoperability](docs/ENGINE-INTEROPERABILITY.md). Spark is the
-first runtime implementation; Flink and Trino must execute the same scenario
-rather than maintaining engine-specific definitions of success.
+first runtime implementation: its exact Spark 4.1.3, Scala 2.13, Iceberg 1.11.0,
+AWS/S3FileIO, JVM, image, and in-image JAR identities are now materialized in a
+runnable Linux ARM64 profile. That is runtime evidence, not yet a workflow
+result. Flink and Trino must execute the same scenario rather than maintaining
+engine-specific definitions of success.
 
 ## The commit benchmark
 
