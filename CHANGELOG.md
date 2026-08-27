@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- C2-06 stock Flink child effects: add the Java 17 entry point and a catalog-
+  neutral `EngineEffects` implementation over Flink 2.1.3's batch Table API and
+  Iceberg 1.11.0's Flink 2.1 catalog. The child creates the catalog through a
+  `CatalogDescriptor`, injects OAuth only into its in-memory factory options,
+  executes every mutation and read through stock Flink SQL, observes the table
+  through that same `FlinkCatalog`, and bounds canonical compact-JSON-lines
+  reads by their row and byte oracles. It emits only sanitized S3 routes,
+  expected-property agreement, typed schemas, snapshot counts, runtime
+  identity, and closed failures. Flink and Iceberg are compile-only/provided
+  dependencies so the source-bound JAR cannot shadow the selected engine
+  runtime; `-Xlint:all -Werror` and seventeen separate Java tests cover decoding,
+  orchestration, credentials, canonical identity, bounds, and arguments. This
+  unit has not run against the production Docker topology and is not runtime or
+  ranking evidence.
+
 - C2-06 Flink child protocol state machine: add a Java-side `EngineEffects`
   algebra, typed `ChildEvent` vocabulary, bounded JSON-lines `EventSink`, and
   deterministic `ProgramRunner` that executes the closed operation ADT in the

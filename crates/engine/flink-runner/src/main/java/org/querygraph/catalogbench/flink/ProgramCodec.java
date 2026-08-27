@@ -20,6 +20,8 @@ import java.util.regex.Pattern;
 
 public final class ProgramCodec {
     static final int MAX_PROGRAM_BYTES = 256 * 1024;
+    static final long MAX_READ_ROWS = 10_000;
+    static final long MAX_READ_BYTES = 16 * 1024 * 1024;
     private static final int MAX_TEXT_CHARS = 4096;
     private static final Pattern IDENTIFIER = Pattern.compile("[a-z0-9_]+");
     private static final Pattern SHA256 = Pattern.compile("[0-9a-f]{64}");
@@ -189,7 +191,10 @@ public final class ProgramCodec {
 
     private static void validateOracle(Program.ReadOracle oracle, List<String> expectedColumns)
             throws ProgramViolation {
-        require(oracle.rows() > 0 && oracle.bytes() > 0, "read oracle counts must be positive");
+        require(oracle.rows() > 0 && oracle.rows() <= MAX_READ_ROWS,
+                "read oracle row count is outside the closed bound");
+        require(oracle.bytes() > 0 && oracle.bytes() <= MAX_READ_BYTES,
+                "read oracle byte count is outside the closed bound");
         require(SHA256.matcher(oracle.sha256()).matches(), "read oracle SHA-256 is invalid");
         List<String> columns = List.copyOf(oracle.columns());
         require(!columns.isEmpty(), "read oracle columns are empty");
@@ -253,6 +258,8 @@ public final class ProgramCodec {
     }
 
     public static final class ProgramViolation extends Exception {
+        private static final long serialVersionUID = 1L;
+
         ProgramViolation(String message) {
             super(message);
         }

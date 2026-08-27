@@ -63,6 +63,8 @@ final class ProgramCodecTest {
         assertViolation(validProgram().replace(
                 "INSERT INTO `ns`.`events` VALUES (1)",
                 "DELETE FROM `ns`.`events`"));
+        assertViolation(validProgram().replace("\"rows\":16", "\"rows\":10001"));
+        assertViolation(validProgram().replace("\"bytes\":346", "\"bytes\":16777217"));
     }
 
     @Test

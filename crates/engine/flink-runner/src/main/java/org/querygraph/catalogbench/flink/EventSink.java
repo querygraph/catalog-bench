@@ -36,6 +36,8 @@ final class EventSink {
     }
 
     static final class EventFailure extends Exception {
+        private static final long serialVersionUID = 1L;
+
         EventFailure() {}
 
         EventFailure(Throwable cause) {

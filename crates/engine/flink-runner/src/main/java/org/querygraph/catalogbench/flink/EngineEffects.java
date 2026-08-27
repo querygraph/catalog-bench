@@ -20,6 +20,8 @@ interface EngineEffects {
     long snapshotCount(Program.SnapshotRead operation) throws EffectFailure;
 
     final class EffectFailure extends Exception {
+        private static final long serialVersionUID = 1L;
+
         EffectFailure() {}
 
         EffectFailure(Throwable cause) {

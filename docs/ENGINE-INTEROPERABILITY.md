@@ -162,9 +162,10 @@ implements Flink's change-list `alterTable` overload, and the exact
 maps a physical `TableChange.AddColumn` to `UpdateSchema.addColumn` or
 `addRequiredColumn` and commits it transactionally. Additive schema evolution
 is therefore a supported stock connector operation for this pinned
-combination. The forthcoming renderer must exercise that Flink catalog API and
-may not substitute a direct REST or standalone Iceberg client call. This policy
-unit is not runtime evidence and creates no Flink result or ranking row.
+combination. The renderer and child described below exercise that Flink catalog
+API and do not substitute a direct REST or standalone Iceberg client call. The
+capability decision alone is not runtime evidence and creates no result or
+ranking row.
 
 ### Catalog-neutral Flink rendering
 
@@ -280,9 +281,8 @@ shaded child relocates its private Jackson classes to avoid classpath collision,
 minimizes the archive, and fixes the archive timestamp. Verification used a
 SHA-512-checked Apache Maven 3.9.16 distribution and the installed Java 17
 toolchain; all four decoder suites passed, and two clean builds produced
-byte-identical JARs. This proves deterministic decoding and packaging only. The
-Flink effect implementation and event emitter remain pending, and the generated
-JAR is not yet a materialized profile artifact.
+byte-identical JARs. That checkpoint proved deterministic decoding and
+packaging only. The generated JAR is not yet a materialized profile artifact.
 
 ### Child protocol state machine
 
@@ -308,8 +308,53 @@ traces, and observed mismatching values never enter stdout. If event output
 itself fails, the parent sees a broken stream and applies its existing protocol
 failure classification. Complete, collision, read-mismatch, namespace-drift,
 and oversized-event tests exercise these boundaries with pure fake effects.
-The stock Flink `EngineEffects` implementation remains pending, so this unit is
-still not runtime evidence.
+The stock implementation below consumes this state machine, but neither those
+pure tests nor its source alone constitute runtime evidence.
+
+### Stock Flink child effects
+
+`Runner` accepts exactly `--program <path>`, decodes that bounded regular file,
+and connects the protocol state machine to `FlinkEngineEffects`. Runtime setup
+creates a batch `TableEnvironment` at parallelism one and reports the actual
+Flink, Java, Scala, operating-system, and architecture identity. Any setup
+failure remains in the closed runtime stage; malformed arguments or envelopes
+cannot launch an effect or print their contents.
+
+Catalog initialization uses Flink 2.1's nondeprecated `createCatalog` API with
+an in-memory `CatalogDescriptor`. The descriptor selects the stock Iceberg
+factory using only the closed properties rendered from the profile. Anonymous
+mode adds nothing. OAuth mode reads the two child-only environment variables
+after runtime verification and adds `credential`, `oauth2-server-uri`, and
+`scope` only to that in-memory descriptor. It never renders a secret into SQL,
+the staged program, an event, or the source-bound JAR. S3FileIO obtains its
+standard AWS environment from the already isolated child process.
+
+Namespace preflight and listing use the selected `TableEnvironment`; all five
+mutations call `executeSql` and await completion. Both canonical projections
+also execute through Flink SQL. Their external `Row` values are accepted only
+as insert rows containing the scenario's long, string, or null vocabulary,
+encoded as compact UTF-8 JSON arrays followed by LF, and incrementally hashed
+with SHA-256. Collection stops closed as soon as the envelope's row or byte
+oracle could be exceeded. Snapshot counts come from the rendered Iceberg
+`$snapshots` metadata-table query rather than inferred local state.
+
+After each structural operation, the child reloads the table from the exact
+`FlinkCatalog` created by the Table API. It projects only UUID, bounded S3
+metadata/table routes in the requested bucket, format version, assigned field
+IDs and primitive types, snapshot count, and match/mismatch for scenario-owned
+properties. Unknown property values, arbitrary catalog payloads, exception
+messages, and stack traces cannot enter evidence. This same-catalog observation
+does not replace the independent Rust REST and object-store reconciliation.
+
+The Maven module pins Flink 2.1.3 and Iceberg 1.11.0 as `provided`: they are
+available for compilation and tests but are deliberately absent from the child
+archive, which must execute the connector bytes pinned in the engine image.
+Compilation enables every Java lint with warnings denied. Seventeen unit tests
+cover the prior decoder/state machine plus argument closure, anonymous and
+OAuth property construction, missing/oversized/ambiguous credentials, and
+canonical row identity and bounds. These tests prove the child structure and
+pure boundaries only. A source-correlated production JAR and same-Docker Flink
+execution are still required before a result or ranking row may be published.
 
 ## Reusable runtime-identity boundary
 

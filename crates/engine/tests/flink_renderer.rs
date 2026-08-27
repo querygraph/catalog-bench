@@ -233,14 +233,17 @@ fn renderer_contains_no_catalog_branch_or_transport_substitute() {
 }
 
 #[test]
-fn child_decoder_is_java17_pinned_bounded_and_transport_free() {
+fn stock_flink_child_is_java17_pinned_bounded_and_transport_free() {
     let pom = fs::read_to_string(format!("{CHILD_ROOT}/pom.xml")).unwrap();
     for pin in [
         "<maven.compiler.release>17</maven.compiler.release>",
+        "<flink.version>2.1.3</flink.version>",
+        "<iceberg.version>1.11.0</iceberg.version>",
         "<jackson.version>2.18.2</jackson.version>",
         "<junit.version>5.11.4</junit.version>",
         "<project.build.outputTimestamp>2026-08-27T00:00:00Z</project.build.outputTimestamp>",
         "<minimizeJar>true</minimizeJar>",
+        "<arg>-Werror</arg>",
     ] {
         assert!(pom.contains(pin), "child POM lost `{pin}`");
     }
@@ -268,11 +271,24 @@ fn child_decoder_is_java17_pinned_bounded_and_transport_free() {
         "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/ProgramRunner.java"
     ))
     .unwrap();
+    let canonical_read = fs::read_to_string(format!(
+        "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/CanonicalRead.java"
+    ))
+    .unwrap();
+    let flink_effects = fs::read_to_string(format!(
+        "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/FlinkEngineEffects.java"
+    ))
+    .unwrap();
+    let entry = fs::read_to_string(format!(
+        "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/Runner.java"
+    ))
+    .unwrap();
     for required in [
         "STRICT_DUPLICATE_DETECTION",
         "FAIL_ON_UNKNOWN_PROPERTIES",
         "FAIL_ON_TRAILING_TOKENS",
         "MAX_PROGRAM_BYTES = 256 * 1024",
+        "MAX_READ_BYTES = 16 * 1024 * 1024",
         "LinkOption.NOFOLLOW_LINKS",
         "OPERATION_ORDER",
     ] {
@@ -291,7 +307,36 @@ fn child_decoder_is_java17_pinned_bounded_and_transport_free() {
     ] {
         assert!(runner.contains(required), "child runner lost `{required}`");
     }
-    for source in [&model, &codec, &events, &effects, &sink, &runner] {
+    for required in [
+        "CatalogDescriptor.of",
+        "CoreOptions.DEFAULT_PARALLELISM, 1",
+        "tableEnvironment().executeSql(operation.sql()).await()",
+        "SerializableTable.copyOf(table)",
+        "CATALOG_BENCH_ENGINE_CLIENT_SECRET",
+    ] {
+        assert!(
+            flink_effects.contains(required),
+            "stock Flink effects lost `{required}`"
+        );
+    }
+    for required in ["RowKind.INSERT", "MessageDigest.getInstance(\"SHA-256\")"] {
+        assert!(
+            canonical_read.contains(required),
+            "canonical Flink read lost `{required}`"
+        );
+    }
+    assert!(entry.contains("ProgramCodec.read(programPath)"));
+    for source in [
+        &model,
+        &codec,
+        &events,
+        &effects,
+        &sink,
+        &runner,
+        &canonical_read,
+        &flink_effects,
+        &entry,
+    ] {
         for catalog in ["lakecat", "polaris", "gravitino", "lakekeeper", "nessie"] {
             assert!(!source.to_ascii_lowercase().contains(catalog));
         }
