@@ -284,6 +284,33 @@ byte-identical JARs. This proves deterministic decoding and packaging only. The
 Flink effect implementation and event emitter remain pending, and the generated
 JAR is not yet a materialized profile artifact.
 
+### Child protocol state machine
+
+`ProgramRunner` owns orchestration but no engine implementation. It depends on
+the small `EngineEffects` algebra for runtime identity, catalog initialization,
+fixture preflight, SQL effects, namespace verification, table observation,
+canonical reads, and snapshot counts. This makes the protocol state machine
+fully testable without mocking static Flink APIs and keeps later Flink code from
+reimplementing event order or classification.
+
+The runner emits the existing `CATALOG_BENCH_EVENT` JSON-lines vocabulary
+through typed Java records. Each encoded event is bounded to 16 KiB and flushed
+immediately. Runtime and catalog initialization precede preflight; an existing
+fixture emits `absent=false`, exits `3`, and performs no mutation. An owned
+fixture follows namespace creation, table creation and observation, initial
+append/read, additive evolution and observation, evolved append/read, final
+observation, and completion. Reads enter evidence only after their row, byte,
+and SHA-256 identity exactly matches the envelope oracle.
+
+Every effect failure maps to the same eleven stage names and four failure
+categories decoded by the Rust parent. Java exception classes, messages, stack
+traces, and observed mismatching values never enter stdout. If event output
+itself fails, the parent sees a broken stream and applies its existing protocol
+failure classification. Complete, collision, read-mismatch, namespace-drift,
+and oversized-event tests exercise these boundaries with pure fake effects.
+The stock Flink `EngineEffects` implementation remains pending, so this unit is
+still not runtime evidence.
+
 ## Reusable runtime-identity boundary
 
 Runtime-ready evidence contains a neutral engine version, an exact sorted map of

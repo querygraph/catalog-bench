@@ -90,7 +90,7 @@ final class ProgramCodecTest {
                 () -> ProgramCodec.decode(json.getBytes(java.nio.charset.StandardCharsets.UTF_8)));
     }
 
-    private static String validProgram() {
+    static String validProgram() {
         return """
                 {
                   "parallelism":1,

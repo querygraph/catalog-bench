@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C2-06 Flink child protocol state machine: add a Java-side `EngineEffects`
+  algebra, typed `ChildEvent` vocabulary, bounded JSON-lines `EventSink`, and
+  deterministic `ProgramRunner` that executes the closed operation ADT in the
+  shared runtime/catalog/preflight/namespace/table/append/read/evolve/final
+  order. Fixture collision exits before mutation; read evidence is emitted only
+  after exact oracle agreement; every effect failure maps to the existing
+  closed stage/category pair without serializing exceptions; and event encoding
+  is capped at 16 KiB. Nine Java tests now cover decoding plus complete event
+  order, collision non-mutation, read mismatch, namespace observation failure,
+  oversized events, and absence of raw/private diagnostics. This pure state
+  machine still has no Flink implementation and makes no runtime claim.
+
 - C2-06 strict Flink child decoder: add a Java 17 Maven module for the
   source-bound child artifact with sealed authentication and operation models,
   a bounded regular-file decoder, duplicate-key/unknown-field/trailing-token

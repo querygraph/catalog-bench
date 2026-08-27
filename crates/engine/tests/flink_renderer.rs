@@ -252,6 +252,22 @@ fn child_decoder_is_java17_pinned_bounded_and_transport_free() {
         "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/ProgramCodec.java"
     ))
     .unwrap();
+    let events = fs::read_to_string(format!(
+        "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/ChildEvent.java"
+    ))
+    .unwrap();
+    let effects = fs::read_to_string(format!(
+        "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/EngineEffects.java"
+    ))
+    .unwrap();
+    let sink = fs::read_to_string(format!(
+        "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/EventSink.java"
+    ))
+    .unwrap();
+    let runner = fs::read_to_string(format!(
+        "{CHILD_ROOT}/src/main/java/org/querygraph/catalogbench/flink/ProgramRunner.java"
+    ))
+    .unwrap();
     for required in [
         "STRICT_DUPLICATE_DETECTION",
         "FAIL_ON_UNKNOWN_PROPERTIES",
@@ -262,7 +278,20 @@ fn child_decoder_is_java17_pinned_bounded_and_transport_free() {
     ] {
         assert!(codec.contains(required), "child decoder lost `{required}`");
     }
-    for source in [&model, &codec] {
+    for required in ["CATALOG_BENCH_EVENT ", "MAX_EVENT_BYTES = 16 * 1024"] {
+        assert!(
+            sink.contains(required),
+            "child event sink lost `{required}`"
+        );
+    }
+    for required in [
+        "FIXTURE_COLLISION_EXIT = 3",
+        "effects.fixtureAbsent(program.fixture())",
+        "if (!expected.equals(observed))",
+    ] {
+        assert!(runner.contains(required), "child runner lost `{required}`");
+    }
+    for source in [&model, &codec, &events, &effects, &sink, &runner] {
         for catalog in ["lakecat", "polaris", "gravitino", "lakekeeper", "nessie"] {
             assert!(!source.to_ascii_lowercase().contains(catalog));
         }
