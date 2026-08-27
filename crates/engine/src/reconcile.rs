@@ -137,11 +137,11 @@ pub(super) fn evaluate_checks(
         initial_append_committed: events.initial_snapshots == Some(1),
         initial_read_exact: events
             .initial_read
-            .is_some_and(|read| read_matches(read, &plan.spark().scenario.canonical_reads.initial)),
+            .is_some_and(|read| read_matches(read, &plan.scenario().canonical_reads.initial)),
         schema_evolved,
         evolved_append_committed: events.evolved_snapshots == Some(2),
         evolved_read_exact: events.evolved_read.is_some_and(|read| {
-            read_matches(read, &plan.spark().scenario.canonical_reads.after_evolution)
+            read_matches(read, &plan.scenario().canonical_reads.after_evolution)
         }),
         catalog_state_correlated,
         shared_object_evidence_complete,
@@ -156,7 +156,7 @@ fn catalog_connection_matches(plan: &InteroperabilityPlan, execution: &EngineExe
             if negotiation.adapter.catalog == plan.catalog().id
                 && negotiation.adapter.name == plan.catalog().name
                 && negotiation.adapter.version == plan.catalog().version
-                && negotiation.adapter.protocol == plan.spark().scenario.catalog_protocol
+                && negotiation.adapter.protocol == plan.scenario().catalog_protocol
                 && negotiation.adapter.request_handling == AdapterRequestHandling::ProtocolNative
                 && negotiation.authentication.outcome == AuthenticationOutcome::Ready
                 && negotiation.config.failure_stage.is_none()
@@ -206,8 +206,7 @@ fn runtime_verification_matches(
 }
 
 fn expected_initial_fields(plan: &InteroperabilityPlan) -> Vec<EngineFieldObservation> {
-    plan.spark()
-        .scenario
+    plan.scenario()
         .table
         .schema
         .fields
@@ -219,7 +218,7 @@ fn expected_initial_fields(plan: &InteroperabilityPlan) -> Vec<EngineFieldObserv
 fn expected_evolved_fields(plan: &InteroperabilityPlan) -> Option<Vec<EngineFieldObservation>> {
     let mut fields = expected_initial_fields(plan);
     let id = fields.iter().map(|field| field.id).max()?.checked_add(1)?;
-    let evolved = &plan.spark().scenario.schema_evolution.field;
+    let evolved = &plan.scenario().schema_evolution.field;
     fields.push(EngineFieldObservation {
         id,
         name: evolved.name.clone(),
@@ -246,8 +245,7 @@ fn table_matches_shape(
     snapshots: u64,
 ) -> bool {
     let expected_properties = plan
-        .spark()
-        .scenario
+        .scenario()
         .table
         .properties
         .keys()
@@ -266,8 +264,7 @@ fn table_matches_shape(
         )
         .is_ok()
         && plan
-            .spark()
-            .fixture
+            .fixture()
             .requested_location
             .as_ref()
             .is_none_or(|location| location == &table.location)
@@ -296,7 +293,7 @@ fn object_evidence_complete(
     else {
         return false;
     };
-    let policy = &plan.spark().scenario.object_audit;
+    let policy = &plan.scenario().object_audit;
     audit.table_root == state.table.location
         && audit.referenced_metadata_location == state.table.metadata_location
         && audit.referenced_metadata_exists

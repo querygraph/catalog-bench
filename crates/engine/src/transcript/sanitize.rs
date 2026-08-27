@@ -55,7 +55,7 @@ pub(super) fn audit_base_values(
 }
 
 fn canonical_row_values(plan: &InteroperabilityPlan) -> Option<Vec<String>> {
-    let scenario = &plan.spark().scenario;
+    let scenario = plan.scenario();
     let IntegerGenerator::Affine { multiplier, offset } = scenario.row_generator.amount_cents;
     let CategoryGenerator::ModuloLabel {
         modulus,

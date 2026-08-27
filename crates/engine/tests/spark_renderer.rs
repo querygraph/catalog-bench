@@ -25,7 +25,7 @@ fn stock_renderer_validates_every_profile_derived_plan_without_spark() {
             "render01",
         )
         .unwrap();
-        let output = validate(&serde_json::to_value(plan.spark()).unwrap());
+        let output = validate(&serde_json::to_value(plan.spark().unwrap()).unwrap());
         assert!(
             output.status.success(),
             "renderer rejected profile-derived plan for {catalog}"
@@ -73,7 +73,7 @@ fn stock_renderer_rejects_policy_resource_and_oracle_drift() {
         "reject01",
     )
     .unwrap();
-    let plan = serde_json::to_value(plan.spark()).unwrap();
+    let plan = serde_json::to_value(plan.spark().unwrap()).unwrap();
     let mutations = [
         ("execution", json!("local[*]")),
         ("policy", json!("allowed")),
@@ -121,7 +121,7 @@ fn renderer_projects_property_agreement_and_rejects_unsafe_table_values() {
         "observe01",
     )
     .unwrap();
-    let plan = serde_json::to_value(plan.spark()).unwrap();
+    let plan = serde_json::to_value(plan.spark().unwrap()).unwrap();
     let location = plan["fixture"]["requested_location"]
         .as_str()
         .unwrap_or("s3://warehouse/table");

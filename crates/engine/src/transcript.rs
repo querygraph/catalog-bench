@@ -203,9 +203,9 @@ impl EngineTranscript {
             components,
             fixture: EngineTranscriptFixture {
                 id: fixture_id.to_owned(),
-                namespace: plan.spark().fixture.namespace.clone(),
-                table: plan.spark().fixture.table.clone(),
-                requested_location: plan.spark().fixture.requested_location.clone(),
+                namespace: plan.fixture().namespace.clone(),
+                table: plan.fixture().table.clone(),
+                requested_location: plan.fixture().requested_location.clone(),
             },
             sanitization: EngineTranscriptSanitization {
                 policy: SANITIZATION_POLICY.to_owned(),
@@ -281,9 +281,9 @@ impl EngineTranscript {
         }
         let expected_fixture = EngineTranscriptFixture {
             id: self.fixture.id.clone(),
-            namespace: plan.spark().fixture.namespace.clone(),
-            table: plan.spark().fixture.table.clone(),
-            requested_location: plan.spark().fixture.requested_location.clone(),
+            namespace: plan.fixture().namespace.clone(),
+            table: plan.fixture().table.clone(),
+            requested_location: plan.fixture().requested_location.clone(),
         };
         if self.fixture != expected_fixture {
             return Err(EngineTranscriptValidationFailure::new(

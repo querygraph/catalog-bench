@@ -55,12 +55,7 @@ async fn stock_rest_load_projects_full_state_and_cleanup_never_purges() {
     assert_eq!(state.table.snapshots, 2);
     assert_eq!(
         state.table.properties.keys().collect::<Vec<_>>(),
-        plan.spark()
-            .scenario
-            .table
-            .properties
-            .keys()
-            .collect::<Vec<_>>()
+        plan.scenario().table.properties.keys().collect::<Vec<_>>()
     );
     assert!(state
         .table

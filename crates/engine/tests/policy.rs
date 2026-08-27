@@ -3,9 +3,10 @@ use catalog_bench_common::contract::{
     Profile, RuntimeArtifact, Scenario,
 };
 use catalog_bench_engine::{
-    CatalogCredentialSource, InteroperabilityPlan, SparkAuthentication, ENGINE_RUNNER_COMPONENT_ID,
-    ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE, ENGINE_TRANSCRIPT_FORMAT,
-    ICEBERG_CONNECTOR_VERSION, SPARK_COMPONENT_VERSION, SPARK_PLAN_FORMAT,
+    CatalogCredentialSource, EngineExecutionPlan, InteroperabilityPlan, SparkAuthentication,
+    ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE,
+    ENGINE_TRANSCRIPT_FORMAT, ICEBERG_CONNECTOR_VERSION, SPARK_COMPONENT_VERSION,
+    SPARK_PLAN_FORMAT,
 };
 use serde_json::json;
 
@@ -31,25 +32,23 @@ fn derives_one_secret_free_stock_spark_plan_for_each_selected_catalog() {
             "policy01",
         )
         .unwrap();
+        let spark = plan.spark().unwrap();
         assert_eq!(plan.engine().version, SPARK_COMPONENT_VERSION);
         assert_eq!(plan.connector().version, ICEBERG_CONNECTOR_VERSION);
-        assert_eq!(plan.spark().format, SPARK_PLAN_FORMAT);
-        assert_eq!(
-            plan.spark().scenario.transcript_format,
-            ENGINE_TRANSCRIPT_FORMAT
-        );
-        assert_eq!(plan.spark().catalog.name, "bench");
-        assert_eq!(plan.spark().file_io.endpoint, "http://minio:9000");
-        assert_eq!(plan.spark().file_io.bucket, "warehouse");
+        assert_eq!(spark.format, SPARK_PLAN_FORMAT);
+        assert_eq!(spark.scenario.transcript_format, ENGINE_TRANSCRIPT_FORMAT);
+        assert_eq!(spark.catalog.name, "bench");
+        assert_eq!(spark.file_io.endpoint, "http://minio:9000");
+        assert_eq!(spark.file_io.bucket, "warehouse");
         assert_eq!(plan.object_store().bucket, "warehouse");
         assert!(plan.object_store().path_style_access);
         assert_eq!(
-            plan.spark().fixture.namespace,
+            spark.fixture.namespace,
             format!("cb_c201_{}_policy01", catalog.replace('-', "_"))
         );
-        assert_eq!(plan.spark().fixture.table, "events");
+        assert_eq!(spark.fixture.table, "events");
 
-        let encoded = serde_json::to_string(plan.spark()).unwrap();
+        let encoded = serde_json::to_string(spark).unwrap();
         for forbidden in [
             "CATALOG_BENCH_POLARIS_CLIENT_ID",
             "CATALOG_BENCH_POLARIS_CLIENT_SECRET",
@@ -62,6 +61,23 @@ fn derives_one_secret_free_stock_spark_plan_for_each_selected_catalog() {
 }
 
 #[test]
+fn execution_plan_exposes_engine_neutral_scenario_and_fixture_views() {
+    let (profile, scenario) = contracts();
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "neutral01",
+    )
+    .unwrap();
+    let EngineExecutionPlan::Spark(spark) = plan.execution();
+
+    assert_eq!(plan.fixture(), &spark.fixture);
+    assert_eq!(plan.scenario(), &spark.scenario);
+    assert_eq!(plan.spark(), Some(spark));
+}
+
+#[test]
 fn derives_only_profile_routing_and_standard_authentication_data() {
     let (profile, scenario) = contracts();
     let lakecat = InteroperabilityPlan::from_contracts(
@@ -71,14 +87,15 @@ fn derives_only_profile_routing_and_standard_authentication_data() {
         "routes01",
     )
     .unwrap();
-    assert_eq!(lakecat.spark().catalog.warehouse, None);
-    assert_eq!(lakecat.spark().catalog.prefix, None);
+    let lakecat_spark = lakecat.spark().unwrap();
+    assert_eq!(lakecat_spark.catalog.warehouse, None);
+    assert_eq!(lakecat_spark.catalog.prefix, None);
     assert_eq!(
-        lakecat.spark().fixture.requested_location.as_deref(),
+        lakecat_spark.fixture.requested_location.as_deref(),
         Some("s3://warehouse/lakecat/cb_c201_lakecat_routes01/events")
     );
     assert!(matches!(
-        lakecat.spark().catalog.authentication,
+        lakecat_spark.catalog.authentication,
         SparkAuthentication::Anonymous
     ));
     assert!(matches!(
@@ -93,11 +110,12 @@ fn derives_only_profile_routing_and_standard_authentication_data() {
         "routes01",
     )
     .unwrap();
-    assert_eq!(polaris.spark().catalog.warehouse.as_deref(), Some("bench"));
-    assert_eq!(polaris.spark().catalog.prefix.as_deref(), Some("bench"));
-    assert_eq!(polaris.spark().fixture.requested_location, None);
+    let polaris_spark = polaris.spark().unwrap();
+    assert_eq!(polaris_spark.catalog.warehouse.as_deref(), Some("bench"));
+    assert_eq!(polaris_spark.catalog.prefix.as_deref(), Some("bench"));
+    assert_eq!(polaris_spark.fixture.requested_location, None);
     assert!(matches!(
-        &polaris.spark().catalog.authentication,
+        &polaris_spark.catalog.authentication,
         SparkAuthentication::OAuth2ClientCredentials {
             oauth2_server_uri,
             scope
@@ -109,7 +127,7 @@ fn derives_only_profile_routing_and_standard_authentication_data() {
         CatalogCredentialSource::OAuth2ClientCredentials { .. }
     ));
     assert_eq!(
-        serde_json::to_value(&polaris.spark().catalog.authentication).unwrap(),
+        serde_json::to_value(&polaris_spark.catalog.authentication).unwrap(),
         json!({
             "kind": "oauth2-client-credentials",
             "oauth2_server_uri": "http://polaris:8181/api/catalog/v1/oauth/tokens",
@@ -124,11 +142,9 @@ fn derives_only_profile_routing_and_standard_authentication_data() {
         "routes01",
     )
     .unwrap();
-    assert_eq!(
-        lakekeeper.spark().catalog.warehouse.as_deref(),
-        Some("bench")
-    );
-    assert_eq!(lakekeeper.spark().catalog.prefix, None);
+    let lakekeeper_spark = lakekeeper.spark().unwrap();
+    assert_eq!(lakekeeper_spark.catalog.warehouse.as_deref(), Some("bench"));
+    assert_eq!(lakekeeper_spark.catalog.prefix, None);
 }
 
 #[test]

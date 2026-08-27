@@ -332,8 +332,11 @@ impl StagedSparkInput {
         let renderer = directory.path().join("runner.py");
         let plan_path = directory.path().join("plan.json");
         let local = directory.path().join("local");
-        let encoded = serde_json::to_vec(plan.spark())
-            .map_err(|_| EnginePreparationFailureKind::EncodePlan)?;
+        let spark = plan
+            .spark()
+            .ok_or(EnginePreparationFailureKind::ExecutionPlanMismatch)?;
+        let encoded =
+            serde_json::to_vec(spark).map_err(|_| EnginePreparationFailureKind::EncodePlan)?;
         std::fs::write(&plan_path, encoded).map_err(|_| EnginePreparationFailureKind::WritePlan)?;
         std::fs::write(&renderer, SPARK_RENDERER)
             .map_err(|_| EnginePreparationFailureKind::WriteRenderer)?;

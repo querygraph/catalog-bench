@@ -46,6 +46,7 @@ pub struct EngineCredentialFailure {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum EnginePreparationFailureKind {
+    ExecutionPlanMismatch,
     TemporaryDirectory,
     EncodePlan,
     WritePlan,

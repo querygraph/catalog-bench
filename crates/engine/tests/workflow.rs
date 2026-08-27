@@ -518,22 +518,19 @@ struct PassingFixture {
 impl PassingFixture {
     fn new(plan: &InteroperabilityPlan) -> Self {
         let location = plan
-            .spark()
-            .fixture
+            .fixture()
             .requested_location
             .clone()
             .unwrap_or_else(|| "s3://warehouse/engine-fixture/events".to_owned());
         let properties = plan
-            .spark()
-            .scenario
+            .scenario()
             .table
             .properties
             .keys()
             .map(|key| (key.clone(), EnginePropertyObservation::Match))
             .collect::<BTreeMap<_, _>>();
         let initial_fields = plan
-            .spark()
-            .scenario
+            .scenario()
             .table
             .schema
             .fields
@@ -546,7 +543,7 @@ impl PassingFixture {
             })
             .collect::<Vec<_>>();
         let mut evolved_fields = initial_fields.clone();
-        let evolved = &plan.spark().scenario.schema_evolution.field;
+        let evolved = &plan.scenario().schema_evolution.field;
         evolved_fields.push(EngineFieldObservation {
             id: 4,
             name: evolved.name.clone(),
@@ -780,7 +777,7 @@ fn runtime_event() -> EngineRuntimeObservation {
 }
 
 fn canonical_initial(plan: &InteroperabilityPlan) -> RowReadObservation {
-    let expected = &plan.spark().scenario.canonical_reads.initial;
+    let expected = &plan.scenario().canonical_reads.initial;
     RowReadObservation {
         rows: expected.rows,
         bytes: expected.bytes,
@@ -789,7 +786,7 @@ fn canonical_initial(plan: &InteroperabilityPlan) -> RowReadObservation {
 }
 
 fn canonical_evolved(plan: &InteroperabilityPlan) -> RowReadObservation {
-    let expected = &plan.spark().scenario.canonical_reads.after_evolution;
+    let expected = &plan.scenario().canonical_reads.after_evolution;
     RowReadObservation {
         rows: expected.rows,
         bytes: expected.bytes,

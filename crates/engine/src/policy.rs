@@ -307,6 +307,35 @@ pub struct SparkExecutionPlan {
     pub scenario: EngineScenarioParameters,
 }
 
+/// Renderer-specific execution policy selected by the runnable profile.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum EngineExecutionPlan {
+    Spark(SparkExecutionPlan),
+}
+
+impl EngineExecutionPlan {
+    #[must_use]
+    pub fn fixture(&self) -> &Fixture {
+        match self {
+            Self::Spark(plan) => &plan.fixture,
+        }
+    }
+
+    #[must_use]
+    pub fn scenario(&self) -> &EngineScenarioParameters {
+        match self {
+            Self::Spark(plan) => &plan.scenario,
+        }
+    }
+
+    #[must_use]
+    pub fn spark(&self) -> Option<&SparkExecutionPlan> {
+        match self {
+            Self::Spark(plan) => Some(plan),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ComponentIdentity {
     pub id: ComponentId,
@@ -387,7 +416,7 @@ pub struct InteroperabilityPlan {
     object_store: ObjectStorePlan,
     runtime_platform: RuntimePlatformExpectation,
     runtime_artifacts: Vec<RuntimeArtifactExpectation>,
-    spark: SparkExecutionPlan,
+    execution: EngineExecutionPlan,
 }
 
 impl InteroperabilityPlan {
@@ -475,7 +504,7 @@ impl InteroperabilityPlan {
                 architecture: profile.platform.architecture.clone(),
             },
             runtime_artifacts,
-            spark,
+            execution: EngineExecutionPlan::Spark(spark),
         })
     }
 
@@ -520,8 +549,23 @@ impl InteroperabilityPlan {
     }
 
     #[must_use]
-    pub fn spark(&self) -> &SparkExecutionPlan {
-        &self.spark
+    pub fn execution(&self) -> &EngineExecutionPlan {
+        &self.execution
+    }
+
+    #[must_use]
+    pub fn fixture(&self) -> &Fixture {
+        self.execution.fixture()
+    }
+
+    #[must_use]
+    pub fn scenario(&self) -> &EngineScenarioParameters {
+        self.execution.scenario()
+    }
+
+    #[must_use]
+    pub fn spark(&self) -> Option<&SparkExecutionPlan> {
+        self.execution.spark()
     }
 }
 

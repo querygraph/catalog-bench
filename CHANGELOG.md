@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C2-06 engine-neutral execution policy: store renderer-specific policy in the
+  `EngineExecutionPlan` algebraic data type and expose common fixture and
+  scenario views from `InteroperabilityPlan`. Catalog projection, independent
+  reconciliation, transcript construction and validation, sanitization, and
+  test support no longer reach through a Spark plan for shared semantics. The
+  Spark adapter explicitly selects and serializes only the Spark variant, with
+  a closed preparation-failure category for an adapter/plan mismatch. Existing
+  Spark plan and transcript JSON remain unchanged. This creates the typed
+  extension seam for later Flink and Trino variants; it does not claim either
+  runtime or result yet.
+
 - C2-06 engine-neutral process evidence: extract credential and preparation
   failures, terminal outcomes, runtime verification, event capture, exit code,
   and elapsed-time evidence from the Spark process adapter into a reusable

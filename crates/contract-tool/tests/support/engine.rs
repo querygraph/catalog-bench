@@ -379,28 +379,25 @@ fn table_observations(
     EngineTableObservation,
 ) {
     let location = plan
-        .spark()
-        .fixture
+        .fixture()
         .requested_location
         .clone()
         .unwrap_or_else(|| {
             format!(
                 "s3://warehouse/{}/{}",
-                plan.spark().fixture.namespace,
-                plan.spark().fixture.table
+                plan.fixture().namespace,
+                plan.fixture().table
             )
         });
     let properties = plan
-        .spark()
-        .scenario
+        .scenario()
         .table
         .properties
         .keys()
         .map(|key| (key.clone(), EnginePropertyObservation::Match))
         .collect::<BTreeMap<_, _>>();
     let initial_fields = plan
-        .spark()
-        .scenario
+        .scenario()
         .table
         .schema
         .fields
@@ -413,7 +410,7 @@ fn table_observations(
         })
         .collect::<Vec<_>>();
     let mut evolved_fields = initial_fields.clone();
-    let evolved = &plan.spark().scenario.schema_evolution.field;
+    let evolved = &plan.scenario().schema_evolution.field;
     let evolved_id = initial_fields.iter().map(|field| field.id).max().unwrap() + 1;
     evolved_fields.push(EngineFieldObservation {
         id: evolved_id,
@@ -445,9 +442,9 @@ fn table_observations(
 
 fn canonical_read(plan: &InteroperabilityPlan, evolved: bool) -> RowReadObservation {
     let expected = if evolved {
-        &plan.spark().scenario.canonical_reads.after_evolution
+        &plan.scenario().canonical_reads.after_evolution
     } else {
-        &plan.spark().scenario.canonical_reads.initial
+        &plan.scenario().canonical_reads.initial
     };
     RowReadObservation {
         rows: expected.rows,

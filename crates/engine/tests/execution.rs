@@ -64,6 +64,15 @@ fn engine_neutral_outcomes_preserve_the_closed_transcript_vocabulary() {
             }),
         ),
         (
+            EngineProcessOutcome::PreparationFailed {
+                kind: EnginePreparationFailureKind::ExecutionPlanMismatch,
+            },
+            json!({
+                "status": "preparation-failed",
+                "kind": "execution-plan-mismatch"
+            }),
+        ),
+        (
             EngineProcessOutcome::EngineFailed {
                 stage: EngineStage::ReadEvolved,
                 category: EngineFailureCategory::Data,

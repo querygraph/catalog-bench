@@ -200,7 +200,7 @@ impl RestEngineCatalog {
         session: CatalogSession,
         plan: &InteroperabilityPlan,
     ) -> Result<Self, EngineCatalogFailure> {
-        let fixture = &plan.spark().fixture;
+        let fixture = plan.fixture();
         let namespace = NamespaceIdentifier::single(fixture.namespace.clone())
             .map_err(|_| EngineCatalogFailure::route())?;
         let table_url = session
@@ -370,7 +370,7 @@ struct TableProjection {
 
 impl TableProjection {
     fn from_plan(plan: &InteroperabilityPlan) -> Self {
-        let scenario = &plan.spark().scenario;
+        let scenario = plan.scenario();
         let mut allowed_fields = scenario
             .table
             .schema

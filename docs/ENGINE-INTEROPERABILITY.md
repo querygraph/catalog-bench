@@ -115,6 +115,22 @@ refactor does not claim either runtime is implemented yet—the remaining runtim
 observation, plan, renderer, and artifact policies must still be generalized in
 separate verified units.
 
+## Reusable execution-policy boundary
+
+`InteroperabilityPlan` separates common semantics from renderer policy. Shared
+catalog projection, reconciliation, transcript, sanitization, and workflow code
+consume only its neutral `fixture` and `scenario` views. Renderer-specific
+settings live in the `EngineExecutionPlan` algebraic data type; its first variant
+contains the existing closed `SparkExecutionPlan`.
+
+The Spark process adapter must explicitly select that Spark variant before it
+can serialize `plan.json`. An adapter paired with the wrong execution-plan
+variant fails preparation with a closed `execution-plan-mismatch` category; it
+cannot reinterpret another engine's settings or panic. This refactor does not
+change the serialized Spark plan or transcript wire formats. Flink and Trino
+will add their own variants and adapters in later independently verified units,
+while reusing the same scenario, fixture, evidence, and classification policy.
+
 ## Independent evidence
 
 An engine reporting query success is necessary but insufficient. The runner also
@@ -454,6 +470,10 @@ to the reviewed live-run envelope above. It now also deterministically
 materializes result records, exact source copies, an immutable manifest, and the
 unranked correctness matrix from only that typed validated input. The remaining
 C2-05 work is the fresh optimized production run, review, and publication.
+C2-06 first extracts engine-neutral process evidence and then separates common
+scenario and fixture semantics from renderer-specific execution policy. Spark
+remains the only implemented execution-plan variant and production adapter;
+Flink and Trino are not yet claimed.
 
 The remaining independently committed units will:
 
