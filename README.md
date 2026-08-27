@@ -72,6 +72,11 @@ cargo run -p catalog-bench-contract --locked -- profile check-spark \
   --source-profile profiles/v1/current-2026-08-27.json \
   --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
   --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
+cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
+  --profile profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
+  --evidence-directory target/spark-evidence/<run-id> \
+  --fixture-id <run-id>
 ```
 
 See **[RESULTS.md](RESULTS.md)** for measured results.

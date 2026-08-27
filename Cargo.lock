@@ -1369,12 +1369,14 @@ dependencies = [
  "catalog-bench-commit",
  "catalog-bench-common",
  "catalog-bench-conformance",
+ "catalog-bench-engine",
  "clap",
  "csv",
  "serde",
  "serde_json",
  "sha2",
  "tempfile",
+ "tokio",
 ]
 
 [[package]]

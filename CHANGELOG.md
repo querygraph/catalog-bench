@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- C2-05 independent Spark evidence admission: add a contract-tool command that
+  derives the complete catalog file set from the runnable profile, accepts only
+  bounded regular files with canonical newline-terminated encoding, and
+  revalidates every transcript against the exact profile/scenario bytes and
+  shared fixture. Missing, extra, swapped, oversized, contract-drifted, or
+  sanitization-invalid evidence fails closed before result materialization; the
+  validated set exposes only deterministic pass, fail, and fixture-collision
+  counts to the forthcoming bundle importer.
+
 - C2-04 fresh four-catalog Spark launcher: add one command that rejects reused
   evidence, projects, and state volumes; builds the source-pinned production
   images under a stable Compose identity; verifies every materialized image and

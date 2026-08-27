@@ -330,6 +330,13 @@ cargo run -p catalog-bench-contract --locked -- schemas write
 # Deserialize and semantically validate one file or a directory tree.
 cargo run -p catalog-bench-contract --locked -- validate path/to/documents
 
+# Admit exactly one canonical stock-engine transcript per profile catalog.
+cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
+  --profile profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
+  --evidence-directory target/spark-evidence/<run-id> \
+  --fixture-id <run-id>
+
 # Detect drift between the broad candidate, audited image observations, and the
 # generated runnable contention profile.
 cargo run -p catalog-bench-contract --locked -- profile check-contention \

@@ -284,6 +284,24 @@ the complete run invalid. Raw transcripts remain outside public results until a
 separate importer revalidates their contracts and invariants and creates an
 immutable bundle.
 
+The independent admission command is the first half of that boundary:
+
+```sh
+cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
+  --profile profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
+  --evidence-directory target/spark-evidence/<run-id> \
+  --fixture-id <run-id>
+```
+
+It does not trust the launcher's catalog list or exit summary. Expected file
+names come from the profile's adapters; the directory may contain no missing,
+extra, nested, symlinked, empty, oversized, or noncanonical entry. Each decoded
+transcript must identify the catalog implied by its file name and the common
+fixture, bind the exact profile and scenario digests, reproduce all derived
+execution checks and classification, and pass the value-safety audit again.
+Only the resulting typed set is available to the result materializer.
+
 ## Phase 2 unit boundaries
 
 C2-01 owns only the common write/read/evolution contract. It intentionally does
@@ -295,6 +313,9 @@ C2-04 owns the stock Spark process, independent REST/MinIO reconciliation,
 cleanup, sanitized transcript boundary, and fresh four-catalog launcher. Its
 production artifact is admitted; live four-catalog evidence remains deliberately
 unpublished until complete runs and a publication bundle are validated.
+C2-05 first admits the exact raw transcript set independently; its next unit
+adds reviewed live-run metadata and deterministically materializes the result
+records and immutable bundle.
 
 The remaining independently committed units will:
 

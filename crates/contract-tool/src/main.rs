@@ -6,8 +6,9 @@ use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
     check_contention_profile, check_contention_result_bundle, check_historical_commit_bundle,
-    check_spark_profile, load_bundle, render_commit_matrix, write_contention_profile,
-    write_contention_result_bundle, write_historical_commit_bundle, write_spark_profile,
+    check_spark_profile, load_bundle, render_commit_matrix, validate_engine_evidence_set,
+    write_contention_profile, write_contention_result_bundle, write_historical_commit_bundle,
+    write_spark_profile,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -58,6 +59,11 @@ enum Command {
     ContentionImport {
         #[command(subcommand)]
         command: ContentionImportCommand,
+    },
+    /// Independently validate a complete stock-engine transcript set.
+    EngineEvidence {
+        #[command(subcommand)]
+        command: EngineEvidenceCommand,
     },
 }
 
@@ -152,6 +158,24 @@ enum ContentionImportCommand {
     },
 }
 
+#[derive(Debug, Subcommand)]
+enum EngineEvidenceCommand {
+    /// Bind one bounded transcript per profile catalog to exact contract bytes.
+    Validate(EngineEvidenceFiles),
+}
+
+#[derive(Debug, Args)]
+struct EngineEvidenceFiles {
+    #[arg(long)]
+    profile: PathBuf,
+    #[arg(long)]
+    scenario: PathBuf,
+    #[arg(long)]
+    evidence_directory: PathBuf,
+    #[arg(long)]
+    fixture_id: String,
+}
+
 fn main() -> ExitCode {
     match run(Cli::parse()) {
         Ok(()) => ExitCode::SUCCESS,
@@ -232,6 +256,31 @@ fn run(cli: Cli) -> Result<()> {
             ContentionImportCommand::Check { root } => {
                 let manifest = check_contention_result_bundle(&root)?;
                 validate_bundle(&manifest)
+            }
+        },
+        Command::EngineEvidence { command } => match command {
+            EngineEvidenceCommand::Validate(EngineEvidenceFiles {
+                profile,
+                scenario,
+                evidence_directory,
+                fixture_id,
+            }) => {
+                let evidence = validate_engine_evidence_set(
+                    &profile,
+                    &scenario,
+                    &evidence_directory,
+                    &fixture_id,
+                )?;
+                let summary = evidence.summary();
+                println!(
+                    "valid engine evidence {}: {} transcript(s), {} pass, {} fail, {} fixture collision",
+                    evidence_directory.display(),
+                    summary.total,
+                    summary.pass,
+                    summary.fail,
+                    summary.fixture_collision
+                );
+                Ok(())
             }
         },
     }

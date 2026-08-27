@@ -288,6 +288,26 @@ mismatched evidence makes the whole run incomplete with exit 1. These files are
 sanitized raw evidence, not public result records until the independent bundle
 import and validation unit accepts all four.
 
+Before any import, independently bind the exact raw directory back to its
+contracts and profile-derived catalog set:
+
+```sh
+run_id="spark_$(date -u +%m%d%H%M%S)"
+docker/run-spark-interoperability.sh "$run_id"
+cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
+  --profile profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+  --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
+  --evidence-directory "target/spark-evidence/$run_id" \
+  --fixture-id "$run_id"
+```
+
+Admission derives expected file names from the profile instead of accepting a
+caller-maintained catalog list. It requires exactly one bounded regular file per
+adapter, rejects all extras, checks canonical encoding and the common fixture,
+then replays each transcript's policy, execution checks, classification, and
+value-sanitization audit against the exact contract bytes. It performs no
+catalog or object-store operation and cannot turn raw files into a public claim.
+
 ## Same-table contention sweep
 
 The strict commit runner is the `bench` service. Its image resolves the exact

@@ -44,6 +44,7 @@ object_store = { version = "0.11", features = ["aws"] }
 catalog-bench-common = { path = "crates/common" }
 catalog-bench-conformance = { path = "crates/conformance" }
 catalog-bench-commit = { path = "crates/commit" }
+catalog-bench-engine = { path = "crates/engine" }
 
 # The cache/read benchmarks must build from a standalone checkout. Keep Sail's
 # object-store boundary immutable and aligned with the LakeCat 0.3.0 dependency
