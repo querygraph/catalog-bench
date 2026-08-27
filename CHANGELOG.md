@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C2-04 contract-only engine CLI: add the `catalog-bench-engine` executable with
+  only profile, scenario, catalog, fixture, and output inputs. It emits
+  newline-terminated sanitized evidence through the shared no-clobber publisher,
+  writes valid fail and collision transcripts before returning a nonzero status,
+  and never creates evidence for invalid contracts or execution policy.
+
 - C2-04 durable evidence publication seam: replace the duplicated contention
   and conformance output writers with one shared same-directory, synchronized,
   hard-link publication primitive. Concurrent writers can publish only one

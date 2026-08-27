@@ -209,6 +209,15 @@ optimized runner artifact to execute the common workflow in the declared
 same-Docker/shared-MinIO topology and the resulting transcript to enter a
 validated publication bundle.
 
+The `catalog-bench-engine` executable exposes only `--profile`, `--scenario`,
+`--catalog`, `--fixture-id`, and `--output`. It reads and hashes the exact
+contract bytes, uses environment variables only through the profile-selected
+credential names, and publishes one newline-terminated transcript without
+overwriting an existing path. A valid behavioral failure is written before the
+process returns status 2; a verified fixture collision is written before status
+3. Contract, policy, sanitization, encoding, or publication failures return
+status 1 and cannot create a claimed transcript.
+
 ## Phase 2 unit boundaries
 
 C2-01 owns only the common write/read/evolution contract. It intentionally does

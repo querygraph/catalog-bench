@@ -5,10 +5,16 @@ edition.workspace = true
 license.workspace = true
 description = "Profile-driven stock-engine Iceberg interoperability runner."
 
+[[bin]]
+name = "catalog-bench-engine"
+path = "src/main.rs"
+
 [dependencies]
+anyhow = { workspace = true }
 catalog-bench-commit = { workspace = true }
 catalog-bench-common = { workspace = true }
 catalog-bench-conformance = { workspace = true }
+clap = { workspace = true }
 libc = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }
