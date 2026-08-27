@@ -1383,6 +1383,8 @@ dependencies = [
  "catalog-bench-common",
  "serde",
  "serde_json",
+ "sha2",
+ "tempfile",
  "url",
 ]
 

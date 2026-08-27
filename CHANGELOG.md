@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- C2-04 runtime and engine-event safety boundary: verify Linux/ARM64 plus every
+  profile-pinned engine and connector file by streamed byte count and SHA-256
+  before credentials or network access, and decode Spark output through a
+  bounded, closed event protocol. The protocol trusts cleanup ownership only
+  after an ordered, flushed stock-engine absence observation; collision,
+  malformed, oversized, duplicated, out-of-order, post-terminal, and incomplete
+  streams remain explicit without persisting arbitrary engine logs or exception
+  text.
+
 - C2-04 typed engine execution policy: decode the canonical common workflow into
   closed algebraic data types, derive the selected Spark/connector/catalog and
   shared-MinIO bindings from the runnable profile, generate collision-safe

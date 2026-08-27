@@ -187,6 +187,28 @@ fn runtime_policy_requires_connector_bytes_inside_the_executed_engine() {
     )
     .unwrap_err();
     assert!(error.to_string().contains("duplicates"));
+
+    let mut traversing = profile.clone();
+    let engine = traversing
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == "spark-4.1")
+        .unwrap();
+    let catalog_bench_common::contract::RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut engine.artifact
+    else {
+        panic!("engine fixture must be an image");
+    };
+    embedded_artifacts[0].location = "image:/opt/spark/../private".to_owned();
+    let error = InteroperabilityPlan::from_contracts(
+        &traversing,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "runtime01",
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains("traversal-free"));
 }
 
 #[test]

@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet};
 use std::error::Error;
 use std::fmt::{Display, Formatter};
+use std::path::{Component as PathComponent, Path};
 
 use catalog_bench_common::contract::{
     parse_contract, AdapterRequestHandling, ArtifactReference, CatalogAdapter,
@@ -320,6 +321,12 @@ pub struct RuntimeArtifactExpectation {
     pub components: Vec<ComponentId>,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RuntimePlatformExpectation {
+    pub operating_system: String,
+    pub architecture: String,
+}
+
 #[derive(Clone, PartialEq, Eq)]
 pub enum CatalogCredentialSource {
     Anonymous,
@@ -360,6 +367,7 @@ pub struct InteroperabilityPlan {
     connector: ComponentIdentity,
     credential_source: CatalogCredentialSource,
     object_store: ObjectStorePlan,
+    runtime_platform: RuntimePlatformExpectation,
     runtime_artifacts: Vec<RuntimeArtifactExpectation>,
     spark: SparkExecutionPlan,
 }
@@ -431,6 +439,10 @@ impl InteroperabilityPlan {
             connector: connector_component.into(),
             credential_source,
             object_store,
+            runtime_platform: RuntimePlatformExpectation {
+                operating_system: profile.platform.operating_system.clone(),
+                architecture: profile.platform.architecture.clone(),
+            },
             runtime_artifacts,
             spark,
         })
@@ -459,6 +471,11 @@ impl InteroperabilityPlan {
     #[must_use]
     pub fn object_store(&self) -> &ObjectStorePlan {
         &self.object_store
+    }
+
+    #[must_use]
+    pub fn runtime_platform(&self) -> &RuntimePlatformExpectation {
+        &self.runtime_platform
     }
 
     #[must_use]
@@ -971,6 +988,14 @@ fn expectation(
     if !location.starts_with('/') {
         return Err(PolicyError::new(
             "runtime artifact image path must be absolute",
+        ));
+    }
+    let mut path_components = Path::new(location).components();
+    if !matches!(path_components.next(), Some(PathComponent::RootDir))
+        || !path_components.all(|component| matches!(component, PathComponent::Normal(_)))
+    {
+        return Err(PolicyError::new(
+            "runtime artifact image path must be absolute and traversal-free",
         ));
     }
     if artifact.digest.algorithm != DigestAlgorithm::Sha256 || !valid_sha256(&artifact.digest.value)
