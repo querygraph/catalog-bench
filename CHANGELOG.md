@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- Shared profile-driven catalog runtime: let performance runners reuse the
+  conformance suite's tested OAuth2, config negotiation, static/negotiated/
+  unprefixed routing, and namespace encoding through a clone-cheap session.
+  Standard JSON requests deliberately expose no arbitrary-header hook, retain
+  bearer tokens and response bodies only in non-serializable state, redact and
+  bound failure details, and either privately collect or allocation-efficiently
+  drain every response under the common one-MiB limit. Added anonymous, OAuth,
+  routing, credential-secrecy, no-idempotency-header, private-body, bad-config,
+  and oversized-response integration coverage without changing existing probe
+  behavior.
+
 - C1-08 contention benchmark core: add a typed, canonical scenario/profile
   boundary; balanced rotate-left conditioning and measured-round planning;
   collision-safe per-catalog/per-round fixtures; deterministic finite latency,

@@ -13,24 +13,24 @@ pub(crate) const DEFAULT_NAMESPACE_SEPARATOR: &str = "%1F";
 pub struct NamespaceIdentifier(Vec<String>);
 
 impl NamespaceIdentifier {
-    pub(crate) fn from_parts(parts: Vec<String>) -> Result<Self> {
+    pub fn from_parts(parts: Vec<String>) -> Result<Self> {
         if parts.is_empty() || parts.iter().any(|part| part.is_empty()) {
             bail!("namespace identifiers must contain nonempty parts");
         }
         Ok(Self(parts))
     }
 
-    pub(crate) fn single(part: String) -> Result<Self> {
+    pub fn single(part: String) -> Result<Self> {
         Self::from_parts(vec![part])
     }
 
-    pub(crate) fn child(&self, part: &str) -> Result<Self> {
+    pub fn child(&self, part: &str) -> Result<Self> {
         let mut parts = self.0.clone();
         parts.push(part.to_owned());
         Self::from_parts(parts)
     }
 
-    pub(crate) fn parts(&self) -> &[String] {
+    pub fn parts(&self) -> &[String] {
         &self.0
     }
 }
@@ -136,6 +136,7 @@ fn decode_separator(encoded: &str) -> Result<String> {
     Ok(decoded)
 }
 
+#[derive(Clone)]
 pub(crate) struct CatalogRoutes {
     base_url: String,
     prefix: Option<String>,

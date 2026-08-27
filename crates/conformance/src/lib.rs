@@ -12,6 +12,7 @@ mod idempotency;
 mod namespace;
 mod operation;
 mod routing;
+mod runtime;
 mod sanitize;
 mod spec;
 mod table;
@@ -27,6 +28,7 @@ pub use commit::*;
 pub use config::*;
 pub use evidence::*;
 pub use namespace::*;
+pub use runtime::*;
 pub use spec::*;
 pub use table::*;
 

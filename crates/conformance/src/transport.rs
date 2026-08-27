@@ -129,7 +129,7 @@ where
             };
             let status = response.status().as_u16();
             let bytes = match read_limited_body(response, MAXIMUM_RESPONSE_BYTES).await {
-                Ok(CollectedBody::Complete(bytes)) => bytes,
+                Ok(CollectedBody::Complete { bytes, .. }) => bytes,
                 Ok(CollectedBody::TooLarge { .. }) => {
                     return authentication_failure(
                         transcript(
@@ -355,7 +355,7 @@ async fn execute_json_request_with_context(
                 ),
             }),
         },
-        CollectedBody::Complete(bytes) => {
+        CollectedBody::Complete { bytes, .. } => {
             capture_complete_body(status, headers, bytes, capture.sensitive_values)
         }
     }
@@ -426,12 +426,24 @@ fn capture_complete_body(
     }
 }
 
-enum CollectedBody {
-    Complete(Vec<u8>),
+pub(crate) enum CollectedBody {
+    Complete { bytes: Vec<u8>, observed: usize },
     TooLarge { observed: usize },
 }
 
-async fn read_limited_body(mut response: Response, limit: usize) -> Result<CollectedBody> {
+pub(crate) async fn read_limited_body(response: Response, limit: usize) -> Result<CollectedBody> {
+    read_bounded_body(response, limit, true).await
+}
+
+pub(crate) async fn drain_limited_body(response: Response, limit: usize) -> Result<CollectedBody> {
+    read_bounded_body(response, limit, false).await
+}
+
+async fn read_bounded_body(
+    mut response: Response,
+    limit: usize,
+    retain: bool,
+) -> Result<CollectedBody> {
     if let Some(length) = response.content_length() {
         if length > limit as u64 {
             return Ok(CollectedBody::TooLarge {
@@ -440,14 +452,17 @@ async fn read_limited_body(mut response: Response, limit: usize) -> Result<Colle
         }
     }
     let mut bytes = Vec::new();
+    let mut observed = 0_usize;
     while let Some(chunk) = response.chunk().await? {
-        let observed = bytes.len().saturating_add(chunk.len());
+        observed = observed.saturating_add(chunk.len());
         if observed > limit {
             return Ok(CollectedBody::TooLarge { observed });
         }
-        bytes.extend_from_slice(&chunk);
+        if retain {
+            bytes.extend_from_slice(&chunk);
+        }
     }
-    Ok(CollectedBody::Complete(bytes))
+    Ok(CollectedBody::Complete { bytes, observed })
 }
 
 fn allowlisted_response_headers(
