@@ -137,7 +137,7 @@ async fn malformed_stream_after_owned_preflight_preserves_cleanup_authority() {
 async fn timeout_kills_the_child_but_retains_prior_fixture_ownership() {
     let runtime = TestRuntime::new("lakecat", &timeout_script(), true);
     let source = source_for(&runtime.plan);
-    let execution = SparkProcessExecutor::try_new(Duration::from_secs(1))
+    let execution = SparkProcessExecutor::try_new(Duration::from_secs(3))
         .unwrap()
         .execute_with_source(&runtime.plan, &runtime.verifier, &source)
         .await;
@@ -163,7 +163,7 @@ async fn timeout_terminates_descendants_in_the_isolated_process_group() {
         .await;
 
     assert!(matches!(execution.outcome, SparkProcessOutcome::TimedOut));
-    tokio::time::sleep(Duration::from_millis(100)).await;
+    tokio::time::sleep(Duration::from_millis(1_200)).await;
     assert!(!marker.exists(), "a timed-out descendant survived");
 }
 
@@ -367,7 +367,7 @@ fn malformed_script() -> Vec<u8> {
         &mut script,
         json!({"event": "fixture-preflight", "absent": true}),
     );
-    script.push_str("printf '%s\\n' 'CATALOG_BENCH_EVENT {malformed}'\nwhile :; do :; done\n");
+    script.push_str("printf '%s\\n' 'CATALOG_BENCH_EVENT {malformed}'\nsleep 30\n");
     script.into_bytes()
 }
 
@@ -393,10 +393,10 @@ fn descendant_script(marker: &std::path::Path) -> Vec<u8> {
         &mut script,
         json!({"event": "fixture-preflight", "absent": true}),
     );
-    script.push_str("parent=$$\n(\n  while kill -0 \"$parent\" 2>/dev/null; do :; done\n");
+    script.push_str("parent=$$\n(\n  while kill -0 \"$parent\" 2>/dev/null; do sleep 1; done\n");
     script.push_str("  printf survived > '");
     script.push_str(marker);
-    script.push_str("'\n) &\nwhile :; do :; done\n");
+    script.push_str("'\n) &\nsleep 30\n");
     script.into_bytes()
 }
 

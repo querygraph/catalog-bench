@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C2-04 concurrent process-test stability: replace the remaining malformed and
+  descendant timeout fixtures' CPU-saturating shell loops with sleeping waits.
+  The descendant test still proves isolated process-group termination, while a
+  three-second timeout gives the separate ownership fixture an explicit process
+  scheduling margin when Rust runs tests in parallel.
+
 - C2-04 independent engine REST evidence: bind the negotiated catalog session
   to the profile-derived fixture, load the Spark-created table through the
   standard Iceberg REST route, and project only bounded structural state plus
