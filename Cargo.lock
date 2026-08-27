@@ -1380,14 +1380,18 @@ dependencies = [
 name = "catalog-bench-engine"
 version = "0.1.0"
 dependencies = [
+ "catalog-bench-commit",
  "catalog-bench-common",
+ "catalog-bench-conformance",
  "libc",
+ "reqwest",
  "serde",
  "serde_json",
  "sha2",
  "tempfile",
  "tokio",
  "url",
+ "uuid",
  "zeroize",
 ]
 

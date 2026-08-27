@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- C2-04 independent engine REST evidence: bind the negotiated catalog session
+  to the profile-derived fixture, load the Spark-created table through the
+  standard Iceberg REST route, and project only bounded structural state plus
+  scenario-owned properties. The parser validates format, UUID, table root,
+  metadata pointer, schema IDs and fields, snapshot uniqueness, and property
+  mismatches without retaining arbitrary response values; cleanup uses only
+  standard table and namespace deletes with `purgeRequested=false` and fixed,
+  secret-free failure categories.
+
 - C2-04 process timeout test stability: exercise descendant termination with a
   sleeping child instead of an unbounded busy loop, preserving the production
   timeout and process-group behavior while avoiding scheduler starvation in

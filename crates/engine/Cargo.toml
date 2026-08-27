@@ -6,12 +6,16 @@ license.workspace = true
 description = "Profile-driven stock-engine Iceberg interoperability runner."
 
 [dependencies]
+catalog-bench-commit = { workspace = true }
 catalog-bench-common = { workspace = true }
+catalog-bench-conformance = { workspace = true }
 libc = { workspace = true }
+reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 sha2 = { workspace = true }
 tempfile = { workspace = true }
 tokio = { workspace = true }
 url = { workspace = true }
+uuid = { workspace = true }
 zeroize = { workspace = true }

@@ -4,11 +4,16 @@
 //! closed, secret-free plan and may translate that behavior only into the
 //! selected engine's stock public syntax.
 
+mod catalog;
 mod policy;
 mod process;
 mod protocol;
 mod runtime;
 
+pub use catalog::{
+    EngineCatalog, EngineCatalogFailure, EngineCatalogFailureKind, EngineCatalogTable,
+    EngineCleanupReceipt, EngineTableLoad, RestEngineCatalog, ENGINE_PROPERTY_MISMATCH,
+};
 pub use policy::*;
 pub use process::*;
 pub use protocol::*;
