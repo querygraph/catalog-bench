@@ -227,6 +227,34 @@ runtime verification can open credential or process effects. The current
 candidate profile remains draft and contains no such materialized JAR; this is
 an admission policy, not evidence that the artifact has been built or run.
 
+### Flink process-effect boundary
+
+`FlinkProcessExecutor` follows the same ordered authority model as the Spark
+adapter. It first asks `RuntimeVerifier` to hash and classify every artifact in
+the selected profile. A mismatch returns `runtime-rejected` before creating a
+program file, reading a credential, or attempting a spawn. It then renders the
+typed Flink program into a private temporary directory; renderer rejection has
+its own closed `render-plan` preparation category. Only after successful
+staging does it read the exact profile-selected object-store and optional OAuth
+environment variables into zeroizing wrappers.
+
+The child command is fixed to the verified stock CLI and source-bound artifact:
+`/opt/flink/bin/flink run --class org.querygraph.catalogbench.flink.Runner
+/opt/catalog-bench/catalog-bench-flink-runner.jar --program <private-path>`.
+The program path contains no secret. The child receives a cleared environment,
+an allowlist of public runtime variables, isolated `HOME` and `TMPDIR`, standard
+AWS variables, and—only for OAuth profiles—the generic engine client ID and
+secret variables. Profile-specific source variable names are not forwarded.
+Arguments, process environment, and temporary files are never persisted.
+
+After spawn, Flink and Spark share one process implementation for isolated
+process groups, timeout termination, bounded stdout draining, protocol decode,
+exit mapping, and cleanup authority. `StockFlinkRunner` exposes that adapter to
+the unchanged engine workflow. Fake-CLI tests prove the effect ordering,
+argument shape, staged envelope, secret boundary, and fixture-collision mapping.
+They do not exercise Apache Flink and are not publishable engine evidence. The
+source-bound Java child remains the next required unit.
+
 ## Reusable runtime-identity boundary
 
 Runtime-ready evidence contains a neutral engine version, an exact sorted map of

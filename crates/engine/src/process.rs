@@ -18,12 +18,14 @@ use crate::execution::{
     EnginePreparationFailureKind, EngineProcessExecution, EngineProcessOutcome,
 };
 use crate::{
-    CatalogCredentialSource, EngineEventCapture, EngineEventDecoder, InteroperabilityPlan,
-    RuntimeVerifier, ENGINE_OAUTH_CLIENT_ID_ENV, ENGINE_OAUTH_CLIENT_SECRET_ENV,
+    CatalogCredentialSource, EngineEventCapture, EngineEventDecoder, FlinkRenderedProgram,
+    InteroperabilityPlan, RuntimeVerifier, ENGINE_OAUTH_CLIENT_ID_ENV,
+    ENGINE_OAUTH_CLIENT_SECRET_ENV, FLINK_CLI_LOCATION, FLINK_RUNNER_LOCATION,
     SPARK_SUBMIT_LOCATION,
 };
 
 const SPARK_RENDERER: &[u8] = include_bytes!("../spark/runner.py");
+const FLINK_RUNNER_MAIN_CLASS: &str = "org.querygraph.catalogbench.flink.Runner";
 const DEFAULT_PROCESS_TIMEOUT: Duration = Duration::from_secs(5 * 60);
 const PROCESS_DRAIN_TIMEOUT: Duration = Duration::from_secs(5);
 const PROCESS_KILL_TIMEOUT: Duration = Duration::from_secs(5);
@@ -93,13 +95,13 @@ impl Drop for SecretValue {
     }
 }
 
-struct SparkSecrets {
+struct EngineSecrets {
     object_store_access_key: SecretValue,
     object_store_secret_key: SecretValue,
     catalog_oauth: Option<(SecretValue, SecretValue)>,
 }
 
-impl SparkSecrets {
+impl EngineSecrets {
     fn load(
         plan: &InteroperabilityPlan,
         source: &(impl SecretSource + ?Sized),
@@ -136,10 +138,10 @@ impl SparkSecrets {
     }
 }
 
-impl Debug for SparkSecrets {
+impl Debug for EngineSecrets {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         formatter
-            .debug_struct("SparkSecrets")
+            .debug_struct("EngineSecrets")
             .field("object_store_access_key", &"<redacted>")
             .field("object_store_secret_key", &"<redacted>")
             .field(
@@ -234,7 +236,7 @@ impl SparkProcessExecutor {
                 );
             }
         };
-        let secrets = match SparkSecrets::load(plan, secrets) {
+        let secrets = match EngineSecrets::load(plan, secrets) {
             Ok(secrets) => secrets,
             Err(failure) => {
                 return EngineProcessExecution::before_process(
@@ -249,62 +251,70 @@ impl SparkProcessExecutor {
         let spawned = command.spawn();
         drop(command);
         drop(secrets);
-        let mut child = match spawned {
-            Ok(child) => child,
-            Err(_) => {
-                return EngineProcessExecution::before_process(
-                    runtime,
-                    EngineProcessOutcome::SpawnFailed {},
-                );
-            }
-        };
-        let started = Instant::now();
-        let Some(stdout) = child.stdout.take() else {
-            terminate_child(&mut child).await;
-            return EngineProcessExecution {
+        collect_child(runtime, spawned, self.process_timeout).await
+    }
+}
+
+async fn collect_child(
+    runtime: crate::RuntimeVerification,
+    spawned: std::io::Result<Child>,
+    process_timeout: Duration,
+) -> EngineProcessExecution {
+    let mut child = match spawned {
+        Ok(child) => child,
+        Err(_) => {
+            return EngineProcessExecution::before_process(
                 runtime,
-                outcome: EngineProcessOutcome::StdoutFailed {},
-                capture: None,
-                exit_code: None,
-                process_elapsed_micros: Some(elapsed_micros(started)),
-            };
-        };
-
-        let decoder = Arc::new(Mutex::new(EngineEventDecoder::new()));
-        let reader_signal = Arc::new(ReaderSignal::default());
-        let reader = tokio::spawn(drain_stdout(
-            stdout,
-            Arc::clone(&decoder),
-            Arc::clone(&reader_signal),
-        ));
-        let wait = tokio::select! {
-            result = child.wait() => match result {
-                Ok(status) => WaitObservation::Exited(status),
-                Err(_) => WaitObservation::Failed,
-            },
-            issue = reader_signal.notified() => WaitObservation::ReaderStopped(issue),
-            () = tokio::time::sleep(self.process_timeout) => WaitObservation::TimedOut,
-        };
-        if !matches!(wait, WaitObservation::Exited(_)) {
-            terminate_child(&mut child).await;
+                EngineProcessOutcome::SpawnFailed {},
+            );
         }
-        let stdout_failed = finish_reader(reader).await;
-        let capture = finish_decoder(decoder);
-        let exit_code = match &wait {
-            WaitObservation::Exited(status) => status.code(),
-            WaitObservation::TimedOut
-            | WaitObservation::Failed
-            | WaitObservation::ReaderStopped(_) => None,
-        };
-        let outcome = classify_process(wait, stdout_failed, &capture);
-
-        EngineProcessExecution {
+    };
+    let started = Instant::now();
+    let Some(stdout) = child.stdout.take() else {
+        terminate_child(&mut child).await;
+        return EngineProcessExecution {
             runtime,
-            outcome,
-            capture: Some(capture),
-            exit_code,
+            outcome: EngineProcessOutcome::StdoutFailed {},
+            capture: None,
+            exit_code: None,
             process_elapsed_micros: Some(elapsed_micros(started)),
+        };
+    };
+
+    let decoder = Arc::new(Mutex::new(EngineEventDecoder::new()));
+    let reader_signal = Arc::new(ReaderSignal::default());
+    let reader = tokio::spawn(drain_stdout(
+        stdout,
+        Arc::clone(&decoder),
+        Arc::clone(&reader_signal),
+    ));
+    let wait = tokio::select! {
+        result = child.wait() => match result {
+            Ok(status) => WaitObservation::Exited(status),
+            Err(_) => WaitObservation::Failed,
+        },
+        issue = reader_signal.notified() => WaitObservation::ReaderStopped(issue),
+        () = tokio::time::sleep(process_timeout) => WaitObservation::TimedOut,
+    };
+    if !matches!(wait, WaitObservation::Exited(_)) {
+        terminate_child(&mut child).await;
+    }
+    let stdout_failed = finish_reader(reader).await;
+    let capture = finish_decoder(decoder);
+    let exit_code = match &wait {
+        WaitObservation::Exited(status) => status.code(),
+        WaitObservation::TimedOut | WaitObservation::Failed | WaitObservation::ReaderStopped(_) => {
+            None
         }
+    };
+    let outcome = classify_process(wait, stdout_failed, &capture);
+
+    EngineProcessExecution {
+        runtime,
+        outcome,
+        capture: Some(capture),
+        exit_code,
+        process_elapsed_micros: Some(elapsed_micros(started)),
     }
 }
 
@@ -313,6 +323,125 @@ impl Default for SparkProcessExecutor {
         Self {
             process_timeout: DEFAULT_PROCESS_TIMEOUT,
         }
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FlinkProcessConfigurationError;
+
+impl std::fmt::Display for FlinkProcessConfigurationError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str("Flink process timeout must be positive")
+    }
+}
+
+impl std::error::Error for FlinkProcessConfigurationError {}
+
+#[derive(Debug, Clone)]
+pub struct FlinkProcessExecutor {
+    process_timeout: Duration,
+}
+
+impl FlinkProcessExecutor {
+    pub fn try_new(process_timeout: Duration) -> Result<Self, FlinkProcessConfigurationError> {
+        if process_timeout.is_zero() {
+            return Err(FlinkProcessConfigurationError);
+        }
+        Ok(Self { process_timeout })
+    }
+
+    pub async fn execute(
+        &self,
+        plan: &InteroperabilityPlan,
+        verifier: &RuntimeVerifier,
+    ) -> EngineProcessExecution {
+        self.execute_with_source(plan, verifier, &ProcessEnvironment)
+            .await
+    }
+
+    pub async fn execute_with_source(
+        &self,
+        plan: &InteroperabilityPlan,
+        verifier: &RuntimeVerifier,
+        secrets: &(impl SecretSource + ?Sized),
+    ) -> EngineProcessExecution {
+        let runtime = verifier.verify(plan);
+        if !runtime.passed() {
+            return EngineProcessExecution::before_process(
+                runtime,
+                EngineProcessOutcome::RuntimeRejected {},
+            );
+        }
+        let staged = match StagedFlinkInput::create(plan) {
+            Ok(staged) => staged,
+            Err(kind) => {
+                return EngineProcessExecution::before_process(
+                    runtime,
+                    EngineProcessOutcome::PreparationFailed { kind },
+                );
+            }
+        };
+        let secrets = match EngineSecrets::load(plan, secrets) {
+            Ok(secrets) => secrets,
+            Err(failure) => {
+                return EngineProcessExecution::before_process(
+                    runtime,
+                    EngineProcessOutcome::CredentialRejected { failure },
+                );
+            }
+        };
+        let mut command = Command::new(verifier.artifact_path(FLINK_CLI_LOCATION));
+        configure_flink_command(
+            &mut command,
+            plan,
+            &staged,
+            &secrets,
+            verifier.artifact_path(FLINK_RUNNER_LOCATION),
+        );
+        let spawned = command.spawn();
+        drop(command);
+        drop(secrets);
+        collect_child(runtime, spawned, self.process_timeout).await
+    }
+}
+
+impl Default for FlinkProcessExecutor {
+    fn default() -> Self {
+        Self {
+            process_timeout: DEFAULT_PROCESS_TIMEOUT,
+        }
+    }
+}
+
+struct StagedFlinkInput {
+    directory: TempDir,
+    program: PathBuf,
+}
+
+impl StagedFlinkInput {
+    fn create(plan: &InteroperabilityPlan) -> Result<Self, EnginePreparationFailureKind> {
+        let directory = TempDirBuilder::new()
+            .prefix("catalog-bench-flink-")
+            .tempdir()
+            .map_err(|_| EnginePreparationFailureKind::TemporaryDirectory)?;
+        let flink = plan
+            .flink()
+            .ok_or(EnginePreparationFailureKind::ExecutionPlanMismatch)?;
+        let program = FlinkRenderedProgram::render(flink)
+            .map_err(|_| EnginePreparationFailureKind::RenderPlan)?;
+        let encoded =
+            serde_json::to_vec(&program).map_err(|_| EnginePreparationFailureKind::EncodePlan)?;
+        let program_path = directory.path().join("program.json");
+        std::fs::write(&program_path, encoded)
+            .map_err(|_| EnginePreparationFailureKind::WritePlan)?;
+        Ok(Self {
+            directory,
+            program: program_path,
+        })
+    }
+
+    fn root(&self) -> &Path {
+        self.directory.path()
     }
 }
 
@@ -359,18 +488,54 @@ fn configure_command(
     command: &mut Command,
     plan: &InteroperabilityPlan,
     staged: &StagedSparkInput,
-    secrets: &SparkSecrets,
+    secrets: &EngineSecrets,
 ) {
     command
         .arg(&staged.renderer)
         .arg("--plan")
-        .arg(&staged.plan)
+        .arg(&staged.plan);
+    configure_child(command, plan, staged.root(), secrets);
+    if std::env::var_os("SPARK_HOME").is_none() {
+        command.env("SPARK_HOME", "/opt/spark");
+    }
+    command
+        .env("SPARK_LOCAL_DIRS", &staged.local)
+        .env("PYTHONDONTWRITEBYTECODE", "1");
+}
+
+fn configure_flink_command(
+    command: &mut Command,
+    plan: &InteroperabilityPlan,
+    staged: &StagedFlinkInput,
+    secrets: &EngineSecrets,
+    runner: PathBuf,
+) {
+    command
+        .arg("run")
+        .arg("--class")
+        .arg(FLINK_RUNNER_MAIN_CLASS)
+        .arg(runner)
+        .arg("--program")
+        .arg(&staged.program);
+    configure_child(command, plan, staged.root(), secrets);
+    if std::env::var_os("FLINK_HOME").is_none() {
+        command.env("FLINK_HOME", "/opt/flink");
+    }
+}
+
+fn configure_child(
+    command: &mut Command,
+    plan: &InteroperabilityPlan,
+    root: &Path,
+    secrets: &EngineSecrets,
+) {
+    command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .kill_on_drop(true)
         .env_clear()
-        .current_dir(staged.root());
+        .current_dir(root);
     #[cfg(unix)]
     command.process_group(0);
     for name in PUBLIC_ENVIRONMENT_ALLOWLIST {
@@ -381,14 +546,9 @@ fn configure_command(
     if std::env::var_os("PATH").is_none() {
         command.env("PATH", FALLBACK_PATH);
     }
-    if std::env::var_os("SPARK_HOME").is_none() {
-        command.env("SPARK_HOME", "/opt/spark");
-    }
     command
-        .env("HOME", staged.root())
-        .env("TMPDIR", staged.root())
-        .env("SPARK_LOCAL_DIRS", &staged.local)
-        .env("PYTHONDONTWRITEBYTECODE", "1")
+        .env("HOME", root)
+        .env("TMPDIR", root)
         .env(
             "AWS_ACCESS_KEY_ID",
             secrets.object_store_access_key.expose(),

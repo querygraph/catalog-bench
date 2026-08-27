@@ -17,7 +17,9 @@ mod runtime;
 mod transcript;
 mod workflow;
 
-pub use adapters::{RestEngineCatalogConnector, SharedObjectStoreConnector, StockSparkRunner};
+pub use adapters::{
+    RestEngineCatalogConnector, SharedObjectStoreConnector, StockFlinkRunner, StockSparkRunner,
+};
 pub use catalog::{
     EngineCatalog, EngineCatalogFailure, EngineCatalogFailureKind, EngineCatalogTable,
     EngineCleanupReceipt, EngineResourcePresence, EngineTableLoad, RestEngineCatalog,

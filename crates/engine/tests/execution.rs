@@ -73,6 +73,15 @@ fn engine_neutral_outcomes_preserve_the_closed_transcript_vocabulary() {
             }),
         ),
         (
+            EngineProcessOutcome::PreparationFailed {
+                kind: EnginePreparationFailureKind::RenderPlan,
+            },
+            json!({
+                "status": "preparation-failed",
+                "kind": "render-plan"
+            }),
+        ),
+        (
             EngineProcessOutcome::EngineFailed {
                 stage: EngineStage::ReadEvolved,
                 category: EngineFailureCategory::Data,

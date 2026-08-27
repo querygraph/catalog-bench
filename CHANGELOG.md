@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- C2-06 Flink process adapter: add `FlinkProcessExecutor` and
+  `StockFlinkRunner` over the existing engine-neutral process evidence and
+  workflow boundary. The adapter verifies all profile artifacts before staging
+  or secret reads, renders one closed program JSON file, invokes the fixed
+  source-bound child JAR through the stock `/opt/flink/bin/flink run` CLI, maps
+  only allowlisted public environment plus zeroized child-only credentials, and
+  reuses Spark's process-group timeout, bounded stdout drain, event decoder, and
+  terminal classifier. Add a closed `render-plan` preparation failure rather
+  than collapsing renderer rejection into encoding. Separate fake-CLI tests
+  prove exact arguments, staged oracle presence, secret absence, OAuth/S3 child
+  environment, collision classification, pre-effect runtime rejection, and
+  timeout validation. This unit does not yet provide the Java child JAR or
+  execute Flink, so it creates no runtime result.
+
 - C2-06 closed Flink child envelope: replace freely paired statement-purpose
   records with a tagged `FlinkOperation` ADT whose read variants carry their
   exact row/byte/SHA-256 oracles. Extend the rendered program with a bounded

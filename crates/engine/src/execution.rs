@@ -47,6 +47,7 @@ pub struct EngineCredentialFailure {
 #[serde(rename_all = "kebab-case")]
 pub enum EnginePreparationFailureKind {
     ExecutionPlanMismatch,
+    RenderPlan,
     TemporaryDirectory,
     EncodePlan,
     WritePlan,

@@ -10,8 +10,8 @@ use catalog_bench_conformance::{
 use crate::{
     EngineCatalogConnection, EngineCatalogConnectionFailure, EngineCatalogConnectionFailureKind,
     EngineCatalogConnector, EngineCatalogNegotiationEvidence, EngineObjectStoreConnector,
-    EngineProcessExecution, EngineRunner, InteroperabilityPlan, RestEngineCatalog, RuntimeVerifier,
-    SecretRead, SecretSource, SparkProcessExecutor,
+    EngineProcessExecution, EngineRunner, FlinkProcessExecutor, InteroperabilityPlan,
+    RestEngineCatalog, RuntimeVerifier, SecretRead, SecretSource, SparkProcessExecutor,
 };
 
 const CATALOG_REQUEST_TIMEOUT_MS: u64 = 30_000;
@@ -57,6 +57,57 @@ impl<S> Clone for StockSparkRunner<S> {
 }
 
 impl<S> EngineRunner for StockSparkRunner<S>
+where
+    S: SecretSource + Send + Sync + 'static,
+{
+    async fn execute(&self, plan: &InteroperabilityPlan) -> EngineProcessExecution {
+        self.executor
+            .execute_with_source(plan, &self.verifier, self.secrets.as_ref())
+            .await
+    }
+}
+
+pub struct StockFlinkRunner<S> {
+    executor: FlinkProcessExecutor,
+    verifier: RuntimeVerifier,
+    secrets: Arc<S>,
+}
+
+impl<S> StockFlinkRunner<S> {
+    #[must_use]
+    pub fn production(secrets: Arc<S>) -> Self {
+        Self {
+            executor: FlinkProcessExecutor::default(),
+            verifier: RuntimeVerifier::host(),
+            secrets,
+        }
+    }
+
+    #[must_use]
+    pub fn from_parts(
+        executor: FlinkProcessExecutor,
+        verifier: RuntimeVerifier,
+        secrets: Arc<S>,
+    ) -> Self {
+        Self {
+            executor,
+            verifier,
+            secrets,
+        }
+    }
+}
+
+impl<S> Clone for StockFlinkRunner<S> {
+    fn clone(&self) -> Self {
+        Self {
+            executor: self.executor.clone(),
+            verifier: self.verifier.clone(),
+            secrets: Arc::clone(&self.secrets),
+        }
+    }
+}
+
+impl<S> EngineRunner for StockFlinkRunner<S>
 where
     S: SecretSource + Send + Sync + 'static,
 {
