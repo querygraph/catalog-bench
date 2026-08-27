@@ -22,6 +22,7 @@ pub const SPARK_COMPONENT_NAME: &str = "Apache Spark";
 pub const SPARK_COMPONENT_VERSION: &str = "4.1.3";
 pub const ICEBERG_CONNECTOR_NAME: &str = "Apache Iceberg Java engine runtimes";
 pub const ICEBERG_CONNECTOR_VERSION: &str = "1.11.0";
+pub const SPARK_SUBMIT_LOCATION: &str = "/opt/spark/bin/spark-submit";
 pub const S3_ACCESS_KEY_ENV: &str = "CATALOG_BENCH_S3_ACCESS_KEY_ID";
 pub const S3_SECRET_KEY_ENV: &str = "CATALOG_BENCH_S3_SECRET_ACCESS_KEY";
 pub const ENGINE_OAUTH_CLIENT_ID_ENV: &str = "CATALOG_BENCH_ENGINE_CLIENT_ID";
@@ -447,6 +448,7 @@ impl InteroperabilityPlan {
             scenario: parameters,
         };
         let runtime_artifacts = runtime_artifacts(engine_component, connector_component)?;
+        validate_execution_artifact(&runtime_artifacts, &engine_component.id)?;
 
         Ok(Self {
             catalog: catalog_component.into(),
@@ -502,6 +504,30 @@ impl InteroperabilityPlan {
     pub fn spark(&self) -> &SparkExecutionPlan {
         &self.spark
     }
+}
+
+fn validate_execution_artifact(
+    artifacts: &[RuntimeArtifactExpectation],
+    engine: &ComponentId,
+) -> Result<(), PolicyError> {
+    let matches = artifacts
+        .iter()
+        .filter(|artifact| artifact.location == SPARK_SUBMIT_LOCATION)
+        .collect::<Vec<_>>();
+    let [artifact] = matches.as_slice() else {
+        return Err(PolicyError::new(format!(
+            "engine runtime must contain exactly one `{SPARK_SUBMIT_LOCATION}` artifact"
+        )));
+    };
+    if artifact.media_type != "application/x-shellscript"
+        || artifact.bytes == 0
+        || artifact.components.as_slice() != std::slice::from_ref(engine)
+    {
+        return Err(PolicyError::new(
+            "Spark submission artifact must be a nonempty engine-owned shell script",
+        ));
+    }
+    Ok(())
 }
 
 fn validate_canonical_scenario(scenario: &Scenario) -> Result<(), PolicyError> {

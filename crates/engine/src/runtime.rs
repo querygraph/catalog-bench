@@ -151,11 +151,15 @@ impl RuntimeVerifier {
         }
     }
 
+    pub(crate) fn artifact_path(&self, location: &str) -> PathBuf {
+        self.root.join(location.trim_start_matches('/'))
+    }
+
     fn verify_artifact(
         &self,
         expectation: &RuntimeArtifactExpectation,
     ) -> RuntimeArtifactObservation {
-        let path = self.root.join(expectation.location.trim_start_matches('/'));
+        let path = self.artifact_path(&expectation.location);
         let outcome = observe_file(&path, expectation);
         RuntimeArtifactObservation {
             location: expectation.location.clone(),

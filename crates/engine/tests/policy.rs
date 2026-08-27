@@ -217,6 +217,30 @@ fn runtime_policy_requires_connector_bytes_inside_the_executed_engine() {
     )
     .unwrap_err();
     assert!(error.to_string().contains("traversal-free"));
+
+    let mut moved_submit = profile.clone();
+    let engine = moved_submit
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == "spark-4.1")
+        .unwrap();
+    let catalog_bench_common::contract::RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut engine.artifact
+    else {
+        panic!("engine fixture must be an image");
+    };
+    embedded_artifacts[0].location = "image:/opt/alternate/spark-submit".to_owned();
+    let error = InteroperabilityPlan::from_contracts(
+        &moved_submit,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "runtime01",
+    )
+    .unwrap_err();
+    assert!(error
+        .to_string()
+        .contains("exactly one `/opt/spark/bin/spark-submit`"));
 }
 
 #[test]

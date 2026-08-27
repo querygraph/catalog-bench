@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C2-04 Spark process and secret boundary: launch only the exact profile-pinned
+  `spark-submit` file after its platform, byte count, and SHA-256 verification;
+  embed the catalog-neutral renderer in the Rust executable; and stage its
+  secret-free plan in a private temporary directory. The executor clears the
+  inherited environment, restores only a runtime allowlist, maps object-store
+  and optional OAuth credentials into child-only standard variables after
+  verification, zeroizes its secret buffers, discards stderr, bounds and
+  decodes stdout, and immediately terminates the isolated process group on a
+  hard timeout or protocol violation. It reports only closed process categories
+  while retaining trusted cleanup ownership after timeout or protocol failure.
+
 - C2-04 stock Spark renderer: add one catalog-neutral PySpark implementation of
   the common workflow using the pinned Iceberg `SparkCatalog`, REST properties,
   `S3FileIO`, DataFrameWriterV2 appends, SQL DDL, metadata tables, and public

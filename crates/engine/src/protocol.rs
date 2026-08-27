@@ -250,6 +250,10 @@ impl EngineEventDecoder {
         }
     }
 
+    pub(crate) fn failed(&self) -> bool {
+        self.failure.is_some()
+    }
+
     #[must_use]
     pub fn finish(mut self) -> EngineEventCapture {
         if self.failure.is_none() && !self.line.is_empty() {
