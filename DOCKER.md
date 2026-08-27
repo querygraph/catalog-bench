@@ -245,12 +245,12 @@ Verify the deterministic profile and the actual local image bytes:
 
 ```sh
 cargo run -p catalog-bench-contract --locked -- profile check-spark \
-  --source-profile profiles/v1/current-2026-08-26.json \
+  --source-profile profiles/v1/current-2026-08-27.json \
   --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
   --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
 
 docker/verify-profile-artifacts.sh \
-  profiles/v1/current-2026-08-26.json \
+  profiles/v1/current-2026-08-27.json \
   materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
   profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
 
@@ -262,6 +262,31 @@ capabilities, `no-new-privileges`, read-only contract mounts, and only tmpfs plu
 the evidence directory writable. It uses `catalog-bench-net` and shared MinIO,
 the same execution boundary as the catalogs. The version smoke proves the stock
 Spark binary and revision; it is not an interoperability result.
+
+Run the common workflow against the four Phase 2 catalogs from one fresh
+run-owned topology:
+
+```sh
+docker/run-spark-interoperability.sh "spark_$(date -u +%m%d%H%M%S)"
+```
+
+The launcher refuses an existing evidence directory, Compose project, or any of
+the four run-scoped state volumes. The shared fresh-run boundary releases the
+fixed benchmark network only from recognized catalog-bench projects and never
+deletes prior named volumes. Builds use the stable `catalog-bench` Compose
+identity; an independent verifier then compares all five selected local images,
+their Linux/ARM64 platform and labels, and every embedded executable or JAR to
+the runnable profile before any run-owned service starts.
+
+`spark-engine` waits for LakeCat, Polaris, Gravitino, and Lakekeeper's complete
+client-facing readiness chains. The launcher invokes that same immutable
+runner/Spark image once per catalog, sequentially, in the same Compose project
+and against the same MinIO process. A behavioral failure does not prevent later
+catalogs from running. Exit 0 requires a `pass` transcript, exit 2 requires
+`fail`, and exit 3 requires `fixture-collision`; missing, unreadable, or
+mismatched evidence makes the whole run incomplete with exit 1. These files are
+sanitized raw evidence, not public result records until the independent bundle
+import and validation unit accepts all four.
 
 ## Same-table contention sweep
 

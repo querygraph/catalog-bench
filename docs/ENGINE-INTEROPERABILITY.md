@@ -188,9 +188,9 @@ drift. The reusable materialization policy also rejects a copied JAR or runner
 when its media type, SHA-256, or byte count differs between donor and executed
 image, so a test-only equality assertion is not the trust boundary.
 
-This unit proves runtime identity and readiness only. It does not claim that any
-catalog passed the common workflow; only the next runner and result bundle may
-make that claim.
+The materialization proves runtime identity only. The runner and launcher below
+can produce raw workflow evidence, but neither this profile nor an unbundled
+transcript claims that a catalog passed the common workflow.
 
 ## Evidence runner boundary
 
@@ -251,6 +251,39 @@ actual running path before credentials, network access, or Spark startup. The
 transcript records the harness source revision from that component rather than
 mistaking the Rust build-toolchain image for the executed runner.
 
+## Fresh four-catalog execution
+
+The canonical production invocation is:
+
+```sh
+docker/run-spark-interoperability.sh "spark_$(date -u +%m%d%H%M%S)"
+```
+
+The launcher admits one new run ID and one new evidence directory, then uses the
+same shared fresh-state policy as the production contention sweep. It rejects
+reused state volumes or Compose projects, refuses unknown users of the fixed
+benchmark network, and preserves all prior volumes. Local source-built images
+are built under the stable `catalog-bench` project identity and every profile
+image, label, platform, executable, and JAR is independently verified before
+the run project starts.
+
+One run-owned Compose project starts LakeCat, Polaris, Gravitino, Lakekeeper,
+their private state stores and readiness helpers, the source-built MinIO server,
+and the immutable combined runner/Spark image. The four catalog workflows run
+sequentially to avoid turning a correctness oracle into an undeclared resource
+competition, but they retain the same catalog processes, Docker network, and
+MinIO process. Each fixture name is already catalog-qualified by policy, so the
+same run ID remains both comparable and collision-safe across catalogs. Nessie
+is intentionally absent because it is not part of this Phase 2 requirement.
+
+The launcher attempts every catalog after an ordinary behavioral failure. It
+accepts runner status 0 only with a `pass` transcript, status 2 only with a
+`fail` transcript, and status 3 only with `fixture-collision`. An unexpected
+status, missing transcript, unreadable JSON, or classification mismatch makes
+the complete run invalid. Raw transcripts remain outside public results until a
+separate importer revalidates their contracts and invariants and creates an
+immutable bundle.
+
 ## Phase 2 unit boundaries
 
 C2-01 owns only the common write/read/evolution contract. It intentionally does
@@ -259,18 +292,18 @@ not claim a runtime result.
 C2-02 owns the reusable scenario-profile derivation and fail-closed image policy.
 C2-03 owns the Spark/Iceberg production images and runnable profile above.
 C2-04 owns the stock Spark process, independent REST/MinIO reconciliation,
-cleanup, and sanitized transcript boundary. Its production artifact and live
-four-catalog evidence remain deliberately unpublished until their immutable
-identities and complete runs are validated.
+cleanup, sanitized transcript boundary, and fresh four-catalog launcher. Its
+production artifact is admitted; live four-catalog evidence remains deliberately
+unpublished until complete runs and a publication bundle are validated.
 
 The remaining independently committed units will:
 
-1. implement one profile/scenario-driven Spark runner and sanitized transcript;
-2. execute Spark against LakeCat, Polaris, Gravitino, and Lakekeeper;
-3. add Flink and Trino renderers against the same scenario;
-4. define a separate deterministic conflict scenario with an honest
+1. execute Spark against LakeCat, Polaris, Gravitino, and Lakekeeper and import
+   the complete raw transcripts into a validated result bundle;
+2. add Flink and Trino renderers against the same scenario;
+3. define a separate deterministic conflict scenario with an honest
    synchronization boundary; and
-5. define OpenLineage correlation only for engines whose pinned integrations can
+4. define OpenLineage correlation only for engines whose pinned integrations can
    emit and identify the required events.
 
 Each unit updates the changelog, runs focused tests plus contract/schema checks,

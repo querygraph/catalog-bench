@@ -121,9 +121,17 @@ and independent REST/MinIO evidence requirements are documented in
 [Stock Engine Interoperability](docs/ENGINE-INTEROPERABILITY.md). Spark is the
 first runtime implementation: its exact Spark 4.1.3, Scala 2.13, Iceberg 1.11.0,
 AWS/S3FileIO, JVM, image, and in-image JAR identities are now materialized in a
-runnable Linux ARM64 profile. That is runtime evidence, not yet a workflow
-result. Flink and Trino must execute the same scenario rather than maintaining
-engine-specific definitions of success.
+runnable Linux ARM64 profile. The optimized runner and fresh four-catalog
+launcher are implemented as well:
+
+```sh
+docker/run-spark-interoperability.sh "spark_$(date -u +%m%d%H%M%S)"
+```
+
+That is implementation and runtime evidence, not yet a checked-in workflow
+result; public catalog claims require a complete validated result bundle. Flink
+and Trino must execute the same scenario rather than maintaining engine-specific
+definitions of success.
 
 ## The commit benchmark
 

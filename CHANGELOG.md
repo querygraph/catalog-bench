@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- C2-04 fresh four-catalog Spark launcher: add one command that rejects reused
+  evidence, projects, and state volumes; builds the source-pinned production
+  images under a stable Compose identity; verifies every materialized image and
+  embedded artifact; and then attempts the common stock-Spark workflow against
+  LakeCat, Polaris, Gravitino, and Lakekeeper in one run-owned Docker topology
+  with shared MinIO. Exit status is checked against each immutable transcript's
+  classification, all four catalogs are attempted after behavioral failures,
+  and the prior contention launcher now shares the same fail-closed network and
+  fresh-state boundary without deleting historical volumes.
+
 - C2-04 immutable source-bound Spark runtime: materialize the exact optimized
   `catalog-bench-engine` donor and its byte-identical copy inside the combined
   Spark image, bind both to public revision `5e10f36e…`, and advance the runnable

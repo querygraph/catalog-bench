@@ -1,4 +1,4 @@
-use std::{fs, path::Path};
+use std::{fs, path::Path, process::Command};
 
 const GRAVITINO_ENVIRONMENT: &[(&str, &str)] = &[
     ("GRAVITINO_ICEBERG_REST_CATALOG_BACKEND", "jdbc"),
@@ -653,8 +653,8 @@ fn clean_contention_run_rejects_reused_persistent_state() {
     }
     assert!(!overlay.contains("external: true"));
 
-    let launcher = fs::read_to_string(root.join("docker/run-contention.sh"))
-        .expect("read contention launcher");
+    let fresh_run = fs::read_to_string(root.join("docker/fresh-run-lib.sh"))
+        .expect("read shared fresh-run library");
     for required in [
         "^[a-z0-9][a-z0-9_]{0,23}$",
         "docker-compose.clean.yml",
@@ -662,13 +662,35 @@ fn clean_contention_run_rejects_reused_persistent_state() {
         "refusing reused state volume",
         "refusing reused Compose project",
         "docker ps --all --filter \"$network_filter\"",
-        "refusing to detach unmanaged containers",
+        "com.docker.compose.project.config_files",
+        "--profile '*' config --services",
+        "refusing to detach unmanaged container",
         "refusing unknown Compose project",
+        "refusing unknown Compose service",
+        "refusing Compose project from another source",
         "CATALOG_BENCH_RUN_ID=\"$project\"",
         "down --remove-orphans",
         "remaining_containers=",
         "refusing to build with containers still attached to catalog-bench-net",
-        "\"${base_compose[@]}\" build --provenance=false minio lakecat bench",
+    ] {
+        assert!(
+            fresh_run.contains(required),
+            "shared fresh-state boundary must contain `{required}`"
+        );
+    }
+    assert!(
+        !fresh_run.contains("down --volumes")
+            && !fresh_run.contains("down -v")
+            && !fresh_run.contains("docker volume rm"),
+        "the shared fresh-state boundary must preserve prior run volumes"
+    );
+
+    let launcher = fs::read_to_string(root.join("docker/run-contention.sh"))
+        .expect("read contention launcher");
+    for required in [
+        "source \"$script_dir/fresh-run-lib.sh\"",
+        "catalog_bench_prepare_fresh_project \"$repository_root\" \"$run_id\"",
+        "build --provenance=false minio lakecat bench",
         "docker/verify-contention-artifacts.sh",
         "profiles/v1/contention-2026-08-27.json",
         "--profile /contracts/profiles/v1/contention-2026-08-27.json",
@@ -680,9 +702,115 @@ fn clean_contention_run_rejects_reused_persistent_state() {
         );
     }
     assert!(
-        !launcher.contains("down --volumes") && !launcher.contains("down -v"),
-        "the launcher must preserve prior run volumes"
+        !launcher.contains("network_filter=") && !launcher.contains("docker volume inspect"),
+        "the contention launcher must reuse rather than duplicate fresh-state policy"
     );
+}
+
+#[test]
+fn fresh_run_id_policy_is_executable_and_closed() {
+    let library = repository_root().join("docker/fresh-run-lib.sh");
+    for accepted in ["a", "run_123", "aaaaaaaaaaaaaaaaaaaaaaaa"] {
+        assert!(
+            run_id_policy(&library, accepted),
+            "run ID `{accepted}` should be accepted"
+        );
+    }
+    for rejected in [
+        "",
+        "Run_123",
+        "run-123",
+        "_run",
+        "aaaaaaaaaaaaaaaaaaaaaaaaa",
+    ] {
+        assert!(
+            !run_id_policy(&library, rejected),
+            "run ID `{rejected}` should be rejected"
+        );
+    }
+}
+
+#[test]
+fn spark_launcher_runs_all_four_catalogs_in_one_fresh_topology() {
+    let root = repository_root();
+    let launcher = fs::read_to_string(root.join("docker/run-spark-interoperability.sh"))
+        .expect("read Spark interoperability launcher");
+
+    for required in [
+        "source \"$script_dir/fresh-run-lib.sh\"",
+        "catalogs=(lakecat polaris gravitino lakekeeper)",
+        "COMPOSE_PROFILES=\"lakekeeper,polaris,gravitino,spark\"",
+        "catalog_bench_prepare_fresh_project \"$repository_root\" \"$run_id\"",
+        "refusing reused Spark evidence directory",
+        "build --provenance=false minio lakecat",
+        "\"$script_dir/build-spark-images.sh\"",
+        "\"$script_dir/verify-profile-artifacts.sh\"",
+        "profiles/v1/current-2026-08-27.json",
+        "materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json",
+        "for catalog in \"${catalogs[@]}\"",
+        "catalog_bench_clean_compose \"$repository_root\" run --rm spark-engine",
+        "--scenario /contracts/scenarios/v1/engine.iceberg.write-read-evolution.json",
+        "--catalog \"$catalog\"",
+        "--fixture-id \"$run_id\"",
+        "host_output=\"$evidence_dir/$run_id/$catalog.json\"",
+        "jq -er '.execution.classification'",
+        "0) expected_classification=\"pass\"",
+        "2) expected_classification=\"fail\"",
+        "3) expected_classification=\"fixture-collision\"",
+        "all four stock-Spark workflows passed",
+    ] {
+        assert!(
+            launcher.contains(required),
+            "Spark launcher must contain `{required}`"
+        );
+    }
+    for forbidden in [
+        "nessie",
+        "docker run",
+        "cargo run",
+        "--no-deps",
+        "network_filter=",
+        "docker volume inspect",
+    ] {
+        assert!(
+            !launcher.contains(forbidden),
+            "Spark launcher must not contain `{forbidden}`"
+        );
+    }
+
+    let compose =
+        fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
+    let engine = compose_service(&compose, "spark-engine");
+    for readiness in [
+        "lakecat-ready",
+        "polaris-ready",
+        "gravitino-ready",
+        "lakekeeper-ready",
+    ] {
+        assert!(
+            engine.contains(&format!(
+                "{readiness}:\n        condition: service_completed_successfully"
+            )),
+            "Spark engine must wait for `{readiness}`"
+        );
+    }
+}
+
+#[test]
+fn evidence_launchers_and_shared_library_parse_as_bash() {
+    let root = repository_root();
+    for relative in [
+        "docker/fresh-run-lib.sh",
+        "docker/run-contention.sh",
+        "docker/run-spark-interoperability.sh",
+    ] {
+        let status = Command::new("bash")
+            .arg("-n")
+            .arg(root.join(relative))
+            .status()
+            .expect("execute bash syntax check");
+        assert!(status.success(), "{relative} must parse as Bash");
+    }
 }
 
 #[test]
@@ -720,6 +848,21 @@ fn repository_root() -> &'static Path {
         .parent()
         .and_then(Path::parent)
         .expect("common crate is nested two levels below the repository root")
+}
+
+fn run_id_policy(library: &Path, run_id: &str) -> bool {
+    Command::new("bash")
+        .args([
+            "-c",
+            "source \"$1\"; catalog_bench_validate_run_id \"$2\"",
+            "catalog-bench-run-id-test",
+        ])
+        .arg(library)
+        .arg(run_id)
+        .output()
+        .expect("execute fresh-run ID policy")
+        .status
+        .success()
 }
 
 fn compose_service(compose: &str, name: &str) -> String {

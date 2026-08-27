@@ -561,6 +561,15 @@ services:
       CATALOG_BENCH_S3_SECRET_ACCESS_KEY: password
       CATALOG_BENCH_POLARIS_CLIENT_ID: root
       CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret
+    depends_on:
+      lakecat-ready:
+        condition: service_completed_successfully
+      polaris-ready:
+        condition: service_completed_successfully
+      gravitino-ready:
+        condition: service_completed_successfully
+      lakekeeper-ready:
+        condition: service_completed_successfully
 
 volumes:
   gravitino-data:
