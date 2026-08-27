@@ -23,11 +23,12 @@ pub struct TableRoot {
 }
 
 impl TableRoot {
-    pub fn from_snapshot(
-        snapshot: &TableSnapshot,
+    pub fn new(
+        location: &str,
+        metadata_location: &str,
         expected_bucket: &str,
     ) -> Result<Self, ObjectStoreFailure> {
-        let (bucket, path) = parse_s3_location(&snapshot.location, "table location")?;
+        let (bucket, path) = parse_s3_location(location, "table location")?;
         if bucket != expected_bucket {
             return Err(ObjectStoreFailure::configuration(format!(
                 "table location uses bucket `{bucket}` instead of `{expected_bucket}`"
@@ -39,12 +40,23 @@ impl TableRoot {
             ));
         }
         let root = Self {
-            location: snapshot.location.clone(),
+            location: location.to_owned(),
             bucket,
             path,
         };
-        root.metadata_path(&snapshot.metadata_location)?;
+        root.metadata_path(metadata_location)?;
         Ok(root)
+    }
+
+    pub fn from_snapshot(
+        snapshot: &TableSnapshot,
+        expected_bucket: &str,
+    ) -> Result<Self, ObjectStoreFailure> {
+        Self::new(
+            &snapshot.location,
+            &snapshot.metadata_location,
+            expected_bucket,
+        )
     }
 
     #[must_use]
@@ -96,6 +108,30 @@ pub struct ObjectAuditSnapshot {
     pub metadata_bytes: u64,
     pub referenced_metadata_location: String,
     pub referenced_metadata_exists: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TableObjectAuditSnapshot {
+    pub table_root: String,
+    pub metadata_objects: u64,
+    pub metadata_bytes: u64,
+    pub parquet_objects: u64,
+    pub parquet_bytes: u64,
+    pub referenced_metadata_location: String,
+    pub referenced_metadata_exists: bool,
+}
+
+impl From<TableObjectAuditSnapshot> for ObjectAuditSnapshot {
+    fn from(audit: TableObjectAuditSnapshot) -> Self {
+        Self {
+            table_root: audit.table_root,
+            metadata_objects: audit.metadata_objects,
+            metadata_bytes: audit.metadata_bytes,
+            referenced_metadata_location: audit.referenced_metadata_location,
+            referenced_metadata_exists: audit.referenced_metadata_exists,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -152,6 +188,54 @@ pub trait MetadataStore: Clone + Send + Sync + 'static {
     ) -> impl Future<Output = Result<ObjectAuditSnapshot, ObjectStoreFailure>> + Send;
 }
 
+pub trait TableObjectStore: Clone + Send + Sync + 'static {
+    fn audit_table(
+        &self,
+        root: &TableRoot,
+        metadata_location: &str,
+    ) -> impl Future<Output = Result<TableObjectAuditSnapshot, ObjectStoreFailure>> + Send;
+}
+
+pub trait ObjectStoreConnectionPolicy {
+    fn endpoint(&self) -> &str;
+    fn bucket(&self) -> &str;
+    fn region(&self) -> &str;
+    fn allow_http(&self) -> bool;
+    fn path_style_access(&self) -> bool;
+    fn access_key_env(&self) -> &str;
+    fn secret_key_env(&self) -> &str;
+}
+
+impl ObjectStoreConnectionPolicy for ObjectStorePolicy {
+    fn endpoint(&self) -> &str {
+        &self.endpoint
+    }
+
+    fn bucket(&self) -> &str {
+        &self.bucket
+    }
+
+    fn region(&self) -> &str {
+        &self.region
+    }
+
+    fn allow_http(&self) -> bool {
+        self.allow_http
+    }
+
+    fn path_style_access(&self) -> bool {
+        self.path_style_access
+    }
+
+    fn access_key_env(&self) -> &str {
+        &self.access_key_env
+    }
+
+    fn secret_key_env(&self) -> &str {
+        &self.secret_key_env
+    }
+}
+
 #[derive(Clone)]
 pub struct ObjectStoreAuditor {
     store: Arc<dyn ObjectStore>,
@@ -164,30 +248,38 @@ impl ObjectStoreAuditor {
     where
         F: Fn(&str) -> Option<String>,
     {
-        let access_key = getenv(&policy.access_key_env)
+        Self::from_connection(policy, getenv)
+    }
+
+    pub fn from_connection<P, F>(policy: &P, getenv: F) -> Result<Self, ObjectStoreFailure>
+    where
+        P: ObjectStoreConnectionPolicy,
+        F: Fn(&str) -> Option<String>,
+    {
+        let access_key = getenv(policy.access_key_env())
             .filter(|value| !value.is_empty())
             .ok_or_else(|| {
                 ObjectStoreFailure::authentication(format!(
                     "environment variable `{}` is not set or is empty",
-                    policy.access_key_env
+                    policy.access_key_env()
                 ))
             })?;
-        let secret_key = getenv(&policy.secret_key_env)
+        let secret_key = getenv(policy.secret_key_env())
             .filter(|value| !value.is_empty())
             .ok_or_else(|| {
                 ObjectStoreFailure::authentication(format!(
                     "environment variable `{}` is not set or is empty",
-                    policy.secret_key_env
+                    policy.secret_key_env()
                 ))
             })?;
         let store = AmazonS3Builder::new()
-            .with_endpoint(&policy.endpoint)
+            .with_endpoint(policy.endpoint())
             .with_access_key_id(&access_key)
             .with_secret_access_key(&secret_key)
-            .with_region(&policy.region)
-            .with_bucket_name(&policy.bucket)
-            .with_allow_http(policy.allow_http)
-            .with_virtual_hosted_style_request(!policy.path_style_access)
+            .with_region(policy.region())
+            .with_bucket_name(policy.bucket())
+            .with_allow_http(policy.allow_http())
+            .with_virtual_hosted_style_request(!policy.path_style_access())
             .build()
             .map_err(|error| {
                 ObjectStoreFailure::configuration(redact_and_bound(
@@ -197,7 +289,7 @@ impl ObjectStoreAuditor {
             })?;
         Ok(Self {
             store: Arc::new(store),
-            bucket: policy.bucket.clone(),
+            bucket: policy.bucket().to_owned(),
             sensitive_values: Arc::new(vec![access_key, secret_key]),
         })
     }
@@ -220,6 +312,22 @@ impl MetadataStore for ObjectStoreAuditor {
         let root = root.clone();
         let metadata_location = metadata_location.to_owned();
         async move {
+            self.audit_table(&root, &metadata_location)
+                .await
+                .map(Into::into)
+        }
+    }
+}
+
+impl TableObjectStore for ObjectStoreAuditor {
+    fn audit_table(
+        &self,
+        root: &TableRoot,
+        metadata_location: &str,
+    ) -> impl Future<Output = Result<TableObjectAuditSnapshot, ObjectStoreFailure>> + Send {
+        let root = root.clone();
+        let metadata_location = metadata_location.to_owned();
+        async move {
             if root.bucket != self.bucket {
                 return Err(ObjectStoreFailure::configuration(format!(
                     "table root bucket `{}` does not match auditor bucket `{}`",
@@ -228,30 +336,43 @@ impl MetadataStore for ObjectStoreAuditor {
             }
             let referenced = root.metadata_path(&metadata_location)?;
             let mut objects = self.store.list(Some(&root.path));
-            let mut count = 0_u64;
-            let mut bytes = 0_u64;
+            let mut metadata_objects = 0_u64;
+            let mut metadata_bytes = 0_u64;
+            let mut parquet_objects = 0_u64;
+            let mut parquet_bytes = 0_u64;
             let mut referenced_metadata_exists = false;
             while let Some(object) = objects.try_next().await.map_err(|error| {
                 ObjectStoreFailure::listing(redact_and_bound(
-                    &format!("failed to list table metadata: {error}"),
+                    &format!("failed to list table objects: {error}"),
                     &self.sensitive_values,
                 ))
             })? {
-                if !object.location.as_ref().ends_with(".metadata.json") {
-                    continue;
+                let size = u64::try_from(object.size).map_err(|_| {
+                    ObjectStoreFailure::listing("object byte count cannot be represented as u64")
+                })?;
+                if object.location.as_ref().ends_with(".metadata.json") {
+                    metadata_objects = metadata_objects.checked_add(1).ok_or_else(|| {
+                        ObjectStoreFailure::listing("metadata object count overflowed u64")
+                    })?;
+                    metadata_bytes = metadata_bytes.checked_add(size).ok_or_else(|| {
+                        ObjectStoreFailure::listing("metadata byte count overflowed u64")
+                    })?;
+                    referenced_metadata_exists |= object.location == referenced;
+                } else if object.location.as_ref().ends_with(".parquet") {
+                    parquet_objects = parquet_objects.checked_add(1).ok_or_else(|| {
+                        ObjectStoreFailure::listing("Parquet object count overflowed u64")
+                    })?;
+                    parquet_bytes = parquet_bytes.checked_add(size).ok_or_else(|| {
+                        ObjectStoreFailure::listing("Parquet byte count overflowed u64")
+                    })?;
                 }
-                count = count.checked_add(1).ok_or_else(|| {
-                    ObjectStoreFailure::listing("metadata object count overflowed u64")
-                })?;
-                bytes = bytes.checked_add(object.size as u64).ok_or_else(|| {
-                    ObjectStoreFailure::listing("metadata byte count overflowed u64")
-                })?;
-                referenced_metadata_exists |= object.location == referenced;
             }
-            Ok(ObjectAuditSnapshot {
+            Ok(TableObjectAuditSnapshot {
                 table_root: root.location,
-                metadata_objects: count,
-                metadata_bytes: bytes,
+                metadata_objects,
+                metadata_bytes,
+                parquet_objects,
+                parquet_bytes,
                 referenced_metadata_location: metadata_location,
                 referenced_metadata_exists,
             })

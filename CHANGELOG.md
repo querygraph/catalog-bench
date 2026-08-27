@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-04 reusable table-object audit: generalize the contention benchmark's
+  returned-table-root validator and MinIO auditor without changing its existing
+  metadata-only transcript shape. A separate engine-facing audit now counts
+  metadata JSON and Parquet objects and bytes recursively, proves the exact
+  catalog-referenced metadata pointer exists under the returned root, and
+  excludes sibling tables plus unrelated Iceberg objects.
+
 - C2-04 Spark process and secret boundary: launch only the exact profile-pinned
   `spark-submit` file after its platform, byte count, and SHA-256 verification;
   embed the catalog-neutral renderer in the Rust executable; and stage its
