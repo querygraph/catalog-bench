@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C1-08 contention round executor: run collision-safe setup, baseline MinIO
+  audit, exact warmup and sequential phases, and barrier-synchronized timed
+  writers through injected catalog and object-store ports. Every request that
+  starts before the deadline now completes and is classified; measured phases
+  reuse the setup UUID without hidden table loads; accepted identities cross
+  the evidence boundary only as SHA-256 values; final table state and metadata
+  growth fail closed; and every post-mutation exit performs verified non-purging
+  cleanup. Separate workflow tests cover a passing contended round, no-mutation
+  fixture collisions, ambiguous setup cleanup, concurrent request errors,
+  failed object audits, metadata undercount, identity redaction, and the absence
+  of setup I/O from measured latency.
+
 - C1-08 REST and object-store ports: bind each run-owned fixture to precomputed
   standard Iceberg REST routes outside measured commit latency; require a
   committed format-v2 table snapshot; send only `assert-table-uuid` and one

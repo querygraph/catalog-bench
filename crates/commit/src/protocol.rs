@@ -16,8 +16,7 @@ use url::Url;
 use crate::model::{RequestErrorKind, RequestIdentity, RequestOutcome, SanitizedRequestError};
 use crate::policy::ContentionFixture;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(deny_unknown_fields)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TableSnapshot {
     pub format_version: u8,
     pub table_uuid: String,
@@ -132,6 +131,12 @@ impl From<CatalogRequestFailure> for CatalogFailure {
 /// Catalog effects required by one contention fixture. The fixture binding
 /// keeps route construction out of measured commit latency.
 pub trait CatalogPort: Clone + Send + Sync + 'static {
+    /// Location requested when the fixture table is created, if the adapter
+    /// binds one. This is immutable fixture configuration, not a network read.
+    fn requested_location(&self) -> Option<&str> {
+        None
+    }
+
     fn namespace_presence(
         &self,
     ) -> impl Future<Output = std::result::Result<PresenceObservation, CatalogFailure>> + Send;
@@ -295,6 +300,10 @@ impl RestCatalogFixture {
 }
 
 impl CatalogPort for RestCatalogFixture {
+    fn requested_location(&self) -> Option<&str> {
+        RestCatalogFixture::requested_location(self)
+    }
+
     fn namespace_presence(
         &self,
     ) -> impl Future<Output = std::result::Result<PresenceObservation, CatalogFailure>> + Send {

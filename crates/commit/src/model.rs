@@ -277,6 +277,30 @@ impl RequestLedger {
         };
         Ok((phase, self.accepted_requests))
     }
+
+    pub fn try_merge(&mut self, mut other: Self) -> Result<(), ModelError> {
+        if !self.seen_requests.is_disjoint(&other.seen_requests) {
+            return Err(ModelError::DuplicateRequestIdentity);
+        }
+        for (error, count) in &other.error_counts {
+            self.error_counts
+                .get(error)
+                .copied()
+                .unwrap_or_default()
+                .checked_add(*count)
+                .ok_or(ModelError::CountOverflow)?;
+        }
+        self.accepted_requests.try_extend(other.accepted_requests)?;
+        self.seen_requests.extend(other.seen_requests);
+        self.all.append(&mut other.all);
+        self.accepted.append(&mut other.accepted);
+        self.conflicts.append(&mut other.conflicts);
+        self.errors.append(&mut other.errors);
+        for (error, count) in other.error_counts {
+            *self.error_counts.entry(error).or_default() += count;
+        }
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -114,6 +114,63 @@ fn accepted_sets_reject_cross_phase_identity_reuse() {
 }
 
 #[test]
+fn ledgers_merge_without_losing_writer_outcomes() {
+    let accepted = RequestIdentity::new("catalog/round/concurrent/0/1").unwrap();
+    let conflict = RequestIdentity::new("catalog/round/concurrent/1/1").unwrap();
+    let mut first = RequestLedger::default();
+    first
+        .record(
+            &accepted,
+            Duration::from_millis(1),
+            RequestOutcome::Accepted,
+        )
+        .unwrap();
+    let mut second = RequestLedger::default();
+    second
+        .record(
+            &conflict,
+            Duration::from_millis(2),
+            RequestOutcome::Conflict,
+        )
+        .unwrap();
+
+    first.try_merge(second).unwrap();
+    let (phase, accepted_requests) = first.finish(Duration::from_secs(1)).unwrap();
+    assert_eq!(phase.counts.attempts, 2);
+    assert_eq!(phase.counts.accepted, 1);
+    assert_eq!(phase.counts.conflicts, 1);
+    assert_eq!(phase.latency_ms.all.unwrap().samples, 2);
+    assert!(accepted_requests.contains_value(accepted.expose_for_request()));
+}
+
+#[test]
+fn ledgers_reject_cross_writer_identity_reuse_atomically() {
+    let identity = RequestIdentity::new("catalog/round/concurrent/shared").unwrap();
+    let mut first = RequestLedger::default();
+    first
+        .record(
+            &identity,
+            Duration::from_millis(1),
+            RequestOutcome::Accepted,
+        )
+        .unwrap();
+    let mut second = RequestLedger::default();
+    second
+        .record(
+            &identity,
+            Duration::from_millis(2),
+            RequestOutcome::Conflict,
+        )
+        .unwrap();
+
+    assert!(first.try_merge(second).is_err());
+    let (phase, _) = first.finish(Duration::from_secs(1)).unwrap();
+    assert_eq!(phase.counts.attempts, 1);
+    assert_eq!(phase.counts.accepted, 1);
+    assert_eq!(phase.counts.conflicts, 0);
+}
+
+#[test]
 fn final_state_and_object_growth_fail_closed() {
     let accepted = AcceptedRequests::default();
     let attribution = FinalStateAttribution::evaluate(Some("unknown"), &accepted, false);
