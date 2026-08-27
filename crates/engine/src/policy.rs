@@ -16,6 +16,9 @@ use url::Url;
 pub const ENGINE_SCENARIO_ID: &str = "engine.iceberg.write-read-evolution";
 pub const ENGINE_SCENARIO_VERSION: u32 = 1;
 pub const ENGINE_TRANSCRIPT_FORMAT: &str = "catalog-bench/engine-interoperability-transcript/v1";
+pub const ENGINE_RUNNER_COMPONENT_ID: &str = "catalog-bench-engine";
+pub const ENGINE_RUNNER_ROLE: &str = "engine-runner";
+pub const ENGINE_RUNNER_LOCATION: &str = "/usr/local/bin/catalog-bench-engine";
 pub const SPARK_PLAN_FORMAT: &str = "catalog-bench/spark-engine-plan/v1";
 pub const SPARK_CATALOG_NAME: &str = "bench";
 pub const SPARK_COMPONENT_NAME: &str = "Apache Spark";
@@ -376,6 +379,7 @@ pub struct ObjectStorePlan {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InteroperabilityPlan {
+    runner: Option<ComponentIdentity>,
     catalog: ComponentIdentity,
     engine: ComponentIdentity,
     connector: ComponentIdentity,
@@ -413,6 +417,7 @@ impl InteroperabilityPlan {
             )));
         }
         let catalog_component = component(profile, catalog, ComponentKind::Catalog)?;
+        let runner_component = optional_engine_runner(profile)?;
         let engine_component = role_component(profile, "stock-engine", ComponentKind::Engine)?;
         let connector_component =
             role_component(profile, "engine-connector", ComponentKind::Connector)?;
@@ -451,10 +456,15 @@ impl InteroperabilityPlan {
             fixture,
             scenario: parameters,
         };
-        let runtime_artifacts = runtime_artifacts(engine_component, connector_component)?;
+        let runtime_artifacts =
+            runtime_artifacts(runner_component, engine_component, connector_component)?;
         validate_execution_artifact(&runtime_artifacts, &engine_component.id)?;
+        if let Some(runner) = runner_component {
+            validate_runner_artifact(&runtime_artifacts, &runner.id, &engine_component.id)?;
+        }
 
         Ok(Self {
+            runner: runner_component.map(ComponentIdentity::from),
             catalog: catalog_component.into(),
             engine: engine_component.into(),
             connector: connector_component.into(),
@@ -467,6 +477,11 @@ impl InteroperabilityPlan {
             runtime_artifacts,
             spark,
         })
+    }
+
+    #[must_use]
+    pub fn runner(&self) -> Option<&ComponentIdentity> {
+        self.runner.as_ref()
     }
 
     #[must_use]
@@ -721,6 +736,40 @@ fn role_component<'a>(
     component(profile, &service.component, kind)
 }
 
+fn optional_engine_runner(profile: &Profile) -> Result<Option<&Component>, PolicyError> {
+    let services = profile
+        .services
+        .iter()
+        .filter(|service| service.role == ENGINE_RUNNER_ROLE)
+        .collect::<Vec<_>>();
+    let service = match services.as_slice() {
+        [] => return Ok(None),
+        [service] => *service,
+        _ => {
+            return Err(PolicyError::new(format!(
+                "profile must contain at most one `{ENGINE_RUNNER_ROLE}` service"
+            )));
+        }
+    };
+    if service.component.as_str() != ENGINE_RUNNER_COMPONENT_ID {
+        return Err(PolicyError::new(format!(
+            "`{ENGINE_RUNNER_ROLE}` must select `{ENGINE_RUNNER_COMPONENT_ID}`"
+        )));
+    }
+    let runner = component(profile, &service.component, ComponentKind::BenchmarkHarness)?;
+    let revision = runner
+        .source
+        .as_ref()
+        .map(|source| source.revision.as_str())
+        .ok_or_else(|| PolicyError::new("engine runner must declare its source revision"))?;
+    if runner.version != revision || !valid_git_revision(revision) {
+        return Err(PolicyError::new(
+            "engine runner version and source must be one lowercase 40-character Git revision",
+        ));
+    }
+    Ok(Some(runner))
+}
+
 fn validate_supported_runtime(
     engine: &Component,
     connector: &Component,
@@ -960,6 +1009,7 @@ fn configured_prefix(adapter: &CatalogAdapter) -> Option<String> {
 }
 
 fn runtime_artifacts(
+    runner: Option<&Component>,
     engine: &Component,
     connector: &Component,
 ) -> Result<Vec<RuntimeArtifactExpectation>, PolicyError> {
@@ -1002,8 +1052,62 @@ fn runtime_artifacts(
         matched.components.sort();
         matched.components.dedup();
     }
+    if let Some(runner) = runner {
+        let runner_artifacts = embedded_artifacts(runner)?;
+        let [runner_artifact] = runner_artifacts else {
+            return Err(PolicyError::new(
+                "engine runner image must declare exactly one embedded executable",
+            ));
+        };
+        let runner_expectation = expectation(runner_artifact, vec![runner.id.clone()])?;
+        let matches = expectations
+            .iter()
+            .enumerate()
+            .filter_map(|(index, expectation)| {
+                (expectation.location == runner_expectation.location
+                    && same_artifact(expectation, &runner_expectation))
+                .then_some(index)
+            })
+            .collect::<Vec<_>>();
+        let [matched_index] = matches.as_slice() else {
+            return Err(PolicyError::new(
+                "engine runner executable must have exactly one byte-identical copy at the same path in the engine image",
+            ));
+        };
+        let matched = &mut expectations[*matched_index];
+        matched.components.push(runner.id.clone());
+        matched.components.sort();
+        matched.components.dedup();
+    }
     expectations.sort_by(|left, right| left.location.cmp(&right.location));
     Ok(expectations)
+}
+
+fn validate_runner_artifact(
+    artifacts: &[RuntimeArtifactExpectation],
+    runner: &ComponentId,
+    engine: &ComponentId,
+) -> Result<(), PolicyError> {
+    let matches = artifacts
+        .iter()
+        .filter(|artifact| artifact.location == ENGINE_RUNNER_LOCATION)
+        .collect::<Vec<_>>();
+    let [artifact] = matches.as_slice() else {
+        return Err(PolicyError::new(format!(
+            "engine runtime must contain exactly one `{ENGINE_RUNNER_LOCATION}` artifact"
+        )));
+    };
+    let mut expected_components = vec![runner.clone(), engine.clone()];
+    expected_components.sort();
+    if artifact.media_type != "application/vnd.elf"
+        || artifact.bytes == 0
+        || artifact.components != expected_components
+    {
+        return Err(PolicyError::new(
+            "engine runner artifact must be one nonempty runner-and-engine-owned ELF",
+        ));
+    }
+    Ok(())
 }
 
 fn embedded_artifacts(component: &Component) -> Result<&[ArtifactReference], PolicyError> {
@@ -1067,6 +1171,13 @@ fn same_artifact(left: &RuntimeArtifactExpectation, right: &RuntimeArtifactExpec
 
 fn valid_sha256(value: &str) -> bool {
     value.len() == 64
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+}
+
+fn valid_git_revision(value: &str) -> bool {
+    value.len() == 40
         && value
             .bytes()
             .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))

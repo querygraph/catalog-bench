@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-04 runner artifact correlation: recognize the singular `engine-runner`
+  service only when it selects `catalog-bench-engine`, bind its source identity
+  into the execution plan and transcript, and require exactly one runner ELF
+  whose bytes and in-image location match the copy embedded in Spark. Runtime
+  verification now hashes that executable together with the engine and connector
+  artifacts whenever the new profile role is present.
+
 - C2-04 single-container Spark harness topology: build the optimized engine
   runner from exact public revision `45e0f82d7bfb17b2d6da9918e89bcc146938addd`,
   copy its ELF and source marker into the pinned Spark/Iceberg image, and add a

@@ -1,11 +1,17 @@
 use catalog_bench_common::contract::{
-    parse_contract, AdapterRequestHandling, ComponentId, ContractDocument, Profile, Scenario,
+    parse_contract, AdapterRequestHandling, ArtifactReference, ComponentId, ContractDocument,
+    Profile, RuntimeArtifact, Scenario,
 };
 use catalog_bench_engine::{
-    CatalogCredentialSource, InteroperabilityPlan, SparkAuthentication, ENGINE_TRANSCRIPT_FORMAT,
+    CatalogCredentialSource, InteroperabilityPlan, SparkAuthentication, ENGINE_RUNNER_COMPONENT_ID,
+    ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE, ENGINE_TRANSCRIPT_FORMAT,
     ICEBERG_CONNECTOR_VERSION, SPARK_COMPONENT_VERSION, SPARK_PLAN_FORMAT,
 };
 use serde_json::json;
+
+mod support;
+
+use support::{add_engine_runner, RUNNER_DIGEST, RUNNER_REVISION};
 
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
@@ -245,6 +251,67 @@ fn runtime_policy_requires_connector_bytes_inside_the_executed_engine() {
 }
 
 #[test]
+fn runner_role_correlates_one_source_bound_elf_inside_spark() {
+    let (mut profile, scenario) = contracts();
+    add_engine_runner(&mut profile);
+
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "runner01",
+    )
+    .unwrap();
+    let runner = plan.runner().unwrap();
+    assert_eq!(runner.id.as_str(), ENGINE_RUNNER_COMPONENT_ID);
+    assert_eq!(runner.source_revision.as_deref(), Some(RUNNER_REVISION));
+    let artifact = plan
+        .runtime_artifacts()
+        .iter()
+        .find(|artifact| artifact.location == ENGINE_RUNNER_LOCATION)
+        .unwrap();
+    assert_eq!(artifact.media_type, "application/vnd.elf");
+    assert_eq!(artifact.sha256, RUNNER_DIGEST);
+    assert_eq!(artifact.bytes, 4_986_064);
+    assert_eq!(
+        artifact
+            .components
+            .iter()
+            .map(ComponentId::as_str)
+            .collect::<Vec<_>>(),
+        [ENGINE_RUNNER_COMPONENT_ID, "spark-4.1"]
+    );
+
+    let mut drifted = profile.clone();
+    runner_artifact_mut(&mut drifted).digest.value = "3".repeat(64);
+    assert!(plan_error(&drifted, &scenario).contains("byte-identical copy"));
+
+    let mut moved = profile.clone();
+    runner_artifact_mut(&mut moved).location = "image:/opt/alternate/runner".to_owned();
+    engine_runner_copy_mut(&mut moved).location = "image:/opt/alternate/runner".to_owned();
+    assert!(plan_error(&moved, &scenario).contains(ENGINE_RUNNER_LOCATION));
+
+    let mut duplicate_role = profile.clone();
+    let service = duplicate_role
+        .services
+        .iter()
+        .find(|service| service.role == ENGINE_RUNNER_ROLE)
+        .unwrap()
+        .clone();
+    duplicate_role.services.push(service);
+    assert!(plan_error(&duplicate_role, &scenario).contains("at most one `engine-runner`"));
+
+    let mut wrong_source = profile;
+    let runner = wrong_source
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == ENGINE_RUNNER_COMPONENT_ID)
+        .unwrap();
+    runner.version = "not-a-revision".to_owned();
+    assert!(plan_error(&wrong_source, &scenario).contains("40-character Git revision"));
+}
+
+#[test]
 fn rejects_contract_drift_shims_unsafe_fixtures_and_ambiguous_roles() {
     let (profile, scenario) = contracts();
 
@@ -359,4 +426,48 @@ fn contracts() -> (Profile, Scenario) {
         panic!("scenario fixture must be a scenario");
     };
     (profile, scenario)
+}
+
+fn runner_artifact_mut(profile: &mut Profile) -> &mut ArtifactReference {
+    let runner = profile
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == ENGINE_RUNNER_COMPONENT_ID)
+        .unwrap();
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut runner.artifact
+    else {
+        panic!("runner fixture must be an image");
+    };
+    &mut embedded_artifacts[0]
+}
+
+fn engine_runner_copy_mut(profile: &mut Profile) -> &mut ArtifactReference {
+    let engine = profile
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == "spark-4.1")
+        .unwrap();
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut engine.artifact
+    else {
+        panic!("engine fixture must be an image");
+    };
+    embedded_artifacts
+        .iter_mut()
+        .find(|artifact| artifact.location.strip_prefix("image:") == Some(ENGINE_RUNNER_LOCATION))
+        .unwrap()
+}
+
+fn plan_error(profile: &Profile, scenario: &Scenario) -> String {
+    InteroperabilityPlan::from_contracts(
+        profile,
+        scenario,
+        &ComponentId::from("lakecat"),
+        "runner01",
+    )
+    .unwrap_err()
+    .to_string()
 }

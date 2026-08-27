@@ -355,17 +355,23 @@ fn expected_components(
     profile: &Profile,
     plan: &InteroperabilityPlan,
 ) -> Option<EngineTranscriptComponents> {
-    let runner_id = profile.platform.container_runtime.as_ref()?;
-    let runner = profile
-        .components
-        .iter()
-        .find(|component| &component.id == runner_id)?;
+    let runner = plan
+        .runner()
+        .map(EngineTranscriptComponent::from_identity)
+        .or_else(|| {
+            let runner_id = profile.platform.container_runtime.as_ref()?;
+            profile
+                .components
+                .iter()
+                .find(|component| &component.id == runner_id)
+                .map(EngineTranscriptComponent::from_component)
+        })?;
     let object_store = profile
         .components
         .iter()
         .find(|component| component.id == plan.object_store().component)?;
     Some(EngineTranscriptComponents {
-        runner: EngineTranscriptComponent::from_component(runner),
+        runner,
         catalog: EngineTranscriptComponent::from_identity(plan.catalog()),
         engine: EngineTranscriptComponent::from_identity(plan.engine()),
         connector: EngineTranscriptComponent::from_identity(plan.connector()),

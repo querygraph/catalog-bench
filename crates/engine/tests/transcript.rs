@@ -1,12 +1,16 @@
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
-use catalog_bench_common::contract::ComponentId;
+use catalog_bench_common::contract::{parse_contract, ComponentId, ContractDocument};
 use catalog_bench_engine::{
     run_stock_spark_interoperability, EngineContracts, EngineEvidenceErrorKind,
     EngineSanitizationViolation, EngineTranscriptValidationFailureKind, SecretRead, SecretSource,
-    ENGINE_TRANSCRIPT_FORMAT,
+    ENGINE_RUNNER_COMPONENT_ID, ENGINE_TRANSCRIPT_FORMAT,
 };
+
+mod support;
+
+use support::{add_engine_runner, RUNNER_REVISION};
 
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
@@ -78,6 +82,36 @@ async fn production_entrypoint_emits_bound_fail_closed_evidence() {
     let serialized = serde_json::to_string(&transcript).unwrap();
     assert!(!serialized.contains(SECRET_SENTINEL));
     assert!(!serialized.contains("Bearer "));
+}
+
+#[tokio::test]
+async fn source_bound_engine_runner_replaces_build_toolchain_identity_in_transcript() {
+    let ContractDocument::Profile(mut profile) = parse_contract(PROFILE).unwrap() else {
+        panic!("profile fixture must be a profile contract");
+    };
+    add_engine_runner(&mut profile);
+    let profile_bytes = serde_json::to_vec(&profile).unwrap();
+    let contracts = EngineContracts::parse(&profile_bytes, SCENARIO).unwrap();
+
+    let transcript = run_stock_spark_interoperability(
+        &contracts,
+        &ComponentId::from("lakecat"),
+        "transcript_runner01",
+        Arc::new(RecordingSecrets::default()),
+    )
+    .await
+    .unwrap();
+
+    assert_eq!(
+        transcript.components.runner.id.as_str(),
+        ENGINE_RUNNER_COMPONENT_ID
+    );
+    assert_eq!(transcript.components.runner.version, RUNNER_REVISION);
+    assert_eq!(
+        transcript.components.runner.source_revision.as_deref(),
+        Some(RUNNER_REVISION)
+    );
+    assert!(transcript.validate(&contracts).is_ok());
 }
 
 #[tokio::test]

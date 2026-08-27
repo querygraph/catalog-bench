@@ -227,6 +227,15 @@ so its `spark-submit` child, contracts, catalogs, and MinIO all remain inside th
 declared Docker topology. The donor image exists only to make the source-built
 artifact independently inspectable.
 
+The corresponding profile role is `engine-runner`, and it may select only the
+`catalog-bench-engine` benchmark-harness component. Its donor image declares one
+ELF at `/usr/local/bin/catalog-bench-engine`; the Spark component must declare a
+byte-identical artifact at the same path. Policy merges those two ownership
+claims into one runtime expectation, and the process-side verifier hashes the
+actual running path before credentials, network access, or Spark startup. The
+transcript records the harness source revision from that component rather than
+mistaking the Rust build-toolchain image for the executed runner.
+
 ## Phase 2 unit boundaries
 
 C2-01 owns only the common write/read/evolution contract. It intentionally does
