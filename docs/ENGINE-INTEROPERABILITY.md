@@ -170,7 +170,7 @@ unit is not runtime evidence and creates no Flink result or ranking row.
 
 `FlinkRenderedProgram` is a pure boundary between the validated plan and the
 future effectful process adapter. It emits one typed catalog setup and eight
-ordered, purpose-tagged stock Flink statements: create the namespace, create
+ordered, tagged stock Flink operations: create the namespace, create
 the table, append and read the initial rows, add the scenario column, append and
 read the evolved rows, and inspect the Iceberg snapshots metadata table. The
 exact pinned [Flink 2.1 parser node for `ALTER TABLE ... ADD`](https://github.com/apache/flink/blob/6cda56b084d5c337b36d2f8ed464bc92093b0a34/flink-table/flink-sql-parser/src/main/java/org/apache/flink/sql/parser/ddl/SqlAlterTableAdd.java)
@@ -188,6 +188,16 @@ catalog-setup value, but no client secret, object-store key, credential option,
 or token can enter the rendered program. The process adapter will read secrets
 only after runtime verification and inject them directly into the child
 environment or in-memory catalog configuration.
+
+The child envelope is self-contained but deliberately narrower than the
+scenario. Its `FlinkOperation` ADT makes mutation, read, and metadata operations
+non-interchangeable; only the two read variants can carry canonical
+row/byte/SHA-256 oracles. A separate fixture target contains only namespace,
+table, optional requested location, and bucket. A separate observation policy
+contains only format version, initial Iceberg fields, the evolved field, and
+scenario-owned properties. This is enough for the child to sanitize its own
+observations without receiving unrelated scenario policy or generator data.
+Unknown envelope or operation fields fail decoding.
 
 The renderer is presently validation-only: tests prove deterministic rendering
 for every selected profile catalog and reject format, parallelism, policy,

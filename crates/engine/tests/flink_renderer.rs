@@ -4,7 +4,8 @@ use catalog_bench_common::contract::{
     parse_contract, ComponentId, ContractDocument, Profile, Scenario,
 };
 use catalog_bench_engine::{
-    EngineCatalogAuthentication, FlinkRenderedProgram, FlinkStatementPurpose, InteroperabilityPlan,
+    EngineCatalogAuthentication, FlinkOperation, FlinkOperationPurpose, FlinkRenderedProgram,
+    InteroperabilityPlan,
 };
 
 mod support;
@@ -40,29 +41,33 @@ fn renders_the_complete_stock_flink_program_for_every_catalog() {
         );
         assert_eq!(
             program
-                .statements
+                .operations
                 .iter()
-                .map(|statement| statement.purpose)
+                .map(catalog_bench_engine::FlinkOperation::purpose)
                 .collect::<Vec<_>>(),
             [
-                FlinkStatementPurpose::CreateNamespace,
-                FlinkStatementPurpose::CreateTable,
-                FlinkStatementPurpose::InitialAppend,
-                FlinkStatementPurpose::InitialRead,
-                FlinkStatementPurpose::AddColumn,
-                FlinkStatementPurpose::EvolvedAppend,
-                FlinkStatementPurpose::EvolvedRead,
-                FlinkStatementPurpose::SnapshotRead,
+                FlinkOperationPurpose::CreateNamespace,
+                FlinkOperationPurpose::CreateTable,
+                FlinkOperationPurpose::InitialAppend,
+                FlinkOperationPurpose::InitialRead,
+                FlinkOperationPurpose::AddColumn,
+                FlinkOperationPurpose::EvolvedAppend,
+                FlinkOperationPurpose::EvolvedRead,
+                FlinkOperationPurpose::SnapshotRead,
             ]
         );
-        let add_column = statement(&program, FlinkStatementPurpose::AddColumn);
+        assert_eq!(program.fixture.table, "events");
+        assert_eq!(program.fixture.bucket, "warehouse");
+        assert_eq!(program.observation.initial_schema.len(), 3);
+        assert_eq!(program.observation.evolved_field.name, "note");
+        let add_column = statement(&program, FlinkOperationPurpose::AddColumn);
         assert!(add_column.ends_with("ADD `note` STRING"));
         assert!(!add_column.contains("NOT NULL"));
-        let initial_append = statement(&program, FlinkStatementPurpose::InitialAppend);
+        let initial_append = statement(&program, FlinkOperationPurpose::InitialAppend);
         assert_eq!(initial_append.matches("), (").count(), 15);
         assert!(initial_append.contains("(0, 'category-0', 7)"));
         assert!(initial_append.contains("(15, 'category-3', 1507)"));
-        let evolved_append = statement(&program, FlinkStatementPurpose::EvolvedAppend);
+        let evolved_append = statement(&program, FlinkOperationPurpose::EvolvedAppend);
         assert_eq!(evolved_append.matches("), (").count(), 3);
         assert!(evolved_append.contains("(16, 'category-0', 1607, 'evolved-16')"));
         assert!(evolved_append.contains("(19, 'category-3', 1907, 'evolved-19')"));
@@ -103,6 +108,40 @@ fn preserves_standard_authentication_as_secret_free_typed_setup() {
 }
 
 #[test]
+fn rendered_wire_envelope_carries_closed_read_and_observation_oracles() {
+    let (profile, scenario) = contracts();
+    let program = render(&profile, &scenario, "lakecat", "wire01");
+    let initial = program
+        .operations
+        .iter()
+        .find_map(|operation| match operation {
+            FlinkOperation::InitialRead { expected, .. } => Some(expected),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(initial.rows, 16);
+    assert_eq!(initial.bytes, 346);
+    assert_eq!(
+        initial.sha256,
+        "e78b526d7e757090a9a90c80802c2a543cbf8166cfac6d6ed48c618926e85a15"
+    );
+    assert_eq!(program.observation.format_version, 2);
+    assert_eq!(
+        program.observation.properties["catalog-bench.owner"],
+        "catalog-bench"
+    );
+
+    let encoded = serde_json::to_vec(&program).unwrap();
+    assert_eq!(
+        serde_json::from_slice::<FlinkRenderedProgram>(&encoded).unwrap(),
+        program
+    );
+    let mut unknown = serde_json::to_value(&program).unwrap();
+    unknown["operations"][0]["untrusted"] = serde_json::json!(true);
+    assert!(serde_json::from_value::<FlinkRenderedProgram>(unknown).is_err());
+}
+
+#[test]
 fn escapes_literals_and_rejects_identifier_or_generator_drift() {
     let (profile, scenario) = contracts();
     let plan = InteroperabilityPlan::from_contracts(
@@ -119,7 +158,7 @@ fn escapes_literals_and_rejects_identifier_or_generator_drift() {
         .properties
         .insert("owner".to_owned(), "O'Reilly".to_owned());
     let program = FlinkRenderedProgram::render(&flink).unwrap();
-    assert!(statement(&program, FlinkStatementPurpose::CreateTable).contains("'O''Reilly'"));
+    assert!(statement(&program, FlinkOperationPurpose::CreateTable).contains("'O''Reilly'"));
 
     flink.fixture.table = "unsafe-name".to_owned();
     assert!(FlinkRenderedProgram::render(&flink)
@@ -222,11 +261,11 @@ fn render(
     FlinkRenderedProgram::render(plan.flink().unwrap()).unwrap()
 }
 
-fn statement(program: &FlinkRenderedProgram, purpose: FlinkStatementPurpose) -> &str {
-    &program
-        .statements
+fn statement(program: &FlinkRenderedProgram, purpose: FlinkOperationPurpose) -> &str {
+    program
+        .operations
         .iter()
-        .find(|statement| statement.purpose == purpose)
+        .find(|operation| operation.purpose() == purpose)
         .unwrap()
-        .sql
+        .sql()
 }

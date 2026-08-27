@@ -6,9 +6,10 @@ use serde::{Deserialize, Serialize};
 use url::Url;
 
 use crate::{
-    CategoryGenerator, ConnectorPolicy, EngineCatalogAuthentication, FlinkExecutionPlan,
-    ForbiddenPolicy, IcebergPrimitiveType, IntegerGenerator, NoteGenerator, SyntaxRenderingPolicy,
-    UnsupportedPolicy, ENGINE_TRANSCRIPT_FORMAT, FLINK_CATALOG_NAME, FLINK_PLAN_FORMAT,
+    CanonicalRead, CategoryGenerator, ConnectorPolicy, EngineCatalogAuthentication, EvolutionField,
+    FlinkExecutionPlan, ForbiddenPolicy, IcebergField, IcebergPrimitiveType, IntegerGenerator,
+    NoteGenerator, SyntaxRenderingPolicy, UnsupportedPolicy, ENGINE_TRANSCRIPT_FORMAT,
+    FLINK_CATALOG_NAME, FLINK_PLAN_FORMAT,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,7 +33,7 @@ pub struct FlinkCatalogSetup {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum FlinkStatementPurpose {
+pub enum FlinkOperationPurpose {
     CreateNamespace,
     CreateTable,
     InitialAppend,
@@ -45,9 +46,82 @@ pub enum FlinkStatementPurpose {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct FlinkStatement {
-    pub purpose: FlinkStatementPurpose,
-    pub sql: String,
+pub struct FlinkFixtureTarget {
+    pub namespace: String,
+    pub table: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requested_location: Option<String>,
+    pub bucket: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FlinkObservationPolicy {
+    pub format_version: u8,
+    pub initial_schema: Vec<IcebergField>,
+    pub evolved_field: EvolutionField,
+    pub properties: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "operation", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum FlinkOperation {
+    CreateNamespace {
+        sql: String,
+    },
+    CreateTable {
+        sql: String,
+    },
+    InitialAppend {
+        sql: String,
+    },
+    InitialRead {
+        sql: String,
+        expected: CanonicalRead,
+    },
+    AddColumn {
+        sql: String,
+    },
+    EvolvedAppend {
+        sql: String,
+    },
+    EvolvedRead {
+        sql: String,
+        expected: CanonicalRead,
+    },
+    SnapshotRead {
+        sql: String,
+    },
+}
+
+impl FlinkOperation {
+    #[must_use]
+    pub fn purpose(&self) -> FlinkOperationPurpose {
+        match self {
+            Self::CreateNamespace { .. } => FlinkOperationPurpose::CreateNamespace,
+            Self::CreateTable { .. } => FlinkOperationPurpose::CreateTable,
+            Self::InitialAppend { .. } => FlinkOperationPurpose::InitialAppend,
+            Self::InitialRead { .. } => FlinkOperationPurpose::InitialRead,
+            Self::AddColumn { .. } => FlinkOperationPurpose::AddColumn,
+            Self::EvolvedAppend { .. } => FlinkOperationPurpose::EvolvedAppend,
+            Self::EvolvedRead { .. } => FlinkOperationPurpose::EvolvedRead,
+            Self::SnapshotRead { .. } => FlinkOperationPurpose::SnapshotRead,
+        }
+    }
+
+    #[must_use]
+    pub fn sql(&self) -> &str {
+        match self {
+            Self::CreateNamespace { sql }
+            | Self::CreateTable { sql }
+            | Self::InitialAppend { sql }
+            | Self::InitialRead { sql, .. }
+            | Self::AddColumn { sql }
+            | Self::EvolvedAppend { sql }
+            | Self::EvolvedRead { sql, .. }
+            | Self::SnapshotRead { sql } => sql,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -55,7 +129,9 @@ pub struct FlinkStatement {
 pub struct FlinkRenderedProgram {
     pub parallelism: u32,
     pub catalog: FlinkCatalogSetup,
-    pub statements: Vec<FlinkStatement>,
+    pub fixture: FlinkFixtureTarget,
+    pub observation: FlinkObservationPolicy,
+    pub operations: Vec<FlinkOperation>,
 }
 
 impl FlinkRenderedProgram {
@@ -131,30 +207,44 @@ impl FlinkRenderedProgram {
                 properties: catalog_properties(plan),
                 authentication: plan.catalog.authentication.clone(),
             },
-            statements: vec![
-                statement(
-                    FlinkStatementPurpose::CreateNamespace,
-                    format!("CREATE DATABASE IF NOT EXISTS {namespace}"),
-                ),
-                statement(FlinkStatementPurpose::CreateTable, create_table),
-                statement(
-                    FlinkStatementPurpose::InitialAppend,
-                    render_insert(&qualified_table, &initial_columns, &initial_values),
-                ),
-                statement(FlinkStatementPurpose::InitialRead, initial_read),
-                statement(FlinkStatementPurpose::AddColumn, add_column),
-                statement(
-                    FlinkStatementPurpose::EvolvedAppend,
-                    render_insert(&qualified_table, &evolved_columns, &evolved_values),
-                ),
-                statement(FlinkStatementPurpose::EvolvedRead, evolved_read),
-                statement(
-                    FlinkStatementPurpose::SnapshotRead,
-                    format!(
+            fixture: FlinkFixtureTarget {
+                namespace: plan.fixture.namespace.clone(),
+                table: plan.fixture.table.clone(),
+                requested_location: plan.fixture.requested_location.clone(),
+                bucket: plan.file_io.bucket.clone(),
+            },
+            observation: FlinkObservationPolicy {
+                format_version: scenario.table.format_version,
+                initial_schema: scenario.table.schema.fields.clone(),
+                evolved_field: scenario.schema_evolution.field.clone(),
+                properties: scenario.table.properties.clone(),
+            },
+            operations: vec![
+                FlinkOperation::CreateNamespace {
+                    sql: format!("CREATE DATABASE IF NOT EXISTS {namespace}"),
+                },
+                FlinkOperation::CreateTable { sql: create_table },
+                FlinkOperation::InitialAppend {
+                    sql: render_insert(&qualified_table, &initial_columns, &initial_values),
+                },
+                FlinkOperation::InitialRead {
+                    sql: initial_read,
+                    expected: scenario.canonical_reads.initial.clone(),
+                },
+                FlinkOperation::AddColumn { sql: add_column },
+                FlinkOperation::EvolvedAppend {
+                    sql: render_insert(&qualified_table, &evolved_columns, &evolved_values),
+                },
+                FlinkOperation::EvolvedRead {
+                    sql: evolved_read,
+                    expected: scenario.canonical_reads.after_evolution.clone(),
+                },
+                FlinkOperation::SnapshotRead {
+                    sql: format!(
                         "SELECT * FROM {namespace}.`{}$snapshots`",
                         plan.fixture.table
                     ),
-                ),
+                },
             ],
         })
     }
@@ -337,10 +427,6 @@ fn render_properties(properties: &BTreeMap<String, String>) -> String {
         .map(|(key, value)| format!("{}={}", literal(key), literal(value)))
         .collect::<Vec<_>>()
         .join(", ")
-}
-
-fn statement(purpose: FlinkStatementPurpose, sql: String) -> FlinkStatement {
-    FlinkStatement { purpose, sql }
 }
 
 fn identifier(value: &str) -> Result<String, FlinkRenderError> {

@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C2-06 closed Flink child envelope: replace freely paired statement-purpose
+  records with a tagged `FlinkOperation` ADT whose read variants carry their
+  exact row/byte/SHA-256 oracles. Extend the rendered program with a bounded
+  fixture target and observation policy containing only the expected format,
+  initial fields, evolved field, and scenario-owned properties. The future
+  child therefore receives one self-contained, secret-free effect program and
+  cannot reach back into the broader scenario, infer expected reads, or pair a
+  read oracle with a mutating operation. Round-trip and unknown-field tests
+  freeze the closed wire shape. This structural unit launches no process and
+  changes no result.
+
 - C2-06 source-bound Flink runner policy: require every runnable Flink profile
   to contain both the stock engine-owned `/opt/flink/bin/flink` CLI and one
   byte-identical copy of the catalog-bench Flink runner JAR in the selected
