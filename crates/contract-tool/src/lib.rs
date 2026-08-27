@@ -4,7 +4,9 @@
 mod bundle;
 mod contention_bundle;
 mod contention_profile;
+mod engine_bundle;
 mod engine_evidence;
+mod engine_matrix;
 mod engine_review;
 mod legacy_commit;
 mod matrix;
@@ -20,13 +22,15 @@ pub use contention_bundle::{check_contention_result_bundle, write_contention_res
 pub use contention_profile::{
     check_contention_profile, render_contention_profile, write_contention_profile,
 };
+pub use engine_bundle::{check_engine_result_bundle, write_engine_result_bundle};
 pub use engine_evidence::{
     validate_engine_evidence_set, EngineEvidenceSummary, ValidatedEngineEvidenceSet,
     ValidatedEngineTranscript,
 };
+pub use engine_matrix::render_engine_matrix;
 pub use engine_review::{validate_engine_result_review, ValidatedEngineResultReview};
 pub use legacy_commit::{check_historical_commit_bundle, write_historical_commit_bundle};
-pub use matrix::render_commit_matrix;
+pub use matrix::{render_commit_matrix, render_matrix};
 pub use profile_materialization::{
     check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactCopyPolicy,
     ArtifactPolicy, BuildExtensionLabelPolicy, ImagePolicy, RequiredLabelPolicy,

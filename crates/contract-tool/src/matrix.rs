@@ -8,6 +8,22 @@ use catalog_bench_common::contract::{
 
 use crate::ValidatedBundle;
 
+/// Select the scenario-specific renderer for one validated result bundle.
+pub fn render_matrix(bundle: &ValidatedBundle) -> Result<String> {
+    let scenario = bundle
+        .scenarios()
+        .first()
+        .context("matrix requires one scenario")?;
+    if bundle.scenarios().len() != 1 {
+        bail!("matrix requires exactly one scenario");
+    }
+    match scenario.scenario().id.as_str() {
+        "iceberg-rest.commit.same-table-contention" => render_commit_matrix(bundle),
+        "engine.iceberg.write-read-evolution" => crate::engine_matrix::render_engine_matrix(bundle),
+        id => bail!("no matrix renderer is registered for scenario `{id}`"),
+    }
+}
+
 /// Render a commit matrix exclusively from validated result records.
 pub fn render_commit_matrix(bundle: &ValidatedBundle) -> Result<String> {
     if bundle.scenarios().len() != 1 {
@@ -340,7 +356,7 @@ fn missing_metric(
     Ok("—".to_owned())
 }
 
-fn outcome_label(outcome: &ResultOutcome) -> &'static str {
+pub(crate) fn outcome_label(outcome: &ResultOutcome) -> &'static str {
     match outcome {
         ResultOutcome::Pass { .. } => "pass",
         ResultOutcome::Fail { .. } => "fail",
@@ -349,11 +365,11 @@ fn outcome_label(outcome: &ResultOutcome) -> &'static str {
     }
 }
 
-fn markdown_text(value: &str) -> String {
+pub(crate) fn markdown_text(value: &str) -> String {
     value.replace('|', "\\|").replace('\n', " ")
 }
 
-fn display_version(version: &str) -> &str {
+pub(crate) fn display_version(version: &str) -> &str {
     if version.len() == 40 && version.bytes().all(|byte| byte.is_ascii_hexdigit()) {
         &version[..8]
     } else {
@@ -361,7 +377,7 @@ fn display_version(version: &str) -> &str {
     }
 }
 
-fn published_path(path: &Path) -> PathBuf {
+pub(crate) fn published_path(path: &Path) -> PathBuf {
     let components = path.components().collect::<Vec<_>>();
     let Some(results_index) = components.iter().rposition(
         |component| matches!(component, Component::Normal(value) if *value == "results"),

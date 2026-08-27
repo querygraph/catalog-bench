@@ -79,7 +79,10 @@ cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
   --fixture-id <run-id>
 cargo run -p catalog-bench-contract --locked -- engine-evidence validate-review \
   --root . \
-  --review target/spark-reviews/<run-id>.json
+  --review results/source/engine/<run-id>/review.json
+cargo run -p catalog-bench-contract --locked -- engine-import check \
+  --root . \
+  --review results/source/engine/<run-id>/review.json
 ```
 
 See **[RESULTS.md](RESULTS.md)** for measured results.
@@ -140,10 +143,15 @@ That is implementation and runtime evidence, not yet a checked-in workflow
 result. The independent admission command revalidates the complete transcript
 set; `validate-review` additionally binds those exact bytes to reviewed run,
 environment, source, and redaction metadata without trusting duplicate
-command-line contract inputs. Neither command publishes a claim: public catalog
-claims require deterministic result materialization and a complete validated
-bundle. Flink and Trino must execute the same scenario rather than maintaining
-engine-specific definitions of success.
+command-line contract inputs. `engine-import write` is the publication boundary:
+it accepts only a review and transcripts archived below `results/source`, copies
+the exact profile, scenario, review, and transcript bytes into a create-new
+bundle, projects every scenario assertion into one result per catalog, and
+generates the manifest and unranked correctness matrix. `engine-import check`
+recomputes the entire output tree. The importer is implemented, but no production
+Spark result is checked in yet; a fresh optimized four-catalog run and its human
+review must supply that evidence. Flink and Trino must execute the same scenario
+rather than maintaining engine-specific definitions of success.
 
 ## The commit benchmark
 

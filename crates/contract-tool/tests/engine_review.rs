@@ -1,13 +1,13 @@
 use std::fs;
+use std::path::Path;
 use std::process::Command;
 
-use catalog_bench_conformance::sha256_hex;
 use catalog_bench_contract::validate_engine_result_review;
 use serde_json::{json, Value};
 
 mod support;
 
-use support::engine::{assert_error_contains, pretty_json, EvidenceFixture, FIXTURE_ID};
+use support::engine::{assert_error_contains, ReviewFixture};
 
 #[tokio::test]
 async fn admits_hash_bound_reviewed_live_run_metadata() {
@@ -55,6 +55,38 @@ async fn cli_validates_the_review_without_caller_supplied_contracts_or_fixture()
     let stdout = String::from_utf8(output.stdout).unwrap();
     assert!(stdout.contains("bundle spark-review-test"));
     assert!(stdout.contains("4 transcript(s), 0 pass, 4 fail, 0 fixture collision"));
+}
+
+#[tokio::test]
+async fn resolves_relative_review_paths_from_the_declared_repository_root() {
+    let fixture = ReviewFixture::new().await;
+
+    let validated = validate_engine_result_review(
+        fixture.evidence.root(),
+        Path::new(support::engine::REVIEW_LOCATION),
+    )
+    .unwrap();
+
+    assert_eq!(validated.review_path(), fixture.review_path);
+}
+
+#[cfg(unix)]
+#[tokio::test]
+async fn rejects_source_paths_that_resolve_outside_the_repository() {
+    use std::os::unix::fs::symlink;
+
+    let mut fixture = ReviewFixture::new().await;
+    let outside = tempfile::tempdir().unwrap();
+    fs::write(
+        outside.path().join("profile.json"),
+        &fixture.evidence.profile_bytes,
+    )
+    .unwrap();
+    symlink(outside.path(), fixture.evidence.root().join("escape")).unwrap();
+    fixture.review["profile"]["location"] = Value::String("escape/profile.json".to_owned());
+    fixture.write_review();
+
+    assert_error_contains(fixture.validate(), "resolves outside the repository root");
 }
 
 #[tokio::test]
@@ -210,112 +242,4 @@ async fn rejects_unbounded_nonregular_and_non_newline_review_files() {
     fs::remove_file(&fixture.review_path).unwrap();
     fs::create_dir(&fixture.review_path).unwrap();
     assert_error_contains(fixture.validate(), "is not a regular file");
-}
-
-struct ReviewFixture {
-    evidence: EvidenceFixture,
-    review_path: std::path::PathBuf,
-    baseline: Value,
-    review: Value,
-}
-
-impl ReviewFixture {
-    async fn new() -> Self {
-        let evidence = EvidenceFixture::new().await;
-        let review_path = evidence.root().join("review.json");
-        let baseline = review_value(&evidence);
-        fs::write(&review_path, pretty_json(&baseline)).unwrap();
-        Self {
-            evidence,
-            review_path,
-            review: baseline.clone(),
-            baseline,
-        }
-    }
-
-    fn validate(&self) -> anyhow::Result<catalog_bench_contract::ValidatedEngineResultReview> {
-        validate_engine_result_review(self.evidence.root(), &self.review_path)
-    }
-
-    fn write_review(&self) {
-        fs::write(&self.review_path, pretty_json(&self.review)).unwrap();
-    }
-
-    fn reset_review(&mut self) {
-        self.review = self.baseline.clone();
-        self.write_review();
-    }
-}
-
-fn review_value(evidence: &EvidenceFixture) -> Value {
-    let transcripts = evidence
-        .transcripts
-        .iter()
-        .map(|(catalog, bytes)| {
-            json!({
-                "catalog": catalog,
-                "source": source_identity(&format!("evidence/{catalog}.json"), bytes)
-            })
-        })
-        .collect::<Vec<_>>();
-    json!({
-        "format": "catalog-bench/engine-result-review/v1",
-        "bundle": {
-            "id": "spark-review-test",
-            "title": "Stock Spark interoperability test review",
-            "output_directory": "results/v1/spark-review-test",
-            "created_at": "2026-08-27T12:02:00Z"
-        },
-        "run": {
-            "fixture_id": FIXTURE_ID,
-            "sanitized_invocation": format!(
-                "docker/run-spark-interoperability.sh \"{FIXTURE_ID}\""
-            ),
-            "started_at": "2026-08-27T12:00:00Z",
-            "started_at_basis": "Captured immediately before the launcher invocation.",
-            "completed_at": "2026-08-27T12:01:00Z",
-            "completed_at_basis": "Captured after all four runner processes returned."
-        },
-        "profile": source_identity("profile.json", &evidence.profile_bytes),
-        "scenario": source_identity("scenario.json", support::engine::SCENARIO),
-        "transcripts": transcripts,
-        "environment": {
-            "operating_system": "Linux",
-            "architecture": "aarch64",
-            "cpu_model": {
-                "precision": "unknown",
-                "explanation": "The test fixture does not substitute a host CPU model."
-            },
-            "logical_cpus": { "precision": "exact", "value": 10 },
-            "memory_bytes": { "precision": "exact", "value": 8321712128_u64 },
-            "network": "catalog-bench-net",
-            "container_runtime": {
-                "precision": "exact",
-                "value": "Docker Engine test fixture"
-            },
-            "runtime_flags": {
-                "docker_compose": "test fixture",
-                "same_docker_boundary": "all workflow processes",
-                "workflow_execution_order": "sequential"
-            }
-        },
-        "redaction": {
-            "reviewed": true,
-            "policy": "catalog-bench/value-safe-engine-v1 plus manual source review",
-            "removed_fields": [
-                "catalog OAuth client credentials and bearer tokens",
-                "object-store access and secret keys",
-                "raw engine rows and response bodies",
-                "raw backend exception and log detail"
-            ]
-        }
-    })
-}
-
-fn source_identity(location: &str, bytes: &[u8]) -> Value {
-    json!({
-        "location": location,
-        "sha256": sha256_hex(bytes),
-        "bytes": bytes.len() as u64
-    })
 }

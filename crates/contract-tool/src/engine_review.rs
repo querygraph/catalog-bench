@@ -119,6 +119,22 @@ impl ValidatedEngineResultReview {
     pub fn redaction(&self) -> &RedactionStatement {
         &self.review.redaction
     }
+
+    pub(crate) fn profile_source_location(&self) -> &str {
+        &self.review.profile.location
+    }
+
+    pub(crate) fn scenario_source_location(&self) -> &str {
+        &self.review.scenario.location
+    }
+
+    pub(crate) fn transcript_source_location(&self, catalog: &ComponentId) -> Option<&str> {
+        self.review
+            .transcripts
+            .iter()
+            .find(|transcript| &transcript.catalog == catalog)
+            .map(|transcript| transcript.source.location.as_str())
+    }
 }
 
 /// Validate one bounded review and every source identity it claims.
@@ -126,7 +142,12 @@ pub fn validate_engine_result_review(
     repository_root: &Path,
     review_path: &Path,
 ) -> Result<ValidatedEngineResultReview> {
-    let review_bytes = read_bounded_review(review_path)?;
+    let review_path = if review_path.is_absolute() {
+        review_path.to_owned()
+    } else {
+        repository_root.join(review_path)
+    };
+    let review_bytes = read_bounded_review(&review_path)?;
     let review: EngineResultReview = serde_json::from_slice(&review_bytes).with_context(|| {
         format!(
             "invalid engine result review JSON in {}",
@@ -141,9 +162,22 @@ pub fn validate_engine_result_review(
     }
     validate_review_shape(&review)?;
 
+    let canonical_root = fs::canonicalize(repository_root).with_context(|| {
+        format!(
+            "failed to resolve repository root {}",
+            repository_root.display()
+        )
+    })?;
     let profile_path = resolve_source(repository_root, &review.profile, "profile")?;
     let scenario_path = resolve_source(repository_root, &review.scenario, "scenario")?;
     let evidence_directory = reviewed_transcript_directory(repository_root, &review.transcripts)?;
+    require_within_repository(&canonical_root, &profile_path, "profile source")?;
+    require_within_repository(&canonical_root, &scenario_path, "scenario source")?;
+    require_within_repository(
+        &canonical_root,
+        &evidence_directory,
+        "transcript source directory",
+    )?;
     let evidence = validate_engine_evidence_set(
         &profile_path,
         &scenario_path,
@@ -157,11 +191,23 @@ pub fn validate_engine_result_review(
     verify_environment(&review.environment, &evidence)?;
 
     Ok(ValidatedEngineResultReview {
-        review_path: review_path.to_owned(),
+        review_path,
         review_bytes,
         review,
         evidence,
     })
+}
+
+fn require_within_repository(canonical_root: &Path, path: &Path, name: &str) -> Result<()> {
+    let canonical = fs::canonicalize(path)
+        .with_context(|| format!("failed to resolve {name} {}", path.display()))?;
+    if !canonical.starts_with(canonical_root) {
+        bail!(
+            "{name} resolves outside the repository root: {}",
+            path.display()
+        );
+    }
+    Ok(())
 }
 
 fn read_bounded_review(path: &Path) -> Result<Vec<u8>> {

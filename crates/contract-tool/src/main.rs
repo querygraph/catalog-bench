@@ -5,10 +5,11 @@ use std::process::ExitCode;
 use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
-    check_contention_profile, check_contention_result_bundle, check_historical_commit_bundle,
-    check_spark_profile, load_bundle, render_commit_matrix, validate_engine_evidence_set,
-    validate_engine_result_review, write_contention_profile, write_contention_result_bundle,
-    write_historical_commit_bundle, write_spark_profile,
+    check_contention_profile, check_contention_result_bundle, check_engine_result_bundle,
+    check_historical_commit_bundle, check_spark_profile, load_bundle, render_matrix,
+    validate_engine_evidence_set, validate_engine_result_review, write_contention_profile,
+    write_contention_result_bundle, write_engine_result_bundle, write_historical_commit_bundle,
+    write_spark_profile,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -64,6 +65,11 @@ enum Command {
     EngineEvidence {
         #[command(subcommand)]
         command: EngineEvidenceCommand,
+    },
+    /// Materialize reviewed stock-engine evidence into an immutable bundle.
+    EngineImport {
+        #[command(subcommand)]
+        command: EngineImportCommand,
     },
 }
 
@@ -184,6 +190,14 @@ struct EngineReviewFile {
     root: PathBuf,
     #[arg(long)]
     review: PathBuf,
+}
+
+#[derive(Debug, Subcommand)]
+enum EngineImportCommand {
+    /// Create records, manifest, source copies, and matrix without overwriting.
+    Write(EngineReviewFile),
+    /// Recompute every byte and reject missing or unexpected output.
+    Check(EngineReviewFile),
 }
 
 fn main() -> ExitCode {
@@ -307,6 +321,16 @@ fn run(cli: Cli) -> Result<()> {
                 Ok(())
             }
         },
+        Command::EngineImport { command } => match command {
+            EngineImportCommand::Write(EngineReviewFile { root, review }) => {
+                let manifest = write_engine_result_bundle(&root, &review)?;
+                validate_bundle(&manifest)
+            }
+            EngineImportCommand::Check(EngineReviewFile { root, review }) => {
+                let manifest = check_engine_result_bundle(&root, &review)?;
+                validate_bundle(&manifest)
+            }
+        },
     }
 }
 
@@ -322,7 +346,7 @@ fn validate_bundle(manifest: &Path) -> Result<()> {
 }
 
 fn write_matrix(manifest: &Path, output: &Path) -> Result<()> {
-    let rendered = render_commit_matrix(&load_bundle(manifest)?)?;
+    let rendered = render_matrix(&load_bundle(manifest)?)?;
     if let Some(parent) = output.parent() {
         fs::create_dir_all(parent)
             .with_context(|| format!("failed to create {}", parent.display()))?;
@@ -333,7 +357,7 @@ fn write_matrix(manifest: &Path, output: &Path) -> Result<()> {
 }
 
 fn check_matrix(manifest: &Path, output: &Path) -> Result<()> {
-    let expected = render_commit_matrix(&load_bundle(manifest)?)?;
+    let expected = render_matrix(&load_bundle(manifest)?)?;
     let actual = fs::read_to_string(output)
         .with_context(|| format!("failed to read {}", output.display()))?;
     if actual != expected {

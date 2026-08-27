@@ -2,6 +2,20 @@
 
 ## Unreleased
 
+- C2-05 deterministic Spark result materialization: add create-new
+  `engine-import write` and exact `engine-import check` commands that accept
+  only a reviewed profile, scenario, sidecar, and complete transcript set
+  archived in the repository's public evidence boundaries. The importer copies
+  those exact bytes into a self-contained bundle, independently projects all
+  fourteen scenario assertions into one result per profile catalog, and emits a
+  validated manifest plus generated correctness matrix. A result passes only
+  when every required assertion and the process terminal are trusted; observed
+  assertion failures remain failures, an untrusted terminal after otherwise
+  successful checks is a harness failure, and a pre-existing fixture collision
+  remains `not-tested`. Results contain no measurements and the matrix contains
+  no rank. The checker recomputes every byte and rejects missing, extra,
+  modified, symlinked, or nonregular output entries.
+
 - C2-05 reviewed Spark live-run envelope: add a bounded, closed review sidecar
   that drives evidence admission from its own source locations and binds exact
   profile, scenario, and transcript bytes to one fixture, canonical launcher
