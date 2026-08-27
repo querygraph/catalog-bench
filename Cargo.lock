@@ -1377,6 +1377,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "catalog-bench-engine"
+version = "0.1.0"
+dependencies = [
+ "catalog-bench-common",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
 name = "catalog-bench-read-write"
 version = "0.1.0"
 dependencies = [

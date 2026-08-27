@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- C2-04 typed engine execution policy: decode the canonical common workflow into
+  closed algebraic data types, derive the selected Spark/connector/catalog and
+  shared-MinIO bindings from the runnable profile, generate collision-safe
+  fixtures and optional standard table locations, and project a catalog-neutral
+  secret-free Spark plan. The policy rejects scenario drift, mutable or
+  non-Docker profiles, behavior-changing shims, ambiguous engine roles,
+  unsupported runtime lines, unsafe fixture identifiers, malformed object-store
+  settings, and connector artifacts that are not byte-identical to the copies
+  in the executed engine image.
+
 - C2-04 shared adapter runtime seam: separate profile adapter resolution from
   scenario capability classification so stock-engine orchestration can reuse
   the credential-safe Iceberg REST authentication, config negotiation, route
