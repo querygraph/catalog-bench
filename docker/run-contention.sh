@@ -121,7 +121,11 @@ if [[ -n "$remaining_containers" ]]; then
   exit 1
 fi
 
-"${clean_compose[@]}" build lakecat bench
+# Build under the stable ordinary project rather than the evidence run ID.
+# Compose writes its project/service labels into exported image configs; using
+# the run-scoped project here would make identical production bytes acquire a
+# different local-image digest on every execution.
+"${base_compose[@]}" build lakecat bench
 
 set +e
 "${clean_compose[@]}" run --rm bench \

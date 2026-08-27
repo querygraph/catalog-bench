@@ -453,7 +453,7 @@ fn clean_contention_run_rejects_reused_persistent_state() {
         "down --remove-orphans",
         "remaining_containers=",
         "refusing to build with containers still attached to catalog-bench-net",
-        "build lakecat bench",
+        "\"${base_compose[@]}\" build lakecat bench",
         "run --rm bench",
     ] {
         assert!(

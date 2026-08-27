@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C1-09 stable production image identity: build the LakeCat and benchmark
+  images under the ordinary `catalog-bench` Compose project before launching a
+  run-scoped evidence project. Compose project labels are part of the exported
+  image config; this keeps a fresh run ID from changing an otherwise identical
+  local-image digest.
+
 - C1-08 LakeCat contention recovery candidate: advance the exact public
   source-built LakeCat image to
   `962f43cb2d2f345addf188e63be0cf6059bc26b0`. This revision classifies Turso
