@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C2-04 shared transcript value audit: extract the contention evidence's
+  recursive serialized-value scanner into the common crate so engine and
+  contention transcripts share one rule for detecting sensitive runtime values
+  and forbidden identifiers without treating fixed JSON schema keys as data.
+  The contention API retains its existing domain-specific failure categories.
+
 - C2-04 concurrent process-test stability: replace the remaining malformed and
   descendant timeout fixtures' CPU-saturating shell loops with sleeping waits.
   The descendant test still proves isolated process-group termination, while a

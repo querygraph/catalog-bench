@@ -2,11 +2,11 @@ use std::error::Error;
 use std::fmt::{Display, Formatter};
 
 use catalog_bench_common::contract::{ComponentId, ProfileId};
+use catalog_bench_common::sanitization::{audit_serialized_values, SerializedValueAuditFailure};
 use catalog_bench_conformance::{
     CatalogNegotiationEvidence, CatalogNegotiationFailure, ContractDigests, TranscriptScenario,
 };
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
 
 use crate::policy::{CatalogRun, ContentionParameters, RoundKind};
 use crate::stats::MedianRange;
@@ -213,8 +213,6 @@ impl ContentionTranscript {
         &self,
         sensitive_values: &[String],
     ) -> Result<(), SanitizationViolation> {
-        let value =
-            serde_json::to_value(self).map_err(|_| SanitizationViolation::SerializationFailed)?;
         let identity_prefixes = self
             .rounds
             .iter()
@@ -225,7 +223,7 @@ impl ContentionTranscript {
                 )
             })
             .collect::<Vec<_>>();
-        inspect_value(&value, sensitive_values, &identity_prefixes)
+        audit_serialized_values(self, sensitive_values, &identity_prefixes).map_err(Into::into)
     }
 }
 
@@ -254,40 +252,12 @@ impl Display for SanitizationViolation {
 
 impl Error for SanitizationViolation {}
 
-fn inspect_value(
-    value: &Value,
-    sensitive_values: &[String],
-    identity_prefixes: &[String],
-) -> Result<(), SanitizationViolation> {
-    match value {
-        Value::Array(values) => {
-            for value in values {
-                inspect_value(value, sensitive_values, identity_prefixes)?;
-            }
+impl From<SerializedValueAuditFailure> for SanitizationViolation {
+    fn from(failure: SerializedValueAuditFailure) -> Self {
+        match failure {
+            SerializedValueAuditFailure::Serialization => Self::SerializationFailed,
+            SerializedValueAuditFailure::SensitiveValue => Self::SensitiveRuntimeValue,
+            SerializedValueAuditFailure::ForbiddenValue => Self::RawRequestIdentity,
         }
-        Value::Object(values) => {
-            // Keys are schema vocabulary, not captured runtime values. Scanning
-            // only values avoids false positives for short fixture credentials.
-            for value in values.values() {
-                inspect_value(value, sensitive_values, identity_prefixes)?;
-            }
-        }
-        Value::String(value) => {
-            if sensitive_values
-                .iter()
-                .filter(|sensitive| !sensitive.is_empty())
-                .any(|sensitive| value.contains(sensitive))
-            {
-                return Err(SanitizationViolation::SensitiveRuntimeValue);
-            }
-            if identity_prefixes
-                .iter()
-                .any(|prefix| value.contains(prefix))
-            {
-                return Err(SanitizationViolation::RawRequestIdentity);
-            }
-        }
-        Value::Null | Value::Bool(_) | Value::Number(_) => {}
     }
-    Ok(())
 }

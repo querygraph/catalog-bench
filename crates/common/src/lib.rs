@@ -13,6 +13,7 @@
 //!   in [`Phase`].
 
 pub mod contract;
+pub mod sanitization;
 
 use std::time::Duration;
 
