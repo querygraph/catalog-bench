@@ -21,8 +21,9 @@ pub use contention_profile::{
 pub use legacy_commit::{check_historical_commit_bundle, write_historical_commit_bundle};
 pub use matrix::render_commit_matrix;
 pub use profile_materialization::{
-    check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactPolicy,
-    BuildExtensionLabelPolicy, ImagePolicy, RequiredLabelPolicy, ScenarioProfilePolicy,
+    check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactCopyPolicy,
+    ArtifactPolicy, BuildExtensionLabelPolicy, ImagePolicy, RequiredLabelPolicy,
+    ScenarioProfilePolicy,
 };
 pub use spark_profile::{check_spark_profile, render_spark_profile, write_spark_profile};
 

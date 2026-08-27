@@ -297,11 +297,12 @@ fn contracts() -> (Profile, Scenario) {
 }
 
 fn rewrite_runtime_artifacts(profile: &mut Profile, submit_script: &[u8]) {
-    for component in profile
-        .components
-        .iter_mut()
-        .filter(|component| matches!(component.id.as_str(), "spark-4.1" | "iceberg-java"))
-    {
+    for component in profile.components.iter_mut().filter(|component| {
+        matches!(
+            component.id.as_str(),
+            "catalog-bench-engine" | "spark-4.1" | "iceberg-java"
+        )
+    }) {
         let RuntimeArtifact::ContainerImage {
             embedded_artifacts, ..
         } = &mut component.artifact
@@ -325,6 +326,8 @@ fn artifact_bytes<'a>(location: &str, submit_script: &'a [u8]) -> &'a [u8] {
         b"test Iceberg Spark runtime artifact"
     } else if location.contains("iceberg-aws-bundle") {
         b"test Iceberg AWS bundle artifact"
+    } else if location.ends_with("catalog-bench-engine") {
+        b"test catalog-bench engine runner artifact"
     } else {
         panic!("unexpected runtime artifact `{location}`");
     }

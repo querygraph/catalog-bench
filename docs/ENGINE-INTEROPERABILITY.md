@@ -135,18 +135,26 @@ audited
 [`spark-4.1.3-iceberg-1.11.0-2026-08-27`](../materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
 image sidecar. It retains exactly Spark, the Java connector, shared MinIO,
 LakeCat, Polaris, Gravitino, Lakekeeper, their required private-state
-components, and the four corresponding protocol-native catalog adapters. Nessie
-is not silently added to the Phase 2 four-catalog requirement.
+components, the exact optimized `catalog-bench-engine` runner, and the four
+corresponding protocol-native catalog adapters. Nessie is not silently added to
+the Phase 2 four-catalog requirement.
 
-The Docker build separates two identities:
+The Docker build separates three identities:
+
+- `catalog-bench-engine:5e10f36e7e99` is the independently observed donor for
+  the stripped production runner. It is built from public revision
+  `5e10f36e7e99815df273c7b567e466749f04d4be` with stable Rust 1.97.1,
+  optimization level 3, fat LTO, one codegen unit, native CPU features, stripped
+  symbols, and aborting panics.
 
 - `catalog-bench/iceberg-spark-runtime:1.11.0-spark4.1_2.13` contains only the
   Maven Central Iceberg Spark runtime and AWS bundle. BuildKit admits each URL
   only when its expected SHA-256 matches.
 - `catalog-bench/spark:4.1.3-iceberg1.11.0` starts from the broad profile's
   immutable Spark index, selected as Linux ARM64, and copies those exact JAR
-  bytes into `/opt/spark/jars`. Its labels bind the audited ARM64 child manifest
-  and both Spark and Iceberg source revisions.
+  bytes into `/opt/spark/jars` plus the exact runner into `/usr/local/bin`. Its
+  labels bind the audited ARM64 child manifest and the Spark, Iceberg, and runner
+  source revisions.
 
 | Artifact | Bytes | SHA-256 |
 | --- | ---: | --- |
@@ -154,24 +162,31 @@ The Docker build separates two identities:
 | `iceberg-aws-bundle-1.11.0.jar` | 63,613,165 | `38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f` |
 | `spark-sql_2.13-4.1.3.jar` | 13,604,536 | `6002f0e4430c36909db950a0b0863502260050ca2cc65ff8ca89baf404edb345` |
 | `spark-submit` | 1,040 | `98e6f3b89b9092938a0b163a656c2b9051099821966fc7ab5ef9888fa9f62c6a` |
+| `catalog-bench-engine` | 4,986,064 | `44e0aad6f2519678d335d6a437073da9674bb5a378df4b6d92fe88dfae038f5b` |
 
 The connector local-image ID is
 `c6fd71411aaffbf5b0d805a7e49886a97252a5d3297586ba79151f7ddc3a15a7`;
+the engine-runner donor local-image ID is
+`e011bf4c8a953768e237431a9e3a8a3dfaf313bd210444fe485a7aa59c0fc2c9`;
 the executed Spark image ID is
-`7dbce16ad888b932f52e5f7db424f9b2ba364076899780cf498c2a4802d5183b`.
+`b2c7d6494c6b8fd407949e3894525b82c1bef9b6ab4fb95cbb702b3e10d01bec`.
 The source index is `bf9d035a...`; the selected ARM64 child is
 `f6831c619d0f...`. A Compose smoke reports Spark 4.1.3, Scala 2.13.17,
 OpenJDK 21.0.11, and Spark revision `77bbf77e86ad...` from inside that image.
 
+The source profile SHA-256 is
+`f2bc773323a1438ee5f66553c3ae55b5706f3ab1dc627eb0c518197e8addb33e`.
 The materialization SHA-256 is
-`15835d6a505b6b78993b2a8ef8288f2f31bd117528cdb5cfc56195814c7cd7c0`;
+`f73834ed8490efbd68f73331627b8061c72a6da159e78fc5e24a0002bd78d7be`;
 the generated
 [`runnable profile`](../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
 SHA-256 is
-`5669b61d42e76b33f17dac21194dcfbbacfa8ebe5131bcef07569fcb507b18c2`.
+`cb64b3b58db24e2380253b6992927ce044b349aaa061230fe62ad9680a99a969`.
 The shared Docker verifier independently copies every recorded artifact from
 stopped containers and rejects image, platform, label, digest, or byte-count
-drift.
+drift. The reusable materialization policy also rejects a copied JAR or runner
+when its media type, SHA-256, or byte count differs between donor and executed
+image, so a test-only equality assertion is not the trust boundary.
 
 This unit proves runtime identity and readiness only. It does not claim that any
 catalog passed the common workflow; only the next runner and result bundle may

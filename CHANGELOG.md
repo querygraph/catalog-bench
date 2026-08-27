@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- C2-04 immutable source-bound Spark runtime: materialize the exact optimized
+  `catalog-bench-engine` donor and its byte-identical copy inside the combined
+  Spark image, bind both to public revision `5e10f36e…`, and advance the runnable
+  profile to the dedicated 2026-08-27 source pinset. A reusable artifact-copy
+  policy now rejects digest, byte-count, or media-type drift for the runner and
+  both Iceberg JARs during generation; the independent Docker verifier confirms
+  all five actual images and every embedded artifact before execution.
+
 - C2-04 source-bound engine profile: preserve the published contention source
   profile and add a separate stock-engine candidate that pins
   `catalog-bench-engine` to public revision

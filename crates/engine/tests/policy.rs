@@ -11,12 +11,13 @@ use serde_json::json;
 
 mod support;
 
-use support::{add_engine_runner, RUNNER_DIGEST, RUNNER_REVISION};
+use support::{remove_engine_runner, RUNNER_REVISION};
 
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const SCENARIO: &[u8] =
     include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.json");
+const RUNNER_DIGEST: &str = "44e0aad6f2519678d335d6a437073da9674bb5a378df4b6d92fe88dfae038f5b";
 
 #[test]
 fn derives_one_secret_free_stock_spark_plan_for_each_selected_catalog() {
@@ -140,11 +141,11 @@ fn runtime_policy_requires_connector_bytes_inside_the_executed_engine() {
         "runtime01",
     )
     .unwrap();
-    assert_eq!(plan.runtime_artifacts().len(), 4);
+    assert_eq!(plan.runtime_artifacts().len(), 5);
     let shared = plan
         .runtime_artifacts()
         .iter()
-        .filter(|artifact| artifact.components.len() == 2)
+        .filter(|artifact| artifact.location.starts_with("/opt/spark/jars/iceberg-"))
         .collect::<Vec<_>>();
     assert_eq!(shared.len(), 2);
     assert!(shared.iter().all(|artifact| {
@@ -252,8 +253,7 @@ fn runtime_policy_requires_connector_bytes_inside_the_executed_engine() {
 
 #[test]
 fn runner_role_correlates_one_source_bound_elf_inside_spark() {
-    let (mut profile, scenario) = contracts();
-    add_engine_runner(&mut profile);
+    let (profile, scenario) = contracts();
 
     let plan = InteroperabilityPlan::from_contracts(
         &profile,
@@ -309,6 +309,22 @@ fn runner_role_correlates_one_source_bound_elf_inside_spark() {
         .unwrap();
     runner.version = "not-a-revision".to_owned();
     assert!(plan_error(&wrong_source, &scenario).contains("40-character Git revision"));
+}
+
+#[test]
+fn legacy_profile_without_runner_role_retains_toolchain_fallback() {
+    let (mut profile, scenario) = contracts();
+    remove_engine_runner(&mut profile);
+
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "legacy_runner01",
+    )
+    .unwrap();
+    assert!(plan.runner().is_none());
+    assert_eq!(plan.runtime_artifacts().len(), 4);
 }
 
 #[test]

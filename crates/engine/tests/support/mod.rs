@@ -1,60 +1,17 @@
-use std::collections::BTreeMap;
-
-use catalog_bench_common::contract::{
-    ArtifactReference, Component, ComponentId, ComponentKind, Digest, DigestAlgorithm,
-    ImageDigestScope, Profile, RuntimeArtifact, ServiceBinding, SourceRevision,
-};
+use catalog_bench_common::contract::{Profile, RuntimeArtifact};
 use catalog_bench_engine::{
     ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE,
 };
 
-pub(crate) const RUNNER_REVISION: &str = "1111111111111111111111111111111111111111";
-pub(crate) const RUNNER_DIGEST: &str =
-    "2222222222222222222222222222222222222222222222222222222222222222";
+pub(crate) const RUNNER_REVISION: &str = "5e10f36e7e99815df273c7b567e466749f04d4be";
 
-pub(crate) fn add_engine_runner(profile: &mut Profile) {
-    let artifact = ArtifactReference {
-        location: format!("image:{ENGINE_RUNNER_LOCATION}"),
-        media_type: "application/vnd.elf".to_owned(),
-        digest: Digest {
-            algorithm: DigestAlgorithm::Sha256,
-            value: RUNNER_DIGEST.to_owned(),
-        },
-        bytes: Some(4_986_064),
-        description: Some("test optimized engine runner".to_owned()),
-        extensions: BTreeMap::new(),
-    };
-    profile.components.push(Component {
-        id: ComponentId::from(ENGINE_RUNNER_COMPONENT_ID),
-        kind: ComponentKind::BenchmarkHarness,
-        name: "catalog-bench stock-engine runner".to_owned(),
-        version: RUNNER_REVISION.to_owned(),
-        source: Some(Box::new(SourceRevision {
-            repository: "https://github.com/querygraph/catalog-bench.git".to_owned(),
-            revision: RUNNER_REVISION.to_owned(),
-            tag: None,
-            extensions: BTreeMap::new(),
-        })),
-        build: None,
-        artifact: RuntimeArtifact::ContainerImage {
-            reference: "catalog-bench-engine:test".to_owned(),
-            digest_scope: ImageDigestScope::LocalImage,
-            digest: Digest {
-                algorithm: DigestAlgorithm::Sha256,
-                value: "4".repeat(64),
-            },
-            platform_digest: None,
-            embedded_artifacts: vec![artifact.clone()],
-        },
-        extensions: BTreeMap::new(),
-    });
-    profile.services.push(ServiceBinding {
-        component: ComponentId::from(ENGINE_RUNNER_COMPONENT_ID),
-        role: ENGINE_RUNNER_ROLE.to_owned(),
-        endpoint: None,
-        private_state: None,
-        settings: BTreeMap::new(),
-        extensions: BTreeMap::new(),
+pub(crate) fn remove_engine_runner(profile: &mut Profile) {
+    profile
+        .components
+        .retain(|component| component.id.as_str() != ENGINE_RUNNER_COMPONENT_ID);
+    profile.services.retain(|service| {
+        service.component.as_str() != ENGINE_RUNNER_COMPONENT_ID
+            && service.role != ENGINE_RUNNER_ROLE
     });
     let engine = profile
         .components
@@ -67,5 +24,7 @@ pub(crate) fn add_engine_runner(profile: &mut Profile) {
     else {
         panic!("engine fixture must be an image");
     };
-    embedded_artifacts.push(artifact);
+    embedded_artifacts.retain(|artifact| {
+        artifact.location.strip_prefix("image:") != Some(ENGINE_RUNNER_LOCATION)
+    });
 }

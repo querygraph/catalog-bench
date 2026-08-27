@@ -6,17 +6,19 @@ use anyhow::Result;
 use catalog_bench_common::contract::ProfilePurpose;
 
 use crate::profile_materialization::{
-    check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactPolicy,
-    ImagePolicy, RequiredLabelPolicy, ScenarioProfilePolicy,
+    check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactCopyPolicy,
+    ArtifactPolicy, ImagePolicy, RequiredLabelPolicy, ScenarioProfilePolicy,
 };
 use crate::profile_runtime_policy::{LAKECAT_IMAGE, MINIO_IMAGE};
 
 const SPARK_BASE_PLATFORM_DIGEST: &str =
     "sha256:f6831c619d0f6f07fe41912a5be499f6a7c0c1e9f18322d0c703ff21d2f30cd1";
 const ICEBERG_SOURCE_REVISION: &str = "6976e020b894f6a6777704df2b8c4458cb291ae9";
+const ENGINE_RUNNER_SOURCE_REVISION: &str = "5e10f36e7e99815df273c7b567e466749f04d4be";
 
 const MATERIALIZED_COMPONENTS: &[&str] = &[
     "rust-runner",
+    "catalog-bench-engine",
     "minio",
     "lakecat",
     "lakecat-turso",
@@ -27,6 +29,11 @@ const MATERIALIZED_COMPONENTS: &[&str] = &[
     "iceberg-java",
     "spark-4.1",
 ];
+
+const ENGINE_RUNNER_ARTIFACTS: &[ArtifactPolicy] = &[ArtifactPolicy {
+    location: "image:/usr/local/bin/catalog-bench-engine",
+    media_type: "application/vnd.elf",
+}];
 
 const ICEBERG_ARTIFACTS: &[ArtifactPolicy] = &[
     ArtifactPolicy {
@@ -55,6 +62,31 @@ const SPARK_ARTIFACTS: &[ArtifactPolicy] = &[
     ArtifactPolicy {
         location: "image:/opt/spark/jars/iceberg-aws-bundle-1.11.0.jar",
         media_type: "application/java-archive",
+    },
+    ArtifactPolicy {
+        location: "image:/usr/local/bin/catalog-bench-engine",
+        media_type: "application/vnd.elf",
+    },
+];
+
+const ARTIFACT_COPIES: &[ArtifactCopyPolicy] = &[
+    ArtifactCopyPolicy {
+        source_component: "iceberg-java",
+        source_location: "image:/opt/iceberg/iceberg-spark-runtime-4.1_2.13-1.11.0.jar",
+        destination_component: "spark-4.1",
+        destination_location: "image:/opt/spark/jars/iceberg-spark-runtime-4.1_2.13-1.11.0.jar",
+    },
+    ArtifactCopyPolicy {
+        source_component: "iceberg-java",
+        source_location: "image:/opt/iceberg/iceberg-aws-bundle-1.11.0.jar",
+        destination_component: "spark-4.1",
+        destination_location: "image:/opt/spark/jars/iceberg-aws-bundle-1.11.0.jar",
+    },
+    ArtifactCopyPolicy {
+        source_component: "catalog-bench-engine",
+        source_location: "image:/usr/local/bin/catalog-bench-engine",
+        destination_component: "spark-4.1",
+        destination_location: "image:/usr/local/bin/catalog-bench-engine",
     },
 ];
 
@@ -86,11 +118,22 @@ const SPARK_LABELS: &[RequiredLabelPolicy] = &[
         label: "io.querygraph.catalog-bench.iceberg-source-revision",
         value: ICEBERG_SOURCE_REVISION,
     },
+    RequiredLabelPolicy {
+        label: "io.querygraph.catalog-bench.runner-source-revision",
+        value: ENGINE_RUNNER_SOURCE_REVISION,
+    },
 ];
 
 const MATERIALIZED_IMAGES: &[ImagePolicy] = &[
     MINIO_IMAGE,
     LAKECAT_IMAGE,
+    ImagePolicy {
+        component: "catalog-bench-engine",
+        compose_service: "engine-runner-image",
+        required_artifacts: ENGINE_RUNNER_ARTIFACTS,
+        required_labels: &[],
+        build_extension_label: None,
+    },
     ImagePolicy {
         component: "iceberg-java",
         compose_service: "iceberg-spark-runtime",
@@ -114,6 +157,7 @@ const POLICY: ScenarioProfilePolicy = ScenarioProfilePolicy {
     purpose: ProfilePurpose::Conformance,
     selected_components: MATERIALIZED_COMPONENTS,
     images: MATERIALIZED_IMAGES,
+    artifact_copies: ARTIFACT_COPIES,
 };
 
 /// Render the runnable Spark interoperability profile.

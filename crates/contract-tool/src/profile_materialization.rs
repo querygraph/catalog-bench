@@ -29,6 +29,20 @@ pub struct ArtifactPolicy {
     pub media_type: &'static str,
 }
 
+/// Require an artifact copied between two materialized images to retain its
+/// exact content identity.
+#[derive(Debug, Clone, Copy)]
+pub struct ArtifactCopyPolicy {
+    /// Component owning the independently observed source artifact.
+    pub source_component: &'static str,
+    /// Absolute in-image source location recorded by its observation.
+    pub source_location: &'static str,
+    /// Component whose image contains the copied artifact.
+    pub destination_component: &'static str,
+    /// Absolute in-image destination location recorded by its observation.
+    pub destination_location: &'static str,
+}
+
 /// Derive one required image label from a string field in the selected
 /// component's build extensions.
 #[derive(Debug, Clone, Copy)]
@@ -80,6 +94,9 @@ pub struct ScenarioProfilePolicy {
     pub selected_components: &'static [&'static str],
     /// Exhaustive local-image observations required by this projection.
     pub images: &'static [ImagePolicy],
+    /// Artifacts whose digest, byte count, and media type must survive a copy
+    /// between independently observed images.
+    pub artifact_copies: &'static [ArtifactCopyPolicy],
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -398,6 +415,63 @@ fn validate_policy(policy: &ScenarioProfilePolicy) -> Result<ValidatedPolicy> {
         }
     }
 
+    let artifact_copies = policy
+        .artifact_copies
+        .iter()
+        .map(|copy| {
+            (
+                copy.source_component,
+                copy.source_location,
+                copy.destination_component,
+                copy.destination_location,
+            )
+        })
+        .collect::<BTreeSet<_>>();
+    if artifact_copies.len() != policy.artifact_copies.len() {
+        bail!("{} policy contains duplicate artifact copies", policy.name);
+    }
+    for copy in policy.artifact_copies {
+        for (field, value) in [
+            ("source component", copy.source_component),
+            ("source location", copy.source_location),
+            ("destination component", copy.destination_component),
+            ("destination location", copy.destination_location),
+        ] {
+            if value.trim().is_empty() {
+                bail!("{} artifact-copy {field} must not be empty", policy.name);
+            }
+        }
+        for (direction, component, location) in [
+            ("source", copy.source_component, copy.source_location),
+            (
+                "destination",
+                copy.destination_component,
+                copy.destination_location,
+            ),
+        ] {
+            let image = policy
+                .images
+                .iter()
+                .find(|image| image.component == component)
+                .with_context(|| {
+                    format!(
+                        "{} artifact-copy {direction} component `{component}` is not a materialized image",
+                        policy.name
+                    )
+                })?;
+            if !image
+                .required_artifacts
+                .iter()
+                .any(|artifact| artifact.location == location)
+            {
+                bail!(
+                    "{} artifact-copy {direction} `{component}` location `{location}` is not a required artifact",
+                    policy.name
+                );
+            }
+        }
+    }
+
     Ok(ValidatedPolicy {
         selected_components,
         image_components,
@@ -496,8 +570,50 @@ fn validate_materialization(
             .with_context(|| format!("materialization omits `{component_id}`"))?;
         validate_image(profile, component, image, image_policy)?;
     }
+    validate_artifact_copies(&observed, policy)?;
     require_consistent_compose_version(&materialization.images, policy.name)?;
     Ok(())
+}
+
+fn validate_artifact_copies(
+    observations: &BTreeMap<&str, &ImageObservation>,
+    policy: &ScenarioProfilePolicy,
+) -> Result<()> {
+    for copy in policy.artifact_copies {
+        let source = observed_artifact(observations, copy.source_component, copy.source_location)?;
+        let destination = observed_artifact(
+            observations,
+            copy.destination_component,
+            copy.destination_location,
+        )?;
+        if source.digest != destination.digest
+            || source.bytes != destination.bytes
+            || source.media_type != destination.media_type
+        {
+            bail!(
+                "artifact copied from `{}` `{}` to `{}` `{}` must be byte-identical",
+                copy.source_component,
+                copy.source_location,
+                copy.destination_component,
+                copy.destination_location
+            );
+        }
+    }
+    Ok(())
+}
+
+fn observed_artifact<'a>(
+    observations: &'a BTreeMap<&str, &ImageObservation>,
+    component: &str,
+    location: &str,
+) -> Result<&'a ArtifactReference> {
+    observations
+        .get(component)
+        .with_context(|| format!("materialization omits `{component}`"))?
+        .embedded_artifacts
+        .iter()
+        .find(|artifact| artifact.location == location)
+        .with_context(|| format!("image `{component}` omits required artifact `{location}`"))
 }
 
 fn validate_image(

@@ -1,10 +1,10 @@
 {
   "contract_version": "catalog-bench/v1",
   "kind": "profile",
-  "id": "catalog-community-spark-4.1.3-iceberg-1.11.0-2026-08-27-linux-arm64",
-  "title": "Spark 4.1.3 and Iceberg 1.11.0 interoperability profile",
-  "description": "Runnable Linux ARM64 profile for the common stock-engine write, read, and additive-schema-evolution scenario through four protocol-native Iceberg REST catalogs and shared MinIO.",
-  "resolved_at": "2026-08-27T07:24:21Z",
+  "id": "catalog-community-spark-4.1.3-iceberg-1.11.0-engine-5e10f36-2026-08-27-linux-arm64",
+  "title": "Spark 4.1.3, Iceberg 1.11.0, and source-bound engine-runner interoperability profile",
+  "description": "Runnable Linux ARM64 profile for the common stock-engine write, read, and additive-schema-evolution scenario through four protocol-native Iceberg REST catalogs and shared MinIO, with the optimized catalog-bench runner bound byte-for-byte to its donor image and executed Spark image.",
+  "resolved_at": "2026-08-27T11:32:32Z",
   "purpose": "conformance",
   "readiness": {
     "status": "runnable"
@@ -38,6 +38,73 @@
         "platform_digest": {
           "algorithm": "sha256",
           "value": "6e957ef098dcc77d33e310261e4ed5843bb108d5c3b5dc2b476cbc8b6caf53fa"
+        }
+      }
+    },
+    {
+      "id": "catalog-bench-engine",
+      "kind": "benchmark-harness",
+      "name": "catalog-bench stock-engine runner",
+      "version": "5e10f36e7e99815df273c7b567e466749f04d4be",
+      "source": {
+        "repository": "https://github.com/querygraph/catalog-bench.git",
+        "revision": "5e10f36e7e99815df273c7b567e466749f04d4be"
+      },
+      "build": {
+        "toolchain": "Rust 1.97.1",
+        "target": "aarch64-unknown-linux-gnu",
+        "profile": "release",
+        "options": [
+          "package=catalog-bench-engine",
+          "binary=catalog-bench-engine",
+          "jobs=1"
+        ],
+        "compiler_flags": [
+          "-Dwarnings",
+          "-Ctarget-cpu=native"
+        ],
+        "locked": true,
+        "environment": {
+          "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_RELEASE_DEBUG": "false",
+          "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+          "CARGO_PROFILE_RELEASE_LTO": "fat",
+          "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+          "CARGO_PROFILE_RELEASE_PANIC": "abort",
+          "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+        }
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "catalog-bench-engine:5e10f36e7e99",
+        "digest_scope": "local-image",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "e011bf4c8a953768e237431a9e3a8a3dfaf313bd210444fe485a7aa59c0fc2c9"
+        },
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/local/bin/catalog-bench-engine",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "44e0aad6f2519678d335d6a437073da9674bb5a378df4b6d92fe88dfae038f5b"
+            },
+            "bytes": 4986064,
+            "description": "Stripped catalog-bench stock-engine runner built from the exact public source revision with stable Rust 1.97.1, optimization level 3, fat LTO, one codegen unit, native CPU features, and aborting panics."
+          }
+        ]
+      },
+      "extensions": {
+        "querygraph/materialized-image-observation": {
+          "architecture": "arm64",
+          "labels": {
+            "com.docker.compose.project": "catalog-bench",
+            "com.docker.compose.service": "engine-runner-image",
+            "com.docker.compose.version": "5.1.3",
+            "org.opencontainers.image.revision": "5e10f36e7e99815df273c7b567e466749f04d4be"
+          },
+          "operating_system": "linux"
         }
       }
     },
@@ -426,7 +493,7 @@
         "digest_scope": "local-image",
         "digest": {
           "algorithm": "sha256",
-          "value": "7dbce16ad888b932f52e5f7db424f9b2ba364076899780cf498c2a4802d5183b"
+          "value": "b2c7d6494c6b8fd407949e3894525b82c1bef9b6ab4fb95cbb702b3e10d01bec"
         },
         "embedded_artifacts": [
           {
@@ -468,6 +535,16 @@
             },
             "bytes": 63613165,
             "description": "The checksum-locked Iceberg AWS/S3FileIO bundle bytes copied into the executed Spark image."
+          },
+          {
+            "location": "image:/usr/local/bin/catalog-bench-engine",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "44e0aad6f2519678d335d6a437073da9674bb5a378df4b6d92fe88dfae038f5b"
+            },
+            "bytes": 4986064,
+            "description": "Byte-identical copy of the source-bound optimized engine runner executed in the same container as stock Spark."
           }
         ]
       },
@@ -479,6 +556,7 @@
             "com.docker.compose.service": "spark",
             "com.docker.compose.version": "5.1.3",
             "io.querygraph.catalog-bench.iceberg-source-revision": "6976e020b894f6a6777704df2b8c4458cb291ae9",
+            "io.querygraph.catalog-bench.runner-source-revision": "5e10f36e7e99815df273c7b567e466749f04d4be",
             "org.opencontainers.image.base.digest": "sha256:f6831c619d0f6f07fe41912a5be499f6a7c0c1e9f18322d0c703ff21d2f30cd1",
             "org.opencontainers.image.base.name": "docker.io/apache/spark:4.1.3",
             "org.opencontainers.image.revision": "77bbf77e86ad48f58b5dfbc6ac882b3e70cf1989",
@@ -493,6 +571,10 @@
     }
   ],
   "services": [
+    {
+      "component": "catalog-bench-engine",
+      "role": "engine-runner"
+    },
     {
       "component": "minio",
       "role": "shared-object-store",
@@ -844,14 +926,14 @@
     "querygraph/iceberg-rest-spec": "Apache Iceberg 1.11.0 OpenAPI at source revision 6976e020b894f6a6777704df2b8c4458cb291ae9; exact YAML SHA-256 80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a",
     "querygraph/materialization": {
       "format": "catalog-bench/spark-profile-materialization/v1",
-      "observation_sha256": "15835d6a505b6b78993b2a8ef8288f2f31bd117528cdb5cfc56195814c7cd7c0",
+      "observation_sha256": "f73834ed8490efbd68f73331627b8061c72a6da159e78fc5e24a0002bd78d7be",
       "scope": "engine.iceberg.write-read-evolution/v1",
       "source_profile": {
         "digest": {
           "algorithm": "sha256",
-          "value": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465"
+          "value": "f2bc773323a1438ee5f66553c3ae55b5706f3ab1dc627eb0c518197e8addb33e"
         },
-        "id": "catalog-community-current-2026-08-26-linux-arm64"
+        "id": "catalog-community-current-2026-08-27-linux-arm64"
       }
     },
     "querygraph/profile-state": "Runnable scenario-scoped profile; every selected runtime artifact has an immutable identity."

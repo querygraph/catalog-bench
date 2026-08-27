@@ -47,6 +47,7 @@ const POLICY: ScenarioProfilePolicy = ScenarioProfilePolicy {
     purpose: ProfilePurpose::Performance,
     selected_components: MATERIALIZED_COMPONENTS,
     images: MATERIALIZED_IMAGES,
+    artifact_copies: &[],
 };
 
 /// Render a scenario-scoped runnable profile from a broader draft and audited

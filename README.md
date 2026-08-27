@@ -69,7 +69,7 @@ cargo run -p catalog-bench-contract --locked -- profile check-contention \
   --materialization materializations/v1/contention-2026-08-27.json \
   --output profiles/v1/contention-2026-08-27.json
 cargo run -p catalog-bench-contract --locked -- profile check-spark \
-  --source-profile profiles/v1/current-2026-08-26.json \
+  --source-profile profiles/v1/current-2026-08-27.json \
   --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
   --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
 ```

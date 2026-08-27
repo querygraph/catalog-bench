@@ -6,8 +6,8 @@ use catalog_bench_common::contract::{
     RuntimeArtifact,
 };
 use catalog_bench_contract::{
-    render_scenario_profile, ArtifactPolicy, BuildExtensionLabelPolicy, ImagePolicy,
-    RequiredLabelPolicy, ScenarioProfilePolicy,
+    render_scenario_profile, ArtifactCopyPolicy, ArtifactPolicy, BuildExtensionLabelPolicy,
+    ImagePolicy, RequiredLabelPolicy, ScenarioProfilePolicy,
 };
 use serde_json::{json, Value};
 use sha2::{Digest as _, Sha256};
@@ -74,6 +74,7 @@ const POLICY: ScenarioProfilePolicy = ScenarioProfilePolicy {
     purpose: ProfilePurpose::Conformance,
     selected_components: COMPONENTS,
     images: IMAGES,
+    artifact_copies: &[],
 };
 
 fn fixture_materialization() -> Result<Vec<u8>> {
@@ -214,6 +215,20 @@ fn policy_rejects_duplicate_unselected_or_ambiguous_entries() -> Result<()> {
     let error = render_scenario_profile(SOURCE_PROFILE, &materialization, &DUPLICATE_LABEL_POLICY)
         .expect_err("duplicate required labels must fail closed");
     assert!(error.to_string().contains("duplicate required labels"));
+
+    const UNDECLARED_COPY: &[ArtifactCopyPolicy] = &[ArtifactCopyPolicy {
+        source_component: "minio",
+        source_location: "image:/usr/local/bin/minio",
+        destination_component: "lakecat",
+        destination_location: "image:/usr/local/bin/not-a-required-artifact",
+    }];
+    const UNDECLARED_COPY_POLICY: ScenarioProfilePolicy = ScenarioProfilePolicy {
+        artifact_copies: UNDECLARED_COPY,
+        ..POLICY
+    };
+    let error = render_scenario_profile(SOURCE_PROFILE, &materialization, &UNDECLARED_COPY_POLICY)
+        .expect_err("copy policy must reference declared artifacts");
+    assert!(error.to_string().contains("is not a required artifact"));
     Ok(())
 }
 

@@ -10,7 +10,7 @@ use catalog_bench_engine::{
 
 mod support;
 
-use support::{add_engine_runner, RUNNER_REVISION};
+use support::{remove_engine_runner, RUNNER_REVISION};
 
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
@@ -69,7 +69,11 @@ async fn production_entrypoint_emits_bound_fail_closed_evidence() {
 
     assert_eq!(transcript.format, ENGINE_TRANSCRIPT_FORMAT);
     assert_eq!(transcript.contract_digests, *contracts.digests());
-    assert_eq!(transcript.components.runner.id.as_str(), "rust-runner");
+    assert_eq!(
+        transcript.components.runner.id.as_str(),
+        ENGINE_RUNNER_COMPONENT_ID
+    );
+    assert_eq!(transcript.components.runner.version, RUNNER_REVISION);
     assert_eq!(transcript.components.catalog.id.as_str(), "lakecat");
     assert_eq!(transcript.components.engine.id.as_str(), "spark-4.1");
     assert_eq!(transcript.components.connector.id.as_str(), "iceberg-java");
@@ -85,11 +89,11 @@ async fn production_entrypoint_emits_bound_fail_closed_evidence() {
 }
 
 #[tokio::test]
-async fn source_bound_engine_runner_replaces_build_toolchain_identity_in_transcript() {
+async fn legacy_profile_without_engine_runner_uses_build_toolchain_identity() {
     let ContractDocument::Profile(mut profile) = parse_contract(PROFILE).unwrap() else {
         panic!("profile fixture must be a profile contract");
     };
-    add_engine_runner(&mut profile);
+    remove_engine_runner(&mut profile);
     let profile_bytes = serde_json::to_vec(&profile).unwrap();
     let contracts = EngineContracts::parse(&profile_bytes, SCENARIO).unwrap();
 
@@ -102,15 +106,12 @@ async fn source_bound_engine_runner_replaces_build_toolchain_identity_in_transcr
     .await
     .unwrap();
 
+    assert_eq!(transcript.components.runner.id.as_str(), "rust-runner");
     assert_eq!(
-        transcript.components.runner.id.as_str(),
-        ENGINE_RUNNER_COMPONENT_ID
+        transcript.components.runner.version,
+        "Rust 1.97.1 on Debian bookworm"
     );
-    assert_eq!(transcript.components.runner.version, RUNNER_REVISION);
-    assert_eq!(
-        transcript.components.runner.source_revision.as_deref(),
-        Some(RUNNER_REVISION)
-    );
+    assert_eq!(transcript.components.runner.source_revision, None);
     assert!(transcript.validate(&contracts).is_ok());
 }
 

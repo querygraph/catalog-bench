@@ -25,8 +25,10 @@ forward:
   LakeCat source-build placeholders with the exact observed local images and
   embedded production executables.
 - [`spark-4.1.3-iceberg-1.11.0-2026-08-27.json`](../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
-  is the current runnable Spark/Iceberg projection. It remains infrastructure
-  evidence rather than a claim that the interoperability scenario passed.
+  is the current runnable Spark/Iceberg projection. It binds the optimized
+  engine runner to the same source revision and bytes in its donor and executed
+  Spark images. It remains infrastructure evidence rather than a claim that the
+  interoperability scenario passed.
 
 All five target Linux ARM64 and one Docker network. All catalog, client, engine,
 and benchmark processes must run in that container environment against the same
@@ -84,6 +86,7 @@ contention-recovery revision selected for the fresh production rerun:
 | Connector | Apache Iceberg Java | 1.11.0 / `6976e020…`; engine JAR hashes unresolved |
 | Engine | Apache Spark | 3.5.9 / `7c14a3c2…`; image index `af02a459…` |
 | Engine | Apache Spark | 4.1.3 / `77bbf77e…`; image index `bf9d035a…` |
+| Benchmark harness | `catalog-bench-engine` | source `5e10f36e…`; stable Rust 1.97.1 optimized release recipe |
 | Engine | Apache Flink | 2.1.3 / `6cda56b0…`; image index `cc557bbe…` |
 | Engine | Trino | 483 / `50b0b50b…`; image index `db58cc93…` |
 | Engine | DuckDB | 1.5.3 / `14eca11b…`; production artifact unresolved |
@@ -220,14 +223,16 @@ also abort before any measured service starts.
 The generated
 [`Spark profile`](../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
 narrows the candidate to Spark 4.1.3, Iceberg 1.11.0, shared MinIO, LakeCat,
-Polaris, Gravitino, Lakekeeper, and required state components. Its authoritative
+Polaris, Gravitino, Lakekeeper, the source-bound optimized engine runner, and
+required state components. Its authoritative
 [`materialization sidecar`](../materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json)
 records exact Linux/ARM64 images and in-image artifacts:
 
 | Component | Local image SHA-256 | Embedded artifact evidence |
 | --- | --- | --- |
+| Engine-runner donor | `e011bf4c8a953768e237431a9e3a8a3dfaf313bd210444fe485a7aa59c0fc2c9` | Optimized `catalog-bench-engine` `44e0aad6…` (4,986,064 bytes), built from `5e10f36e…` |
 | Iceberg connector | `c6fd71411aaffbf5b0d805a7e49886a97252a5d3297586ba79151f7ddc3a15a7` | Spark runtime JAR `d6ea6c5d...` (47,959,591 bytes); AWS/S3FileIO bundle `38f01da7...` (63,613,165 bytes) |
-| Executed Spark runtime | `7dbce16ad888b932f52e5f7db424f9b2ba364076899780cf498c2a4802d5183b` | `spark-submit` `98e6f3b8...`; Spark SQL `6002f0e4...`; byte-identical copies of both Iceberg JARs |
+| Executed Spark runtime | `b2c7d6494c6b8fd407949e3894525b82c1bef9b6ab4fb95cbb702b3e10d01bec` | `spark-submit` `98e6f3b8...`; Spark SQL `6002f0e4...`; byte-identical copies of both Iceberg JARs and `catalog-bench-engine` |
 | LakeCat | `f10c056cd9c9534bdc4b9547c89501c44ebe9a0460cd2ed71440ef2fb061e41d` | Optimized `lakecat-service` `ca2e4b6f...` |
 | MinIO | `6ed436d0b5030603da533ab6747c01451cdd890e75e4cee7169efe476838cd5b` | Exact MinIO server plus all six typed helper identities |
 
@@ -237,25 +242,30 @@ its audited ARM64 child is
 `f6831c619d0f6f07fe41912a5be499f6a7c0c1e9f18322d0c703ff21d2f30cd1`.
 The build script verifies that exact local base before creating a stable local
 indirection for BuildKit, so an unrelated mutable tag cannot enter the runtime.
+The materializer independently requires each declared copy to preserve its media
+type, SHA-256, and byte count. That closes the gap between observing a donor
+artifact and proving that the executed image contains those same bytes.
+The source profile SHA-256 is
+`f2bc773323a1438ee5f66553c3ae55b5706f3ab1dc627eb0c518197e8addb33e`.
 The materialization SHA-256 is
-`15835d6a505b6b78993b2a8ef8288f2f31bd117528cdb5cfc56195814c7cd7c0`;
+`f73834ed8490efbd68f73331627b8061c72a6da159e78fc5e24a0002bd78d7be`;
 the output profile SHA-256 is
-`5669b61d42e76b33f17dac21194dcfbbacfa8ebe5131bcef07569fcb507b18c2`.
+`cb64b3b58db24e2380253b6992927ce044b349aaa061230fe62ad9680a99a969`.
 
 Build, regenerate, and independently verify it with:
 
 ```sh
 docker/build-spark-images.sh
 cargo run -p catalog-bench-contract --locked -- profile materialize-spark \
-  --source-profile profiles/v1/current-2026-08-26.json \
+  --source-profile profiles/v1/current-2026-08-27.json \
   --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
   --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
 cargo run -p catalog-bench-contract --locked -- profile check-spark \
-  --source-profile profiles/v1/current-2026-08-26.json \
+  --source-profile profiles/v1/current-2026-08-27.json \
   --materialization materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
   --output profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
 docker/verify-profile-artifacts.sh \
-  profiles/v1/current-2026-08-26.json \
+  profiles/v1/current-2026-08-27.json \
   materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
   profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json
 ```
