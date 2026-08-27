@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- C1-09 runnable contention profile: deterministically narrow the broad current
+  candidate to the ten components used by same-table contention, retain all five
+  neutral catalog adapters, and replace the runner, LakeCat, and MinIO
+  source-build placeholders with audited Linux ARM64 local-image and embedded
+  executable identities. Added a strict materialization sidecar, source and
+  observation digest binding, external drift/attribution tests, CLI regeneration
+  and staleness checks, and a pre-run Docker verifier that compares actual image
+  IDs, platforms, labels, executable hashes, and byte sizes before any measured
+  service starts. The production launcher now passes only this runnable profile.
+
 - C1-09 MinIO helper provenance: copy bucket, health, setup, and readiness
   helper sources from the immutable public catalog-bench revision
   `f2f66ee45574a64d1e76330e95e7aa551c3a148b` instead of the mutable local

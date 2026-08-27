@@ -63,6 +63,10 @@ cargo run -p catalog-bench-contract -- bundle validate \
 cargo run -p catalog-bench-contract -- matrix check \
   --manifest results/v1/2026-08-08/manifest.json \
   --output results/v1/2026-08-08/MATRIX.md
+cargo run -p catalog-bench-contract -- profile check-contention \
+  --source-profile profiles/v1/current-2026-08-26.json \
+  --materialization materializations/v1/contention-2026-08-27.json \
+  --output profiles/v1/contention-2026-08-27.json
 ```
 
 See **[RESULTS.md](RESULTS.md)** for measured results.
@@ -274,17 +278,19 @@ panics. It embeds the profile-pinned source revision at compile time and refuses
 to touch credentials or the network if runtime or source identity drifts.
 
 ```sh
-docker/run-contention.sh "c108_$(date -u +%m%d%H%M%S)"
+docker/run-contention.sh "run_$(date -u +%m%d%H%M%S)"
 ```
 
 The launcher rejects reused output, containers, and run-scoped state volumes,
-then builds and runs the optimized runner, LakeCat, all four other catalogs, and
-MinIO in one Docker topology. The output is create-new. Exit `0` means every
-catalog passed every round, `2` means the complete transcript was written but at
-least one catalog is unranked, and `1` means invocation, provenance, or evidence
-persistence failed. The current profile remains a draft, so this is smoke
-evidence until the final executable/image hashes are captured
-in a runnable profile and manifest. See
+then builds the optimized runner, LakeCat, and MinIO under one stable Compose
+identity. Before any measured service starts, it verifies their actual image
+IDs, source/platform labels, and in-image executable hashes against the generated
+[runnable contention profile](profiles/v1/contention-2026-08-27.json). It then
+runs all five catalogs in the same Docker topology. The output is create-new.
+Exit `0` means every catalog passed every round, `2` means the complete
+transcript was written but at least one catalog is unranked, and `1` means
+invocation, provenance, or evidence persistence failed. A transcript becomes
+publishable only after immutable result/manifest materialization and review. See
 [Commit contention](docs/COMMIT-CONTENTION.md) and [DOCKER.md](DOCKER.md).
 
 ## Bootstrap caveats (the externals are not turnkey)

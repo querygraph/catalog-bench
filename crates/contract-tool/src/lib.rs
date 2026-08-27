@@ -2,12 +2,16 @@
 //! `catalog-bench/v1` evidence bundles.
 
 mod bundle;
+mod contention_profile;
 mod legacy_commit;
 mod matrix;
 
 use sha2::{Digest as _, Sha256};
 
 pub use bundle::{load_bundle, ValidatedBundle, ValidatedResult, ValidatedScenario};
+pub use contention_profile::{
+    check_contention_profile, render_contention_profile, write_contention_profile,
+};
 pub use legacy_commit::{check_historical_commit_bundle, write_historical_commit_bundle};
 pub use matrix::render_commit_matrix;
 

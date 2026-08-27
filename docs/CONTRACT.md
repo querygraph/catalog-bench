@@ -297,6 +297,13 @@ cargo run -p catalog-bench-contract --locked -- schemas write
 # Deserialize and semantically validate one file or a directory tree.
 cargo run -p catalog-bench-contract --locked -- validate path/to/documents
 
+# Detect drift between the broad candidate, audited image observations, and the
+# generated runnable contention profile.
+cargo run -p catalog-bench-contract --locked -- profile check-contention \
+  --source-profile profiles/v1/current-2026-08-26.json \
+  --materialization materializations/v1/contention-2026-08-27.json \
+  --output profiles/v1/contention-2026-08-27.json
+
 # Verify exact bytes and every cross-document link in one result bundle.
 cargo run -p catalog-bench-contract --locked -- bundle validate \
   --manifest results/v1/2026-08-08/manifest.json
@@ -316,4 +323,7 @@ importer also verifies the source hashes, exact round/catalog dimensions, summar
 arithmetic, request-rate arithmetic, expected and observed MinIO growth, and
 legacy rank fields before emitting v1 records. `matrix check` first runs full
 bundle validation and ranks only `pass` outcomes; non-pass measurements remain
-visible but unranked.
+visible but unranked. The contention materialization sidecar is a strict generator
+input rather than a fifth `catalog-bench/v1` document kind; its source digest,
+closed fields, exact image set, labels, platforms, and executable identities are
+validated before the ordinary runnable profile is rendered and validated.

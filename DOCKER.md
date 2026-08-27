@@ -6,10 +6,12 @@ and catalog-private state volumes. It does not depend on `~/src/boat`, an
 external Docker network, host MinIO ports, or a host-built benchmark process.
 
 The checked-in [current candidate profile](profiles/v1/current-2026-08-26.json)
-is the authority for selected versions and provenance. Compose references are
-digest-pinned for Linux ARM64. Final public evidence additionally requires a
-runnable profile containing the hashes of every optimized executable; the
-candidate profile remains `draft` until those artifacts are materialized.
+is the broad authority for selected versions and provenance. Compose references
+are digest-pinned for Linux ARM64. The generated
+[runnable contention profile](profiles/v1/contention-2026-08-27.json) narrows
+that pinset to the same-table contention topology and records the exact optimized
+runner, LakeCat, MinIO, and helper artifacts. The broad candidate correctly
+remains `draft` for its unresolved conformance, client, and engine artifacts.
 
 ## Phase 1 topology
 
@@ -158,7 +160,7 @@ evidence. The canonical launcher performs the preflight and does not delete old
 state:
 
 ```sh
-docker/run-contention.sh "c108_$(date -u +%m%d%H%M%S)"
+docker/run-contention.sh "run_$(date -u +%m%d%H%M%S)"
 ```
 
 Before changing running services, the launcher rejects an existing transcript,
@@ -204,10 +206,14 @@ Lakekeeper/Polaris setup, and readiness helpers are copied from the exact public
 catalog-bench revision declared as a named Docker build context. The image
 records both revisions; no helper source is copied from the mutable host tree.
 
-This is the production build recipe required for final runs, but C1-09 still
-owns artifact materialization: hash the resulting executables and images, create
-a runnable profile containing those identities, and accept measurements only
-from that same Docker environment.
+The source-built artifacts are materialized in
+[`profiles/v1/contention-2026-08-27.json`](profiles/v1/contention-2026-08-27.json)
+from the audited
+[`materializations/v1/contention-2026-08-27.json`](materializations/v1/contention-2026-08-27.json)
+sidecar. After every production build, the launcher verifies the actual local
+image IDs, Linux/ARM64 platform, relevant OCI and Compose labels, and the digest
+and size of every selected executable copied directly from a stopped container.
+Any mismatch aborts before the evidence project starts.
 
 ## Same-table contention sweep
 
@@ -218,15 +224,21 @@ architecture drift before reading credentials or making a request. The
 container has a read-only root filesystem, no Linux capabilities, and read-only
 contract mounts. Only `/evidence` is writable.
 
+The host is limited to Docker orchestration and copying/hash-checking immutable
+image files; no host-built service or benchmark executable participates. The
+launcher requires Docker, `jq`, and either `sha256sum` or `shasum`, in addition
+to ordinary POSIX command-line utilities.
+
 Activate every catalog profile. The `bench` dependency graph waits for shared
 MinIO initialization plus LakeCat, Lakekeeper, Nessie, Polaris, and Gravitino's
 client-facing readiness gates:
 
 ```sh
-docker/run-contention.sh "c108_$(date -u +%m%d%H%M%S)"
+docker/run-contention.sh "run_$(date -u +%m%d%H%M%S)"
 ```
 
-The benchmark process, all catalogs, readiness helpers, and MinIO communicate
+The launcher passes only the runnable contention profile to the benchmark. The
+benchmark process, all catalogs, readiness helpers, and MinIO communicate
 only through `catalog-bench-net`; host-published catalog ports do not participate
 in measured traffic. The default transcript directory is
 `target/commit-evidence`. Set `CATALOG_BENCH_COMMIT_EVIDENCE_DIR` before running

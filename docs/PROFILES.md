@@ -3,7 +3,7 @@
 Profiles separate environment selection from benchmark results. A profile says
 what would run; only a result plus its immutable manifest says what did run.
 
-Two v1 profiles preserve the Phase 0 boundary and carry Phase 1 forward:
+Three v1 profiles preserve the Phase 0 boundary and carry Phase 1 forward:
 
 - [`reproduction-2026-08-08.json`](../profiles/v1/reproduction-2026-08-08.json)
   reconstructs the exact production artifacts used by the published commit sweep.
@@ -14,10 +14,16 @@ Two v1 profiles preserve the Phase 0 boundary and carry Phase 1 forward:
   pinset for subsequent conformance and performance work. It is `draft`, lists
   every unresolved artifact, and cannot back a result until those artifacts are
   built or downloaded, hashed, and represented in a new runnable profile.
+- [`contention-2026-08-27.json`](../profiles/v1/contention-2026-08-27.json) is
+  the generated, `runnable` Linux ARM64 performance profile for the same-table
+  contention v2 scenario only. It retains all five catalog adapters but removes
+  unrelated client and engine components, and replaces the runner, MinIO, and
+  LakeCat source-build placeholders with the exact observed local images and
+  embedded production executables.
 
-Both target Linux ARM64 and one Docker network. All catalog, client, engine, and
-benchmark processes must run in that container environment against the same MinIO
-warehouse. Each catalog may have only its necessary private state backend.
+All three target Linux ARM64 and one Docker network. All catalog, client, engine,
+and benchmark processes must run in that container environment against the same
+MinIO warehouse. Each catalog may have only its necessary private state backend.
 
 ## Historical reproduction profile
 
@@ -107,9 +113,9 @@ The C1-08 contention runner source is pinned to
 `e5345a260a42148aa5cd1044fb3f43acfc2232d2`. The production Docker recipe embeds
 that revision at compile time, resolves the same public commit as its immutable
 build context, and lets the CLI check it, Linux, and ARM64 before credential
-access or network I/O. This closes source-selection drift for smoke runs; it does
-not resolve the draft artifact. C1-09 must still record and verify the exact
-optimized executable and image digests in a runnable profile.
+access or network I/O. The scenario-scoped materialization below resolves this
+artifact without pretending that the broader current candidate is runnable for
+conformance, stock clients, or engines whose artifacts remain unresolved.
 
 The LakeCat image independently resolves the exact public Git commit named by
 the profile, uses that immutable tree as its Docker build context, and labels
@@ -128,7 +134,9 @@ historical-compatibility semantics.
 The C1-05 smoke acceptance rebuilt and hashed the candidate conformance runner
 and LakeCat production executable, then proved all five catalog metadata paths
 against shared MinIO. Those observed local artifacts do not resolve this draft:
-C1-09 must materialize them into a new immutable runnable profile and bundle.
+the contention profile uses a later production build and applies only to the v2
+contention scenario. C1-09 still must wrap final transcripts in an immutable
+result bundle before publication.
 Exact hashes and the behavioral matrix are in
 [`TABLE-CONFORMANCE.md`](TABLE-CONFORMANCE.md).
 
@@ -145,6 +153,54 @@ same-table-contention v1 scenario. Current performance work uses the separately
 versioned v2 scenario, which binds the common workload to profile routing,
 run-owned MinIO evidence, cleanup, sanitization, repeated rounds, and generated
 median-with-range aggregation without changing historical inputs.
+
+## Runnable contention profile
+
+The runnable profile is generated, not hand-edited. Its two authoritative inputs
+are the broad current candidate and the audited image observation sidecar
+[`contention-2026-08-27.json`](../materializations/v1/contention-2026-08-27.json).
+The sidecar binds source profile bytes, output identity, Linux/ARM64 platform,
+stable Compose labels, exact source labels, local image IDs, and every executable
+used by the scenario. Its SHA-256 is
+`005e114fd696a89b4031a6ef1599ae4f0cd3a524e8a695ce7acdc3badb8adf1f`;
+the source profile SHA-256 is
+`648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465`.
+
+The materialized runtime identities are:
+
+| Component | Local image SHA-256 | Embedded production artifact(s) |
+|---|---|---|
+| Contention runner | `79a83b934d72a2e6ea697cb514211afd6650cccfaa5619ddbd9aa30cd0f46236` | `catalog-bench-commit`: `470d706fdccd1f66cfcb3f98b2ce3b4600e63fc623d4b4c1ed405bbe61359813`, 4,723,816 bytes |
+| LakeCat | `f10c056cd9c9534bdc4b9547c89501c44ebe9a0460cd2ed71440ef2fb061e41d` | `lakecat-service`: `ca2e4b6f456f139855f445eb447c810401b88211dd43946034af9f79321ad6f5`, 19,625,632 bytes |
+| MinIO and typed helpers | `6ed436d0b5030603da533ab6747c01451cdd890e75e4cee7169efe476838cd5b` | `minio`: `16020fd2829fb8f23b29b2d108b35bfecfd73aa9ada05d499939bfb59abbe582` (105,251,000 bytes); `ensure-bucket`: `8152050fbe456b964902f547e5c2b38fe3f0503944aaf0d4383441a67d9606dd` (7,078,072); `healthcheck`: `63108d653e6e6e8c152973b43b16c0ebb30066bc603759ef99311e0729669dd8` (6,553,784); `lakekeeper-setup`: `0d140420e2775f78251955340b04195874f303062a90a1543b7713b082f7f107` (6,750,392); `polaris-setup`: `7109f6ec37d62f64488e30fcfbf46ca8e89372e8528dbc934352abb6f606c3f0` (6,750,392); `wait-http`: `2069bfb8047ac2e0a41a23d1328be009a1c543ec4d8c76ff0d9b1b3da1d8032c` (6,553,784) |
+
+The output profile SHA-256 is
+`8d63c1d74c6761b4f46724807eef8f3edaf8780ae0ba45eb9116662ff632741d`.
+It retains exactly ten scenario components and all five catalog adapters. A
+`local-image` digest deliberately identifies the locally exported OCI config and
+layers; it is not mislabeled as an image-index or platform-manifest digest.
+
+Regenerate or verify the derivation with stable Rust:
+
+```sh
+cargo run -p catalog-bench-contract -- profile materialize-contention \
+  --source-profile profiles/v1/current-2026-08-26.json \
+  --materialization materializations/v1/contention-2026-08-27.json \
+  --output profiles/v1/contention-2026-08-27.json
+
+cargo run -p catalog-bench-contract -- profile check-contention \
+  --source-profile profiles/v1/current-2026-08-26.json \
+  --materialization materializations/v1/contention-2026-08-27.json \
+  --output profiles/v1/contention-2026-08-27.json
+```
+
+The production launcher performs a second, independent runtime gate after every
+build. [`verify-contention-artifacts.sh`](../docker/verify-contention-artifacts.sh)
+compares the profile projection with the sidecar, checks each actual Docker image
+ID, platform, and recorded label, then copies every selected executable out of a
+stopped container and verifies its byte count and SHA-256. A matching profile is
+therefore necessary but not sufficient: locally rebuilt image and ELF drift also
+abort before any measured service starts.
 
 Primary release sources: [Polaris](https://polaris.apache.org/downloads/),
 [Gravitino](https://gravitino.apache.org/downloads/),

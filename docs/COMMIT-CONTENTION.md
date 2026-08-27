@@ -1,12 +1,17 @@
 # Iceberg REST same-table commit contention
 
 This document describes the current `catalog-bench-commit` performance runner.
-It is an execution contract, not a catalog-specific tuning recipe and not a
-claim that a draft-profile smoke run is publishable.
+It is an execution contract, not a catalog-specific tuning recipe. A runnable
+profile proves artifact identity; it does not by itself make an unreviewed
+transcript a published result.
 
 The authority is the versioned
 [`iceberg-rest.commit.same-table-contention` v2 scenario](../scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json)
-plus the selected [current profile](../profiles/v1/current-2026-08-26.json).
+plus the generated
+[runnable contention profile](../profiles/v1/contention-2026-08-27.json).
+That profile is deterministically derived from the broader
+[current candidate](../profiles/v1/current-2026-08-26.json) and its audited
+[image observation sidecar](../materializations/v1/contention-2026-08-27.json).
 The runner compiles the canonical scenario and rejects behaviorally meaningful
 drift before network access.
 
@@ -183,7 +188,7 @@ invocation-specific provenance wrapper while retaining source, build-recipe,
 OCI-label, platform-image, and executable hashes:
 
 ```sh
-docker/run-contention.sh "c108_$(date -u +%m%d%H%M%S)"
+docker/run-contention.sh "run_$(date -u +%m%d%H%M%S)"
 ```
 
 The default host destination is `target/commit-evidence`. Set
@@ -202,9 +207,16 @@ Exit codes are:
 - `1`: invocation, contract, runner provenance, internal harness, sanitization,
   or evidence-write failure.
 
-The checked-in current profile is still `draft`. A transcript produced from it
-is smoke evidence, even though the executable uses the final optimization
-recipe. Publication requires C1-09 to hash the exact executable and image,
-materialize those identities in a runnable profile, validate the same bytes
-inside the runner container, and place the transcript in a manifest-backed
-immutable result bundle.
+The launcher now uses only the runnable contention profile. Immediately after
+building, it invokes
+[`verify-contention-artifacts.sh`](../docker/verify-contention-artifacts.sh),
+which checks the profile/sidecar projection, actual image IDs, Linux/ARM64
+platform, recorded labels, and every selected executable's byte count and
+SHA-256 copied from the exact stopped image. This gate executes before the
+run-scoped services start; a locally rebuilt image or executable that differs
+from the profile cannot produce a transcript.
+
+The profile closes artifact materialization, not result publication. A final
+transcript must still pass its complete contract, sanitization and environment
+review, then be converted into `catalog-bench/v1` result records under an
+immutable manifest before it can replace a published ranking.

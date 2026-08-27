@@ -496,6 +496,9 @@ fn clean_contention_run_rejects_reused_persistent_state() {
         "remaining_containers=",
         "refusing to build with containers still attached to catalog-bench-net",
         "\"${base_compose[@]}\" build --provenance=false minio lakecat bench",
+        "docker/verify-contention-artifacts.sh",
+        "profiles/v1/contention-2026-08-27.json",
+        "--profile /contracts/profiles/v1/contention-2026-08-27.json",
         "run --rm bench",
     ] {
         assert!(
@@ -507,6 +510,32 @@ fn clean_contention_run_rejects_reused_persistent_state() {
         !launcher.contains("down --volumes") && !launcher.contains("down -v"),
         "the launcher must preserve prior run volumes"
     );
+}
+
+#[test]
+fn contention_artifact_verifier_checks_images_labels_and_executables() {
+    let verifier =
+        fs::read_to_string(repository_root().join("docker/verify-contention-artifacts.sh"))
+            .expect("read contention artifact verifier");
+
+    for required in [
+        "source profile digest mismatch",
+        "materialization digest mismatch",
+        "runnable profile does not exactly project its contention materialization",
+        "docker image inspect --format '{{.Id}}'",
+        "docker image inspect --format '{{json .Config.Labels}}'",
+        "docker create \"$reference\"",
+        "docker cp \"$container_id:$source_path\" \"$destination\"",
+        "sha256_command=(sha256sum)",
+        "sha256_command=(shasum -a 256)",
+        "wc -c",
+        "embedded artifact mismatch",
+    ] {
+        assert!(
+            verifier.contains(required),
+            "contention artifact verifier must contain `{required}`"
+        );
+    }
 }
 
 fn repository_root() -> &'static Path {

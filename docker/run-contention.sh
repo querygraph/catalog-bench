@@ -17,6 +17,9 @@ fi
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 repository_root="$(cd "$script_dir/.." && pwd -P)"
 evidence_dir="${CATALOG_BENCH_COMMIT_EVIDENCE_DIR:-$repository_root/target/commit-evidence}"
+source_profile="$repository_root/profiles/v1/current-2026-08-26.json"
+materialization="$repository_root/materializations/v1/contention-2026-08-27.json"
+runnable_profile="$repository_root/profiles/v1/contention-2026-08-27.json"
 mkdir -p "$evidence_dir"
 evidence_dir="$(cd "$evidence_dir" && pwd -P)"
 evidence_path="$evidence_dir/$run_id.json"
@@ -126,10 +129,14 @@ fi
 # the run-scoped project here would make identical production bytes acquire a
 # different local-image digest on every execution.
 "${base_compose[@]}" build --provenance=false minio lakecat bench
+"$repository_root/docker/verify-contention-artifacts.sh" \
+  "$source_profile" \
+  "$materialization" \
+  "$runnable_profile"
 
 set +e
 "${clean_compose[@]}" run --rm bench \
-  --profile /contracts/profiles/v1/current-2026-08-26.json \
+  --profile /contracts/profiles/v1/contention-2026-08-27.json \
   --scenario /contracts/scenarios/v1/iceberg-rest.commit.same-table-contention.v2.json \
   --fixture-id "$run_id" \
   --output "/evidence/$run_id.json"

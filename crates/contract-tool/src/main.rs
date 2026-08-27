@@ -5,8 +5,8 @@ use std::process::ExitCode;
 use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
-    check_historical_commit_bundle, load_bundle, render_commit_matrix,
-    write_historical_commit_bundle,
+    check_contention_profile, check_historical_commit_bundle, load_bundle, render_commit_matrix,
+    write_contention_profile, write_historical_commit_bundle,
 };
 use clap::{Parser, Subcommand};
 
@@ -42,6 +42,11 @@ enum Command {
     Matrix {
         #[command(subcommand)]
         command: MatrixCommand,
+    },
+    /// Materialize scenario-scoped runnable profiles.
+    Profile {
+        #[command(subcommand)]
+        command: ProfileCommand,
     },
     /// Recompute the canonical 2026-08-08 result bundle from preserved TSVs.
     HistoricalImport {
@@ -92,6 +97,28 @@ enum MatrixCommand {
 }
 
 #[derive(Debug, Subcommand)]
+enum ProfileCommand {
+    /// Derive a runnable contention profile from a draft and image observations.
+    MaterializeContention {
+        #[arg(long)]
+        source_profile: PathBuf,
+        #[arg(long)]
+        materialization: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+    /// Check that a runnable contention profile exactly matches its inputs.
+    CheckContention {
+        #[arg(long)]
+        source_profile: PathBuf,
+        #[arg(long)]
+        materialization: PathBuf,
+        #[arg(long)]
+        output: PathBuf,
+    },
+}
+
+#[derive(Debug, Subcommand)]
 enum HistoricalImportCommand {
     /// Recompute and write records plus their immutable manifest.
     Write {
@@ -128,6 +155,26 @@ fn run(cli: Cli) -> Result<()> {
         Command::Matrix { command } => match command {
             MatrixCommand::Write { manifest, output } => write_matrix(&manifest, &output),
             MatrixCommand::Check { manifest, output } => check_matrix(&manifest, &output),
+        },
+        Command::Profile { command } => match command {
+            ProfileCommand::MaterializeContention {
+                source_profile,
+                materialization,
+                output,
+            } => {
+                write_contention_profile(&source_profile, &materialization, &output)?;
+                println!("wrote {}", output.display());
+                Ok(())
+            }
+            ProfileCommand::CheckContention {
+                source_profile,
+                materialization,
+                output,
+            } => {
+                check_contention_profile(&source_profile, &materialization, &output)?;
+                println!("{} matches its materialization inputs", output.display());
+                Ok(())
+            }
         },
         Command::HistoricalImport { command } => match command {
             HistoricalImportCommand::Write { root } => {
