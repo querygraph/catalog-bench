@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C2-04 verified engine cleanup: extend the engine-bound REST port with bounded
+  table and namespace presence observations so orchestration can prove both
+  run-owned resources absent after non-purging cleanup instead of inferring
+  cleanliness from DELETE status alone. Presence responses discard bodies and
+  retain only standard HTTP 200/404 classifications and byte counts.
+
 - C2-04 bounded engine observations: give the stock Spark renderer the exact
   profile bucket, validate every emitted table UUID, S3 table root, metadata
   pointer, field, count, digest, and runtime label before stdout, and represent

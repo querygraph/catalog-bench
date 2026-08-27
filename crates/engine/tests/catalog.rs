@@ -27,7 +27,9 @@ async fn stock_rest_load_projects_full_state_and_cleanup_never_purges() {
         MockResponse::json(json!({"defaults": {}, "overrides": {}})),
         MockResponse::json(table_response(private)),
         MockResponse::empty(204),
+        MockResponse::empty(404),
         MockResponse::empty(204),
+        MockResponse::empty(404),
     ]);
     let (mut profile, scenario) = contracts();
     adapter_mut(&mut profile, "lakecat").endpoint.base_url = format!("{}/catalog", server.url());
@@ -70,8 +72,10 @@ async fn stock_rest_load_projects_full_state_and_cleanup_never_purges() {
     let table_cleanup = catalog.drop_table_without_purge().await.unwrap();
     assert_eq!(table_cleanup.http_status, 204);
     assert!(!table_cleanup.already_absent);
+    assert!(catalog.table_presence().await.unwrap().is_absent());
     let namespace_cleanup = catalog.drop_namespace().await.unwrap();
     assert_eq!(namespace_cleanup.http_status, 204);
+    assert!(catalog.namespace_presence().await.unwrap().is_absent());
 
     let requests = server.finish();
     assert_eq!(requests[0].target, "/catalog/v1/config");
@@ -81,8 +85,12 @@ async fn stock_rest_load_projects_full_state_and_cleanup_never_purges() {
     assert!(!requests[1].headers.contains_key("idempotency-key"));
     assert_eq!(requests[2].method, "DELETE");
     assert!(requests[2].target.ends_with("?purgeRequested=false"));
-    assert_eq!(requests[3].method, "DELETE");
-    assert!(!requests[3].target.contains("purge"));
+    assert_eq!(requests[3].method, "GET");
+    assert!(requests[3].target.ends_with("/tables/events"));
+    assert_eq!(requests[4].method, "DELETE");
+    assert!(!requests[4].target.contains("purge"));
+    assert_eq!(requests[5].method, "GET");
+    assert!(!requests[5].target.contains("/tables/"));
 }
 
 #[tokio::test]

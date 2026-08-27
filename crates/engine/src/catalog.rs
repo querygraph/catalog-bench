@@ -142,6 +142,26 @@ pub struct EngineCleanupReceipt {
     pub already_absent: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "status", rename_all = "kebab-case", deny_unknown_fields)]
+pub enum EngineResourcePresence {
+    Present {
+        http_status: u16,
+        response_bytes: u64,
+    },
+    Absent {
+        http_status: u16,
+        response_bytes: u64,
+    },
+}
+
+impl EngineResourcePresence {
+    #[must_use]
+    pub fn is_absent(self) -> bool {
+        matches!(self, Self::Absent { .. })
+    }
+}
+
 pub trait EngineCatalog: Clone + Send + Sync + 'static {
     fn load_table(
         &self,
@@ -154,6 +174,14 @@ pub trait EngineCatalog: Clone + Send + Sync + 'static {
     fn drop_namespace(
         &self,
     ) -> impl Future<Output = Result<EngineCleanupReceipt, EngineCatalogFailure>> + Send;
+
+    fn table_presence(
+        &self,
+    ) -> impl Future<Output = Result<EngineResourcePresence, EngineCatalogFailure>> + Send;
+
+    fn namespace_presence(
+        &self,
+    ) -> impl Future<Output = Result<EngineResourcePresence, EngineCatalogFailure>> + Send;
 }
 
 #[derive(Clone)]
@@ -211,6 +239,25 @@ impl RestEngineCatalog {
             already_absent: response.status() == 404,
         })
     }
+
+    async fn presence(&self, url: Url) -> Result<EngineResourcePresence, EngineCatalogFailure> {
+        let response = self
+            .session
+            .request_json(Method::GET, url, None, ResponseCapture::Discard)
+            .await
+            .map_err(EngineCatalogFailure::from)?;
+        match response.status() {
+            200 => Ok(EngineResourcePresence::Present {
+                http_status: response.status(),
+                response_bytes: response.body_bytes(),
+            }),
+            404 => Ok(EngineResourcePresence::Absent {
+                http_status: response.status(),
+                response_bytes: response.body_bytes(),
+            }),
+            status => Err(EngineCatalogFailure::unexpected_http(status)),
+        }
+    }
 }
 
 impl EngineCatalog for RestEngineCatalog {
@@ -255,6 +302,18 @@ impl EngineCatalog for RestEngineCatalog {
         &self,
     ) -> impl Future<Output = Result<EngineCleanupReceipt, EngineCatalogFailure>> + Send {
         self.cleanup(self.namespace_url.clone())
+    }
+
+    fn table_presence(
+        &self,
+    ) -> impl Future<Output = Result<EngineResourcePresence, EngineCatalogFailure>> + Send {
+        self.presence(self.table_url.clone())
+    }
+
+    fn namespace_presence(
+        &self,
+    ) -> impl Future<Output = Result<EngineResourcePresence, EngineCatalogFailure>> + Send {
+        self.presence(self.namespace_url.clone())
     }
 }
 

@@ -12,7 +12,7 @@ mod runtime;
 
 pub use catalog::{
     EngineCatalog, EngineCatalogFailure, EngineCatalogFailureKind, EngineCatalogTable,
-    EngineCleanupReceipt, EngineTableLoad, RestEngineCatalog,
+    EngineCleanupReceipt, EngineResourcePresence, EngineTableLoad, RestEngineCatalog,
 };
 pub use policy::*;
 pub use process::*;
