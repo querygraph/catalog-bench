@@ -356,6 +356,41 @@ canonical row identity and bounds. These tests prove the child structure and
 pure boundaries only. A source-correlated production JAR and same-Docker Flink
 execution are still required before a result or ranking row may be published.
 
+### Checksum-locked Flink image boundary
+
+[`docker/flink/Dockerfile`](../docker/flink/Dockerfile) defines four explicit
+stages without changing the already materialized Spark donor or profile:
+
+1. `java-build` starts from the locally tagged, independently verified Linux
+   ARM64 child of the exact Flink 2.1.3 image. It admits Apache Maven 3.9.16 by
+   its published SHA-512, runs Maven with strict repository checksums, Java 17,
+   all compiler warnings denied, and the complete child test suite, then emits
+   only the shaded child JAR and its source revision.
+2. `connector` admits the Iceberg 1.11.0 Flink 2.1 runtime and AWS/S3FileIO
+   bundle directly from Maven Central under their exact SHA-256 identities. It
+   is a separately inspectable scratch image as well as the donor for runtime
+   bytes.
+3. `runner` copies the child JAR into the independently built production Rust
+   runner image. Both artifacts carry and compare the same full public source
+   revision, so the future runner component can prove both required files from
+   one donor image.
+4. `runtime` starts again from the verified stock Flink image, copies the exact
+   optimized Rust executable, child JAR, and two connector JARs from those
+   donors, verifies both source-revision files, records the Flink, Iceberg, and
+   harness revisions as labels, and returns to the unprivileged `flink` user.
+
+The Dockerfile records the selected Flink platform-child digest
+`99a499ed…c84e18`; the candidate profile separately records the immutable
+multi-platform index `cc557bbe…a7802d`. The future launcher must resolve that
+index for Linux ARM64, compare both identities, and create the local build tag
+only after they agree—the same two-level rule used by the Spark launcher.
+
+This definition deliberately does not claim a built image. Docker's VM showed
+filesystem write/conversion failures while its data volume was nearly full, so
+launch, image inspection, artifact extraction, profile materialization, and
+same-Docker behavior remain pending until that storage is made safe. The static
+audit proves the build boundary and immutable inputs, not runtime evidence.
+
 ## Reusable runtime-identity boundary
 
 Runtime-ready evidence contains a neutral engine version, an exact sorted map of

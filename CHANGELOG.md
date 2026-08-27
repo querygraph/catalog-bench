@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+- C2-06 checksum-locked Flink image definition: add a four-stage BuildKit
+  boundary that compiles and tests the Java child inside the exact Flink Java
+  17 image using SHA-512-locked Maven 3.9.16 with strict repository checksums;
+  downloads the Iceberg Flink 2.1 runtime and AWS bundle under exact SHA-256;
+  combines the JAR with the separately optimized, source-pinned Rust donor; and
+  copies those byte-identical artifacts into the executed stock Flink image.
+  Both donor and runtime compare their independent source-revision files, while
+  the runtime labels the audited Linux ARM64 Flink child digest and upstream
+  revisions. A separate Rust audit freezes checksums, paths, non-root runtime,
+  and absence of unverified package/download commands. Docker execution remains
+  intentionally pending while the local Docker filesystem is unsafe, so this
+  definition creates no materialization or runtime result.
+
 - C2-06 stock Flink child effects: add the Java 17 entry point and a catalog-
   neutral `EngineEffects` implementation over Flink 2.1.3's batch Table API and
   Iceberg 1.11.0's Flink 2.1 catalog. The child creates the catalog through a
