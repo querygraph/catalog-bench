@@ -302,6 +302,51 @@ fixture, bind the exact profile and scenario digests, reproduce all derived
 execution checks and classification, and pass the value-safety audit again.
 Only the resulting typed set is available to the result materializer.
 
+## Reviewed live-run envelope
+
+Raw transcript validity does not establish when, where, or under which runtime
+the workflow ran. The second C2-05 admission layer therefore uses one closed
+`catalog-bench/engine-result-review/v1` sidecar. The command takes only a
+repository root and the review path:
+
+```sh
+cargo run -p catalog-bench-contract --locked -- engine-evidence validate-review \
+  --root . \
+  --review target/spark-reviews/<run-id>.json
+```
+
+The sidecar is stored outside the raw evidence directory and contains four
+sections of operator-reviewed provenance:
+
+1. `bundle` names a nonempty ID and title, a destination below `results/v1`, and
+   the UTC instant at which the reviewed publication input was completed.
+2. `run` names the shared fixture, the exact sanitized invocation
+   `docker/run-spark-interoperability.sh "<run-id>"`, strictly ordered start and
+   completion instants, and the observation basis for each instant.
+3. `profile`, `scenario`, and the catalog-sorted `transcripts` bind normalized
+   repository-relative locations to their exact lowercase SHA-256 and byte
+   counts. Every transcript location must share one directory and be named
+   `<catalog>.json`.
+4. `environment` uses the ordinary result contract's precision-aware capture,
+   while `redaction` records a completed review, its policy, and a nonempty set
+   of unique excluded-data categories.
+
+The file must be a newline-terminated regular file no larger than 1 MiB and may
+not contain unknown fields. Source and output paths reject absolute paths,
+traversal, duplicate separators, backslashes, URI-like forms, and control
+characters. UTC timestamps accept one to nine fractional digits, validate leap
+years and calendar ranges, and compare as instants rather than strings. The
+reviewed operating system, architecture, and Docker network must equal the
+runnable profile; container-runtime precision must be `exact`.
+
+Crucially, `validate-review` does not accept separate profile, scenario,
+fixture, evidence-directory, or catalog arguments. It resolves them from the
+review, reruns the complete raw evidence validator, and correlates each claimed
+path, hash, byte count, catalog, and fixture with that typed admitted set. This
+prevents an operator from reviewing one run while accidentally validating
+another. The validated envelope is still not a public result: it is the sole
+input to the following deterministic materialization unit.
+
 ## Phase 2 unit boundaries
 
 C2-01 owns only the common write/read/evolution contract. It intentionally does
@@ -313,9 +358,10 @@ C2-04 owns the stock Spark process, independent REST/MinIO reconciliation,
 cleanup, sanitized transcript boundary, and fresh four-catalog launcher. Its
 production artifact is admitted; live four-catalog evidence remains deliberately
 unpublished until complete runs and a publication bundle are validated.
-C2-05 first admits the exact raw transcript set independently; its next unit
-adds reviewed live-run metadata and deterministically materializes the result
-records and immutable bundle.
+C2-05 first admits the exact raw transcript set independently and then binds it
+to the reviewed live-run envelope above. Its next unit deterministically
+materializes result records and the immutable bundle from only that typed
+validated input.
 
 The remaining independently committed units will:
 

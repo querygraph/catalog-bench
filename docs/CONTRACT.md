@@ -281,6 +281,26 @@ evidence being audited. The separate Phase 2 conflict and OpenLineage scenarios
 will retain their own synchronization and correlation contracts rather than
 weakening this common deterministic workflow.
 
+Stock-engine publication has two independent admission layers before result
+materialization. `engine-evidence validate` derives the exact transcript file
+set from the runnable profile and revalidates every canonical transcript against
+the supplied profile, scenario, and fixture. A separate reviewed
+`catalog-bench/engine-result-review/v1` sidecar then becomes the sole input to
+`engine-evidence validate-review`: the command resolves those contract and
+evidence locations from the sidecar itself and repeats the first admission
+layer, avoiding a second caller-controlled description of the run.
+
+The closed review shape binds exact source hashes and byte counts, a common
+fixture and canonical launcher invocation, strictly ordered calendar-valid UTC
+timestamps and their observation basis, a profile-matching environment with an
+exact container-runtime capture, and completed redaction policy plus unique
+excluded-data categories. Source paths must be normalized repository-relative
+paths; transcript entries are catalog-sorted, share one directory, and use the
+profile-derived `<catalog>.json` names. The requested output remains below
+`results/v1`. The validator returns a typed reviewed evidence set but writes
+nothing, so review admission cannot be mistaken for result or bundle
+publication.
+
 ## Closed fields and extensions
 
 All ordinary records and enum variants deny unknown fields. This turns misspelled
@@ -336,6 +356,12 @@ cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
   --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
   --evidence-directory target/spark-evidence/<run-id> \
   --fixture-id <run-id>
+
+# Bind that exact set to reviewed source, run, environment, and redaction
+# metadata without accepting duplicate contract or fixture arguments.
+cargo run -p catalog-bench-contract --locked -- engine-evidence validate-review \
+  --root . \
+  --review target/spark-reviews/<run-id>.json
 
 # Detect drift between the broad candidate, audited image observations, and the
 # generated runnable contention profile.

@@ -5,6 +5,7 @@ mod bundle;
 mod contention_bundle;
 mod contention_profile;
 mod engine_evidence;
+mod engine_review;
 mod legacy_commit;
 mod matrix;
 mod profile_materialization;
@@ -23,6 +24,7 @@ pub use engine_evidence::{
     validate_engine_evidence_set, EngineEvidenceSummary, ValidatedEngineEvidenceSet,
     ValidatedEngineTranscript,
 };
+pub use engine_review::{validate_engine_result_review, ValidatedEngineResultReview};
 pub use legacy_commit::{check_historical_commit_bundle, write_historical_commit_bundle};
 pub use matrix::render_commit_matrix;
 pub use profile_materialization::{

@@ -77,6 +77,9 @@ cargo run -p catalog-bench-contract --locked -- engine-evidence validate \
   --scenario scenarios/v1/engine.iceberg.write-read-evolution.json \
   --evidence-directory target/spark-evidence/<run-id> \
   --fixture-id <run-id>
+cargo run -p catalog-bench-contract --locked -- engine-evidence validate-review \
+  --root . \
+  --review target/spark-reviews/<run-id>.json
 ```
 
 See **[RESULTS.md](RESULTS.md)** for measured results.
@@ -134,9 +137,13 @@ docker/run-spark-interoperability.sh "spark_$(date -u +%m%d%H%M%S)"
 ```
 
 That is implementation and runtime evidence, not yet a checked-in workflow
-result; public catalog claims require a complete validated result bundle. Flink
-and Trino must execute the same scenario rather than maintaining engine-specific
-definitions of success.
+result. The independent admission command revalidates the complete transcript
+set; `validate-review` additionally binds those exact bytes to reviewed run,
+environment, source, and redaction metadata without trusting duplicate
+command-line contract inputs. Neither command publishes a claim: public catalog
+claims require deterministic result materialization and a complete validated
+bundle. Flink and Trino must execute the same scenario rather than maintaining
+engine-specific definitions of success.
 
 ## The commit benchmark
 

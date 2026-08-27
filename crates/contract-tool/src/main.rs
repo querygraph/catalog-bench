@@ -7,8 +7,8 @@ use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
     check_contention_profile, check_contention_result_bundle, check_historical_commit_bundle,
     check_spark_profile, load_bundle, render_commit_matrix, validate_engine_evidence_set,
-    write_contention_profile, write_contention_result_bundle, write_historical_commit_bundle,
-    write_spark_profile,
+    validate_engine_result_review, write_contention_profile, write_contention_result_bundle,
+    write_historical_commit_bundle, write_spark_profile,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -162,6 +162,8 @@ enum ContentionImportCommand {
 enum EngineEvidenceCommand {
     /// Bind one bounded transcript per profile catalog to exact contract bytes.
     Validate(EngineEvidenceFiles),
+    /// Validate reviewed live-run metadata and every source identity it binds.
+    ValidateReview(EngineReviewFile),
 }
 
 #[derive(Debug, Args)]
@@ -174,6 +176,14 @@ struct EngineEvidenceFiles {
     evidence_directory: PathBuf,
     #[arg(long)]
     fixture_id: String,
+}
+
+#[derive(Debug, Args)]
+struct EngineReviewFile {
+    #[arg(long, default_value = ".")]
+    root: PathBuf,
+    #[arg(long)]
+    review: PathBuf,
 }
 
 fn main() -> ExitCode {
@@ -275,6 +285,20 @@ fn run(cli: Cli) -> Result<()> {
                 println!(
                     "valid engine evidence {}: {} transcript(s), {} pass, {} fail, {} fixture collision",
                     evidence_directory.display(),
+                    summary.total,
+                    summary.pass,
+                    summary.fail,
+                    summary.fixture_collision
+                );
+                Ok(())
+            }
+            EngineEvidenceCommand::ValidateReview(EngineReviewFile { root, review }) => {
+                let validated = validate_engine_result_review(&root, &review)?;
+                let summary = validated.evidence().summary();
+                println!(
+                    "valid reviewed engine evidence {}: bundle {}, {} transcript(s), {} pass, {} fail, {} fixture collision",
+                    review.display(),
+                    validated.bundle_id(),
                     summary.total,
                     summary.pass,
                     summary.fail,

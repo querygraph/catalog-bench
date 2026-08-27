@@ -31,7 +31,10 @@ use catalog_bench_common::contract::{
 use catalog_bench_conformance::AuthenticationOutcome;
 use serde::Deserialize;
 
-use crate::publication::{artifact, parse_profile, parse_scenario, pretty_json, read_hashed};
+use crate::publication::{
+    artifact, parse_profile, parse_scenario, parse_utc_timestamp, pretty_json, read_hashed,
+    require_text, ReviewBundle, ReviewSource,
+};
 use crate::{load_bundle, render_commit_matrix, sha256_hex};
 
 const OUTPUT_DIRECTORY: &str = "results/v1/2026-08-27";
@@ -50,7 +53,7 @@ const REVIEW_EVIDENCE_ID: &str = "materialization-review";
 #[serde(deny_unknown_fields)]
 struct ResultReview {
     format: String,
-    bundle: BundleReview,
+    bundle: ReviewBundle,
     run: RunReview,
     environment: EnvironmentManifest,
     failures: Vec<FailureReview>,
@@ -59,31 +62,14 @@ struct ResultReview {
 
 #[derive(Debug, Deserialize)]
 #[serde(deny_unknown_fields)]
-struct BundleReview {
-    id: String,
-    title: String,
-    output_directory: String,
-    created_at: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
 struct RunReview {
     fixture_id: String,
-    transcript: SourceIdentity,
+    transcript: ReviewSource,
     sanitized_invocation: String,
     started_at: String,
     started_at_basis: String,
     completed_at: String,
     completed_at_basis: String,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(deny_unknown_fields)]
-struct SourceIdentity {
-    location: String,
-    sha256: String,
-    bytes: u64,
 }
 
 #[derive(Debug, Deserialize)]
@@ -926,12 +912,10 @@ fn verify_review(
         bail!("result review identifies an unexpected format, bundle, or output directory");
     }
     require_text(&review.bundle.title, "bundle title")?;
-    require_utc_timestamp(&review.bundle.created_at, "bundle created_at")?;
-    require_utc_timestamp(&review.run.started_at, "run started_at")?;
-    require_utc_timestamp(&review.run.completed_at, "run completed_at")?;
-    if review.run.started_at >= review.run.completed_at
-        || review.run.completed_at >= review.bundle.created_at
-    {
+    let created_at = parse_utc_timestamp(&review.bundle.created_at, "bundle created_at")?;
+    let started_at = parse_utc_timestamp(&review.run.started_at, "run started_at")?;
+    let completed_at = parse_utc_timestamp(&review.run.completed_at, "run completed_at")?;
+    if started_at >= completed_at || completed_at >= created_at {
         bail!("reviewed run and bundle timestamps are not strictly ordered");
     }
     require_text(&review.run.started_at_basis, "started_at basis")?;
@@ -1001,7 +985,7 @@ fn verify_failure_review(
                 observation.component
             );
         }
-        require_utc_timestamp(&observation.observed_at, "log observation timestamp")?;
+        parse_utc_timestamp(&observation.observed_at, "log observation timestamp")?;
         require_text(&observation.signature, "log observation signature")?;
         if observation.context.is_empty() || observation.context.iter().any(|line| line.is_empty())
         {
@@ -1063,18 +1047,4 @@ fn http_status_counts(rounds: &[&CatalogRoundTranscript]) -> Result<BTreeMap<u16
         }
     }
     Ok(counts)
-}
-
-fn require_text(value: &str, name: &str) -> Result<()> {
-    if value.trim().is_empty() {
-        bail!("{name} must not be empty");
-    }
-    Ok(())
-}
-
-fn require_utc_timestamp(value: &str, name: &str) -> Result<()> {
-    if value.len() < 20 || !value.ends_with('Z') || !value.contains('T') {
-        bail!("{name} must be a UTC RFC 3339 timestamp");
-    }
-    Ok(())
 }

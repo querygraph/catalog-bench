@@ -91,6 +91,12 @@ pub struct EnvironmentManifest {
     pub extensions: Extensions,
 }
 
+impl Validate for EnvironmentManifest {
+    fn collect_issues(&self, path: &str, issues: &mut Vec<ValidationIssue>) {
+        validate_environment(self, path, issues);
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "kebab-case")]
 pub enum FailureCategory {
@@ -283,7 +289,8 @@ impl Validate for ResultRecord {
             validate_executed_component(client, &child_path(path, "client"), issues);
         }
         validate_run(&self.run, &child_path(path, "run"), issues);
-        validate_environment(&self.environment, &child_path(path, "environment"), issues);
+        self.environment
+            .collect_issues(&child_path(path, "environment"), issues);
 
         require_unique(
             self.assertions

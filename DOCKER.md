@@ -308,6 +308,38 @@ then replays each transcript's policy, execution checks, classification, and
 value-sanitization audit against the exact contract bytes. It performs no
 catalog or object-store operation and cannot turn raw files into a public claim.
 
+After a human has reviewed the run and captured its environment, validate the
+separate review sidecar from the repository root:
+
+```sh
+cargo run -p catalog-bench-contract --locked -- engine-evidence validate-review \
+  --root . \
+  --review target/spark-reviews/<run-id>.json
+```
+
+The review file must remain outside `target/spark-evidence/<run-id>` because the
+raw evidence directory admits exactly the four profile-derived transcript files
+and rejects every extra entry. Its closed
+`catalog-bench/engine-result-review/v1` object names:
+
+- a nonempty bundle ID and title, an output directory below `results/v1`, and a
+  creation timestamp;
+- the fixture ID, the exact sanitized launcher spelling, strictly ordered run
+  timestamps, and a written basis for both observations;
+- repository-relative profile, scenario, and transcript locations with exact
+  SHA-256 and byte count, with transcript entries sorted by catalog; and
+- the complete environment manifest plus a completed redaction review, policy,
+  and unique categories of data excluded from publication.
+
+Paths are normalized and traversal-free. Every timestamp is a calendar-valid
+`YYYY-MM-DDTHH:MM:SS[.fraction]Z` instant. The environment's operating system,
+architecture, and network must equal the runnable profile, while the container
+runtime must be captured exactly. The command resolves all inputs from the
+review itself, reruns complete evidence admission, and then compares every
+reviewed source identity to the admitted bytes. It still performs no import or
+publication; deterministic result and manifest materialization is the next
+boundary.
+
 ## Same-table contention sweep
 
 The strict commit runner is the `bench` service. Its image resolves the exact

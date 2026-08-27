@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C2-05 reviewed Spark live-run envelope: add a bounded, closed review sidecar
+  that drives evidence admission from its own source locations and binds exact
+  profile, scenario, and transcript bytes to one fixture, canonical launcher
+  invocation, calendar-validated UTC interval, profile-matching execution
+  environment, and completed redaction review. Portable normalized paths,
+  deterministic catalog ordering, exact container-runtime capture, and an
+  output destination below `results/v1` fail closed; only the resulting typed
+  review can enter the forthcoming deterministic result materializer. The
+  contention importer now shares the same strict UTC timestamp parser, and
+  environment manifests expose their existing semantic validation directly.
+
 - C2-05 independent Spark evidence admission: add a contract-tool command that
   derives the complete catalog file set from the runnable profile, accepts only
   bounded regular files with canonical newline-terminated encoding, and
