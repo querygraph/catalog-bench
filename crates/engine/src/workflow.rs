@@ -247,7 +247,7 @@ impl EngineExecution {
         }
     }
 
-    fn finalize(&mut self, plan: &InteroperabilityPlan) {
+    pub(crate) fn finalize(&mut self, plan: &InteroperabilityPlan) {
         self.checks = evaluate_checks(plan, self);
         self.classification = if self.process.fixture_collision() {
             EngineBehaviorClassification::FixtureCollision

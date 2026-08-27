@@ -8,10 +8,10 @@ through a profile-selected Iceberg REST catalog and the shared MinIO data plane.
 Spark is implemented first; Flink and Trino must consume the same scenario and
 produce the same evidence contract.
 
-This document defines the boundary before runtime code exists. A checked-in
-scenario says what success means. A later runnable profile says exactly which
-artifacts and topology execute it. Only sanitized transcripts and validated
-result bundles say what actually happened.
+The checked-in scenario defines the boundary before execution code may make a
+claim. The runnable profile says exactly which artifacts and topology execute
+it. The implementation now enforces that boundary, but only sanitized
+transcripts and validated result bundles say what actually happened.
 
 ## Common workflow
 
@@ -177,6 +177,38 @@ This unit proves runtime identity and readiness only. It does not claim that any
 catalog passed the common workflow; only the next runner and result bundle may
 make that claim.
 
+## Evidence runner boundary
+
+The C2-04 library implementation runs the stock Spark process before opening a
+harness REST session or MinIO client. Runtime mismatch, preparation failure, and
+fixture collision therefore cannot trigger independent network or cleanup
+effects. Once the engine has emitted the ordered run-owned absence event, the
+harness may independently load the final table, audit only its validated S3
+root, and attempt every non-purging cleanup and absence check even when an
+earlier cleanup operation fails.
+
+The resulting transcript binds:
+
+- the exact profile and scenario bytes through SHA-256;
+- runner, catalog, engine, connector, and object-store identities;
+- the run-owned fixture and bounded process event stream;
+- independently projected REST table state and shared-MinIO counts; and
+- complete cleanup evidence plus all 13 behavioral checks.
+
+Sanitization is the fourteenth check. One shared credential source records only
+values actually read by the admitted execution. Before a transcript can be
+returned, a recursive value audit rejects those values, an unredacted bearer
+form, or any complete deterministic input row. The serialized schema has no raw
+engine stdout, row payload, REST response body, object-store error detail, or
+raw backend exception. Offline validation re-derives the selected plan and
+behavior checks, so changing a catalog identity, component, fixture, contract
+digest, redaction record, or classification fails closed.
+
+This implementation evidence is not a catalog result. A pass still requires the
+optimized runner artifact to execute the common workflow in the declared
+same-Docker/shared-MinIO topology and the resulting transcript to enter a
+validated publication bundle.
+
 ## Phase 2 unit boundaries
 
 C2-01 owns only the common write/read/evolution contract. It intentionally does
@@ -184,6 +216,10 @@ not claim a runtime result.
 
 C2-02 owns the reusable scenario-profile derivation and fail-closed image policy.
 C2-03 owns the Spark/Iceberg production images and runnable profile above.
+C2-04 owns the stock Spark process, independent REST/MinIO reconciliation,
+cleanup, and sanitized transcript boundary. Its production artifact and live
+four-catalog evidence remain deliberately unpublished until their immutable
+identities and complete runs are validated.
 
 The remaining independently committed units will:
 

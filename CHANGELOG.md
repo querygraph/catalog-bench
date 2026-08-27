@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- C2-04 sanitized engine transcript: bind each stock Spark execution to the
+  exact profile and scenario bytes, runner/catalog/engine/connector/MinIO
+  identities, run-owned fixture, and reconciled execution evidence. The
+  production path audits only credential values actually observed by its shared
+  secret source, rejects raw bearer forms and complete canonical rows, and
+  makes transcript sanitization the fourteenth fail-closed assertion with
+  offline contract and invariant validation.
+
 - C2-04 bounded catalog negotiation evidence: project the reusable conformance
   session into a closed engine-specific record containing only adapter identity,
   authentication outcome, response status and byte count, routing modes,

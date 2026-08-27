@@ -12,6 +12,7 @@ mod process;
 mod protocol;
 mod reconcile;
 mod runtime;
+mod transcript;
 mod workflow;
 
 pub use adapters::{RestEngineCatalogConnector, SharedObjectStoreConnector, StockSparkRunner};
@@ -27,6 +28,13 @@ pub use policy::*;
 pub use process::*;
 pub use protocol::*;
 pub use runtime::*;
+pub use transcript::{
+    run_stock_spark_interoperability, EngineContracts, EngineEvidenceError,
+    EngineEvidenceErrorKind, EngineSanitizationViolation, EngineTranscript,
+    EngineTranscriptComponent, EngineTranscriptComponents, EngineTranscriptFixture,
+    EngineTranscriptProfile, EngineTranscriptSanitization, EngineTranscriptValidationFailure,
+    EngineTranscriptValidationFailureKind,
+};
 pub use workflow::{
     run_engine_workflow, EngineBehaviorChecks, EngineBehaviorClassification,
     EngineCatalogConnection, EngineCatalogConnectionEvidence, EngineCatalogConnectionFailure,
