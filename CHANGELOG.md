@@ -1,5 +1,9 @@
 # Changelog
 
+- Advance the runnable Trino profile to `catalog-bench@6ea0f803` and bind the
+  closed scenario-property allowlist to the rebuilt runner and composite stock
+  Trino image identities.
+
 - Derive Trino's closed `iceberg.allowed-extra-properties` connector allowlist
   from the scenario property oracle so the common table contract is admitted
   identically by every REST catalog.
