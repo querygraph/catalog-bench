@@ -56,6 +56,21 @@ x-flink-build: &flink-build
     ICEBERG_SOURCE_REVISION: 6976e020b894f6a6777704df2b8c4458cb291ae9
   additional_contexts:
     catalog-bench-engine-runner: "service:flink-engine-runner-base"
+x-trino-engine-runner-image: &trino-engine-runner-image catalog-bench-engine-trino:6131423fc4ea
+x-trino-engine-runner-build: &trino-engine-runner-build
+  context: "https://github.com/querygraph/catalog-bench.git#6131423fc4ea06cba0d651dd479b23d29495f5b5"
+  dockerfile: docker/bench.Dockerfile
+  args:
+    CATALOG_BENCH_SOURCE_REVISION: 6131423fc4ea06cba0d651dd479b23d29495f5b5
+x-trino-image: &trino-image catalog-bench/trino:483-runner-6131423fc4ea
+x-trino-build: &trino-build
+  context: .
+  dockerfile: docker/trino/Dockerfile
+  args:
+    CATALOG_BENCH_SOURCE_REVISION: 6131423fc4ea06cba0d651dd479b23d29495f5b5
+    TRINO_SOURCE_REVISION: 50b0b50b75abd47f830b7805ee1b51716eb4065e
+  additional_contexts:
+    catalog-bench-engine-runner: "service:trino-engine-runner-base"
 x-rust-runner: &rust-runner
   build: *bench-build
   image: *bench-image
@@ -102,6 +117,24 @@ x-flink-runtime: &flink-runtime
     - ./profiles:/contracts/profiles:ro
     - ./scenarios:/contracts/scenarios:ro
     - ${CATALOG_BENCH_FLINK_EVIDENCE_DIR:-./target/flink-evidence}:/evidence
+  depends_on:
+    minio-init:
+      condition: service_completed_successfully
+x-trino-runtime: &trino-runtime
+  image: *trino-image
+  platform: linux/arm64
+  networks: [lakehouse-net]
+  profiles: ["trino"]
+  init: true
+  read_only: true
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs:
+    - /tmp:size=1024m,mode=1777,exec
+  volumes:
+    - ./profiles:/contracts/profiles:ro
+    - ./scenarios:/contracts/scenarios:ro
+    - ${CATALOG_BENCH_TRINO_EVIDENCE_DIR:-./target/trino-evidence}:/evidence
   depends_on:
     minio-init:
       condition: service_completed_successfully
@@ -661,6 +694,45 @@ services:
   # The optimized harness and its stock Flink child execute in this one image.
   flink-engine:
     <<: *flink-runtime
+    entrypoint: ["/usr/local/bin/catalog-bench-engine"]
+    command: ["--help"]
+    environment:
+      CATALOG_BENCH_S3_ACCESS_KEY_ID: admin
+      CATALOG_BENCH_S3_SECRET_ACCESS_KEY: password
+      CATALOG_BENCH_POLARIS_CLIENT_ID: root
+      CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret
+    depends_on:
+      lakecat-ready:
+        condition: service_completed_successfully
+      polaris-ready:
+        condition: service_completed_successfully
+      gravitino-ready:
+        condition: service_completed_successfully
+      lakekeeper-ready:
+        condition: service_completed_successfully
+
+  # Exact source-pinned optimized Rust donor copied into the stock Trino image.
+  trino-engine-runner-base:
+    build: *trino-engine-runner-build
+    image: *trino-engine-runner-image
+    platform: linux/arm64
+    profiles: ["trino"]
+    network_mode: none
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    entrypoint: ["/usr/local/bin/catalog-bench-engine"]
+    command: ["--help"]
+
+  # Trino 483's stock server, CLI, and Iceberg plugin plus the benchmark ELF.
+  trino:
+    <<: *trino-runtime
+    build: *trino-build
+    command: ["--help"]
+
+  # The harness starts and supervises the stock server inside this one image.
+  trino-engine:
+    <<: *trino-runtime
     entrypoint: ["/usr/local/bin/catalog-bench-engine"]
     command: ["--help"]
     environment:

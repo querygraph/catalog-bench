@@ -1,5 +1,10 @@
 # Changelog
 
+- C2-06 stock Trino image topology: compose the exact pinned Linux ARM64 Trino
+  483 child with only the source-bound optimized Rust runner, verify the base
+  descriptor and platform before construction, and expose a hardened one-shot
+  engine service on the shared catalog and MinIO network.
+
 - C2-06 Trino transcript dispatch: select the production stock Trino runner
   whenever the runnable profile resolves a Trino execution plan, while retaining
   the same negotiation, three-authority reconciliation, cleanup, sanitization,
