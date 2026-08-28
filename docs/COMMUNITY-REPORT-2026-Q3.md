@@ -25,6 +25,6 @@ relationships, five metrics, AI context, and the two source model extensions.
 That verified loss report motivates a focused Apache Ossie report-contract
 proposal rather than a false lossless-interchange claim.
 
-The release index is `results/v1/2026-q3-community/manifest.json`. Known gaps
+The release index is `results/v1/2026-q3-community/index.json`. Known gaps
 remain generated at `results/v1/KNOWN-GAPS.md`; reproduction is described in
 `docs/COMMUNITY-REPRODUCTION.md`.

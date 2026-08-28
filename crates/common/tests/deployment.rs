@@ -537,7 +537,7 @@ fn contention_runner_is_source_pinned_optimized_and_same_docker() {
 #[test]
 fn lakecat_image_is_public_source_pinned_optimized_and_labeled() {
     let root = repository_root();
-    let revision = "d7b9e3bef36134aeeac11eccf2761488d3ace463";
+    let revision = "8917e5c639d0ec6bfb39a3923550ed73ddb163aa";
     assert_eq!(revision.len(), 40);
     assert!(revision
         .bytes()

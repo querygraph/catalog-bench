@@ -16,5 +16,5 @@ Compare the resulting `summary.json` content hash and proof bases with the
 reviewed evidence. The command refuses reused output, checksum-fetches Ossie,
 uses run-owned state, and cleans its containers and volumes. Validate the Q3
 index by recomputing SHA-256 for every path in
-`results/v1/2026-q3-community/manifest.json`. Run the repository’s existing
+`results/v1/2026-q3-community/index.json`. Run the repository’s existing
 structured/literal secret scan before publication.

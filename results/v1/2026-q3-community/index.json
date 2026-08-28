@@ -1,5 +1,5 @@
 {
-  "contract": "catalog-bench/community-release-manifest/v1",
+  "contract": "catalog-bench/community-release-index/v1",
   "files": [
     {"path":"../../source/semantic/tpcds_0828e/review.json","sha256":"c28169d2a487f673f681c2ca35fb77349d06ad265ce5ef8bfb61789456848419"},
     {"path":"../../source/semantic/tpcds_0828e/summary.json","sha256":"9ffe002c3cb1a12094c2f7e8e7a98463b59c8ea3069dd3e26fd7cc5b0aa52903"},

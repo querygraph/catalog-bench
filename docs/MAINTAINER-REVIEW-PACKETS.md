@@ -9,7 +9,7 @@ is claimed until a maintainer comments on a public issue or review.
 Review issue: <https://github.com/querygraph/lakecat/issues/4>
 
 Please review the stock-engine matrices, recovery evidence, and TPC-DS semantic
-proof indexed by `results/v1/2026-q3-community/manifest.json`. Corrections to
+proof indexed by `results/v1/2026-q3-community/index.json`. Corrections to
 LakeCat configuration, claims, or known gaps will be retained verbatim in the
 next versioned feedback ledger.
 

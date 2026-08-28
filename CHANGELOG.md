@@ -19,6 +19,10 @@
   reproduction guide, catalog-specific review packets, and feedback backlog v2.
 - Dispatch the four catalog-specific review packets through public maintainer
   issues and bind the active-review backlog entries to those URLs.
+- Keep the deployment provenance assertion synchronized with the public
+  semantic-replay LakeCat image revision.
+- Name the Q3 cross-bundle artifact an `index.json` so it cannot be mistaken
+  for the benchmark contract's typed per-run `manifest.json` schema.
 
 ## Unreleased
 
