@@ -10,6 +10,26 @@ const SCENARIO: &[u8] =
     include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 const RENDERER: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/duckdb.rs");
 const ADAPTERS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/adapters.rs");
+const DUCKDB_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/duckdb-1.5.3-lakecat-b424f778-2026-08-28.json");
+
+#[test]
+fn materialized_duckdb_profile_selects_the_closed_plan() {
+    let ContractDocument::Profile(profile) = parse_contract(DUCKDB_PROFILE).unwrap() else {
+        panic!()
+    };
+    let ContractDocument::Scenario(scenario) = parse_contract(SCENARIO).unwrap() else {
+        panic!()
+    };
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "profile01",
+    )
+    .unwrap();
+    assert!(plan.duckdb().is_some());
+}
 
 #[test]
 fn renders_the_complete_catalog_neutral_duckdb_program() {

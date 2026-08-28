@@ -1,5 +1,9 @@
 # Changelog
 
+- Materialize the source-complete DuckDB composite image, runner, connector
+  stack, and exact observed artifact digests into a runnable four-catalog
+  profile.
+
 - Admit DuckDB's release-pinned Iceberg, HTTPFS, and Avro extension stack as
   the engine-owned connector identity without weakening Java-engine checks.
 
