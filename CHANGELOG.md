@@ -6,6 +6,9 @@
   table routes decode multipart namespaces for Spark's standard metadata-table
   probe. Preserve both earlier v2 generations while admitting this exact
   second repair as a new source profile.
+  Materialize the launcher's exact ARM64 OCI identity and service ELF, derive
+  and verify the runnable profile, and advance both host and in-container
+  launcher selection to this generation.
 
 - Pass the newly materialized LakeCat repair profile to the in-container Spark
   runner as well as the host-side artifact verifier. Deployment coverage now

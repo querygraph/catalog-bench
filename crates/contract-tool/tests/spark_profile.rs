@@ -25,6 +25,12 @@ const V2_LAKECAT_MATERIALIZATION: &[u8] =
     include_bytes!("../../../materializations/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json");
 const V2_LAKECAT_RUNNABLE_PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json");
+const V2_MULTIPART_SOURCE_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/current-engine-v2-lakecat-65f0a4c3-2026-08-28.json");
+const V2_MULTIPART_MATERIALIZATION: &[u8] =
+    include_bytes!("../../../materializations/v1/spark-v2-lakecat-65f0a4c3-2026-08-28.json");
+const V2_MULTIPART_RUNNABLE_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/spark-v2-lakecat-65f0a4c3-2026-08-28.json");
 
 #[test]
 fn checked_in_spark_profile_exactly_matches_its_inputs() -> Result<()> {
@@ -78,6 +84,21 @@ fn checked_in_spark_v2_lakecat_repair_profile_is_exact() -> Result<()> {
     assert_eq!(
         render_spark_profile(V2_LAKECAT_SOURCE_PROFILE, V2_LAKECAT_MATERIALIZATION)?,
         V2_LAKECAT_RUNNABLE_PROFILE
+    );
+    Ok(())
+}
+
+#[test]
+fn checked_in_spark_v2_multipart_repair_profile_is_exact() -> Result<()> {
+    let root = repository_root();
+    check_spark_profile(
+        &root.join("profiles/v1/current-engine-v2-lakecat-65f0a4c3-2026-08-28.json"),
+        &root.join("materializations/v1/spark-v2-lakecat-65f0a4c3-2026-08-28.json"),
+        &root.join("profiles/v1/spark-v2-lakecat-65f0a4c3-2026-08-28.json"),
+    )?;
+    assert_eq!(
+        render_spark_profile(V2_MULTIPART_SOURCE_PROFILE, V2_MULTIPART_MATERIALIZATION)?,
+        V2_MULTIPART_RUNNABLE_PROFILE
     );
     Ok(())
 }
