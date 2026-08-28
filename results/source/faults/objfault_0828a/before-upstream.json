@@ -1,0 +1,32 @@
+{
+  "schema_version": "catalog-bench.object-fault-probe.v1",
+  "phase": "before-upstream",
+  "client_disconnected": true,
+  "object_persisted": false,
+  "object_path_sha256": "sha256:e6c12ad112a0bc265ad9f6603da506f63aeeb3b182f15e923a349b7c34ebb16a",
+  "content_sha256": "sha256:9c6a95372144d03bb2f58ebf9dc3049576560f9b6811787e3eb3baec95f02f61",
+  "proxy_state": {
+    "schema_version": "catalog-bench.fault-proxy-state.v1",
+    "rule": {
+      "id": "metadata-before",
+      "method": "PUT",
+      "path_contains": "/warehouse/fault-objfault_0828a-before-upstream/metadata/00001.json",
+      "occurrence": 1,
+      "injections": 100,
+      "phase": "before-upstream",
+      "action": "disconnect"
+    },
+    "match_count": 1,
+    "events": [
+      {
+        "sequence": 1,
+        "rule_id": "metadata-before",
+        "phase": "before-upstream",
+        "action": "disconnect",
+        "method": "PUT",
+        "path_sha256": "sha256:e6c12ad112a0bc265ad9f6603da506f63aeeb3b182f15e923a349b7c34ebb16a",
+        "match_number": 1
+      }
+    ]
+  }
+}

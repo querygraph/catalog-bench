@@ -15,6 +15,10 @@ must be generated from these records rather than maintained independently.
 
 ## Benchmarks
 
+The [deterministic fault-injection guide](docs/FAULT-INJECTION.md) defines the
+Phase 3 before/after-upstream boundary and its accepted metadata-persistence
+evidence. It is operational correctness evidence, not a timing comparison.
+
 | Name | Status | What it measures |
 | --- | --- | --- |
 | `commit` | **ready** | Iceberg REST **commit-path** latency + throughput across catalogs — the impartial, catalog-only comparison (detailed below). LakeCat ranks **#1 among passing catalogs** in the 2026-08-27 production sweep at 147.536 accepted commits/s; Lakekeeper and Nessie remain visible but unranked after non-conflict request errors. |

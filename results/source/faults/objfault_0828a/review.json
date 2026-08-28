@@ -1,0 +1,27 @@
+{
+  "schema-version": "catalog-bench.object-fault-review.v1",
+  "run-id": "objfault_0828a",
+  "status": "accepted",
+  "reviewed-at": "2026-08-28T11:32:00Z",
+  "source-revisions": {
+    "fault-proxy-and-probe": "8e04f70f2d509f01a233ea3d54690748a03b7efc",
+    "runner-and-scenario": "65228a9179e8c7d6d6e653cfdf91ef68ebf49a3a",
+    "runnable-profile": "18287a5332ccedf473a700ce46dac8e6f11a855f"
+  },
+  "contracts": {
+    "profile": {"path": "profiles/v1/object-faults-2026-08-28.json", "sha256": "c5d001fb1c1adde4b6af60b520be947dac1827ba70a23ab15dbd940611f895bb"},
+    "scenario": {"path": "scenarios/v1/object-store.metadata-persistence-faults.json", "sha256": "1add1362d7dfcfe19f7b8d7135d3097af37941df675084ed5966bef86aef7f36"}
+  },
+  "artifacts": {
+    "before-upstream.json": "sha256:ea10949f042a8963f3d1b2ca50ccb0702355945befc9df40a05517714b7669a1",
+    "after-upstream.json": "sha256:7f7d9b106d22b0bd0404190ed9b07281bbca592e6df7aeeaca10b49e885d34dd",
+    "summary.json": "sha256:350c5a2e9d2c61b6e7b19c51bc0d306d5a24fecd8f0fc1259265caee14cb3faf"
+  },
+  "observations": {
+    "before-upstream": {"client-disconnected": true, "upstream-contacted": false, "object-persisted": false},
+    "after-upstream": {"client-disconnected": true, "upstream-status": 200, "object-persisted": true},
+    "content-sha256": "sha256:9c6a95372144d03bb2f58ebf9dc3049576560f9b6811787e3eb3baec95f02f61",
+    "cleanup": "both objects, all run containers, and all run volumes removed"
+  },
+  "publication-boundary": "Implementation and fault-semantics evidence only. This is not a catalog comparison, performance result, or Phase 3 recovery claim."
+}

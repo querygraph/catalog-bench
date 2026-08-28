@@ -1,0 +1,33 @@
+{
+  "schema_version": "catalog-bench.object-fault-probe.v1",
+  "phase": "after-upstream",
+  "client_disconnected": true,
+  "object_persisted": true,
+  "object_path_sha256": "sha256:5b4ca2c0737b6d2c582b86f8ea90236329eec4da1ef1759a9c5952939f7da657",
+  "content_sha256": "sha256:9c6a95372144d03bb2f58ebf9dc3049576560f9b6811787e3eb3baec95f02f61",
+  "proxy_state": {
+    "schema_version": "catalog-bench.fault-proxy-state.v1",
+    "rule": {
+      "id": "metadata-after",
+      "method": "PUT",
+      "path_contains": "/warehouse/fault-objfault_0828a-after-upstream/metadata/00001.json",
+      "occurrence": 1,
+      "injections": 100,
+      "phase": "after-upstream",
+      "action": "disconnect"
+    },
+    "match_count": 1,
+    "events": [
+      {
+        "sequence": 1,
+        "rule_id": "metadata-after",
+        "phase": "after-upstream",
+        "action": "disconnect",
+        "method": "PUT",
+        "path_sha256": "sha256:5b4ca2c0737b6d2c582b86f8ea90236329eec4da1ef1759a9c5952939f7da657",
+        "match_number": 1,
+        "upstream_status": 200
+      }
+    ]
+  }
+}

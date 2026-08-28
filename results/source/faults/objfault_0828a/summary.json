@@ -1,0 +1,16 @@
+{
+  "schema_version": "catalog-bench.object-fault-run.v1",
+  "run_id": "objfault_0828a",
+  "status": "verified",
+  "scenario": "object-store.metadata-persistence-faults",
+  "content_sha256": "sha256:9c6a95372144d03bb2f58ebf9dc3049576560f9b6811787e3eb3baec95f02f61",
+  "before_upstream": {
+    "artifact_sha256": "sha256:ea10949f042a8963f3d1b2ca50ccb0702355945befc9df40a05517714b7669a1",
+    "object_persisted": false
+  },
+  "after_upstream": {
+    "artifact_sha256": "sha256:7f7d9b106d22b0bd0404190ed9b07281bbca592e6df7aeeaca10b49e885d34dd",
+    "object_persisted": true,
+    "upstream_status": 200
+  }
+}

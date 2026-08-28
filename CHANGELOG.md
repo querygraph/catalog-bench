@@ -33,6 +33,9 @@
 - Permit non-catalog fault-injection profiles to omit the Iceberg REST adapter
   vocabulary when they contain no catalog component or adapter declarations;
   catalog-bearing profiles retain exhaustive capability coverage.
+- Publish the reviewed `objfault_0828a` source evidence and reproduction guide,
+  explicitly limiting it to the C3-01 injection substrate rather than claiming
+  catalog recovery or performance.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope
