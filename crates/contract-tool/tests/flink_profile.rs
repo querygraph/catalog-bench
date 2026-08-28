@@ -5,7 +5,7 @@ use catalog_bench_common::contract::{
     parse_contract, ArtifactReference, ContractDocument, ProfilePurpose, ProfileReadiness,
     RuntimeArtifact,
 };
-use catalog_bench_contract::render_flink_profile;
+use catalog_bench_contract::{check_flink_profile, render_flink_profile};
 use serde_json::{json, Value};
 use sha2::{Digest as _, Sha256};
 
@@ -15,6 +15,12 @@ const FLINK_SOURCE_PROFILE: &[u8] =
 const SPARK_MATERIALIZATION: &[u8] =
     include_bytes!("../../../materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const RUNNER_REVISION: &str = "df3a68da787de82ae83d1a5034228b731f3bc588";
+const CURRENT_SOURCE_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/flink-candidate-2.1.3-lakecat-65f0a4c3-2026-08-28.json");
+const CURRENT_MATERIALIZATION: &[u8] =
+    include_bytes!("../../../materializations/v1/flink-2.1.3-lakecat-65f0a4c3-2026-08-28.json");
+const CURRENT_RUNNABLE_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/flink-2.1.3-lakecat-65f0a4c3-2026-08-28.json");
 
 #[test]
 fn checked_in_candidate_advances_only_identity_and_runner_source() -> Result<()> {
@@ -34,6 +40,21 @@ fn checked_in_candidate_advances_only_identity_and_runner_source() -> Result<()>
 
     let actual: Value = serde_json::from_slice(FLINK_SOURCE_PROFILE)?;
     assert_eq!(actual, expected);
+    Ok(())
+}
+
+#[test]
+fn checked_in_current_flink_profile_is_exact() -> Result<()> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+    check_flink_profile(
+        &root.join("profiles/v1/flink-candidate-2.1.3-lakecat-65f0a4c3-2026-08-28.json"),
+        &root.join("materializations/v1/flink-2.1.3-lakecat-65f0a4c3-2026-08-28.json"),
+        &root.join("profiles/v1/flink-2.1.3-lakecat-65f0a4c3-2026-08-28.json"),
+    )?;
+    assert_eq!(
+        render_flink_profile(CURRENT_SOURCE_PROFILE, CURRENT_MATERIALIZATION)?,
+        CURRENT_RUNNABLE_PROFILE
+    );
     Ok(())
 }
 

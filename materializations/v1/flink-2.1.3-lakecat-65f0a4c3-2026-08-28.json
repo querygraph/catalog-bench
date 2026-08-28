@@ -1,0 +1,298 @@
+{
+  "format": "catalog-bench/flink-profile-materialization/v1",
+  "source_profile": {
+    "id": "catalog-community-flink-candidate-2.1.3-lakecat-65f0a4c3-2026-08-28-linux-arm64",
+    "digest": {
+      "algorithm": "sha256",
+      "value": "fb500f6dec6f68113a56812e80b102edb03faa720db993bca521163b3db241a5"
+    }
+  },
+  "output_profile": {
+    "id": "catalog-community-flink-2.1.3-engine-df3a68da-lakecat-65f0a4c3-2026-08-28-linux-arm64",
+    "title": "Flink 2.1.3, Iceberg 1.11.0, source-bound runner, and LakeCat 65f0a4c3 interoperability profile",
+    "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with the optimized Rust runner and Java effects JAR bound to catalog-bench@df3a68da.",
+    "resolved_at": "2026-08-28T05:58:02Z"
+  },
+  "images": [
+    {
+      "component": "minio",
+      "reference": "catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z",
+      "image_id": {
+        "algorithm": "sha256",
+        "value": "6ed436d0b5030603da533ab6747c01451cdd890e75e4cee7169efe476838cd5b"
+      },
+      "operating_system": "linux",
+      "architecture": "arm64",
+      "labels": {
+        "com.docker.compose.project": "catalog-bench",
+        "com.docker.compose.service": "minio",
+        "com.docker.compose.version": "5.1.3",
+        "io.querygraph.catalog-bench.helper-source-revision": "f2f66ee45574a64d1e76330e95e7aa551c3a148b",
+        "org.opencontainers.image.description": "Exact source-built MinIO for catalog interoperability evidence",
+        "org.opencontainers.image.licenses": "AGPL-3.0-only",
+        "org.opencontainers.image.revision": "9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a",
+        "org.opencontainers.image.source": "https://github.com/minio/minio",
+        "org.opencontainers.image.title": "catalog-bench MinIO",
+        "org.opencontainers.image.version": "RELEASE.2025-10-15T17-29-55Z"
+      },
+      "embedded_artifacts": [
+        {
+          "location": "image:/usr/local/bin/minio",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "16020fd2829fb8f23b29b2d108b35bfecfd73aa9ada05d499939bfb59abbe582"
+          },
+          "bytes": 105251000,
+          "description": "Stripped upstream MinIO server built from the exact community release revision with its release identity and pinned Go toolchain."
+        },
+        {
+          "location": "image:/usr/local/bin/ensure-bucket",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "8152050fbe456b964902f547e5c2b38fe3f0503944aaf0d4383441a67d9606dd"
+          },
+          "bytes": 7078072,
+          "description": "Idempotent shared-warehouse initializer built from the pinned public catalog-bench helper source."
+        },
+        {
+          "location": "image:/usr/local/bin/healthcheck",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "63108d653e6e6e8c152973b43b16c0ebb30066bc603759ef99311e0729669dd8"
+          },
+          "bytes": 6553784,
+          "description": "MinIO readiness probe built from the pinned public catalog-bench helper source."
+        },
+        {
+          "location": "image:/usr/local/bin/lakekeeper-setup",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "0d140420e2775f78251955340b04195874f303062a90a1543b7713b082f7f107"
+          },
+          "bytes": 6750392,
+          "description": "Typed Lakekeeper bootstrap and warehouse reconciler built from the pinned public catalog-bench helper source."
+        },
+        {
+          "location": "image:/usr/local/bin/polaris-setup",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "7109f6ec37d62f64488e30fcfbf46ca8e89372e8528dbc934352abb6f606c3f0"
+          },
+          "bytes": 6750392,
+          "description": "Typed Polaris bootstrap and credential-vending setup helper built from the pinned public catalog-bench helper source."
+        },
+        {
+          "location": "image:/usr/local/bin/wait-http",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "2069bfb8047ac2e0a41a23d1328be009a1c543ec4d8c76ff0d9b1b3da1d8032c"
+          },
+          "bytes": 6553784,
+          "description": "Protocol-level catalog readiness probe built from the pinned public catalog-bench helper source."
+        }
+      ]
+    },
+    {
+      "component": "lakecat",
+      "reference": "lakecat-service:65f0a4c3b7f2",
+      "image_id": {
+        "algorithm": "sha256",
+        "value": "fb10686c357d60b86f022169bea1d38e2526945b6b1ca96398bdcd17b00b79cb"
+      },
+      "operating_system": "linux",
+      "architecture": "arm64",
+      "labels": {
+        "com.docker.compose.project": "catalog-bench",
+        "com.docker.compose.service": "lakecat",
+        "com.docker.compose.version": "5.1.3",
+        "org.opencontainers.image.revision": "65f0a4c3b7f2e023e7ca87388de700b654cf7c4d"
+      },
+      "embedded_artifacts": [
+        {
+          "location": "image:/usr/local/bin/lakecat-service",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "06d17a5c6f348d3bccceeb37af608eb4e74576d02f6141a5218af33e5bdaff10"
+          },
+          "bytes": 19691168,
+          "description": "Stripped LakeCat service built with Rust 1.97.1, optimization level 3, fat LTO, one codegen unit, native CPU features, aborting panics, and the turso-local,sail-local feature set."
+        }
+      ]
+    },
+    {
+      "component": "catalog-bench-engine",
+      "reference": "catalog-bench/flink-runner:df3a68da787d",
+      "image_id": {
+        "algorithm": "sha256",
+        "value": "3436600c89815a3bf992e58bcc525325cd34c3cdbabc6b6c673dbf490d811d66"
+      },
+      "operating_system": "linux",
+      "architecture": "arm64",
+      "labels": {
+        "com.docker.compose.project": "catalog-bench",
+        "com.docker.compose.service": "flink-runner-image",
+        "com.docker.compose.version": "5.1.3",
+        "io.querygraph.catalog-bench.runner-source-revision": "df3a68da787de82ae83d1a5034228b731f3bc588",
+        "org.opencontainers.image.revision": "df3a68da787de82ae83d1a5034228b731f3bc588",
+        "org.opencontainers.image.title": "catalog-bench Flink runner donor"
+      },
+      "embedded_artifacts": [
+        {
+          "location": "image:/usr/local/bin/catalog-bench-engine",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "89bd01527310a48d61a7c4c70cddb116c6bbe716c9bedc1e005e87b4a3e6883f"
+          },
+          "bytes": 4986064,
+          "description": "Optimized source-bound stock-engine harness."
+        },
+        {
+          "location": "image:/opt/catalog-bench/catalog-bench-flink-runner.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "7352d50fe255a2c6b7ff3ff3e88fdf3f66ae9495bff359928de97e1ccffd349c"
+          },
+          "bytes": 2393229,
+          "description": "Source-bound Flink Java effects runner compiled with the pinned JDK."
+        }
+      ]
+    },
+    {
+      "component": "iceberg-java",
+      "reference": "catalog-bench/iceberg-flink-runtime:1.11.0-flink2.1",
+      "image_id": {
+        "algorithm": "sha256",
+        "value": "f6e00cf359dfbc152b1efd6bc1008b6893f22bf292456d85dda53e205d5658cc"
+      },
+      "operating_system": "linux",
+      "architecture": "arm64",
+      "labels": {
+        "com.docker.compose.project": "catalog-bench",
+        "com.docker.compose.service": "iceberg-flink-runtime",
+        "com.docker.compose.version": "5.1.3",
+        "io.querygraph.catalog-bench.iceberg-aws-bundle-coordinate": "org.apache.iceberg:iceberg-aws-bundle:1.11.0",
+        "io.querygraph.catalog-bench.iceberg-flink-runtime-coordinate": "org.apache.iceberg:iceberg-flink-runtime-2.1:1.11.0",
+        "org.opencontainers.image.revision": "6976e020b894f6a6777704df2b8c4458cb291ae9",
+        "org.opencontainers.image.source": "https://github.com/apache/iceberg",
+        "org.opencontainers.image.title": "Apache Iceberg Flink 2.1 runtime",
+        "org.opencontainers.image.version": "1.11.0"
+      },
+      "embedded_artifacts": [
+        {
+          "location": "image:/opt/iceberg/iceberg-flink-runtime-2.1-1.11.0.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "39e658d876f253815b4b17c6676bebf6a24d517afe93a21298106d1d7fa97331"
+          },
+          "bytes": 39122167,
+          "description": "Checksum-locked Apache Iceberg Flink 2.1 runtime."
+        },
+        {
+          "location": "image:/opt/iceberg/iceberg-aws-bundle-1.11.0.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f"
+          },
+          "bytes": 63613165,
+          "description": "Checksum-locked Apache Iceberg AWS bundle."
+        }
+      ]
+    },
+    {
+      "component": "flink",
+      "reference": "catalog-bench/flink:2.1.3-iceberg1.11.0",
+      "image_id": {
+        "algorithm": "sha256",
+        "value": "de95288f6cd0f3ec8bbc16b1b01ee5f7376f759741124c01f75be0a95aaa18bb"
+      },
+      "operating_system": "linux",
+      "architecture": "arm64",
+      "labels": {
+        "com.docker.compose.project": "catalog-bench",
+        "com.docker.compose.service": "flink",
+        "com.docker.compose.version": "5.1.3",
+        "io.querygraph.catalog-bench.iceberg-source-revision": "6976e020b894f6a6777704df2b8c4458cb291ae9",
+        "io.querygraph.catalog-bench.runner-source-revision": "df3a68da787de82ae83d1a5034228b731f3bc588",
+        "org.opencontainers.image.base.digest": "sha256:99a499ed147b28d358486066ab8308e351b232b2ac81aff69157fdb349c84e18",
+        "org.opencontainers.image.base.name": "docker.io/library/flink:2.1.3-scala_2.12-java17",
+        "org.opencontainers.image.revision": "6cda56b084d5c337b36d2f8ed464bc92093b0a34",
+        "org.opencontainers.image.source": "https://github.com/apache/flink",
+        "org.opencontainers.image.title": "catalog-bench Flink interoperability runtime",
+        "org.opencontainers.image.version": "2.1.3"
+      },
+      "embedded_artifacts": [
+        {
+          "location": "image:/opt/flink/bin/flink",
+          "media_type": "application/x-shellscript",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "afe88941ee6584ef5777a67fd3b343de98c6a53816259256fd30d91228e663c8"
+          },
+          "bytes": 2381,
+          "description": "Stock Flink command launcher."
+        },
+        {
+          "location": "image:/opt/flink/lib/flink-dist-2.1.3.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "c0fd26bd01974d271319e12f9a64f6af1732725eb0a574e459d7009fe132d5c0"
+          },
+          "bytes": 191431445,
+          "description": "Stock Flink 2.1.3 distribution JAR."
+        },
+        {
+          "location": "image:/opt/flink/lib/iceberg-flink-runtime-2.1-1.11.0.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "39e658d876f253815b4b17c6676bebf6a24d517afe93a21298106d1d7fa97331"
+          },
+          "bytes": 39122167,
+          "description": "Byte-identical Iceberg Flink runtime copy."
+        },
+        {
+          "location": "image:/opt/flink/lib/iceberg-aws-bundle-1.11.0.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f"
+          },
+          "bytes": 63613165,
+          "description": "Byte-identical Iceberg AWS bundle copy."
+        },
+        {
+          "location": "image:/usr/local/bin/catalog-bench-engine",
+          "media_type": "application/vnd.elf",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "89bd01527310a48d61a7c4c70cddb116c6bbe716c9bedc1e005e87b4a3e6883f"
+          },
+          "bytes": 4986064,
+          "description": "Byte-identical optimized harness copy."
+        },
+        {
+          "location": "image:/opt/catalog-bench/catalog-bench-flink-runner.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "7352d50fe255a2c6b7ff3ff3e88fdf3f66ae9495bff359928de97e1ccffd349c"
+          },
+          "bytes": 2393229,
+          "description": "Byte-identical Java effects runner copy."
+        }
+      ]
+    }
+  ]
+}

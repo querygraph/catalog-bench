@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Materialize the buildable Flink 2.1.3 runtime: bind the exact stock ARM64
+  image, Iceberg 1.11.0 JARs, optimized Rust harness, source-bound Java effects
+  JAR, current LakeCat image, and every copied artifact byte into a verified
+  deterministic runnable profile. No behavioral result is claimed yet.
+
 - Advance the unpublished Flink candidate and Compose source pin to
   `catalog-bench@df3a68da`, the first revision whose pinned-JDK build topology
   can actually compile the Java effects runner. No prior Flink materialization
