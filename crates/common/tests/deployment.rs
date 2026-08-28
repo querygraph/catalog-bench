@@ -537,22 +537,7 @@ fn contention_runner_is_source_pinned_optimized_and_same_docker() {
 #[test]
 fn lakecat_image_is_public_source_pinned_optimized_and_labeled() {
     let root = repository_root();
-    let profile: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(
-            root.join("profiles/v1/current-engine-v2-lakecat-65f0a4c3-2026-08-28.json"),
-        )
-        .expect("read current profile"),
-    )
-    .expect("parse current profile");
-    let lakecat = profile["components"]
-        .as_array()
-        .expect("profile components are an array")
-        .iter()
-        .find(|component| component["id"] == "lakecat")
-        .expect("profile contains LakeCat");
-    let revision = lakecat["source"]["revision"]
-        .as_str()
-        .expect("LakeCat source revision is a string");
+    let revision = "20116489d138f4dc8883cd12732947fd41615922";
     assert_eq!(revision.len(), 40);
     assert!(revision
         .bytes()

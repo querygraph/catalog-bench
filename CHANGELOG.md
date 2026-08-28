@@ -6,6 +6,10 @@
   HadoopCatalog-to-LakeCat legacy migration cookbook, with two snapshots, two
   specs, two refs, pointer identity, and exact three-row reads.
 
+- Advance the deployment provenance assertion to the exact LakeCat revision
+  used by the Hadoop migration evidence instead of coupling it to the older
+  Phase 2 Spark profile.
+
 - Add a fresh-state stock Spark HadoopCatalog-to-LakeCat migration runner that
   consumes QueryGraph's legacy-catalog verifier, shares only a run-owned
   filesystem volume with a matching isolated LakeCat storage profile, and
