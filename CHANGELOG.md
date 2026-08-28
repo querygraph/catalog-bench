@@ -148,6 +148,10 @@
 
 ## Unreleased
 
+- Add the exact-source DuckDB 1.5.3 four-catalog launcher and runnable profile,
+  including official signed offline extensions, bounded result decoding, OAuth
+  negotiation, and a passing fresh LakeCat/Polaris/Gravitino/Lakekeeper run.
+
 - Correct Trino 483 launcher provenance from the live pinned ARM64 image:
   `/usr/lib/trino/bin/launcher` is an engine-owned Bash architecture selector,
   and the executed `/usr/lib/trino/bin/linux-arm64/launcher` is a separate

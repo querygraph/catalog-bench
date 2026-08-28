@@ -10,7 +10,7 @@ const BUILD_SCRIPT: &str = concat!(
 );
 const COMPOSE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docker-compose.yml");
 const SOURCE_REVISION: &str = "14eca11bd9d4a0de2ea0f078be588a9c1c5b279c";
-const RUNNER_REVISION: &str = "d2f9d0ac0a9251713f7846a03b47313a6f765095";
+const RUNNER_REVISION: &str = "65fa4a9679ac803ed73aa22a510ba8dc5b5de7ba";
 
 #[test]
 fn duckdb_image_is_source_pinned_with_offline_signed_extensions() {
@@ -56,7 +56,7 @@ fn duckdb_build_verifies_version_extensions_and_platform() {
     assert!(compose.contains("duckdb-runtime-base:"));
     assert!(compose.contains("duckdb-benchmark-base:"));
     assert!(compose.contains("catalog-bench/duckdb:1.5.3-arm64"));
-    assert!(compose.contains("catalog-bench/duckdb:1.5.3-runner-d2f9d0a"));
+    assert!(compose.contains("catalog-bench/duckdb:1.5.3-runner-65fa4a9"));
 }
 
 #[test]

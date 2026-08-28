@@ -11,7 +11,7 @@ const SCENARIO: &[u8] =
 const RENDERER: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/duckdb.rs");
 const ADAPTERS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/adapters.rs");
 const DUCKDB_PROFILE: &[u8] =
-    include_bytes!("../../../profiles/v1/duckdb-1.5.3-lakecat-b424f778-2026-08-28.json");
+    include_bytes!("../../../profiles/v1/duckdb-1.5.3-lakecat-b8be6bc9-2026-08-28.json");
 
 #[test]
 fn materialized_duckdb_profile_selects_the_closed_plan() {

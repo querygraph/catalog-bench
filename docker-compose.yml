@@ -72,19 +72,19 @@ x-trino-build: &trino-build
   additional_contexts:
     catalog-bench-engine-runner: "service:trino-engine-runner-base"
 x-duckdb-base-image: &duckdb-base-image catalog-bench/duckdb:1.5.3-arm64
-x-duckdb-image: &duckdb-image catalog-bench/duckdb:1.5.3-runner-d2f9d0a
-x-duckdb-engine-runner-image: &duckdb-engine-runner-image catalog-bench-engine-duckdb:d2f9d0a
+x-duckdb-image: &duckdb-image catalog-bench/duckdb:1.5.3-runner-65fa4a9
+x-duckdb-engine-runner-image: &duckdb-engine-runner-image catalog-bench-engine-duckdb:65fa4a9
 x-duckdb-engine-runner-build: &duckdb-engine-runner-build
-  context: "https://github.com/querygraph/catalog-bench.git#d2f9d0ac0a9251713f7846a03b47313a6f765095"
+  context: "https://github.com/querygraph/catalog-bench.git#65fa4a9679ac803ed73aa22a510ba8dc5b5de7ba"
   dockerfile: docker/bench.Dockerfile
   args:
-    CATALOG_BENCH_SOURCE_REVISION: d2f9d0ac0a9251713f7846a03b47313a6f765095
+    CATALOG_BENCH_SOURCE_REVISION: 65fa4a9679ac803ed73aa22a510ba8dc5b5de7ba
 x-duckdb-build: &duckdb-build
   context: .
   dockerfile: docker/duckdb/Dockerfile
   args:
     DUCKDB_SOURCE_REVISION: 14eca11bd9d4a0de2ea0f078be588a9c1c5b279c
-    CATALOG_BENCH_SOURCE_REVISION: d2f9d0ac0a9251713f7846a03b47313a6f765095
+    CATALOG_BENCH_SOURCE_REVISION: 65fa4a9679ac803ed73aa22a510ba8dc5b5de7ba
   additional_contexts:
     duckdb-source: "https://github.com/duckdb/duckdb.git#14eca11bd9d4a0de2ea0f078be588a9c1c5b279c"
     catalog-bench-engine-runner: "service:duckdb-engine-runner-base"
@@ -155,6 +155,24 @@ x-trino-runtime: &trino-runtime
   depends_on:
     minio-init:
       condition: service_completed_successfully
+x-duckdb-runtime: &duckdb-runtime
+  image: *duckdb-image
+  platform: linux/arm64
+  networks: [lakehouse-net]
+  profiles: ["duckdb"]
+  init: true
+  read_only: true
+  cap_drop: ["ALL"]
+  security_opt: ["no-new-privileges:true"]
+  tmpfs:
+    - /tmp:size=256m,mode=1777,exec
+  volumes:
+    - ./profiles:/contracts/profiles:ro
+    - ./scenarios:/contracts/scenarios:ro
+    - ${CATALOG_BENCH_DUCKDB_EVIDENCE_DIR:-./target/duckdb-evidence}:/evidence
+  depends_on:
+    minio-init:
+      condition: service_completed_successfully
 x-lakekeeper-environment: &lakekeeper-environment
   LAKEKEEPER__AUTHZ_BACKEND: allowall
   LAKEKEEPER__ENABLE_DEFAULT_PROJECT: "true"
@@ -194,6 +212,23 @@ services:
       target: benchmark
     image: *duckdb-image
     profiles: ["duckdb"]
+
+  duckdb-engine:
+    <<: *duckdb-runtime
+    environment:
+      CATALOG_BENCH_S3_ACCESS_KEY_ID: admin
+      CATALOG_BENCH_S3_SECRET_ACCESS_KEY: password
+      CATALOG_BENCH_POLARIS_CLIENT_ID: root
+      CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret
+    depends_on:
+      trino-lakecat-ready:
+        condition: service_completed_successfully
+      polaris-ready:
+        condition: service_completed_successfully
+      gravitino-ready:
+        condition: service_completed_successfully
+      lakekeeper-ready:
+        condition: service_completed_successfully
 
   # Exact source-built community MinIO. Host ports are intentionally omitted:
   # benchmark traffic stays on the one Docker network and cannot collide with a
@@ -398,10 +433,10 @@ services:
     build:
       context: ./docker/lakecat
       args:
-        LAKECAT_SOURCE_REVISION: b424f778109d4f4d5f3588e1b84f72613cce8058
+        LAKECAT_SOURCE_REVISION: b8be6bc9e92fd728636b51fc3698b4d94b0e0fdb
       additional_contexts:
-        lakecat-source: "https://github.com/querygraph/lakecat.git#b424f778109d4f4d5f3588e1b84f72613cce8058"
-    image: lakecat-service:b424f778109d
+        lakecat-source: "https://github.com/querygraph/lakecat.git#b8be6bc9e92fd728636b51fc3698b4d94b0e0fdb"
+    image: lakecat-service:b8be6bc9e92f
     profiles: ["trino"]
     networks: [lakehouse-net]
     environment:
