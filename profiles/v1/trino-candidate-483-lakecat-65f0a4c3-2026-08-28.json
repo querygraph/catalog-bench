@@ -129,10 +129,10 @@
       "id": "catalog-bench-engine",
       "kind": "benchmark-harness",
       "name": "catalog-bench stock-engine runner",
-      "version": "836a3cd039e404fe84d9f3f0fa3e4ab8da3baea8",
+      "version": "33b3d656479aea5e915faf57095f9f9daf402d6e",
       "source": {
         "repository": "https://github.com/querygraph/catalog-bench.git",
-        "revision": "836a3cd039e404fe84d9f3f0fa3e4ab8da3baea8"
+        "revision": "33b3d656479aea5e915faf57095f9f9daf402d6e"
       },
       "build": {
         "toolchain": "Rust 1.97.1",

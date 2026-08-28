@@ -1,5 +1,9 @@
 # Changelog
 
+- Advance the runnable Trino profile to `catalog-bench@33b3d656`, including
+  the corrected stock-server node environment, and bind it to the rebuilt
+  optimized runner and composite Trino image identities.
+
 - Correct the generated Trino node environment from `catalog-bench` to
   `catalog_bench`; Trino 483 requires `[a-z0-9][_a-z0-9]*` and rejected the
   hyphenated value during configuration admission.
