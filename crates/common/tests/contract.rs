@@ -134,6 +134,22 @@ fn profile() -> Profile {
     }
 }
 
+#[test]
+fn non_catalog_fault_profile_does_not_invent_catalog_capabilities() {
+    let mut value = profile();
+    value.purpose = ProfilePurpose::FaultInjection;
+    value
+        .components
+        .retain(|component| component.kind != ComponentKind::Catalog);
+    value.services.clear();
+    value.catalog_capabilities.clear();
+    value.catalog_adapters.clear();
+
+    value
+        .validate()
+        .expect("object-store fault profile should validate without a catalog adapter contract");
+}
+
 fn result_record() -> ResultRecord {
     ResultRecord {
         contract_version: ContractVersion::V1,

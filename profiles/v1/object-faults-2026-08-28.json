@@ -1,0 +1,157 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "profile",
+  "id": "object-faults-2026-08-28-linux-arm64",
+  "title": "Deterministic metadata persistence fault profile",
+  "description": "Runnable Linux ARM64 profile for the source-built MinIO, fault proxy, signed S3 observer, and fresh-state orchestration used to distinguish pre-persistence failure from accepted-state ambiguity.",
+  "resolved_at": "2026-08-28T11:32:00Z",
+  "purpose": "fault-injection",
+  "readiness": {"status": "runnable"},
+  "platform": {
+    "operating_system": "Linux",
+    "architecture": "aarch64",
+    "mode": "docker-compose",
+    "network": "catalog-bench-net",
+    "shared_object_store": "minio",
+    "warehouse_uri": "s3://warehouse",
+    "extensions": {
+      "querygraph/execution-rule": "The object store, proxy, probe, and runner use one owned Docker network; only the proxy control API may bind to host loopback."
+    }
+  },
+  "components": [
+    {
+      "id": "minio",
+      "kind": "object-store",
+      "name": "MinIO",
+      "version": "RELEASE.2025-10-15T17-29-55Z",
+      "source": {
+        "repository": "https://github.com/minio/minio.git",
+        "revision": "9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a",
+        "tag": "RELEASE.2025-10-15T17-29-55Z"
+      },
+      "build": {
+        "toolchain": "Go 1.24.8 in pinned golang:1.24.8-bookworm image",
+        "target": "linux/arm64",
+        "profile": "release",
+        "options": ["tag=RELEASE.2025-10-15T17-29-55Z", "verify fetched tag resolves to revision"],
+        "compiler_flags": ["-tags=kqueue", "-trimpath", "upstream-generated release ldflags"],
+        "locked": true,
+        "environment": {"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "linux"}
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z",
+        "digest_scope": "local-image",
+        "digest": {"algorithm": "sha256", "value": "82c13cbf98f02dbc41347d8389484c7ef82a58e0af8a986b13e04b24c720ad92"},
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/local/bin/minio",
+            "media_type": "application/vnd.elf",
+            "digest": {"algorithm": "sha256", "value": "16020fd2829fb8f23b29b2d108b35bfecfd73aa9ada05d499939bfb59abbe582"},
+            "bytes": 105251000,
+            "description": "Exact source-built MinIO server."
+          }
+        ]
+      }
+    },
+    {
+      "id": "fault-proxy",
+      "kind": "benchmark-harness",
+      "name": "catalog-bench deterministic fault proxy",
+      "version": "8e04f70f2d509f01a233ea3d54690748a03b7efc",
+      "source": {"repository": "https://github.com/querygraph/catalog-bench.git", "revision": "8e04f70f2d509f01a233ea3d54690748a03b7efc"},
+      "build": {
+        "toolchain": "Go 1.24.8",
+        "target": "linux/arm64",
+        "profile": "release",
+        "options": ["package=./cmd/fault-proxy"],
+        "compiler_flags": ["-trimpath", "-s", "-w"],
+        "locked": true,
+        "environment": {"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "linux"}
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z",
+        "digest_scope": "local-image",
+        "digest": {"algorithm": "sha256", "value": "82c13cbf98f02dbc41347d8389484c7ef82a58e0af8a986b13e04b24c720ad92"},
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/local/bin/fault-proxy",
+            "media_type": "application/vnd.elf",
+            "digest": {"algorithm": "sha256", "value": "6e51ffc4555e1c61de37c9cadd1882d129312592099711a21ea08fddc376742c"},
+            "bytes": 6029496,
+            "description": "Typed bounded before/after-upstream disconnect proxy."
+          }
+        ]
+      }
+    },
+    {
+      "id": "object-fault-probe",
+      "kind": "client",
+      "name": "catalog-bench signed metadata fault observer",
+      "version": "8e04f70f2d509f01a233ea3d54690748a03b7efc",
+      "source": {"repository": "https://github.com/querygraph/catalog-bench.git", "revision": "8e04f70f2d509f01a233ea3d54690748a03b7efc"},
+      "build": {
+        "toolchain": "Go 1.24.8",
+        "target": "linux/arm64",
+        "profile": "release",
+        "options": ["package=./cmd/object-fault-probe"],
+        "compiler_flags": ["-trimpath", "-s", "-w"],
+        "locked": true,
+        "environment": {"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "linux"}
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z",
+        "digest_scope": "local-image",
+        "digest": {"algorithm": "sha256", "value": "82c13cbf98f02dbc41347d8389484c7ef82a58e0af8a986b13e04b24c720ad92"},
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/local/bin/object-fault-probe",
+            "media_type": "application/vnd.elf",
+            "digest": {"algorithm": "sha256", "value": "a204e0373047c2c00512e18081cdcfa07baa0f8d31a0493fd07422c56635db2e"},
+            "bytes": 7340216,
+            "description": "Signed S3 metadata PUT and direct persistence observer."
+          }
+        ]
+      }
+    },
+    {
+      "id": "object-fault-runner",
+      "kind": "benchmark-harness",
+      "name": "catalog-bench fresh object-fault runner",
+      "version": "65228a9179e8c7d6d6e653cfdf91ef68ebf49a3a",
+      "source": {"repository": "https://github.com/querygraph/catalog-bench.git", "revision": "65228a9179e8c7d6d6e653cfdf91ef68ebf49a3a"},
+      "build": {
+        "toolchain": "bash 3.2, Docker Compose v2, Node.js",
+        "target": "macOS host orchestrating linux/arm64 containers",
+        "profile": "evidence",
+        "options": ["set -euo pipefail", "fresh run-owned Compose project", "strict JSON summary checks"],
+        "locked": true
+      },
+      "artifact": {
+        "kind": "source-build",
+        "executable": {
+          "location": "docker/run-object-faults.sh",
+          "media_type": "text/x-shellscript",
+          "digest": {"algorithm": "sha256", "value": "8fbc0682a5de39e6acf57b5b88cf9bea72f00c814d4328ed09b13a5bdd149f40"},
+          "bytes": 3752,
+          "description": "Fresh-state orchestrator that verifies and hashes both fault artifacts."
+        }
+      }
+    }
+  ],
+  "services": [
+    {"component": "minio", "role": "shared-object-store", "endpoint": "http://minio:9000"},
+    {"component": "fault-proxy", "role": "object-store-fault-proxy", "endpoint": "http://object-store-fault-proxy:8080"},
+    {"component": "object-fault-probe", "role": "signed-metadata-client-and-direct-observer"},
+    {"component": "object-fault-runner", "role": "fresh-state-orchestrator"}
+  ],
+  "extensions": {
+    "querygraph/scenario": {
+      "id": "object-store.metadata-persistence-faults",
+      "version": 1,
+      "sha256": "1add1362d7dfcfe19f7b8d7135d3097af37941df675084ed5966bef86aef7f36"
+    }
+  }
+}

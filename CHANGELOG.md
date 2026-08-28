@@ -28,6 +28,11 @@
   detaching recognized prior harness projects, preventing stopped engine/catalog
   services from surviving on the fixed benchmark network; prior volumes remain
   preserved unless the owning run explicitly removes them.
+- C3-01 runnable profile: pin the exact source, local image, executable, binary,
+  and scenario hashes for the verified Linux ARM64 metadata fault topology.
+- Permit non-catalog fault-injection profiles to omit the Iceberg REST adapter
+  vocabulary when they contain no catalog component or adapter declarations;
+  catalog-bearing profiles retain exhaustive capability coverage.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope

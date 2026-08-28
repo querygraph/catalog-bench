@@ -218,9 +218,18 @@ fn validate_catalog_adapters(
     path: &str,
     issues: &mut Vec<ValidationIssue>,
 ) {
+    let catalog_components: BTreeSet<&ComponentId> = profile
+        .components
+        .iter()
+        .filter(|component| component.kind == ComponentKind::Catalog)
+        .map(|component| &component.id)
+        .collect();
     let contract_is_present =
         !profile.catalog_capabilities.is_empty() || !profile.catalog_adapters.is_empty();
-    if matches!(profile.purpose, ProfilePurpose::HistoricalReproduction) && !contract_is_present {
+    if (catalog_components.is_empty()
+        || matches!(profile.purpose, ProfilePurpose::HistoricalReproduction))
+        && !contract_is_present
+    {
         return;
     }
 
@@ -253,12 +262,6 @@ fn validate_catalog_adapters(
         issues,
     );
 
-    let catalog_components: BTreeSet<&ComponentId> = profile
-        .components
-        .iter()
-        .filter(|component| component.kind == ComponentKind::Catalog)
-        .map(|component| &component.id)
-        .collect();
     let adapter_catalogs: BTreeSet<&ComponentId> = profile
         .catalog_adapters
         .iter()
