@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Rematerialize the Flink candidate at `catalog-bench@df38c81` with the admitted
+  Hadoop client pair. The source-derived profile, image identities, eight
+  runtime artifacts, and live byte checks now agree; a stock SQL-client probe
+  successfully creates and selects the LakeCat REST catalog.
+
 - Add checksum-locked Hadoop 3.4.3 client API and runtime JARs to the Flink
   connector/runtime boundary. Stock Flink initialization proved Iceberg's REST
   catalog factory requires Hadoop configuration classes; materialization now

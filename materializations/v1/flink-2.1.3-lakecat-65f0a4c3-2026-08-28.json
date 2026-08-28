@@ -4,13 +4,13 @@
     "id": "catalog-community-flink-candidate-2.1.3-lakecat-65f0a4c3-2026-08-28-linux-arm64",
     "digest": {
       "algorithm": "sha256",
-      "value": "c0f5f7621c8f033afa323c0acbaf8e7331b47c5b3c5584d059ba5387353096f8"
+      "value": "05d01b4c32aaf24a6e9f944a588fd61ece0ae318a7dd15a94d632f0beb8d5390"
     }
   },
   "output_profile": {
-    "id": "catalog-community-flink-2.1.3-engine-701f2b97-lakecat-65f0a4c3-2026-08-28-linux-arm64",
+    "id": "catalog-community-flink-2.1.3-engine-df38c818-lakecat-65f0a4c3-2026-08-28-linux-arm64",
     "title": "Flink 2.1.3, Iceberg 1.11.0, source-bound runner, and LakeCat 65f0a4c3 interoperability profile",
-    "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with the optimized Rust runner and Java effects JAR bound to catalog-bench@701f2b97.",
+    "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with the optimized Rust runner and Java effects JAR bound to catalog-bench@df38c818.",
     "resolved_at": "2026-08-28T05:58:02Z"
   },
   "images": [
@@ -128,10 +128,10 @@
     },
     {
       "component": "catalog-bench-engine",
-      "reference": "catalog-bench/flink-runner:701f2b976f36",
+      "reference": "catalog-bench/flink-runner:df38c8186cfe",
       "image_id": {
         "algorithm": "sha256",
-        "value": "a11fee3d01cf37b92e021935818abadcb24d60abfacdac38cbc456a4e0a22ed7"
+        "value": "fd39fa4f922f3f46963130dd852ee1bf7283a4de703749873d44edc0b4e09f15"
       },
       "operating_system": "linux",
       "architecture": "arm64",
@@ -139,8 +139,8 @@
         "com.docker.compose.project": "catalog-bench",
         "com.docker.compose.service": "flink-runner-image",
         "com.docker.compose.version": "5.1.3",
-        "io.querygraph.catalog-bench.runner-source-revision": "701f2b976f36b1046637e6f8fff7043518d7f7a5",
-        "org.opencontainers.image.revision": "701f2b976f36b1046637e6f8fff7043518d7f7a5",
+        "io.querygraph.catalog-bench.runner-source-revision": "df38c8186cfe3c2400113ae3308250a01d05c800",
+        "org.opencontainers.image.revision": "df38c8186cfe3c2400113ae3308250a01d05c800",
         "org.opencontainers.image.title": "catalog-bench Flink runner donor"
       },
       "embedded_artifacts": [
@@ -171,7 +171,7 @@
       "reference": "catalog-bench/iceberg-flink-runtime:1.11.0-flink2.1",
       "image_id": {
         "algorithm": "sha256",
-        "value": "f6e00cf359dfbc152b1efd6bc1008b6893f22bf292456d85dda53e205d5658cc"
+        "value": "7b68934a3a2d6fc2909d211eb6f3b8a6f256ccf57f9d854cfcb97cf5b3c17a1a"
       },
       "operating_system": "linux",
       "architecture": "arm64",
@@ -184,7 +184,8 @@
         "org.opencontainers.image.revision": "6976e020b894f6a6777704df2b8c4458cb291ae9",
         "org.opencontainers.image.source": "https://github.com/apache/iceberg",
         "org.opencontainers.image.title": "Apache Iceberg Flink 2.1 runtime",
-        "org.opencontainers.image.version": "1.11.0"
+        "org.opencontainers.image.version": "1.11.0",
+        "io.querygraph.catalog-bench.hadoop-client-version": "3.4.3"
       },
       "embedded_artifacts": [
         {
@@ -206,6 +207,26 @@
           },
           "bytes": 63613165,
           "description": "Checksum-locked Apache Iceberg AWS bundle."
+        },
+        {
+          "location": "image:/opt/iceberg/hadoop-client-api-3.4.3.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "6443332781f26a7199009d9517cd1eb013fbf54ca1c9759a2a9e487542b1d52a"
+          },
+          "bytes": 19669807,
+          "description": "Checksum-locked Apache Hadoop client API required by the Iceberg Flink catalog factory."
+        },
+        {
+          "location": "image:/opt/iceberg/hadoop-client-runtime-3.4.3.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "bd20267b0555766ae84697dd888f074ca326d8e2ec3c0008928a6ac2966c67de"
+          },
+          "bytes": 30878646,
+          "description": "Checksum-locked Apache Hadoop client runtime required by the Iceberg Flink catalog factory."
         }
       ]
     },
@@ -214,7 +235,7 @@
       "reference": "catalog-bench/flink:2.1.3-iceberg1.11.0",
       "image_id": {
         "algorithm": "sha256",
-        "value": "fdde44564bdff111759d25f5bbb5c86e8750f6a825411d509c97e587c609cdc1"
+        "value": "ad27758a4977ec4f10809cb7e576fb59c6f779cb584180f615a73d543b7bea70"
       },
       "operating_system": "linux",
       "architecture": "arm64",
@@ -223,7 +244,7 @@
         "com.docker.compose.service": "flink",
         "com.docker.compose.version": "5.1.3",
         "io.querygraph.catalog-bench.iceberg-source-revision": "6976e020b894f6a6777704df2b8c4458cb291ae9",
-        "io.querygraph.catalog-bench.runner-source-revision": "701f2b976f36b1046637e6f8fff7043518d7f7a5",
+        "io.querygraph.catalog-bench.runner-source-revision": "df38c8186cfe3c2400113ae3308250a01d05c800",
         "org.opencontainers.image.base.digest": "sha256:99a499ed147b28d358486066ab8308e351b232b2ac81aff69157fdb349c84e18",
         "org.opencontainers.image.base.name": "docker.io/library/flink:2.1.3-scala_2.12-java17",
         "org.opencontainers.image.revision": "6cda56b084d5c337b36d2f8ed464bc92093b0a34",
@@ -291,6 +312,26 @@
           },
           "bytes": 2393229,
           "description": "Byte-identical Java effects runner copy."
+        },
+        {
+          "location": "image:/opt/flink/lib/hadoop-client-api-3.4.3.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "6443332781f26a7199009d9517cd1eb013fbf54ca1c9759a2a9e487542b1d52a"
+          },
+          "bytes": 19669807,
+          "description": "Byte-identical Hadoop client API copy."
+        },
+        {
+          "location": "image:/opt/flink/lib/hadoop-client-runtime-3.4.3.jar",
+          "media_type": "application/java-archive",
+          "digest": {
+            "algorithm": "sha256",
+            "value": "bd20267b0555766ae84697dd888f074ca326d8e2ec3c0008928a6ac2966c67de"
+          },
+          "bytes": 30878646,
+          "description": "Byte-identical Hadoop client runtime copy."
         }
       ]
     }
