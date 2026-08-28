@@ -1,5 +1,10 @@
 # Changelog
 
+- C2-06 fresh Trino launcher: build and independently admit the pinned profile,
+  create one run-owned Docker topology, execute the same stock Trino workflow
+  against LakeCat, Polaris, Gravitino, and Lakekeeper, and require a complete,
+  exit-consistent transcript set before reporting success.
+
 - C2-06 live Trino profile materialization: bind the exact built runner donor,
   independently labeled stock Iceberg plugin donor, and final Trino image to
   their live ARM64 image IDs, labels, artifact digests, and byte counts. Add
