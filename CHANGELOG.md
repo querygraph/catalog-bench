@@ -216,6 +216,11 @@
 
 ## Unreleased
 
+- C3-04 cold-state helper: add a dependency-free, source-built volume archive
+  command with exclusive backup creation, empty-target restore, path traversal
+  rejection, symlink rejection, and round-trip tests for run-scoped catalog
+  state volumes.
+
 - Add the exact-source DuckDB 1.5.3 four-catalog launcher and runnable profile,
   including official signed offline extensions, bounded result decoding, OAuth
   negotiation, and a passing fresh LakeCat/Polaris/Gravitino/Lakekeeper run.
