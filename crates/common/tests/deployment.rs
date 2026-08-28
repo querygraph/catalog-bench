@@ -672,6 +672,30 @@ fn fault_overlay_routes_catalog_and_object_store_traffic_through_owned_proxies()
 }
 
 #[test]
+fn object_fault_runner_is_fresh_state_bounded_and_checks_both_persistence_sides() {
+    let root = repository_root();
+    let runner = fs::read_to_string(root.join("docker/run-object-faults.sh"))
+        .expect("read object fault runner");
+    let fresh =
+        fs::read_to_string(root.join("docker/fresh-run-lib.sh")).expect("read fresh-run library");
+    for required in [
+        "catalog_bench_prepare_fresh_project",
+        "catalog_bench_fault_compose",
+        "before-upstream after-upstream",
+        "--entrypoint /usr/local/bin/object-fault-probe",
+        "before.client_disconnected && !before.object_persisted",
+        "after.client_disconnected && after.object_persisted",
+        "down --volumes --remove-orphans",
+    ] {
+        assert!(
+            runner.contains(required),
+            "object fault runner must contain `{required}`"
+        );
+    }
+    assert!(fresh.contains("docker-compose.fault.yml"));
+}
+
+#[test]
 fn clean_contention_run_rejects_reused_persistent_state() {
     let root = repository_root();
     let overlay = fs::read_to_string(root.join("docker-compose.clean.yml"))

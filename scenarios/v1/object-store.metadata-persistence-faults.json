@@ -1,0 +1,119 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "object-store.metadata-persistence-faults",
+  "version": 1,
+  "title": "Metadata persistence under deterministic response loss",
+  "description": "Distinguish a metadata PUT disconnected before upstream admission from an upstream HTTP success whose response is disconnected, using direct object-store observation rather than client outcome inference.",
+  "family": "operations",
+  "classification": "strict-v1",
+  "tags": ["fault-injection", "object-store", "metadata", "accepted-state-ambiguity"],
+  "parameters": {
+    "fault_action": "disconnect",
+    "metadata_path_required_fragment": "/metadata/",
+    "observation_path": "direct-object-store",
+    "rule_occurrence": 1,
+    "rule_injection_budget": 100
+  },
+  "steps": [
+    {
+      "id": "prepare-isolated-object",
+      "actor": "harness",
+      "operation": "object.fixture.prepare-absent",
+      "description": "Select a run-owned metadata object and directly establish that it is absent."
+    },
+    {
+      "id": "disconnect-before-upstream",
+      "actor": "object-store",
+      "operation": "object.put.disconnect-before-upstream",
+      "description": "Disconnect the signed metadata PUT before the upstream object store receives it.",
+      "depends_on": ["prepare-isolated-object"]
+    },
+    {
+      "id": "observe-before-state",
+      "actor": "harness",
+      "operation": "object.stat.direct",
+      "description": "Observe the object through the direct non-faulted endpoint and require absence.",
+      "depends_on": ["disconnect-before-upstream"]
+    },
+    {
+      "id": "disconnect-after-upstream",
+      "actor": "object-store",
+      "operation": "object.put.disconnect-after-upstream-success",
+      "description": "Forward the signed metadata PUT, consume an upstream success, and disconnect before returning any response to the client.",
+      "depends_on": ["observe-before-state"]
+    },
+    {
+      "id": "observe-after-state",
+      "actor": "harness",
+      "operation": "object.stat.direct",
+      "description": "Observe the object through the direct endpoint and require persistence despite the ambiguous client failure.",
+      "depends_on": ["disconnect-after-upstream"]
+    },
+    {
+      "id": "sanitize-and-clean",
+      "actor": "harness",
+      "operation": "evidence.sanitize-and-clean",
+      "description": "Retain only hashes and typed fault observations, remove both fixture objects, and remove the fresh Docker project and volumes.",
+      "depends_on": ["observe-after-state"]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "before-client-disconnected",
+      "step": "disconnect-before-upstream",
+      "required": true,
+      "description": "The client receives no HTTP response for the before-upstream fault.",
+      "check": {"kind": "custom", "name": "querygraph/catalog-bench/client-disconnected-v1", "configuration": {"expected": true}}
+    },
+    {
+      "id": "before-object-absent",
+      "step": "observe-before-state",
+      "required": true,
+      "description": "Direct observation proves the metadata object was not persisted.",
+      "check": {"kind": "artifact-exists", "role": "direct-object-absence-proof"}
+    },
+    {
+      "id": "before-no-upstream-status",
+      "step": "observe-before-state",
+      "required": true,
+      "description": "The fault event contains no upstream status because forwarding never occurred.",
+      "check": {"kind": "custom", "name": "querygraph/catalog-bench/upstream-status-presence-v1", "configuration": {"expected": false}}
+    },
+    {
+      "id": "after-client-disconnected",
+      "step": "disconnect-after-upstream",
+      "required": true,
+      "description": "The client receives no HTTP response for the after-upstream fault.",
+      "check": {"kind": "custom", "name": "querygraph/catalog-bench/client-disconnected-v1", "configuration": {"expected": true}}
+    },
+    {
+      "id": "after-upstream-success",
+      "step": "disconnect-after-upstream",
+      "required": true,
+      "description": "The proxy observed upstream HTTP 200 before disconnecting the response.",
+      "check": {"kind": "http-status", "allowed": [200]}
+    },
+    {
+      "id": "after-object-present",
+      "step": "observe-after-state",
+      "required": true,
+      "description": "Direct observation proves the metadata object persisted despite the ambiguous client failure.",
+      "check": {"kind": "artifact-exists", "role": "direct-object-presence-proof"}
+    },
+    {
+      "id": "fault-evidence-sanitized",
+      "step": "sanitize-and-clean",
+      "required": true,
+      "description": "Evidence contains no credentials, signed query, headers, request body, or raw metadata path.",
+      "check": {"kind": "custom", "name": "querygraph/catalog-bench/fault-evidence-sanitization-v1", "configuration": {"path_policy": "sha256", "headers": "omitted", "body": "omitted", "query": "omitted"}}
+    },
+    {
+      "id": "fixture-cleaned",
+      "step": "sanitize-and-clean",
+      "required": true,
+      "description": "Both run-owned objects and the fresh Docker project volumes are removed.",
+      "check": {"kind": "custom", "name": "querygraph/catalog-bench/fresh-project-cleanup-v1", "configuration": {"objects": 2, "volumes": "removed"}}
+    }
+  ]
+}

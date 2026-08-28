@@ -20,6 +20,14 @@
   after an upstream success whose response was disconnected.
 - C3-01 metadata-probe source binding: compile the retry-resistant proxy and
   object persistence observer together from their immutable public revision.
+- C3-01 reproducible object-fault workflow: define the neutral scenario and a
+  fresh-state one-command runner that verifies both persistence sides, hashes
+  each artifact, rejects existing output, and removes its fixture state and
+  Docker volumes.
+- Fresh-run teardown now activates every declared Compose profile while
+  detaching recognized prior harness projects, preventing stopped engine/catalog
+  services from surviving on the fixed benchmark network; prior volumes remain
+  preserved unless the owning run explicitly removes them.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope

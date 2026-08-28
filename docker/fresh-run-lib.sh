@@ -43,6 +43,22 @@ catalog_bench_clean_compose() {
     "$@"
 }
 
+catalog_bench_fault_compose() {
+  if [[ $# -lt 2 ]]; then
+    echo "catalog_bench_fault_compose requires a repository root and command" >&2
+    return 1
+  fi
+
+  local repository_root="$1"
+  shift
+  docker compose \
+    --project-directory "$repository_root" \
+    --file "$repository_root/docker-compose.yml" \
+    --file "$repository_root/docker-compose.clean.yml" \
+    --file "$repository_root/docker-compose.fault.yml" \
+    "$@"
+}
+
 # Admit a new run-scoped Compose project without deleting any prior named
 # volume. The fixed benchmark network is released only from recognized harness
 # projects; unknown or unmanaged containers fail closed.
@@ -93,7 +109,7 @@ catalog_bench_prepare_fresh_project() {
 
   network_filter="network=catalog-bench-net"
   known_services="$(
-    catalog_bench_base_compose "$repository_root" \
+    CATALOG_BENCH_RUN_ID="$run_id" catalog_bench_fault_compose "$repository_root" \
       --profile '*' config --services
   )"
   attached_containers="$(
@@ -132,16 +148,16 @@ catalog_bench_prepare_fresh_project() {
   while IFS= read -r project; do
     [[ -z "$project" ]] && continue
     if [[ "$project" == "catalog-bench" ]]; then
-      catalog_bench_base_compose "$repository_root" down --remove-orphans
+      catalog_bench_base_compose "$repository_root" --profile '*' down --remove-orphans
     else
       CATALOG_BENCH_RUN_ID="$project" \
-        catalog_bench_clean_compose "$repository_root" down --remove-orphans
+        catalog_bench_clean_compose "$repository_root" --profile '*' down --remove-orphans
     fi
   done <<< "$active_projects"
 
   # A stopped ordinary-project container may no longer appear in a network
   # filter. This still deliberately omits --volumes.
-  catalog_bench_base_compose "$repository_root" down --remove-orphans
+  catalog_bench_base_compose "$repository_root" --profile '*' down --remove-orphans
 
   remaining_containers="$(
     docker ps --all --filter "$network_filter" \
