@@ -8,6 +8,7 @@ mod adapters;
 mod catalog;
 mod execution;
 mod flink;
+mod iceberg_metadata;
 mod negotiation;
 mod policy;
 mod process;
@@ -15,6 +16,7 @@ mod protocol;
 mod reconcile;
 mod runtime;
 mod sql;
+mod strict_json;
 mod transcript;
 mod trino;
 mod trino_child;
@@ -30,6 +32,7 @@ pub use catalog::{
 };
 pub use execution::*;
 pub use flink::*;
+pub use iceberg_metadata::*;
 pub use negotiation::{
     EngineAuthenticationEvidence, EngineAuthenticationMode, EngineCatalogConfigEvidence,
     EngineCatalogNegotiationEvidence, EngineNegotiationProjectionFailure, EngineRoutingResolution,

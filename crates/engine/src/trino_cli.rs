@@ -1,13 +1,12 @@
 //! Strict decoding of bounded stock Trino CLI JSON output.
 
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::BTreeSet;
 use std::fmt::{Display, Formatter};
 
 use catalog_bench_conformance::sha256_hex;
-use serde::de::{Error as _, MapAccess, Visitor};
-use serde::{Deserialize, Deserializer};
 use serde_json::Value;
 
+use crate::strict_json::{decode_strict_json, StrictJsonError};
 use crate::{CanonicalRead, RowReadObservation};
 
 const MAXIMUM_TRINO_CLI_BYTES: usize = 16 * 1024 * 1024;
@@ -72,26 +71,24 @@ pub fn decode_trino_canonical_read(
         if rows >= expected.rows {
             return Err(TrinoCliDecodeError::TooManyRows);
         }
-        let row = serde_json::from_slice::<StrictRow>(line).map_err(|error| {
-            if error.to_string().contains("duplicate column") {
-                TrinoCliDecodeError::DuplicateColumn
-            } else if error.to_string().contains("non-scalar") {
-                TrinoCliDecodeError::UnsupportedValue
-            } else {
-                TrinoCliDecodeError::MalformedRow
-            }
+        let row = decode_strict_json(line).map_err(|error| match error {
+            StrictJsonError::DuplicateKey => TrinoCliDecodeError::DuplicateColumn,
+            StrictJsonError::Malformed => TrinoCliDecodeError::MalformedRow,
         })?;
-        if row.0.keys().cloned().collect::<BTreeSet<_>>() != expected_columns {
+        let row = row.as_object().ok_or(TrinoCliDecodeError::MalformedRow)?;
+        if row
+            .values()
+            .any(|value| matches!(value, Value::Array(_) | Value::Object(_)))
+        {
+            return Err(TrinoCliDecodeError::UnsupportedValue);
+        }
+        if row.keys().cloned().collect::<BTreeSet<_>>() != expected_columns {
             return Err(TrinoCliDecodeError::UnexpectedColumns);
         }
         let values = expected
             .columns
             .iter()
-            .map(|column| {
-                row.0
-                    .get(column)
-                    .expect("column set equality checked above")
-            })
+            .map(|column| row.get(column).expect("column set equality checked above"))
             .collect::<Vec<_>>();
         serde_json::to_writer(&mut canonical, &values)
             .map_err(|_| TrinoCliDecodeError::MalformedRow)?;
@@ -106,41 +103,4 @@ pub fn decode_trino_canonical_read(
         bytes: u64::try_from(canonical.len()).unwrap_or(u64::MAX),
         sha256: sha256_hex(&canonical),
     })
-}
-
-struct StrictRow(BTreeMap<String, Value>);
-
-impl<'de> Deserialize<'de> for StrictRow {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: Deserializer<'de>,
-    {
-        deserializer.deserialize_map(StrictRowVisitor)
-    }
-}
-
-struct StrictRowVisitor;
-
-impl<'de> Visitor<'de> for StrictRowVisitor {
-    type Value = StrictRow;
-
-    fn expecting(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
-        formatter.write_str("one JSON object containing scalar column values")
-    }
-
-    fn visit_map<A>(self, mut access: A) -> Result<Self::Value, A::Error>
-    where
-        A: MapAccess<'de>,
-    {
-        let mut row = BTreeMap::new();
-        while let Some((key, value)) = access.next_entry::<String, Value>()? {
-            if matches!(value, Value::Array(_) | Value::Object(_)) {
-                return Err(A::Error::custom("non-scalar column value"));
-            }
-            if row.insert(key, value).is_some() {
-                return Err(A::Error::custom("duplicate column"));
-            }
-        }
-        Ok(StrictRow(row))
-    }
 }

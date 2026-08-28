@@ -628,6 +628,32 @@ values, parser diagnostics, and stderr cannot enter evidence. Tests cover
 reordered keys, duplicate/missing/extra keys, nested values, malformed and blank
 lines, absent LF, excess rows, the 16 MiB boundary, and the empty-output hash.
 
+### Trino-correlated Iceberg metadata observation
+
+Trino's `$metadata_log_entries` system table exposes the metadata file selected
+by its stock Iceberg connector. Trino SQL does not expose all evidence required
+by the common event—most importantly table UUID and Iceberg field IDs—so the
+child must read that one immutable metadata object from shared MinIO. It may not
+list or guess a metadata filename, substitute the catalog REST response, or
+inspect a path not returned by Trino.
+
+The decoder admits at most 4 MiB and requires Iceberg format v2, a canonical
+UUID, a table location in the profile bucket, and a metadata JSON path under
+that exact table's `metadata/` directory. It selects `current-schema-id` from
+the schema list, requires a struct schema equal to either the scenario's initial
+fields or its one authorized additive evolution, and checks `last-column-id`.
+Snapshots must be an array when present; omission is the valid zero-snapshot
+state immediately after table creation.
+
+Only scenario-owned property keys survive, each as `match` or `mismatch`;
+unknown values are discarded. UUID, locations, schema, snapshot count, and
+property observations then form the existing engine-neutral table event. One
+recursive JSON decoder now rejects duplicate keys at every nesting level for
+both metadata and CLI rows. Tests cover initial/evolved states, unknown-property
+redaction, mismatches, invalid identities and paths, schema and snapshot drift,
+duplicates, malformed JSON, and the byte limit. Fetching the Trino-returned S3
+object remains an effect in the forthcoming supervised child implementation.
+
 This event change deliberately advances the scenario revision and transcript
 format to v2. The decoder does not use an untagged legacy alternative whose
 shape could become ambiguous as engines are added. The checked-in immutable

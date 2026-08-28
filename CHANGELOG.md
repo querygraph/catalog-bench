@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C2-06 bounded Iceberg metadata projection for Trino: decode at most 4 MiB of
+  the immutable metadata object located through Trino's stock
+  `$metadata_log_entries` table, require canonical UUID, format v2, same-table
+  S3 metadata ancestry, current struct schema, scenario-exact initial or evolved
+  fields/IDs, valid snapshots, and bounded string properties. Emit only the
+  closed table observation and match/mismatch for scenario-owned properties;
+  unknown properties are discarded. Extract a recursive duplicate-key-rejecting
+  JSON decoder shared with stock CLI rows. Separate tests cover initial/evolved
+  projection, property redaction, identity/location/schema/snapshot drift,
+  duplicate keys, malformed JSON, and the byte limit. Object retrieval and live
+  Trino effects remain separate.
+
 - C2-06 strict Trino CLI read decoder: consume Trino 483's stock JSON output as
   one bounded object per newline, reject missing final LF, malformed or blank
   rows, duplicate/missing/extra columns, nested values, excess rows, and input
