@@ -1,0 +1,79 @@
+{
+  "cases": {
+    "after_upstream": {
+      "client_disconnected": true,
+      "drift_mutated": false,
+      "drift_status": 200,
+      "fault_events": [
+        {
+          "action": "disconnect",
+          "match_number": 1,
+          "method": "POST",
+          "path_sha256": "sha256:0d39a22a57fe44a4063be7f0c9cdd178f6e1b942dcf4ddc8ff0f88dddea46291",
+          "phase": "after-upstream",
+          "rule_id": "commit-after",
+          "sequence": 1,
+          "upstream_status": 200
+        }
+      ],
+      "final_property": "accepted",
+      "idempotency_advertised": true,
+      "idempotency_key_sha256": "sha256:da329ec38be094c6290ef0ecdb4e7d3ef46d60308938e9c9ad159d6297f557a8",
+      "observed_before_retry": "accepted",
+      "retry_status": 200
+    },
+    "before_upstream": {
+      "client_disconnected": true,
+      "drift_mutated": false,
+      "drift_status": 200,
+      "fault_events": [
+        {
+          "action": "disconnect",
+          "match_number": 1,
+          "method": "POST",
+          "path_sha256": "sha256:0d39a22a57fe44a4063be7f0c9cdd178f6e1b942dcf4ddc8ff0f88dddea46291",
+          "phase": "before-upstream",
+          "rule_id": "commit-before",
+          "sequence": 1
+        }
+      ],
+      "final_property": "accepted",
+      "idempotency_advertised": true,
+      "idempotency_key_sha256": "sha256:b297b4a17c1047cf58e55009ee56fec95939e7169be8dab83076f737f81859b4",
+      "observed_before_retry": null,
+      "retry_status": 200
+    },
+    "restart_during_commit": {
+      "durable_fixture_present": true,
+      "fault_events": [
+        {
+          "action": "pause-request-body",
+          "match_number": 1,
+          "method": "POST",
+          "path_sha256": "sha256:0d39a22a57fe44a4063be7f0c9cdd178f6e1b942dcf4ddc8ff0f88dddea46291",
+          "phase": "during-upstream",
+          "rule_id": "commit-restart",
+          "sequence": 1
+        }
+      ],
+      "final_property": "accepted",
+      "observed_before_retry": null,
+      "request_outcome": {
+        "kind": "response",
+        "status": 502
+      },
+      "retry_status": 200
+    }
+  },
+  "catalog": "lakekeeper",
+  "cleanup": {
+    "namespace_dropped": true,
+    "table_dropped": true
+  },
+  "fixture_id": "restart_0828d",
+  "routing": {
+    "oauth": false,
+    "prefix_sha256": "sha256:ed37fba056418f52a6ea6ce978d5f045e82b513939e7a7a109041431b284ff6a"
+  },
+  "schema_version": "catalog-bench.catalog-recovery-probe.v2"
+}

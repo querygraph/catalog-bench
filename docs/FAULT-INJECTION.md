@@ -67,3 +67,38 @@ The reviewed summary hash is
 This closes the deterministic network/object-store injection substrate only.
 It does not claim catalog recovery, restart safety, backup/restore behavior, or
 relative performance. Those require the subsequent catalog-specific scenarios.
+
+## Catalog commit recovery
+
+The neutral `iceberg-rest.commit.failure-recovery` scenario uses only standard
+Iceberg REST config, namespace, table, load, update, and drop operations. Its
+proxy adds three transport conditions: disconnect before forwarding, disconnect
+after an upstream response, and transmit one request-body byte before pausing
+the remainder while the target catalog process restarts. Direct catalog loads,
+not client outcomes, determine accepted state. Run it with:
+
+```sh
+docker/run-catalog-recovery.sh recovery_local
+```
+
+Fresh run `restart_0828d` at `catalog-bench@bb580944028d4742406085b0150d70e817139b71`
+completed all four catalogs and removed every run container and volume. The
+reviewed summary hash is
+`sha256:7083e202a2a4a1ad6d44faf01e51684b3a0c028d4b1ce538c643736b8cad76dc`;
+raw sanitized evidence and its review record are under
+`results/source/faults/restart_0828d/`.
+
+| Catalog | Before/after response loss | Fixture after restart | Exact retry | Restart result |
+| --- | --- | --- | --- | --- |
+| LakeCat | pass / pass | present | HTTP 200 | pass |
+| Polaris | pass / pass | absent | HTTP 500 | fail in this ephemeral benchmark configuration |
+| Gravitino | pass / pass | present | HTTP 200 | pass |
+| Lakekeeper | pass / pass | present | HTTP 200 | pass |
+
+All interrupted in-flight requests returned HTTP 502 and left no partial
+property mutation. Lakekeeper alone advertised idempotency; exact replay
+returned 200, while same-key/different-content also returned cached 200 without
+mutating state. This is a disclosed content-binding defect, not an exactly-once
+claim. Polaris uses its benchmark image's ephemeral persistence mode, so its
+restart failure does not generalize to external database deployments. This
+scenario makes no performance, rolling-upgrade, or backup/restore claim.

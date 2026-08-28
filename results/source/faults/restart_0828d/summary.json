@@ -1,0 +1,69 @@
+{
+  "schema_version": "catalog-bench.catalog-recovery-run.v2",
+  "run_id": "restart_0828d",
+  "status": "verified_with_failures",
+  "restart_failures": 1,
+  "scenario": "iceberg-rest.commit.failure-recovery",
+  "results": {
+    "lakecat": {
+      "artifact_sha256": "sha256:632b7352472dfaa3d126ecd17b7ba6c2635ad83fff8d47cfb9f123d7f01d5b23",
+      "before_retry_status": 200,
+      "after_retry_status": 200,
+      "idempotency_advertised": false,
+      "idempotency_drift_status": null,
+      "idempotency_drift_mutated": false,
+      "restart_passed": true,
+      "durable_fixture_present_after_restart": true,
+      "restart_request_outcome": {
+        "kind": "response",
+        "status": 502
+      },
+      "restart_retry_status": 200
+    },
+    "polaris": {
+      "artifact_sha256": "sha256:61bfab91797cdb7d1ced131259766502f8dd5d491e63aa0c8082e1fea2442930",
+      "before_retry_status": 200,
+      "after_retry_status": 200,
+      "idempotency_advertised": false,
+      "idempotency_drift_status": null,
+      "idempotency_drift_mutated": false,
+      "restart_passed": false,
+      "durable_fixture_present_after_restart": false,
+      "restart_request_outcome": {
+        "kind": "response",
+        "status": 502
+      },
+      "restart_retry_status": 500
+    },
+    "gravitino": {
+      "artifact_sha256": "sha256:5556685c8572468359258c86db83acf950e02fed62d18be5c6c1540dec6387f7",
+      "before_retry_status": 200,
+      "after_retry_status": 200,
+      "idempotency_advertised": false,
+      "idempotency_drift_status": null,
+      "idempotency_drift_mutated": false,
+      "restart_passed": true,
+      "durable_fixture_present_after_restart": true,
+      "restart_request_outcome": {
+        "kind": "response",
+        "status": 502
+      },
+      "restart_retry_status": 200
+    },
+    "lakekeeper": {
+      "artifact_sha256": "sha256:3ce4f86e612d97dfdd89c3594047bb7d2358bfc357efd72b261e4f403b716739",
+      "before_retry_status": 200,
+      "after_retry_status": 200,
+      "idempotency_advertised": true,
+      "idempotency_drift_status": 200,
+      "idempotency_drift_mutated": false,
+      "restart_passed": true,
+      "durable_fixture_present_after_restart": true,
+      "restart_request_outcome": {
+        "kind": "response",
+        "status": 502
+      },
+      "restart_retry_status": 200
+    }
+  }
+}

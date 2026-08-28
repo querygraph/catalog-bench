@@ -1,0 +1,15 @@
+{
+  "schema_version": "catalog-bench.catalog-recovery-review.v1",
+  "run_id": "restart_0828d",
+  "reviewed_source_revision": "bb580944028d4742406085b0150d70e817139b71",
+  "summary_sha256": "sha256:7083e202a2a4a1ad6d44faf01e51684b3a0c028d4b1ce538c643736b8cad76dc",
+  "scenario_sha256": "sha256:33eac21f6deed230160b383de4fc259792b683e27d0086e6252cb210aa001e00",
+  "runner_sha256": "sha256:b3069d06933a931c9ff3da8948e37b283ed03cca99ff866f1d204a78f810945f",
+  "probe_sha256": "sha256:f8152f5e5402e36658a5f372dbccf12094baaacabb89b85096832621e70cac90",
+  "infrastructure_image_digest": "sha256:51cac149369aa085d0fd52b11874ee425ab120b30ab72c6d94be2fb771150dbc",
+  "fresh_project_cleanup": {
+    "containers_remaining": 0,
+    "volumes_remaining": 0
+  },
+  "review": "accepted comparative evidence with one disclosed restart failure"
+}

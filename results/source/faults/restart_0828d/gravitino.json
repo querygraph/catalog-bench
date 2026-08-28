@@ -1,0 +1,79 @@
+{
+  "cases": {
+    "after_upstream": {
+      "client_disconnected": true,
+      "drift_mutated": false,
+      "drift_status": null,
+      "fault_events": [
+        {
+          "action": "disconnect",
+          "match_number": 1,
+          "method": "POST",
+          "path_sha256": "sha256:7335867a263fb07b95cc51303dfa51d2b454a6c6fd181dd37f0f929a36afdf74",
+          "phase": "after-upstream",
+          "rule_id": "commit-after",
+          "sequence": 1,
+          "upstream_status": 200
+        }
+      ],
+      "final_property": "accepted",
+      "idempotency_advertised": false,
+      "idempotency_key_sha256": null,
+      "observed_before_retry": "accepted",
+      "retry_status": 200
+    },
+    "before_upstream": {
+      "client_disconnected": true,
+      "drift_mutated": false,
+      "drift_status": null,
+      "fault_events": [
+        {
+          "action": "disconnect",
+          "match_number": 1,
+          "method": "POST",
+          "path_sha256": "sha256:7335867a263fb07b95cc51303dfa51d2b454a6c6fd181dd37f0f929a36afdf74",
+          "phase": "before-upstream",
+          "rule_id": "commit-before",
+          "sequence": 1
+        }
+      ],
+      "final_property": "accepted",
+      "idempotency_advertised": false,
+      "idempotency_key_sha256": null,
+      "observed_before_retry": null,
+      "retry_status": 200
+    },
+    "restart_during_commit": {
+      "durable_fixture_present": true,
+      "fault_events": [
+        {
+          "action": "pause-request-body",
+          "match_number": 1,
+          "method": "POST",
+          "path_sha256": "sha256:7335867a263fb07b95cc51303dfa51d2b454a6c6fd181dd37f0f929a36afdf74",
+          "phase": "during-upstream",
+          "rule_id": "commit-restart",
+          "sequence": 1
+        }
+      ],
+      "final_property": "accepted",
+      "observed_before_retry": null,
+      "request_outcome": {
+        "kind": "response",
+        "status": 502
+      },
+      "retry_status": 200
+    }
+  },
+  "catalog": "gravitino",
+  "cleanup": {
+    "namespace_dropped": true,
+    "table_dropped": true
+  },
+  "fixture_id": "restart_0828d",
+  "routing": {
+    "oauth": false,
+    "prefix_sha256": "sha256:2d234c97703ce824eaa4d98fbd2701668ef5e63e46f1574f2ea72e7927b1f57e"
+  },
+  "schema_version": "catalog-bench.catalog-recovery-probe.v2"
+}

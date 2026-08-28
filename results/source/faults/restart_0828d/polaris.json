@@ -1,0 +1,79 @@
+{
+  "cases": {
+    "after_upstream": {
+      "client_disconnected": true,
+      "drift_mutated": false,
+      "drift_status": null,
+      "fault_events": [
+        {
+          "action": "disconnect",
+          "match_number": 1,
+          "method": "POST",
+          "path_sha256": "sha256:0f6ed9a396437c78a56ca302f8b2bc96c831090a8739bcf02734b4dc0b412fe7",
+          "phase": "after-upstream",
+          "rule_id": "commit-after",
+          "sequence": 1,
+          "upstream_status": 200
+        }
+      ],
+      "final_property": "accepted",
+      "idempotency_advertised": false,
+      "idempotency_key_sha256": null,
+      "observed_before_retry": "accepted",
+      "retry_status": 200
+    },
+    "before_upstream": {
+      "client_disconnected": true,
+      "drift_mutated": false,
+      "drift_status": null,
+      "fault_events": [
+        {
+          "action": "disconnect",
+          "match_number": 1,
+          "method": "POST",
+          "path_sha256": "sha256:0f6ed9a396437c78a56ca302f8b2bc96c831090a8739bcf02734b4dc0b412fe7",
+          "phase": "before-upstream",
+          "rule_id": "commit-before",
+          "sequence": 1
+        }
+      ],
+      "final_property": "accepted",
+      "idempotency_advertised": false,
+      "idempotency_key_sha256": null,
+      "observed_before_retry": null,
+      "retry_status": 200
+    },
+    "restart_during_commit": {
+      "durable_fixture_present": false,
+      "fault_events": [
+        {
+          "action": "pause-request-body",
+          "match_number": 1,
+          "method": "POST",
+          "path_sha256": "sha256:0f6ed9a396437c78a56ca302f8b2bc96c831090a8739bcf02734b4dc0b412fe7",
+          "phase": "during-upstream",
+          "rule_id": "commit-restart",
+          "sequence": 1
+        }
+      ],
+      "final_property": null,
+      "observed_before_retry": null,
+      "request_outcome": {
+        "kind": "response",
+        "status": 502
+      },
+      "retry_status": 500
+    }
+  },
+  "catalog": "polaris",
+  "cleanup": {
+    "namespace_dropped": true,
+    "table_dropped": true
+  },
+  "fixture_id": "restart_0828d",
+  "routing": {
+    "oauth": true,
+    "prefix_sha256": "sha256:09a8b30a57dce31c26303bb4a562847dad7f420178777c5002ec4c06ae66968a"
+  },
+  "schema_version": "catalog-bench.catalog-recovery-probe.v2"
+}

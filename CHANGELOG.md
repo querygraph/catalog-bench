@@ -64,6 +64,9 @@
 - Preserve comparative restart failures as evidence instead of aborting the
   matrix: a catalog may lose the run-owned fixture, receive a 404 exact retry,
   and still permit the remaining catalogs and fresh-state cleanup to run.
+- Publish the reviewed `restart_0828d` four-catalog recovery matrix, raw
+  sanitized artifacts, exact hashes, cleanup proof, and configuration-scoped
+  Polaris and Lakekeeper findings.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope
