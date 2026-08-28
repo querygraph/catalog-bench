@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- C2-06 private Trino server staging: materialize the closed source-derived
+  Trino configuration into a create-new temporary tree with `0700` directories
+  and `0600` files, fsync each file before launch, reject non-normal relative
+  paths, expose only the configuration and data roots needed by the pinned
+  launcher, and remove the complete private tree on drop. Regression coverage
+  binds the staged bytes to the typed LakeCat plan and proves credential values
+  remain environment references rather than persisted configuration.
+
 - C2-06 bounded stock Trino CLI execution: execute the closed CLI invocation in
   the shared cleared-environment, private-home, null-input/error, isolated
   process-group boundary with one positive timeout and caller-selected output

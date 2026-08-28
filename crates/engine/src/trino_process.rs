@@ -1,14 +1,17 @@
 //! Closed subprocess grammar for the pinned stock Trino launcher and CLI.
 
+use std::fs::OpenOptions;
+use std::io::Write as _;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+use tempfile::{Builder as TempDirBuilder, TempDir};
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
 use tokio::time::timeout;
 
 use crate::process::{configure_sanitized_process, terminate_child};
-use crate::TRINO_CATALOG_NAME;
+use crate::{TrinoServerConfiguration, TRINO_CATALOG_NAME};
 
 const TRINO_SERVER_URI: &str = "http://127.0.0.1:8080";
 const TRINO_USER: &str = "catalog_bench";
@@ -17,6 +20,95 @@ const MAXIMUM_TRINO_CAPTURE_BYTES: usize = 16 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrinoInvocationError;
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrinoStageFailure {
+    CreateRoot,
+    CreateDirectory,
+    InvalidPath,
+    CreateFile,
+    WriteFile,
+}
+
+#[derive(Debug)]
+pub struct StagedTrinoServer {
+    root: TempDir,
+    configuration: PathBuf,
+    data: PathBuf,
+}
+
+impl StagedTrinoServer {
+    pub fn create(configuration: &TrinoServerConfiguration) -> Result<Self, TrinoStageFailure> {
+        let root = TempDirBuilder::new()
+            .prefix("catalog-bench-trino-")
+            .tempdir()
+            .map_err(|_| TrinoStageFailure::CreateRoot)?;
+        restrict_directory(root.path())?;
+        let configuration_root = root.path().join("etc");
+        let catalog_root = configuration_root.join("catalog");
+        let data = root.path().join("data");
+        for directory in [&configuration_root, &catalog_root, &data] {
+            std::fs::create_dir(directory).map_err(|_| TrinoStageFailure::CreateDirectory)?;
+            restrict_directory(directory)?;
+        }
+        for file in configuration.files() {
+            let relative = Path::new(file.relative_path);
+            if relative.is_absolute()
+                || relative
+                    .components()
+                    .any(|component| !matches!(component, std::path::Component::Normal(_)))
+            {
+                return Err(TrinoStageFailure::InvalidPath);
+            }
+            let path = configuration_root.join(relative);
+            let mut options = OpenOptions::new();
+            options.write(true).create_new(true);
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::OpenOptionsExt as _;
+                options.mode(0o600);
+            }
+            let mut output = options
+                .open(path)
+                .map_err(|_| TrinoStageFailure::CreateFile)?;
+            output
+                .write_all(file.contents.as_bytes())
+                .and_then(|()| output.sync_all())
+                .map_err(|_| TrinoStageFailure::WriteFile)?;
+        }
+        Ok(Self {
+            root,
+            configuration: configuration_root,
+            data,
+        })
+    }
+
+    #[must_use]
+    pub fn root(&self) -> &Path {
+        self.root.path()
+    }
+
+    #[must_use]
+    pub fn configuration(&self) -> &Path {
+        &self.configuration
+    }
+
+    #[must_use]
+    pub fn data(&self) -> &Path {
+        &self.data
+    }
+}
+
+fn restrict_directory(path: &Path) -> Result<(), TrinoStageFailure> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o700))
+            .map_err(|_| TrinoStageFailure::CreateDirectory)?;
+    }
+    Ok(())
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TrinoLauncherInvocation {

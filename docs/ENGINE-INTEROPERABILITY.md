@@ -635,6 +635,23 @@ fake executables to prove capture, environment, exit, timeout, and byte-limit
 behavior without requiring Trino. Server supervision and concrete effect
 mapping remain separate.
 
+### Private Trino server staging
+
+The concrete process boundary stages the rendered server configuration only in
+a new per-run temporary tree. Its root, `etc`, `etc/catalog`, and data directory
+are owner-only on Unix; configuration files use create-new semantics and
+owner-only permissions, and each file is synchronized before the launcher can
+observe it. Only normal relative configuration paths are admitted. Dropping the
+staged value removes the entire tree, so a completed or failed run cannot leave
+catalog or storage configuration in a stable ambient path.
+
+The staged catalog properties retain environment placeholders for benchmark
+credentials. Secret values are supplied only through the already-sanitized
+child environment and are not written into configuration files. This unit does
+not yet supervise a live Trino server or claim interoperability evidence; the
+next process unit must bind the staged roots to launcher start, readiness,
+bounded CLI execution, and guaranteed stop.
+
 ### Strict Trino CLI read boundary
 
 Scalar queries have a narrower boundary than canonical table reads. Fixture

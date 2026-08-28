@@ -1,11 +1,23 @@
 use std::path::Path;
 use std::time::Duration;
 
+use catalog_bench_common::contract::{parse_contract, ComponentId, ContractDocument};
 use catalog_bench_engine::{
-    TrinoCliInvocation, TrinoCliOutput, TrinoCommandExecutor, TrinoCommandFailure,
-    TrinoLauncherInvocation, TRINO_CLI_LOCATION, TRINO_LAUNCHER_LOCATION,
+    InteroperabilityPlan, StagedTrinoServer, TrinoCliInvocation, TrinoCliOutput,
+    TrinoCommandExecutor, TrinoCommandFailure, TrinoLauncherInvocation, TrinoRenderedProgram,
+    TrinoServerConfiguration, TRINO_CLI_LOCATION, TRINO_LAUNCHER_LOCATION,
 };
 use tempfile::TempDir;
+
+mod support;
+
+use support::select_synthetic_materialized_trino;
+
+const PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
+const CANDIDATE_PROFILE: &[u8] = include_bytes!("../../../profiles/v1/current-2026-08-27.json");
+const SCENARIO: &[u8] =
+    include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 
 #[test]
 fn launcher_uses_only_the_verified_stock_program_and_private_configuration() {
@@ -72,6 +84,49 @@ fn invocation_rejects_relative_paths_controls_and_unbounded_sql() {
         TrinoCliOutput::Json,
     )
     .is_err());
+}
+
+#[test]
+fn stages_the_exact_private_configuration_and_removes_it_on_drop() {
+    let configuration = configuration();
+    let staged = StagedTrinoServer::create(&configuration).unwrap();
+    let root = staged.root().to_owned();
+
+    assert!(staged.configuration().starts_with(&root));
+    assert!(staged.data().starts_with(&root));
+    assert!(staged.data().is_dir());
+    for file in configuration.files() {
+        let path = staged.configuration().join(file.relative_path);
+        assert_eq!(std::fs::read_to_string(&path).unwrap(), file.contents);
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt as _;
+            assert_eq!(
+                std::fs::metadata(path).unwrap().permissions().mode() & 0o777,
+                0o600
+            );
+        }
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt as _;
+        for directory in [staged.root(), staged.configuration(), staged.data()] {
+            assert_eq!(
+                std::fs::metadata(directory).unwrap().permissions().mode() & 0o777,
+                0o700
+            );
+        }
+    }
+    let staged_text = configuration
+        .files()
+        .iter()
+        .map(|file| file.contents.as_str())
+        .collect::<String>();
+    assert!(!staged_text.contains("secret-value"));
+    assert!(staged_text.contains("${ENV:CATALOG_BENCH_S3_SECRET_ACCESS_KEY}"));
+
+    drop(staged);
+    assert!(!root.exists());
 }
 
 #[tokio::test]
@@ -157,4 +212,26 @@ fn script(directory: &TempDir, name: &str, body: &str) -> std::path::PathBuf {
     permissions.set_mode(0o700);
     std::fs::set_permissions(&path, permissions).unwrap();
     path
+}
+
+fn configuration() -> TrinoServerConfiguration {
+    let ContractDocument::Profile(mut profile) = parse_contract(PROFILE).unwrap() else {
+        panic!("profile fixture must be a profile");
+    };
+    let ContractDocument::Profile(candidate) = parse_contract(CANDIDATE_PROFILE).unwrap() else {
+        panic!("candidate fixture must be a profile");
+    };
+    let ContractDocument::Scenario(scenario) = parse_contract(SCENARIO).unwrap() else {
+        panic!("scenario fixture must be a scenario");
+    };
+    select_synthetic_materialized_trino(&mut profile, &candidate);
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "stage01",
+    )
+    .unwrap();
+    let program = TrinoRenderedProgram::render(plan.trino().unwrap()).unwrap();
+    TrinoServerConfiguration::render(&program).unwrap()
 }
