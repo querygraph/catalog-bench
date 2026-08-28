@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Correct Trino 483 launcher provenance from the live pinned ARM64 image:
+  `/usr/lib/trino/bin/launcher` is an engine-owned Bash architecture selector,
+  and the executed `/usr/lib/trino/bin/linux-arm64/launcher` is a separate
+  native ELF. Require both exact nonempty artifacts instead of misclassifying
+  the wrapper as Python or omitting the program it executes.
+
 - Publish the reviewed fresh stock-Flink v2 correctness bundle from run
   `flinkv2_08280635`: LakeCat, Polaris, Gravitino, and Lakekeeper each pass all
   required assertions. Generalize review admission to require the canonical

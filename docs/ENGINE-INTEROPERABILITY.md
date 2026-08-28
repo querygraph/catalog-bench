@@ -516,7 +516,8 @@ type system, not an engine-name branch in shared execution code.
 
 Before a Trino plan can exist, the materialized image must contain the
 engine-owned `/usr/lib/trino/bin/run-trino` shell launcher and `/usr/bin/trino`
-CLI JAR, the engine-owned `/usr/lib/trino/bin/launcher` Python program, the
+CLI JAR, the engine-owned `/usr/lib/trino/bin/launcher` architecture-selecting
+shell script, its `/usr/lib/trino/bin/linux-arm64/launcher` native ELF, the
 source-correlated optimized Rust runner, and byte-correlated Iceberg 1.11.0
 connector artifacts. These paths and Trino's Java 25.0.3 runtime
 come from revision `50b0b50b75abd47f830b7805ee1b51716eb4065e`: its Dockerfile

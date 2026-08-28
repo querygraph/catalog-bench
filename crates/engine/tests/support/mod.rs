@@ -1,7 +1,8 @@
 use catalog_bench_common::contract::{Profile, RuntimeArtifact};
 use catalog_bench_engine::{
     ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE, FLINK_RUNNER_LOCATION,
-    TRINO_CLI_LOCATION, TRINO_LAUNCHER_LOCATION, TRINO_SERVER_LOCATION,
+    TRINO_CLI_LOCATION, TRINO_LAUNCHER_LOCATION, TRINO_NATIVE_LAUNCHER_LOCATION,
+    TRINO_SERVER_LOCATION,
 };
 
 #[allow(dead_code)]
@@ -176,11 +177,21 @@ pub(crate) fn select_synthetic_materialized_trino(profile: &mut Profile, candida
         .expect("synthetic Trino fixture needs a server launcher identity")
         .clone();
     launcher.location = format!("image:{TRINO_LAUNCHER_LOCATION}");
-    launcher.media_type = "text/x-python".to_owned();
+    launcher.media_type = "application/x-shellscript".to_owned();
     launcher.digest.value = "c".repeat(64);
     launcher.bytes = Some(67_890);
     launcher.description = Some("Synthetic stock Trino launcher fixture.".to_owned());
     embedded_artifacts.push(launcher);
+    let mut native_launcher = embedded_artifacts
+        .last()
+        .expect("synthetic Trino fixture needs a launcher identity")
+        .clone();
+    native_launcher.location = format!("image:{TRINO_NATIVE_LAUNCHER_LOCATION}");
+    native_launcher.media_type = "application/vnd.elf".to_owned();
+    native_launcher.digest.value = "d".repeat(64);
+    native_launcher.bytes = Some(3_932_322);
+    native_launcher.description = Some("Synthetic stock Trino native launcher fixture.".to_owned());
+    embedded_artifacts.push(native_launcher);
     profile.components.push(trino);
     profile
         .services
