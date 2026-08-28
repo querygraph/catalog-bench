@@ -50,6 +50,7 @@ func TestBeforeAndAfterUpstreamDisconnectHaveDistinctPersistence(t *testing.T) {
 				Method:       "PUT",
 				PathContains: "/metadata/",
 				Occurrence:   1,
+				Injections:   1,
 				Phase:        test.phase,
 				Action:       Disconnect,
 			})
@@ -100,7 +101,7 @@ func TestOccurrenceAndNormalForwarding(t *testing.T) {
 	defer server.Close()
 	control := httptest.NewServer(proxy.ControlHandler())
 	defer control.Close()
-	putRule(t, control.URL, Rule{ID: "second-post", Method: "POST", PathContains: "/objects/", Occurrence: 2, Phase: BeforeUpstream, Action: Disconnect})
+	putRule(t, control.URL, Rule{ID: "second-post", Method: "POST", PathContains: "/objects/", Occurrence: 2, Injections: 1, Phase: BeforeUpstream, Action: Disconnect})
 
 	response, err := http.Post(server.URL+"/objects/a", "application/octet-stream", nil)
 	if err != nil {
@@ -129,11 +130,46 @@ func TestRuleValidationRejectsUnsafeOrAmbiguousInput(t *testing.T) {
 		{ID: "valid", Method: "PUT", PathContains: "x", Occurrence: 1, Phase: BeforeUpstream, Action: Disconnect},
 		{ID: "valid", Method: "PUT", PathContains: "/x?secret=y", Occurrence: 1, Phase: BeforeUpstream, Action: Disconnect},
 		{ID: "valid", Method: "PUT", PathContains: "/x", Occurrence: 0, Phase: BeforeUpstream, Action: Disconnect},
+		{ID: "valid", Method: "PUT", PathContains: "/x", Occurrence: 1, Injections: 0, Phase: BeforeUpstream, Action: Disconnect},
 	}
 	for _, rule := range invalid {
 		if err := rule.Validate(); err == nil {
 			t.Fatalf("expected invalid rule: %+v", rule)
 		}
+	}
+}
+
+func TestBoundedInjectionRangeSurvivesAutomaticRetries(t *testing.T) {
+	var admitted atomic.Uint64
+	upstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		admitted.Add(1)
+		writer.WriteHeader(http.StatusNoContent)
+	}))
+	defer upstream.Close()
+	parsed, _ := url.Parse(upstream.URL)
+	proxy, _ := New(parsed, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	server := httptest.NewServer(proxy.ProxyHandler())
+	defer server.Close()
+	control := httptest.NewServer(proxy.ControlHandler())
+	defer control.Close()
+	putRule(t, control.URL, Rule{ID: "three-posts", Method: "POST", PathContains: "/commit", Occurrence: 1, Injections: 3, Phase: BeforeUpstream, Action: Disconnect})
+
+	for index := 0; index < 4; index++ {
+		response, err := http.Post(server.URL+"/commit", "application/json", nil)
+		if index < 3 {
+			if err == nil {
+				response.Body.Close()
+				t.Fatalf("request %d should disconnect", index+1)
+			}
+		} else if err != nil {
+			t.Fatalf("request after injection range: %v", err)
+		} else {
+			response.Body.Close()
+		}
+	}
+	state := getState(t, control.URL)
+	if state.MatchCount != 4 || len(state.Events) != 3 || admitted.Load() != 1 {
+		t.Fatalf("unexpected bounded-range state=%+v admitted=%d", state, admitted.Load())
 	}
 }
 

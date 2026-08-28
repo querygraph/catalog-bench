@@ -41,6 +41,7 @@ type Rule struct {
 	Method       string `json:"method"`
 	PathContains string `json:"path_contains"`
 	Occurrence   uint64 `json:"occurrence"`
+	Injections   uint64 `json:"injections"`
 	Phase        Phase  `json:"phase"`
 	Action       Action `json:"action"`
 }
@@ -65,6 +66,12 @@ func (rule Rule) Validate() error {
 	}
 	if rule.Occurrence == 0 {
 		return errors.New("occurrence must be greater than zero")
+	}
+	if rule.Injections == 0 || rule.Injections > 1000 {
+		return errors.New("injections must be from 1 through 1000")
+	}
+	if rule.Occurrence > ^uint64(0)-rule.Injections+1 {
+		return errors.New("occurrence and injections overflow the match range")
 	}
 	if rule.Phase != BeforeUpstream && rule.Phase != AfterUpstream {
 		return errors.New("phase must be before-upstream or after-upstream")
@@ -189,7 +196,8 @@ func (proxy *Proxy) match(method string, path string) (Rule, uint64, bool) {
 		return Rule{}, 0, false
 	}
 	proxy.matchCount++
-	return *proxy.rule, proxy.matchCount, proxy.matchCount == proxy.rule.Occurrence
+	lastInjection := proxy.rule.Occurrence + proxy.rule.Injections - 1
+	return *proxy.rule, proxy.matchCount, proxy.matchCount >= proxy.rule.Occurrence && proxy.matchCount <= lastInjection
 }
 
 func (proxy *Proxy) record(rule Rule, method string, escapedPath string, matchNumber uint64, status *int) {
