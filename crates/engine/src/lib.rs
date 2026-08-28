@@ -43,6 +43,7 @@ pub use process::*;
 pub use protocol::*;
 pub use runtime::*;
 pub use transcript::{
+    run_stock_engine_interoperability, run_stock_flink_interoperability,
     run_stock_spark_interoperability, EngineContracts, EngineEvidenceError,
     EngineEvidenceErrorKind, EngineSanitizationViolation, EngineTranscript,
     EngineTranscriptComponent, EngineTranscriptComponents, EngineTranscriptFixture,

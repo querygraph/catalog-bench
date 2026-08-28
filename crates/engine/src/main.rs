@@ -7,7 +7,7 @@ use anyhow::{Context, Result};
 use catalog_bench_common::contract::ComponentId;
 use catalog_bench_conformance::{encode_evidence, sha256_hex, write_new_evidence};
 use catalog_bench_engine::{
-    run_stock_spark_interoperability, EngineBehaviorClassification, EngineContracts,
+    run_stock_engine_interoperability, EngineBehaviorClassification, EngineContracts,
     ProcessEnvironment,
 };
 use clap::Parser;
@@ -58,7 +58,7 @@ async fn run(cli: Cli) -> Result<EngineBehaviorClassification> {
     let scenario_bytes = read_contract(&cli.scenario)?;
     let contracts = EngineContracts::parse(&profile_bytes, &scenario_bytes)
         .context("invalid engine interoperability contracts")?;
-    let transcript = run_stock_spark_interoperability(
+    let transcript = run_stock_engine_interoperability(
         &contracts,
         &ComponentId::new(cli.catalog),
         &cli.fixture_id,

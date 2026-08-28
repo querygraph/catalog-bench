@@ -19,7 +19,8 @@ use sanitize::{audit_base_values, audit_with_plan, ObservedSecretSource};
 use crate::{
     run_engine_workflow, ComponentIdentity, EngineCatalogConnectionEvidence, EngineExecution,
     InteroperabilityPlan, RestEngineCatalogConnector, SecretSource, SharedObjectStoreConnector,
-    StockSparkRunner, ENGINE_SCENARIO_ID, ENGINE_SCENARIO_VERSION, ENGINE_TRANSCRIPT_FORMAT,
+    StockFlinkRunner, StockSparkRunner, ENGINE_SCENARIO_ID, ENGINE_SCENARIO_VERSION,
+    ENGINE_TRANSCRIPT_FORMAT,
 };
 
 const SANITIZATION_POLICY: &str = "catalog-bench/value-safe-engine-v1";
@@ -349,6 +350,51 @@ where
         execution,
         sensitive_values.as_slice(),
     )
+}
+
+pub async fn run_stock_flink_interoperability<S>(
+    contracts: &EngineContracts,
+    catalog: &ComponentId,
+    fixture_id: &str,
+    secrets: Arc<S>,
+) -> Result<EngineTranscript, EngineEvidenceError>
+where
+    S: SecretSource + Send + Sync + 'static,
+{
+    let plan = contracts.plan(catalog, fixture_id)?;
+    let observed = Arc::new(ObservedSecretSource::new(secrets));
+    let execution = run_engine_workflow(
+        &plan,
+        StockFlinkRunner::production(Arc::clone(&observed)),
+        RestEngineCatalogConnector::new(Arc::clone(&contracts.profile), Arc::clone(&observed)),
+        SharedObjectStoreConnector::new(Arc::clone(&observed)),
+    )
+    .await;
+    let sensitive_values = observed.sensitive_values();
+    EngineTranscript::from_execution(
+        contracts,
+        &plan,
+        fixture_id,
+        execution,
+        sensitive_values.as_slice(),
+    )
+}
+
+pub async fn run_stock_engine_interoperability<S>(
+    contracts: &EngineContracts,
+    catalog: &ComponentId,
+    fixture_id: &str,
+    secrets: Arc<S>,
+) -> Result<EngineTranscript, EngineEvidenceError>
+where
+    S: SecretSource + Send + Sync + 'static,
+{
+    let plan = contracts.plan(catalog, fixture_id)?;
+    if plan.flink().is_some() {
+        run_stock_flink_interoperability(contracts, catalog, fixture_id, secrets).await
+    } else {
+        run_stock_spark_interoperability(contracts, catalog, fixture_id, secrets).await
+    }
 }
 
 fn expected_components(

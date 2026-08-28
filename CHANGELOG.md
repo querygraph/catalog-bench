@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Dispatch the production engine CLI from the profile-selected engine instead
+  of unconditionally invoking the Spark executor. Flink profiles now use the
+  verified Flink process path, with a CLI regression test that distinguishes
+  correct runtime admission from the former execution-plan mismatch.
+
 - Add the fresh four-catalog Flink production launcher. It rebuilds and verifies
   the exact materialized images, creates isolated run-owned state, executes the
   same v2 workflow sequentially through LakeCat, Polaris, Gravitino, and

@@ -11,6 +11,8 @@ const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const SCENARIO: &[u8] =
     include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
+const FLINK_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/flink-2.1.3-lakecat-65f0a4c3-2026-08-28.json");
 const SECRET_SENTINEL: &str = "engine-cli-secret-sentinel";
 
 #[test]
@@ -99,6 +101,26 @@ fn invalid_contract_creates_no_evidence() {
 
     assert_eq!(execution.status.code(), Some(1));
     assert!(!output_path.exists());
+}
+
+#[test]
+fn flink_profile_dispatches_to_the_flink_executor() {
+    let root = tempfile::tempdir().unwrap();
+    let profile_path = root.path().join("profile.json");
+    let scenario_path = root.path().join("scenario.json");
+    let output_path = root.path().join("transcript.json");
+    fs::write(&profile_path, FLINK_PROFILE).unwrap();
+    fs::write(&scenario_path, SCENARIO).unwrap();
+
+    let execution = run_engine(&profile_path, &scenario_path, &output_path);
+
+    assert_eq!(execution.status.code(), Some(2));
+    let transcript: EngineTranscript =
+        serde_json::from_slice(&fs::read(output_path).unwrap()).unwrap();
+    assert!(matches!(
+        transcript.execution.process.outcome,
+        EngineProcessOutcome::RuntimeRejected {}
+    ));
 }
 
 fn run_engine(profile: &Path, scenario: &Path, output: &Path) -> std::process::Output {
