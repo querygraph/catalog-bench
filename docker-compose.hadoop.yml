@@ -5,7 +5,7 @@ volumes:
 
 services:
   hadoop-state-init:
-    image: lakecat-service:20116489d138
+    image: lakecat-service:d7b9e3bef361
     profiles: ["spark"]
     networks: [lakehouse-net]
     user: root

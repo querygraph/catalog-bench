@@ -391,10 +391,10 @@ services:
     build:
       context: ./docker/lakecat
       args:
-        LAKECAT_SOURCE_REVISION: 20116489d138f4dc8883cd12732947fd41615922
+        LAKECAT_SOURCE_REVISION: d7b9e3bef36134aeeac11eccf2761488d3ace463
       additional_contexts:
-        lakecat-source: "https://github.com/querygraph/lakecat.git#20116489d138f4dc8883cd12732947fd41615922"
-    image: lakecat-service:20116489d138
+        lakecat-source: "https://github.com/querygraph/lakecat.git#d7b9e3bef36134aeeac11eccf2761488d3ace463"
+    image: lakecat-service:d7b9e3bef361
     networks: [lakehouse-net]
     ports: ["8181:8181"]
     environment:

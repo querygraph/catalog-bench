@@ -1,0 +1,4 @@
+services:
+  lakecat:
+    environment:
+      LAKECAT_WAREHOUSE_LOCATION: s3://warehouse/lakecat

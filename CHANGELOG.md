@@ -1,5 +1,9 @@
 # Changelog
 
+- Add a fresh-state stock Spark runner that fetch-verifies Apache Ossie's
+  pinned TPC-DS model and creates five relationship-connected Iceberg tables
+  through LakeCat REST on isolated MinIO.
+
 ## Unreleased
 
 - Publish reviewed `hadoop_0828i` evidence for the stock Spark/Iceberg
