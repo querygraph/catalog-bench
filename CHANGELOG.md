@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Publish reviewed `hadoop_0828i` evidence for the stock Spark/Iceberg
+  HadoopCatalog-to-LakeCat legacy migration cookbook, with two snapshots, two
+  specs, two refs, pointer identity, and exact three-row reads.
+
 - Add a fresh-state stock Spark HadoopCatalog-to-LakeCat migration runner that
   consumes QueryGraph's legacy-catalog verifier, shares only a run-owned
   filesystem volume with a matching isolated LakeCat storage profile, and

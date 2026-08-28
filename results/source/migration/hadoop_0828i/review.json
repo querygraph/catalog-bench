@@ -1,0 +1,14 @@
+{
+  "schema_version": "catalog-bench.querygraph-hadoop-migration-review.v1",
+  "run_id": "hadoop_0828i",
+  "reviewed_catalog_bench_revision": "871620343c8cd8f49cede55599ceb5b59007bbb8",
+  "querygraph_revision": "b176d1d2e1f2ae6ce5a45eb552da93f51f380e9a",
+  "lakecat_revision": "20116489d138f4dc8883cd12732947fd41615922",
+  "raw_summary_sha256": "sha256:a9bcda4c54b315d04e57d2e1b1a69e0ccb0518b2613d1602e2da0876382820ab",
+  "runner_sha256": "sha256:ea662ba1f0be4a8b22f1ce0767f8ebc56f5fab90e5bf32f9c79b2d7ff0bc6ae4",
+  "overlay_sha256": "sha256:1c1d09d354057b1c324fbfddd6b7af90a2cb386f4370642666f30c5299826746",
+  "querygraph_harness_sha256": "sha256:630b1c16da4e57682fc3837c86cdfd8a15c72b113d3e10cf727924adac4ca98b",
+  "lakecat_image_digest": "sha256:6d135117986b6d3157cc176b711821f20a5d2affda537bfe6a1213816a0b37d8",
+  "fresh_project_cleanup": {"containers_remaining": 0, "volumes_remaining": 0},
+  "review": "accepted stock Spark HadoopCatalog-to-LakeCat REST registration with evolved schema/specs, snapshots, refs, exact pointer identity, and exact reads"
+}

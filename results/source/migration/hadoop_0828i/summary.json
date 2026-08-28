@@ -1,0 +1,30 @@
+{
+  "content_sha256": "sha256:7b45bced25c8dd7966b74b88df2ed3d867f2e4738efe7aacc10ce1cedae416e4",
+  "contract": "catalog-bench/querygraph-hadoop-migration/v1",
+  "querygraph_revision": "b176d1d2e1f2ae6ce5a45eb552da93f51f380e9a",
+  "result": {
+    "contract": "querygraph/hadoop-to-rest-migration/v1",
+    "data": {
+      "destination_count": 3,
+      "destination_digest": "sha256:399e7ecbc386cd9c12454862d2cfdd2da5f20c6fe264396215b7110212258b50",
+      "preserved": true,
+      "source_count": 3,
+      "source_digest": "sha256:399e7ecbc386cd9c12454862d2cfdd2da5f20c6fe264396215b7110212258b50"
+    },
+    "destination_catalog": "LakeCat Iceberg REST",
+    "fixture": "hadoop_0828i",
+    "semantic": {
+      "destination_digest": "sha256:a0f7d2bd253157da45ec523ddd49398ff4f579a1ac5410f4d410b25d6976ccca",
+      "metadata_location_digest": "sha256:81239a07d208c8ec5f9facae38f0c8c4da39b68c1841b061f7943e24e2ee3a47",
+      "mismatches": [],
+      "preserved": true,
+      "ref_count": 2,
+      "snapshot_count": 2,
+      "source_digest": "sha256:a0f7d2bd253157da45ec523ddd49398ff4f579a1ac5410f4d410b25d6976ccca",
+      "spec_count": 2
+    },
+    "source_catalog": "Apache Iceberg HadoopCatalog"
+  },
+  "run_id": "hadoop_0828i",
+  "status": "verified"
+}
