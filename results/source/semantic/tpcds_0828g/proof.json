@@ -1,0 +1,31 @@
+{
+  "answer_hash": "sha256:f108182a1b9763f9bca5e166fef6b26749b454b87d7e528aca4acc0582ef29c2",
+  "answers": {
+    "customer-lifetime-value": [{"value": "35.000000000000"}],
+    "sales-by-brand": [{"brand":"item-i_brand-1","value":"20.00"},{"brand":"item-i_brand-2","value":"35.00"},{"brand":"item-i_brand-3","value":"50.00"}],
+    "store-productivity": [{"value": "1.909090909091"}],
+    "total-profit": [{"value": "28.00"}],
+    "total-sales": [{"value": "105.00"}]
+  },
+  "basis": {
+    "artifact": "sha256:438372de9b8ca0f074aed72806f92ac9b84047851a0385423f004748efe5a316",
+    "graph": "sha256:0967a1a2fd5b481a2c68e505cfb40ae73f35d3e159ca28520952b2ade4057aac",
+    "lineage": "sha256:751b0c86dbe7b705a064105b017d68b6c57e1f3d083ca81ef96c27bfb3659ad9",
+    "model": "sha256:3400c9e7e4a4c8b283868f7d9bcc6ca5646200bad8a3da069bb7a1dfc16dd74b",
+    "physical": "sha256:340fea3bf28deb2cbee5d57a55baf07991406c536db9edb37a87e0c4898dded6",
+    "plan": "sha256:79a387ee640370fd47dcd42caf25792bb0da2dcba7bc37189eebfedfa0d23b48",
+    "policy": "sha256:1c939a2779f32ae31c2c7e4bd9a28ef2b3351dca4e04a83171530e98e6cd11c4"
+  },
+  "drift_rejections": {"artifact":"rejected","graph":"rejected","lineage":"rejected","model":"rejected","physical":"rejected","policy":"rejected"},
+  "model_publication_replay": {
+    "event_id": "sha256:b5dce3143483e23442a7bcf645a5be293de894c0b464e4567f10d87ade4737e2",
+    "graph_events": 1,
+    "lineage_events": 1,
+    "lineage_hash": "sha256:a830e7e1a6efb49b1c9d56805de27d93aaf71e070c936b309d12b7ec525ed54f",
+    "openlineage_hash": "sha256:2baa03098ecf48d508719a77dc34a118343cc4d0917dc17df83b1435288e7bd0"
+  },
+  "proof_hash": "sha256:c8571a6398c35296d50b3b3ff15782cd11c0830551a690aa3e8b7ca9cadcab63",
+  "run_id": "tpcds_0828g",
+  "status": "verified",
+  "summary_content_sha256": "sha256:3057bc8175a91ef97eb37beac69a0ffafb7ef23cfe8ffc91f86d292f794e3376"
+}

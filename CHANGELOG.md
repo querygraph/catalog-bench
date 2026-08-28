@@ -13,6 +13,8 @@
   governed model publication, five realized schemas, and zero cleanup residue.
 - Advance the source-pinned LakeCat image to the semantic publication
   graph/OpenLineage replay implementation for the full TPC-DS proof run.
+- Publish reviewed `tpcds_0828g` answer, graph/OpenLineage replay, seven-basis
+  proof, six-dimension drift rejection, source provenance, and cleanup evidence.
 
 ## Unreleased
 
