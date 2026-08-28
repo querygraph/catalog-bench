@@ -1,5 +1,11 @@
 # Changelog
 
+- C3-01 deterministic fault substrate: add a benchmark-owned HTTP reverse
+  proxy with typed one-shot before-upstream and after-upstream disconnect rules,
+  occurrence matching, sanitized hash-only event evidence, strict control input,
+  and real-socket tests that distinguish definite non-persistence from
+  accepted-state ambiguity.
+
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope
   for the benchmark credential.
