@@ -17,6 +17,8 @@
   proof, six-dimension drift rejection, source provenance, and cleanup evidence.
 - Publish the 2026-Q3 community report, immutable cross-bundle index,
   reproduction guide, catalog-specific review packets, and feedback backlog v2.
+- Dispatch the four catalog-specific review packets through public maintainer
+  issues and bind the active-review backlog entries to those URLs.
 
 ## Unreleased
 
