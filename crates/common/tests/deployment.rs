@@ -755,6 +755,7 @@ fn spark_launcher_runs_all_four_catalogs_in_one_fresh_topology() {
         "profiles/v1/current-engine-v2-lakecat-5d62f1c4-2026-08-28.json",
         "materializations/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json",
         "profiles/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json",
+        "--profile /contracts/profiles/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json",
         "for catalog in \"${catalogs[@]}\"",
         "catalog_bench_clean_compose \"$repository_root\" run --rm spark-engine",
         "--scenario /contracts/scenarios/v1/engine.iceberg.write-read-evolution.v2.json",
@@ -772,6 +773,7 @@ fn spark_launcher_runs_all_four_catalogs_in_one_fresh_topology() {
             "Spark launcher must contain `{required}`"
         );
     }
+    assert!(!launcher.contains("--profile /contracts/profiles/v1/spark-v2-2026-08-28.json"));
     for forbidden in [
         "nessie",
         "engine.iceberg.write-read-evolution.json ",

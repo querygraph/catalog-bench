@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Pass the newly materialized LakeCat repair profile to the in-container Spark
+  runner as well as the host-side artifact verifier. Deployment coverage now
+  rejects the superseded runner profile path so a launch cannot produce
+  split-brain evidence that claims the old LakeCat revision.
+
 - Advance the source-built LakeCat benchmark image to `lakecat@5d62f1c4`,
   which assigns catalog-owned positive Iceberg field IDs for stock Spark
   `createTable` requests. Preserve the first v2 runtime generation while

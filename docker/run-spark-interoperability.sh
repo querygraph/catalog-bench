@@ -59,7 +59,7 @@ for catalog in "${catalogs[@]}"; do
 
   set +e
   catalog_bench_clean_compose "$repository_root" run --rm spark-engine \
-    --profile /contracts/profiles/v1/spark-v2-2026-08-28.json \
+    --profile /contracts/profiles/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json \
     --scenario /contracts/scenarios/v1/engine.iceberg.write-read-evolution.v2.json \
     --catalog "$catalog" \
     --fixture-id "$run_id" \
