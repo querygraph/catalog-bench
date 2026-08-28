@@ -57,6 +57,16 @@ fn renders_the_complete_stock_trino_program_for_every_catalog() {
         assert!(create.contains("\"category\" VARCHAR"));
         assert!(create.contains("format_version = 2"));
         assert!(create.contains("extra_properties = MAP(ARRAY["));
+        assert_eq!(
+            program
+                .catalog
+                .properties
+                .get("iceberg.allowed-extra-properties")
+                .map(String::as_str),
+            Some(
+                "catalog-bench.owner,write.metadata.delete-after-commit.enabled,write.metadata.previous-versions-max"
+            )
+        );
         let initial = statement(&program, TrinoOperationPurpose::InitialAppend);
         assert_eq!(initial.matches("), (").count(), 15);
         assert!(initial.contains("(0, 'category-0', 7)"));

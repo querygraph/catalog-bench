@@ -1,5 +1,9 @@
 # Changelog
 
+- Derive Trino's closed `iceberg.allowed-extra-properties` connector allowlist
+  from the scenario property oracle so the common table contract is admitted
+  identically by every REST catalog.
+
 - Advance the runnable Trino profile to `catalog-bench@eeac1003` and bind the
   corrected readiness timeout to the rebuilt runner and composite stock Trino
   image identities.

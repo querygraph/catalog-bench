@@ -502,6 +502,16 @@ fn catalog_properties(plan: &TrinoExecutionPlan) -> BTreeMap<String, String> {
             "s3.path-style-access".to_owned(),
             plan.file_io.path_style_access.to_string(),
         ),
+        (
+            "iceberg.allowed-extra-properties".to_owned(),
+            plan.scenario
+                .table
+                .properties
+                .keys()
+                .cloned()
+                .collect::<Vec<_>>()
+                .join(","),
+        ),
     ]);
     if let Some(warehouse) = &plan.catalog.warehouse {
         properties.insert(
