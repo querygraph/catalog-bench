@@ -588,6 +588,30 @@ so the runtime profile also proves the underlying stock
 verified program as `launcher run --etc-dir <private-tree>`; it does not replace
 Trino's launcher or server.
 
+### Trino child state machine
+
+Trino orchestration is a pure state machine over a `TrinoEffects` algebra. It
+does not know about subprocess APIs, HTTP, catalog identities, or exception
+types. Given the closed rendered program, it requires the same lifecycle as the
+other engines: runtime identity, catalog initialization, fixture preflight,
+namespace creation and exact listing, table creation and observation, initial
+append/read, additive evolution and observation, evolved append/read, final
+observation, and completion.
+
+Fixture collision emits `fixture-preflight(absent=false)` and exits with code 3
+before the first mutation. Reads emit evidence only when rows, bytes, and
+SHA-256 exactly match the scenario oracle. Every effect failure is discarded
+and replaced by the fixed shared stage/category pair and exit code 2. A complete
+run exits 0. Structural rejection occurs after runtime observation so even its
+failure stream remains valid under the common ordered decoder.
+
+Separate fake-effect tests prove all twelve successful events, exact effect
+order, collision non-mutation, initial-read mismatch before evolution,
+malformed-operation rejection without panic, and value-free failure mapping.
+Every produced stream is serialized back through the shared decoder in tests.
+The next unit must implement the effects with only the verified stock launcher
+and CLI, bound all parsed output, and supervise the complete process group.
+
 This event change deliberately advances the scenario revision and transcript
 format to v2. The decoder does not use an untagged legacy alternative whose
 shape could become ambiguous as engines are added. The checked-in immutable

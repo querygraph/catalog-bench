@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C2-06 Trino child state machine: add a transport-free `TrinoEffects` algebra
+  and deterministic runner over the closed eight-operation program. Runtime,
+  catalog initialization, fixture preflight, namespace/table creation,
+  appends, canonical reads, schema evolution, snapshot counts, final
+  observation, and terminal classification now emit the shared engine event
+  vocabulary in decoder-valid order. Collision stops before mutation; read
+  evidence requires exact oracle equality; every effect failure maps to one
+  fixed stage/category without retaining details. Separate tests cover complete
+  order, collision non-mutation, read mismatch, malformed operation order, and
+  effect failure. This pure state machine has no launcher/CLI effects and makes
+  no runtime claim.
+
 - C2-06 stock Trino launcher provenance: require the engine image to contain
   Trino 483's nonempty engine-owned `/usr/lib/trino/bin/launcher` Python program
   in addition to `run-trino` and the CLI JAR. The process adapter needs the
