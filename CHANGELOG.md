@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Advance the source-built LakeCat image to `lakecat@65f0a4c3`, whose REST
+  table routes decode multipart namespaces for Spark's standard metadata-table
+  probe. Preserve both earlier v2 generations while admitting this exact
+  second repair as a new source profile.
+
 - Pass the newly materialized LakeCat repair profile to the in-container Spark
   runner as well as the host-side artifact verifier. Deployment coverage now
   rejects the superseded runner profile path so a launch cannot produce
