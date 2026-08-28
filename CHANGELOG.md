@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C2-06 closed Trino server configuration: deterministically project the typed
+  rendered program into a complete private `--etc-dir` tree using the exact
+  Trino 483 single-node and JVM defaults, fixed task concurrency, static Iceberg
+  catalog, native S3 settings, and environment-bound node/data identities.
+  Catalog OAuth and S3 credentials appear only as Trino's documented
+  `${ENV:…}` secret references; no value is written to configuration. Property
+  names and values are bounded and injection-safe, files have a closed sorted
+  path set, and separate tests cover anonymous/OAuth configurations, the pinned
+  JVM boundary, required references, and malformed-property rejection. This
+  pure unit neither writes files nor starts a process.
+
 - C2-06 catalog-neutral Trino renderer: translate the closed Trino plan into
   exact Trino 483 REST-catalog and `fs.s3.enabled` properties plus an ordered
   eight-operation SQL program for schema/table creation, deterministic appends

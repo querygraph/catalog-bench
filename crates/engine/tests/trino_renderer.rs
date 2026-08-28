@@ -5,7 +5,7 @@ use catalog_bench_common::contract::{
 };
 use catalog_bench_engine::{
     EngineCatalogAuthentication, InteroperabilityPlan, TrinoOperation, TrinoOperationPurpose,
-    TrinoRenderedProgram,
+    TrinoRenderedProgram, TrinoServerConfiguration,
 };
 
 mod support;
@@ -131,6 +131,73 @@ fn wire_envelope_carries_closed_read_and_observation_oracles() {
 }
 
 #[test]
+fn renders_a_complete_secret_reference_only_server_configuration() {
+    let (profile, scenario) = contracts();
+    let anonymous = render(&profile, &scenario, "lakecat", "config01");
+    let configuration = TrinoServerConfiguration::render(&anonymous).unwrap();
+    assert_eq!(
+        configuration
+            .files()
+            .iter()
+            .map(|file| file.relative_path)
+            .collect::<Vec<_>>(),
+        [
+            "catalog/bench.properties",
+            "config.properties",
+            "jvm.config",
+            "log.properties",
+            "node.properties",
+        ]
+    );
+    let catalog = file(&configuration, "catalog/bench.properties");
+    assert!(catalog.contains("s3.aws-access-key=${ENV:CATALOG_BENCH_S3_ACCESS_KEY_ID}\n"));
+    assert!(catalog.contains("s3.aws-secret-key=${ENV:CATALOG_BENCH_S3_SECRET_ACCESS_KEY}\n"));
+    assert!(!catalog.contains("oauth2.credential"));
+    assert!(file(&configuration, "config.properties").contains("task.concurrency=1\n"));
+    assert!(file(&configuration, "node.properties")
+        .contains("node.data-dir=${ENV:CATALOG_BENCH_TRINO_DATA_DIR}\n"));
+    assert!(file(&configuration, "node.properties")
+        .contains("node.id=${ENV:CATALOG_BENCH_TRINO_NODE_ID}\n"));
+    for required in [
+        "-agentpath:/usr/lib/trino/bin/libjvmkill.so",
+        "-XX:InitialRAMPercentage=80",
+        "-XX:MaxRAMPercentage=80",
+        "-Djdk.nio.maxCachedBufferSize=2000000",
+    ] {
+        assert!(file(&configuration, "jvm.config").contains(required));
+    }
+
+    let oauth = render(&profile, &scenario, "polaris", "config01");
+    let configuration = TrinoServerConfiguration::render(&oauth).unwrap();
+    assert!(file(&configuration, "catalog/bench.properties").contains(
+        "iceberg.rest-catalog.oauth2.credential=${ENV:CATALOG_BENCH_ENGINE_OAUTH_CREDENTIAL}\n"
+    ));
+
+    let encoded = configuration
+        .files()
+        .iter()
+        .map(|file| file.contents.as_str())
+        .collect::<String>();
+    for secret in ["actual-client-secret", "actual-s3-secret"] {
+        assert!(!encoded.contains(secret));
+    }
+}
+
+#[test]
+fn server_configuration_rejects_property_injection() {
+    let (profile, scenario) = contracts();
+    let mut program = render(&profile, &scenario, "lakecat", "config02");
+    program
+        .catalog
+        .properties
+        .insert("unsafe\nproperty".to_owned(), "value".to_owned());
+    assert!(TrinoServerConfiguration::render(&program)
+        .unwrap_err()
+        .to_string()
+        .contains("unsafe property"));
+}
+
+#[test]
 fn rejects_plan_policy_file_io_identifier_and_generator_drift() {
     let (profile, scenario) = contracts();
     let plan = InteroperabilityPlan::from_contracts(
@@ -229,5 +296,14 @@ fn statement(program: &TrinoRenderedProgram, purpose: TrinoOperationPurpose) -> 
         .iter()
         .find(|operation| operation.purpose() == purpose)
         .map(TrinoOperation::sql)
+        .unwrap()
+}
+
+fn file<'a>(configuration: &'a TrinoServerConfiguration, path: &str) -> &'a str {
+    configuration
+        .files()
+        .iter()
+        .find(|file| file.relative_path == path)
+        .map(|file| file.contents.as_str())
         .unwrap()
 }

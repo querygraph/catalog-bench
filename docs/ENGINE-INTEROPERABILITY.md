@@ -553,6 +553,33 @@ generator overflow/modulus drift, policy changes, file-I/O changes, or any
 catalog-specific branch or direct REST transport. These pure tests are not a
 Trino process or interoperability result.
 
+### Closed Trino server configuration
+
+Trino 483 reads static properties rather than accepting a complete catalog
+configuration through CLI arguments. The harness therefore derives a closed
+private configuration tree from the already validated rendered program. The
+tree contains exactly `catalog/bench.properties`, `config.properties`,
+`jvm.config`, `log.properties`, and `node.properties`, in deterministic order.
+It reproduces the pinned stock image's single-node and JVM defaults, adds
+`task.concurrency=1`, and binds the node ID and data directory through dedicated
+environment references so each future run can own its state.
+
+The catalog file contains Trino's exact REST and native-S3 properties. S3 keys
+are `${ENV:CATALOG_BENCH_S3_ACCESS_KEY_ID}` and
+`${ENV:CATALOG_BENCH_S3_SECRET_ACCESS_KEY}` references. OAuth profiles add only
+`${ENV:CATALOG_BENCH_ENGINE_OAUTH_CREDENTIAL}`; the future process adapter must
+construct that child-only `client-id:client-secret` value from the two typed
+credential sources and zeroize it after spawn. Anonymous profiles omit the
+OAuth credential property entirely. This follows Trino's pinned
+`security/secrets.md` mechanism and never writes a credential value.
+
+The configuration ADT does no filesystem or process I/O. It rejects empty,
+oversized, control-bearing, or syntactically unsafe property names and values;
+tests prove the closed file set, exact JVM boundary, required references,
+anonymous/OAuth distinction, and property-injection failure. Staging with safe
+permissions, launcher supervision, readiness, CLI execution, and cleanup remain
+the next process-boundary unit.
+
 This event change deliberately advances the scenario revision and transcript
 format to v2. The decoder does not use an untagged legacy alternative whose
 shape could become ambiguous as engines are added. The checked-in immutable

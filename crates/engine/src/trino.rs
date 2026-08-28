@@ -13,6 +13,7 @@ use crate::{
     IcebergField, IcebergPrimitiveType, SyntaxRenderingPolicy, TrinoExecutionPlan,
     UnsupportedPolicy, ENGINE_TRANSCRIPT_FORMAT, TRINO_CATALOG_NAME, TRINO_PLAN_FORMAT,
 };
+use crate::{S3_ACCESS_KEY_ENV, S3_SECRET_KEY_ENV};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TrinoRenderError(&'static str);
@@ -272,6 +273,155 @@ impl TrinoRenderedProgram {
             ],
         })
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TrinoConfigurationFile {
+    pub relative_path: &'static str,
+    pub contents: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TrinoServerConfiguration {
+    files: Vec<TrinoConfigurationFile>,
+}
+
+impl TrinoServerConfiguration {
+    pub fn render(program: &TrinoRenderedProgram) -> Result<Self, TrinoRenderError> {
+        if program.task_concurrency != 1 || program.catalog.name != TRINO_CATALOG_NAME {
+            return Err(TrinoRenderError(
+                "unsupported Trino server configuration input",
+            ));
+        }
+        let mut catalog = program.catalog.properties.clone();
+        catalog.insert(
+            "s3.aws-access-key".to_owned(),
+            environment_reference(S3_ACCESS_KEY_ENV),
+        );
+        catalog.insert(
+            "s3.aws-secret-key".to_owned(),
+            environment_reference(S3_SECRET_KEY_ENV),
+        );
+        if matches!(
+            program.catalog.authentication,
+            EngineCatalogAuthentication::OAuth2ClientCredentials { .. }
+        ) {
+            catalog.insert(
+                "iceberg.rest-catalog.oauth2.credential".to_owned(),
+                environment_reference("CATALOG_BENCH_ENGINE_OAUTH_CREDENTIAL"),
+            );
+        }
+        let catalog = render_property_file(&catalog)?;
+        let config = render_property_file(&BTreeMap::from([
+            ("coordinator".to_owned(), "true".to_owned()),
+            (
+                "node-scheduler.include-coordinator".to_owned(),
+                "true".to_owned(),
+            ),
+            (
+                "discovery.uri".to_owned(),
+                "http://127.0.0.1:8080".to_owned(),
+            ),
+            ("catalog.management".to_owned(), "static".to_owned()),
+            (
+                "task.concurrency".to_owned(),
+                program.task_concurrency.to_string(),
+            ),
+        ]))?;
+        let node = render_property_file(&BTreeMap::from([
+            ("node.environment".to_owned(), "catalog-bench".to_owned()),
+            (
+                "node.id".to_owned(),
+                environment_reference("CATALOG_BENCH_TRINO_NODE_ID"),
+            ),
+            (
+                "node.data-dir".to_owned(),
+                environment_reference("CATALOG_BENCH_TRINO_DATA_DIR"),
+            ),
+        ]))?;
+        Ok(Self {
+            files: vec![
+                TrinoConfigurationFile {
+                    relative_path: "catalog/bench.properties",
+                    contents: catalog,
+                },
+                TrinoConfigurationFile {
+                    relative_path: "config.properties",
+                    contents: config,
+                },
+                TrinoConfigurationFile {
+                    relative_path: "jvm.config",
+                    contents: TRINO_JVM_CONFIG.to_owned(),
+                },
+                TrinoConfigurationFile {
+                    relative_path: "log.properties",
+                    contents: "io.trino=INFO\n".to_owned(),
+                },
+                TrinoConfigurationFile {
+                    relative_path: "node.properties",
+                    contents: node,
+                },
+            ],
+        })
+    }
+
+    #[must_use]
+    pub fn files(&self) -> &[TrinoConfigurationFile] {
+        &self.files
+    }
+}
+
+const TRINO_JVM_CONFIG: &str = concat!(
+    "-server\n",
+    "-agentpath:/usr/lib/trino/bin/libjvmkill.so\n",
+    "-XX:InitialRAMPercentage=80\n",
+    "-XX:MaxRAMPercentage=80\n",
+    "-XX:G1HeapRegionSize=32M\n",
+    "-XX:+ExplicitGCInvokesConcurrent\n",
+    "-XX:+HeapDumpOnOutOfMemoryError\n",
+    "-XX:+ExitOnOutOfMemoryError\n",
+    "-XX:-OmitStackTraceInFastThrow\n",
+    "-XX:ReservedCodeCacheSize=256M\n",
+    "-XX:PerMethodRecompilationCutoff=10000\n",
+    "-XX:PerBytecodeRecompilationCutoff=10000\n",
+    "-Djdk.attach.allowAttachSelf=true\n",
+    "-Djdk.nio.maxCachedBufferSize=2000000\n",
+);
+
+fn environment_reference(name: &str) -> String {
+    format!("${{ENV:{name}}}")
+}
+
+fn render_property_file(properties: &BTreeMap<String, String>) -> Result<String, TrinoRenderError> {
+    let mut rendered = String::new();
+    for (key, value) in properties {
+        if !valid_property_key(key) || !valid_property_value(value) {
+            return Err(TrinoRenderError(
+                "Trino configuration contains an unsafe property",
+            ));
+        }
+        rendered.push_str(key);
+        rendered.push('=');
+        rendered.push_str(value);
+        rendered.push('\n');
+    }
+    Ok(rendered)
+}
+
+fn valid_property_key(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 256
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'.' | b'-' | b'_'))
+}
+
+fn valid_property_value(value: &str) -> bool {
+    !value.is_empty()
+        && value.len() <= 4096
+        && value
+            .bytes()
+            .all(|byte| byte.is_ascii_graphic() || byte == b' ')
 }
 
 fn validate_plan(plan: &TrinoExecutionPlan) -> Result<(), TrinoRenderError> {
