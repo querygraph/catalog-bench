@@ -1,5 +1,8 @@
 # Changelog
 
+- Admit DuckDB's release-pinned Iceberg, HTTPFS, and Avro extension stack as
+  the engine-owned connector identity without weakening Java-engine checks.
+
 - Bind the verified DuckDB runtime to the exact catalog-bench engine runner
   revision in a minimal composite benchmark image.
 

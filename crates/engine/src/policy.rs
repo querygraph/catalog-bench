@@ -29,6 +29,8 @@ pub const SPARK_SCALA_VERSION: &str = "2.13.17";
 pub const SPARK_JAVA_VERSION: &str = "21.0.11";
 pub const ICEBERG_CONNECTOR_NAME: &str = "Apache Iceberg Java engine runtimes";
 pub const ICEBERG_CONNECTOR_VERSION: &str = "1.11.0";
+pub const DUCKDB_CONNECTOR_NAME: &str = "DuckDB Iceberg extension stack";
+pub const DUCKDB_CONNECTOR_VERSION: &str = "1.5.3";
 pub const SPARK_SUBMIT_LOCATION: &str = "/opt/spark/bin/spark-submit";
 pub const FLINK_PLAN_FORMAT: &str = "catalog-bench/flink-engine-plan/v1";
 pub const FLINK_CATALOG_NAME: &str = "bench";
@@ -632,7 +634,7 @@ impl InteroperabilityPlan {
             selected_role_component(profile, "stock-engine", engine, ComponentKind::Engine)?;
         let connector_component =
             role_component(profile, "engine-connector", ComponentKind::Connector)?;
-        validate_supported_connector(connector_component)?;
+        validate_supported_connector(engine_component, connector_component)?;
 
         let object_store = object_store_plan(profile)?;
         let fixture = fixture(
@@ -1193,10 +1195,19 @@ fn optional_engine_runner(profile: &Profile) -> Result<Option<&Component>, Polic
     Ok(Some(runner))
 }
 
-fn validate_supported_connector(connector: &Component) -> Result<(), PolicyError> {
-    if connector.name != ICEBERG_CONNECTOR_NAME || connector.version != ICEBERG_CONNECTOR_VERSION {
+fn validate_supported_connector(
+    engine: &Component,
+    connector: &Component,
+) -> Result<(), PolicyError> {
+    let (expected_name, expected_version) =
+        if engine.name == DUCKDB_COMPONENT_NAME && engine.version == DUCKDB_COMPONENT_VERSION {
+            (DUCKDB_CONNECTOR_NAME, DUCKDB_CONNECTOR_VERSION)
+        } else {
+            (ICEBERG_CONNECTOR_NAME, ICEBERG_CONNECTOR_VERSION)
+        };
+    if connector.name != expected_name || connector.version != expected_version {
         return Err(PolicyError::new(format!(
-            "stock renderers support {ICEBERG_CONNECTOR_NAME} {ICEBERG_CONNECTOR_VERSION}, found {} {}",
+            "stock renderer requires {expected_name} {expected_version}, found {} {}",
             connector.name, connector.version
         )));
     }
