@@ -6,6 +6,7 @@
 
 mod adapters;
 mod catalog;
+mod duckdb;
 mod execution;
 mod flink;
 mod iceberg_metadata;
@@ -32,6 +33,7 @@ pub use catalog::{
     EngineCatalog, EngineCatalogFailure, EngineCatalogFailureKind, EngineCatalogTable,
     EngineCleanupReceipt, EngineResourcePresence, EngineTableLoad, RestEngineCatalog,
 };
+pub use duckdb::*;
 pub use execution::*;
 pub use flink::*;
 pub use iceberg_metadata::*;

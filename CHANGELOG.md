@@ -1,5 +1,8 @@
 # Changelog
 
+- Add a closed, catalog-neutral DuckDB execution plan and renderer for the full
+  namespace, table, append, read, schema-evolution, and snapshot workflow.
+
 - Add a Linux ARM64 DuckDB 1.5.3 source build with the release-pinned Iceberg,
   HTTPFS, and Avro revisions packaged as checksum-locked signed offline
   extensions.

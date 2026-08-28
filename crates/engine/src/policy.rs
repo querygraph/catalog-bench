@@ -47,6 +47,11 @@ pub const TRINO_SERVER_LOCATION: &str = "/usr/lib/trino/bin/run-trino";
 pub const TRINO_LAUNCHER_LOCATION: &str = "/usr/lib/trino/bin/launcher";
 pub const TRINO_NATIVE_LAUNCHER_LOCATION: &str = "/usr/lib/trino/bin/linux-arm64/launcher";
 pub const TRINO_CLI_LOCATION: &str = "/usr/bin/trino";
+pub const DUCKDB_PLAN_FORMAT: &str = "catalog-bench/duckdb-engine-plan/v1";
+pub const DUCKDB_CATALOG_NAME: &str = "bench";
+pub const DUCKDB_COMPONENT_NAME: &str = "DuckDB";
+pub const DUCKDB_COMPONENT_VERSION: &str = "1.5.3";
+pub const DUCKDB_CLI_LOCATION: &str = "/usr/local/bin/duckdb";
 pub const S3_ACCESS_KEY_ENV: &str = "CATALOG_BENCH_S3_ACCESS_KEY_ID";
 pub const S3_SECRET_KEY_ENV: &str = "CATALOG_BENCH_S3_SECRET_ACCESS_KEY";
 pub const ENGINE_OAUTH_CLIENT_ID_ENV: &str = "CATALOG_BENCH_ENGINE_CLIENT_ID";
@@ -374,12 +379,23 @@ pub struct TrinoExecutionPlan {
     pub scenario: EngineScenarioParameters,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DuckDbExecutionPlan {
+    pub format: String,
+    pub catalog: RestCatalogPlan,
+    pub file_io: S3FileIoPlan,
+    pub fixture: Fixture,
+    pub scenario: EngineScenarioParameters,
+}
+
 /// Renderer-specific execution policy selected by the runnable profile.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EngineExecutionPlan {
     Spark(SparkExecutionPlan),
     Flink(FlinkExecutionPlan),
     Trino(TrinoExecutionPlan),
+    DuckDb(DuckDbExecutionPlan),
 }
 
 impl EngineExecutionPlan {
@@ -389,6 +405,7 @@ impl EngineExecutionPlan {
             Self::Spark(plan) => &plan.fixture,
             Self::Flink(plan) => &plan.fixture,
             Self::Trino(plan) => &plan.fixture,
+            Self::DuckDb(plan) => &plan.fixture,
         }
     }
 
@@ -398,6 +415,7 @@ impl EngineExecutionPlan {
             Self::Spark(plan) => &plan.scenario,
             Self::Flink(plan) => &plan.scenario,
             Self::Trino(plan) => &plan.scenario,
+            Self::DuckDb(plan) => &plan.scenario,
         }
     }
 
@@ -407,6 +425,7 @@ impl EngineExecutionPlan {
             Self::Spark(plan) => Some(plan),
             Self::Flink(_) => None,
             Self::Trino(_) => None,
+            Self::DuckDb(_) => None,
         }
     }
 
@@ -416,14 +435,23 @@ impl EngineExecutionPlan {
             Self::Spark(_) => None,
             Self::Flink(plan) => Some(plan),
             Self::Trino(_) => None,
+            Self::DuckDb(_) => None,
         }
     }
 
     #[must_use]
     pub fn trino(&self) -> Option<&TrinoExecutionPlan> {
         match self {
-            Self::Spark(_) | Self::Flink(_) => None,
+            Self::Spark(_) | Self::Flink(_) | Self::DuckDb(_) => None,
             Self::Trino(plan) => Some(plan),
+        }
+    }
+
+    #[must_use]
+    pub fn duckdb(&self) -> Option<&DuckDbExecutionPlan> {
+        match self {
+            Self::DuckDb(plan) => Some(plan),
+            Self::Spark(_) | Self::Flink(_) | Self::Trino(_) => None,
         }
     }
 
@@ -461,6 +489,16 @@ impl EngineExecutionPlan {
                         .dependencies
                         .get("java")
                         .is_some_and(|version| version == TRINO_JAVA_VERSION)
+            }
+            Self::DuckDb(_) => {
+                observation.engine_version == DUCKDB_COMPONENT_VERSION
+                    && observation.dependencies.len() == 3
+                    && ["avro", "httpfs", "iceberg"].into_iter().all(|name| {
+                        observation
+                            .dependencies
+                            .get(name)
+                            .is_some_and(|version| version == "1.5.3")
+                    })
             }
         }
     }
@@ -710,6 +748,11 @@ impl InteroperabilityPlan {
     pub fn trino(&self) -> Option<&TrinoExecutionPlan> {
         self.execution.trino()
     }
+
+    #[must_use]
+    pub fn duckdb(&self) -> Option<&DuckDbExecutionPlan> {
+        self.execution.duckdb()
+    }
 }
 
 fn execution_plan(
@@ -780,6 +823,15 @@ fn execution_plan(
                 scenario,
             }))
         }
+        (DUCKDB_COMPONENT_NAME, DUCKDB_COMPONENT_VERSION) => {
+            Ok(EngineExecutionPlan::DuckDb(DuckDbExecutionPlan {
+                format: DUCKDB_PLAN_FORMAT.to_owned(),
+                catalog: catalog(DUCKDB_CATALOG_NAME, authentication)?,
+                file_io: file_io(),
+                fixture,
+                scenario,
+            }))
+        }
         _ => Err(PolicyError::new(format!(
             "no stock renderer supports {} {}",
             engine.name, engine.version
@@ -797,6 +849,7 @@ fn validate_execution_artifact(
         EngineExecutionPlan::Spark(_) => (SPARK_SUBMIT_LOCATION, "Spark submission"),
         EngineExecutionPlan::Flink(_) => (FLINK_CLI_LOCATION, "Flink CLI"),
         EngineExecutionPlan::Trino(_) => (TRINO_SERVER_LOCATION, "Trino server launcher"),
+        EngineExecutionPlan::DuckDb(_) => (DUCKDB_CLI_LOCATION, "DuckDB CLI"),
     };
     let matches = artifacts
         .iter()
@@ -807,12 +860,17 @@ fn validate_execution_artifact(
             "engine runtime must contain exactly one `{location}` artifact"
         )));
     };
-    if artifact.media_type != "application/x-shellscript"
+    let (media_type, artifact_label) = if matches!(execution, EngineExecutionPlan::DuckDb(_)) {
+        ("application/vnd.elf", "executable")
+    } else {
+        ("application/x-shellscript", "shell script")
+    };
+    if artifact.media_type != media_type
         || artifact.bytes == 0
         || artifact.components.as_slice() != std::slice::from_ref(engine)
     {
         return Err(PolicyError::new(format!(
-            "{label} artifact must be a nonempty engine-owned shell script"
+            "{label} artifact must be a nonempty engine-owned {artifact_label}"
         )));
     }
     if matches!(execution, EngineExecutionPlan::Flink(_)) {
