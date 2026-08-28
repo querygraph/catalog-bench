@@ -59,6 +59,8 @@
   direct durable-state reconciliation, exact commit retry, and cleanup proof.
 - Refresh an OAuth bearer after catalog restart so the Polaris recovery case
   measures durable commit behavior instead of the process-local token epoch.
+- Wait for the restarted OAuth endpoint before refreshing the bearer; Compose
+  restart completion precedes application-level Polaris readiness.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope

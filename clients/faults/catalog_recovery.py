@@ -89,6 +89,20 @@ def oauth_token(base: str, client_id: str, client_secret: str, scope: str) -> st
     return token
 
 
+def wait_for_oauth_token(
+    base: str, client_id: str, client_secret: str, scope: str, timeout: float = 90
+) -> str:
+    deadline = time.monotonic() + timeout
+    last: Exception | None = None
+    while time.monotonic() < deadline:
+        try:
+            return oauth_token(base, client_id, client_secret, scope)
+        except (urllib.error.URLError, ConnectionError, TimeoutError, OSError) as error:
+            last = error
+            time.sleep(0.5)
+    raise RuntimeError("OAuth endpoint did not recover after restart") from last
+
+
 def configure_fault(control: Client, rule: dict[str, Any]) -> None:
     outcome, _ = control.request("PUT", "/v1/rule", rule)
     if outcome.status != 200:
@@ -314,7 +328,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             raise RuntimeError(f"in-flight gate release failed: {release}")
         interrupted, _ = pending.result(timeout=30)
     if args.oauth:
-        bearer = oauth_token(
+        bearer = wait_for_oauth_token(
             args.direct_base,
             os.environ[args.oauth_client_id_env],
             os.environ[args.oauth_client_secret_env],
