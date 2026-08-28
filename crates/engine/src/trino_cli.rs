@@ -6,10 +6,13 @@ use std::fmt::{Display, Formatter};
 use catalog_bench_conformance::sha256_hex;
 use serde_json::Value;
 
+use crate::sql::valid_identifier;
 use crate::strict_json::{decode_strict_json, StrictJsonError};
 use crate::{CanonicalRead, RowReadObservation};
 
 const MAXIMUM_TRINO_CLI_BYTES: usize = 16 * 1024 * 1024;
+const MAXIMUM_TRINO_SCALAR_BYTES: usize = 64 * 1024;
+const MAXIMUM_TRINO_SCALAR_TEXT_BYTES: usize = 4096;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TrinoCliDecodeError {
@@ -39,6 +42,77 @@ impl Display for TrinoCliDecodeError {
 }
 
 impl std::error::Error for TrinoCliDecodeError {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrinoCliScalarError {
+    OutputTooLarge,
+    InvalidShape,
+    DuplicateColumn,
+    InvalidValue,
+}
+
+impl Display for TrinoCliScalarError {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        formatter.write_str(match self {
+            Self::OutputTooLarge => "Trino CLI scalar output exceeds its byte limit",
+            Self::InvalidShape => "Trino CLI scalar output has an invalid row shape",
+            Self::DuplicateColumn => "Trino CLI scalar output contains a duplicate column",
+            Self::InvalidValue => "Trino CLI scalar output has an invalid value",
+        })
+    }
+}
+
+impl std::error::Error for TrinoCliScalarError {}
+
+pub fn decode_trino_single_u64(output: &[u8], column: &str) -> Result<u64, TrinoCliScalarError> {
+    single_value(output, column)?
+        .as_u64()
+        .ok_or(TrinoCliScalarError::InvalidValue)
+}
+
+pub fn decode_trino_single_text(
+    output: &[u8],
+    column: &str,
+) -> Result<String, TrinoCliScalarError> {
+    let value = single_value(output, column)?;
+    let text = value
+        .as_str()
+        .filter(|text| {
+            !text.is_empty()
+                && text.len() <= MAXIMUM_TRINO_SCALAR_TEXT_BYTES
+                && !text.chars().any(char::is_control)
+        })
+        .ok_or(TrinoCliScalarError::InvalidValue)?;
+    Ok(text.to_owned())
+}
+
+fn single_value(output: &[u8], column: &str) -> Result<Value, TrinoCliScalarError> {
+    if output.len() > MAXIMUM_TRINO_SCALAR_BYTES {
+        return Err(TrinoCliScalarError::OutputTooLarge);
+    }
+    if output.is_empty() || !output.ends_with(b"\n") || !valid_identifier(column) {
+        return Err(TrinoCliScalarError::InvalidShape);
+    }
+    let line = output
+        .strip_suffix(b"\n")
+        .ok_or(TrinoCliScalarError::InvalidShape)?;
+    if line.is_empty() || line.contains(&b'\n') {
+        return Err(TrinoCliScalarError::InvalidShape);
+    }
+    let value = decode_strict_json(line).map_err(|error| match error {
+        StrictJsonError::DuplicateKey => TrinoCliScalarError::DuplicateColumn,
+        StrictJsonError::Malformed => TrinoCliScalarError::InvalidShape,
+    })?;
+    let Value::Object(mut object) = value else {
+        return Err(TrinoCliScalarError::InvalidShape);
+    };
+    if object.len() != 1 || !object.contains_key(column) {
+        return Err(TrinoCliScalarError::InvalidShape);
+    }
+    object
+        .remove(column)
+        .ok_or(TrinoCliScalarError::InvalidShape)
+}
 
 pub fn decode_trino_canonical_read(
     output: &[u8],

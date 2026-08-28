@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-06 strict Trino CLI scalar decoder: admit preflight counts and immutable
+  metadata locations only as one bounded JSON object, one closed identifier
+  column, one exact unsigned integer or nonempty control-free text value, and
+  one final LF. Reject output over 64 KiB, text over 4 KiB, duplicate or extra
+  columns, multiple rows, malformed shapes, and type drift. Separate tests
+  cover exact values and every boundary; no raw CLI output enters evidence.
+
 - C2-06 bounded Iceberg metadata projection for Trino: decode at most 4 MiB of
   the immutable metadata object located through Trino's stock
   `$metadata_log_entries` table, require canonical UUID, format v2, same-table

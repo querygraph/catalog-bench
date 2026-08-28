@@ -614,6 +614,15 @@ and CLI, bound all parsed output, and supervise the complete process group.
 
 ### Strict Trino CLI read boundary
 
+Scalar queries have a narrower boundary than canonical table reads. Fixture
+preflight counts, snapshot counts, and the latest metadata location are decoded
+only from one stock-CLI JSON object with one expected identifier column and one
+final LF. Counts must be exact unsigned JSON integers. Locations must be
+nonempty, control-free JSON strings no larger than 4 KiB. The complete output
+is capped at 64 KiB and duplicate columns, extra columns, additional rows, and
+type coercion are rejected. Only the typed scalar crosses this boundary; raw
+CLI output is neither retained nor admitted to benchmark evidence.
+
 Trino 483's pinned `JsonPrinter` writes each result row as one JSON object and a
 trailing LF, using result-column names as object keys. The harness admits at
 most 16 MiB and rejects a missing final LF, blank or malformed row, duplicate
