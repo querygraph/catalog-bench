@@ -1,0 +1,41 @@
+{
+  "content_sha256": "sha256:be68dda139534b1af64fd71efd694496fe57500216b89b3908e016a98e96c0c9",
+  "contract": "catalog-bench/querygraph-catalog-migration/v1",
+  "directions": [
+    {
+      "contract": "querygraph/catalog-migration-live/v1",
+      "data": {"destination_count": 3, "destination_digest": "sha256:47667d3010f5b9a4f6d9c3f26873938dc46adecf8392d7ba1d1b88409f18315e", "preserved": true, "source_count": 3, "source_digest": "sha256:47667d3010f5b9a4f6d9c3f26873938dc46adecf8392d7ba1d1b88409f18315e"},
+      "destination": "polaris",
+      "fixture": "migrate_0828d_lp",
+      "semantic": {"destination_digest": "sha256:c3deb1bdae02f2624024dde83a2033b33dbfa81670f81bcfffea97707f37b658", "mismatches": [], "preserved": true, "proves_nonempty_history": true, "ref_count": 1, "snapshot_count": 1, "source_digest": "sha256:c3deb1bdae02f2624024dde83a2033b33dbfa81670f81bcfffea97707f37b658"},
+      "source": "lakecat"
+    },
+    {
+      "contract": "querygraph/catalog-migration-live/v1",
+      "data": {"destination_count": 3, "destination_digest": "sha256:47667d3010f5b9a4f6d9c3f26873938dc46adecf8392d7ba1d1b88409f18315e", "preserved": true, "source_count": 3, "source_digest": "sha256:47667d3010f5b9a4f6d9c3f26873938dc46adecf8392d7ba1d1b88409f18315e"},
+      "destination": "lakecat",
+      "fixture": "migrate_0828d_pl",
+      "semantic": {"destination_digest": "sha256:b5fce1ee486ccb1918393194a12bee99a78cd60b7e31361f94b78597eb4a99e0", "mismatches": [], "preserved": true, "proves_nonempty_history": true, "ref_count": 1, "snapshot_count": 1, "source_digest": "sha256:b5fce1ee486ccb1918393194a12bee99a78cd60b7e31361f94b78597eb4a99e0"},
+      "source": "polaris"
+    },
+    {
+      "contract": "querygraph/catalog-migration-live/v1",
+      "data": {"destination_count": 3, "destination_digest": "sha256:47667d3010f5b9a4f6d9c3f26873938dc46adecf8392d7ba1d1b88409f18315e", "preserved": true, "source_count": 3, "source_digest": "sha256:47667d3010f5b9a4f6d9c3f26873938dc46adecf8392d7ba1d1b88409f18315e"},
+      "destination": "lakekeeper",
+      "fixture": "migrate_0828d_lk",
+      "semantic": {"destination_digest": "sha256:ad55009d58f1ea207e6d4a0637f21d5e00127727fb347dea94fc10f20bee3d3c", "mismatches": [], "preserved": true, "proves_nonempty_history": true, "ref_count": 1, "snapshot_count": 1, "source_digest": "sha256:ad55009d58f1ea207e6d4a0637f21d5e00127727fb347dea94fc10f20bee3d3c"},
+      "source": "lakecat"
+    },
+    {
+      "contract": "querygraph/catalog-migration-live/v1",
+      "data": {"destination_count": 3, "destination_digest": "sha256:47667d3010f5b9a4f6d9c3f26873938dc46adecf8392d7ba1d1b88409f18315e", "preserved": true, "source_count": 3, "source_digest": "sha256:47667d3010f5b9a4f6d9c3f26873938dc46adecf8392d7ba1d1b88409f18315e"},
+      "destination": "lakecat",
+      "fixture": "migrate_0828d_kl",
+      "semantic": {"destination_digest": "sha256:b20b5318f33485a142c1f72e10492e254d944a92d64c1cb783a8e16738db808d", "mismatches": [], "preserved": true, "proves_nonempty_history": true, "ref_count": 1, "snapshot_count": 1, "source_digest": "sha256:b20b5318f33485a142c1f72e10492e254d944a92d64c1cb783a8e16738db808d"},
+      "source": "lakekeeper"
+    }
+  ],
+  "querygraph_revision": "9ef2e21fefd68037376edeb782fd056f54d86e07",
+  "run_id": "migrate_0828d",
+  "status": "verified"
+}

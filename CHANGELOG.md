@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Publish reviewed `migrate_0828d` evidence: all four LakeCat↔Polaris and
+  LakeCat↔Lakekeeper directions preserve Iceberg identity, schemas, specs,
+  orders, snapshots, refs, metadata pointers, and exact non-empty data scans.
+
 - Add a fresh-state QueryGraph migration harness that uses stock PyIceberg to
   prove non-empty semantic and data preservation in both directions between
   LakeCat and Polaris and between LakeCat and Lakekeeper, advancing its

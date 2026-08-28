@@ -1,0 +1,15 @@
+{
+  "schema_version": "catalog-bench.querygraph-catalog-migration-review.v1",
+  "run_id": "migrate_0828d",
+  "reviewed_catalog_bench_revision": "c0637ab5f94d8a48b189790a677291004162a9f4",
+  "querygraph_revision": "9ef2e21fefd68037376edeb782fd056f54d86e07",
+  "lakecat_revision": "f09f7896d4f13bbee13cfad2acff689b6f5e5003",
+  "sail_revision": "65df4aa4edf04ef2756a8e4d874b6cab39c81338",
+  "raw_summary_sha256": "sha256:7d1f426db69b70d718b7b946ea532d75e3642451e897eed6374ac30220db9e38",
+  "runner_sha256": "sha256:a12bbc0cbfe3272c9f982a15eef80e4eb6e0cbdcd10bea941417276bc2629d96",
+  "querygraph_verifier_sha256": "sha256:901a62e70342533ec8715524eaa325a1a5a2e92e9fb8da450cfabc8526c57978",
+  "querygraph_live_harness_sha256": "sha256:910d877837391d9ab86f7274fbae37345dde055a4dbfab5d38e036944d1c347f",
+  "lakecat_image_digest": "sha256:8d1b41e2fee24b8dc515a0df748f222fa19e98ee05a556abb36ca12a00c4564e",
+  "fresh_project_cleanup": {"containers_remaining": 0, "volumes_remaining": 0},
+  "review": "accepted four-direction semantic and exact-data migration evidence from stock PyIceberg with no catalog-specific protocol shim"
+}
