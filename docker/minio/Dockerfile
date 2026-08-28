@@ -2,7 +2,7 @@
 # 2025-10-15 release. Build that exact upstream source revision with its pinned
 # Go toolchain instead of silently substituting an older binary.
 ARG GO_IMAGE=golang:1.24.8-bookworm@sha256:4ed690d6649d63c312b99a6120025ec79ce3b542968a37da53d6236c7c61a848
-ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=48baab68ad923cba55246cacb0a147f2ea2ec9a5
+ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=2130ae1e08ce7ce5102effbdcddce7df0a926552
 
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS tool-build
 ARG TARGETARCH
@@ -27,7 +27,9 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
     && CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
     go build -trimpath -ldflags="-s -w" -o /out/fault-proxy ./cmd/fault-proxy \
     && CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
-    go build -trimpath -ldflags="-s -w" -o /out/object-fault-probe ./cmd/object-fault-probe
+    go build -trimpath -ldflags="-s -w" -o /out/object-fault-probe ./cmd/object-fault-probe \
+    && CGO_ENABLED=0 GOOS=linux GOARCH="$TARGETARCH" \
+    go build -trimpath -ldflags="-s -w" -o /out/volume-archive ./cmd/volume-archive
 
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS minio-build
 ARG TARGETARCH
@@ -48,7 +50,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
 FROM scratch
 ARG MINIO_TAG=RELEASE.2025-10-15T17-29-55Z
 ARG MINIO_REVISION=9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
-ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=48baab68ad923cba55246cacb0a147f2ea2ec9a5
+ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=2130ae1e08ce7ce5102effbdcddce7df0a926552
 LABEL org.opencontainers.image.title="catalog-bench MinIO" \
       org.opencontainers.image.description="Exact source-built MinIO for catalog interoperability evidence" \
       org.opencontainers.image.source="https://github.com/minio/minio" \
@@ -66,6 +68,7 @@ COPY --from=tool-build /out/polaris-setup /usr/local/bin/polaris-setup
 COPY --from=tool-build /out/wait-http /usr/local/bin/wait-http
 COPY --from=tool-build /out/fault-proxy /usr/local/bin/fault-proxy
 COPY --from=tool-build /out/object-fault-probe /usr/local/bin/object-fault-probe
+COPY --from=tool-build /out/volume-archive /usr/local/bin/volume-archive
 ENV MINIO_HEALTHCHECK_URL=http://127.0.0.1:9000/minio/health/ready \
     TMPDIR=/data/.tmp
 WORKDIR /data

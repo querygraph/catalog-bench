@@ -604,7 +604,7 @@ fn minio_helpers_are_built_from_an_immutable_public_source() {
         fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
     let dockerfile =
         fs::read_to_string(root.join("docker/minio/Dockerfile")).expect("read MinIO Dockerfile");
-    let revision = "48baab68ad923cba55246cacb0a147f2ea2ec9a5";
+    let revision = "2130ae1e08ce7ce5102effbdcddce7df0a926552";
 
     for required in [
         format!("CATALOG_BENCH_HELPER_SOURCE_REVISION: {revision}"),
@@ -617,6 +617,7 @@ fn minio_helpers_are_built_from_an_immutable_public_source() {
     }
     for required in [
         "ARG CATALOG_BENCH_HELPER_SOURCE_REVISION",
+        "COPY --from=tool-build /out/volume-archive /usr/local/bin/volume-archive",
         "grep -Eq '^[0-9a-f]{40}$'",
         "COPY --from=catalog-bench-helper-source docker/minio/tools/go.mod docker/minio/tools/go.sum ./",
         "COPY --from=catalog-bench-helper-source docker/minio/tools/ ./",

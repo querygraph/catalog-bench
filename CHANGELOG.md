@@ -220,6 +220,8 @@
   command with exclusive backup creation, empty-target restore, path traversal
   rejection, symlink rejection, and round-trip tests for run-scoped catalog
   state volumes.
+- Bind the volume archive helper into the checksum-pinned shared infrastructure
+  image and deployment audit at its reviewed public source revision.
 
 - Add the exact-source DuckDB 1.5.3 four-catalog launcher and runnable profile,
   including official signed offline extensions, bounded result decoding, OAuth
