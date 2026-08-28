@@ -11,6 +11,8 @@
   binding, and exact upstream artifact CAS publication/read-after-write in LakeCat.
 - Publish reviewed `tpcds_0828e` evidence for the exact Ossie artifact,
   governed model publication, five realized schemas, and zero cleanup residue.
+- Advance the source-pinned LakeCat image to the semantic publication
+  graph/OpenLineage replay implementation for the full TPC-DS proof run.
 
 ## Unreleased
 
