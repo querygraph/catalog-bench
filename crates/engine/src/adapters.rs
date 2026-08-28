@@ -664,10 +664,17 @@ impl DuckDbProductionEffects {
         if !output.status.success() {
             return Err(());
         }
+        if output.stdout.len() > 16 * 1024 * 1024 {
+            return Err(());
+        }
         if output.stdout.is_empty() {
             return Ok(Vec::new());
         }
-        serde_json::from_slice(&output.stdout).map_err(|_| ())
+        serde_json::Deserializer::from_slice(&output.stdout)
+            .into_iter::<Vec<serde_json::Value>>()
+            .last()
+            .ok_or(())?
+            .map_err(|_| ())
     }
 
     async fn table_observation(&self) -> Result<crate::EngineTableObservation, ()> {

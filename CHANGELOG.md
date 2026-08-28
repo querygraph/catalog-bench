@@ -1,5 +1,8 @@
 # Changelog
 
+- Decode DuckDB CLI setup and query result arrays as a bounded JSON stream and
+  retain only the final query result.
+
 - Use DuckDB's accepted in-memory `CREATE SECRET` grammar for each isolated CLI
   invocation.
 
