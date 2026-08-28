@@ -3,6 +3,7 @@ package faultproxy
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -12,6 +13,7 @@ import (
 	"strings"
 	"sync/atomic"
 	"testing"
+	"time"
 )
 
 func TestBeforeAndAfterUpstreamDisconnectHaveDistinctPersistence(t *testing.T) {
@@ -170,6 +172,58 @@ func TestBoundedInjectionRangeSurvivesAutomaticRetries(t *testing.T) {
 	state := getState(t, control.URL)
 	if state.MatchCount != 4 || len(state.Events) != 3 || admitted.Load() != 1 {
 		t.Fatalf("unexpected bounded-range state=%+v admitted=%d", state, admitted.Load())
+	}
+}
+
+func TestRequestBodyGatePausesAfterTransmissionStartsUntilRelease(t *testing.T) {
+	var received atomic.Uint64
+	upstream := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		payload, _ := io.ReadAll(request.Body)
+		received.Store(uint64(len(payload)))
+		writer.WriteHeader(http.StatusCreated)
+	}))
+	defer upstream.Close()
+	parsed, _ := url.Parse(upstream.URL)
+	proxy, _ := New(parsed, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	server := httptest.NewServer(proxy.ProxyHandler())
+	defer server.Close()
+	control := httptest.NewServer(proxy.ControlHandler())
+	defer control.Close()
+	putRule(t, control.URL, Rule{ID: "commit-gate", Method: "POST", PathContains: "/commit", Occurrence: 1, Injections: 1, Phase: DuringUpstream, Action: PauseRequestBody})
+
+	result := make(chan error, 1)
+	go func() {
+		response, err := http.Post(server.URL+"/commit", "application/json", strings.NewReader("{\"commit\":true}"))
+		if response != nil {
+			response.Body.Close()
+			if response.StatusCode != http.StatusCreated {
+				err = errors.New("unexpected response status")
+			}
+		}
+		result <- err
+	}()
+
+	for attempts := 0; attempts < 100 && len(getState(t, control.URL).Events) == 0; attempts++ {
+		time.Sleep(5 * time.Millisecond)
+	}
+	state := getState(t, control.URL)
+	if len(state.Events) != 1 || received.Load() != 0 {
+		t.Fatalf("request was not paused before full admission: state=%+v received=%d", state, received.Load())
+	}
+	request, _ := http.NewRequest(http.MethodPost, control.URL+"/v1/release", nil)
+	response, err := http.DefaultClient.Do(request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	response.Body.Close()
+	if response.StatusCode != http.StatusOK {
+		t.Fatalf("release status=%d", response.StatusCode)
+	}
+	if err := <-result; err != nil {
+		t.Fatal(err)
+	}
+	if received.Load() != uint64(len("{\"commit\":true}")) {
+		t.Fatalf("upstream received %d bytes after release", received.Load())
 	}
 }
 

@@ -27,13 +27,15 @@ type Phase string
 
 const (
 	BeforeUpstream Phase = "before-upstream"
+	DuringUpstream Phase = "during-upstream"
 	AfterUpstream  Phase = "after-upstream"
 )
 
 type Action string
 
 const (
-	Disconnect Action = "disconnect"
+	Disconnect       Action = "disconnect"
+	PauseRequestBody Action = "pause-request-body"
 )
 
 type Rule struct {
@@ -73,11 +75,17 @@ func (rule Rule) Validate() error {
 	if rule.Occurrence > ^uint64(0)-rule.Injections+1 {
 		return errors.New("occurrence and injections overflow the match range")
 	}
-	if rule.Phase != BeforeUpstream && rule.Phase != AfterUpstream {
-		return errors.New("phase must be before-upstream or after-upstream")
+	if rule.Phase != BeforeUpstream && rule.Phase != DuringUpstream && rule.Phase != AfterUpstream {
+		return errors.New("phase must be before-upstream, during-upstream, or after-upstream")
 	}
-	if rule.Action != Disconnect {
-		return errors.New("action must be disconnect")
+	if rule.Action != Disconnect && rule.Action != PauseRequestBody {
+		return errors.New("action must be disconnect or pause-request-body")
+	}
+	if rule.Action == PauseRequestBody && rule.Phase != DuringUpstream {
+		return errors.New("pause-request-body requires phase during-upstream")
+	}
+	if rule.Action == Disconnect && rule.Phase == DuringUpstream {
+		return errors.New("during-upstream requires action pause-request-body")
 	}
 	return nil
 }
@@ -110,6 +118,8 @@ type Proxy struct {
 	matchCount uint64
 	events     []Event
 	sequence   uint64
+	release    chan struct{}
+	released   bool
 }
 
 func New(upstream *url.URL, logger *slog.Logger) (*Proxy, error) {
@@ -140,6 +150,7 @@ func (proxy *Proxy) ControlHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("PUT /v1/rule", proxy.putRule)
 	mux.HandleFunc("DELETE /v1/rule", proxy.deleteRule)
+	mux.HandleFunc("POST /v1/release", proxy.releaseRule)
 	mux.HandleFunc("GET /v1/state", proxy.getState)
 	mux.HandleFunc("GET /healthz", func(writer http.ResponseWriter, _ *http.Request) {
 		writer.Header().Set("Content-Type", "application/json")
@@ -150,7 +161,7 @@ func (proxy *Proxy) ControlHandler() http.Handler {
 
 func (proxy *Proxy) serveProxy(writer http.ResponseWriter, request *http.Request) {
 	rule, matchNumber, inject := proxy.match(request.Method, request.URL.Path)
-	if inject && rule.Phase == BeforeUpstream {
+	if inject && rule.Action == Disconnect && rule.Phase == BeforeUpstream {
 		proxy.record(rule, request.Method, request.URL.EscapedPath(), matchNumber, nil)
 		disconnect(writer)
 		return
@@ -163,6 +174,20 @@ func (proxy *Proxy) serveProxy(writer http.ResponseWriter, request *http.Request
 	upstreamRequest.URL.Path = joinPath(proxy.upstream.Path, request.URL.Path)
 	upstreamRequest.URL.RawPath = ""
 	removeHopHeaders(upstreamRequest.Header)
+	if inject && rule.Action == PauseRequestBody {
+		if upstreamRequest.Body == nil {
+			proxy.record(rule, request.Method, request.URL.EscapedPath(), matchNumber, nil)
+			http.Error(writer, "pause-request-body requires a request body", http.StatusBadRequest)
+			return
+		}
+		upstreamRequest.Body = &gatedBody{
+			body:    upstreamRequest.Body,
+			release: proxy.releaseChannel(),
+			onPause: func() {
+				proxy.record(rule, request.Method, request.URL.EscapedPath(), matchNumber, nil)
+			},
+		}
+	}
 
 	response, err := proxy.client.Do(upstreamRequest)
 	if err != nil {
@@ -171,7 +196,7 @@ func (proxy *Proxy) serveProxy(writer http.ResponseWriter, request *http.Request
 	}
 	defer response.Body.Close()
 
-	if inject && rule.Phase == AfterUpstream {
+	if inject && rule.Action == Disconnect && rule.Phase == AfterUpstream {
 		status := response.StatusCode
 		_, _ = io.Copy(io.Discard, response.Body)
 		proxy.record(rule, request.Method, request.URL.EscapedPath(), matchNumber, &status)
@@ -236,6 +261,12 @@ func (proxy *Proxy) putRule(writer http.ResponseWriter, request *http.Request) {
 	proxy.matchCount = 0
 	proxy.events = nil
 	proxy.sequence = 0
+	proxy.released = false
+	if rule.Action == PauseRequestBody {
+		proxy.release = make(chan struct{})
+	} else {
+		proxy.release = nil
+	}
 	proxy.mu.Unlock()
 	writeJSON(writer, http.StatusOK, proxy.snapshot())
 }
@@ -246,8 +277,29 @@ func (proxy *Proxy) deleteRule(writer http.ResponseWriter, _ *http.Request) {
 	proxy.matchCount = 0
 	proxy.events = nil
 	proxy.sequence = 0
+	proxy.release = nil
+	proxy.released = false
 	proxy.mu.Unlock()
 	writeJSON(writer, http.StatusOK, proxy.snapshot())
+}
+
+func (proxy *Proxy) releaseRule(writer http.ResponseWriter, _ *http.Request) {
+	proxy.mu.Lock()
+	if proxy.release == nil || proxy.released {
+		proxy.mu.Unlock()
+		http.Error(writer, "no paused rule is awaiting release", http.StatusConflict)
+		return
+	}
+	close(proxy.release)
+	proxy.released = true
+	proxy.mu.Unlock()
+	writeJSON(writer, http.StatusOK, proxy.snapshot())
+}
+
+func (proxy *Proxy) releaseChannel() <-chan struct{} {
+	proxy.mu.Lock()
+	defer proxy.mu.Unlock()
+	return proxy.release
 }
 
 func (proxy *Proxy) getState(writer http.ResponseWriter, _ *http.Request) {
@@ -297,6 +349,29 @@ func removeHopHeaders(headers http.Header) {
 		headers.Del(name)
 	}
 }
+
+type gatedBody struct {
+	body    io.ReadCloser
+	release <-chan struct{}
+	onPause func()
+	once    sync.Once
+	first   bool
+}
+
+func (body *gatedBody) Read(buffer []byte) (int, error) {
+	if !body.first {
+		body.first = true
+		if len(buffer) > 1 {
+			buffer = buffer[:1]
+		}
+		return body.body.Read(buffer)
+	}
+	body.once.Do(body.onPause)
+	<-body.release
+	return body.body.Read(buffer)
+}
+
+func (body *gatedBody) Close() error { return body.body.Close() }
 
 type Servers struct {
 	Proxy   *http.Server

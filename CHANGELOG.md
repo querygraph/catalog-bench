@@ -48,6 +48,10 @@
   scenario and a fresh-state four-catalog runner that verifies direct-state
   reconciliation, exact retry, optional idempotency drift behavior, sanitized
   fault events, fixture cleanup, and project-volume cleanup.
+- C3-02 deterministic in-flight gate: add a typed `during-upstream` rule that
+  transmits the first request-body byte, records a sanitized pause event, and
+  blocks the remainder until an explicit control-plane release. Real-socket
+  tests prove the upstream cannot complete before release.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope
