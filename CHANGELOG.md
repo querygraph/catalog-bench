@@ -54,6 +54,9 @@
   tests prove the upstream cannot complete before release.
 - C3-02 immutable gate delivery: advance the shared infrastructure image and
   deployment audit to the reviewed in-flight-gate source revision.
+- C3-02 restart recovery workflow: extend the protocol-native four-catalog
+  scenario with a deterministic mid-body pause, target-service restart,
+  direct durable-state reconciliation, exact commit retry, and cleanup proof.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope

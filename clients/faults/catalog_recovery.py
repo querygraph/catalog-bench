@@ -4,11 +4,13 @@
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import hashlib
 import json
 import os
 import random
 import re
+import subprocess
 import time
 import urllib.error
 import urllib.parse
@@ -91,6 +93,48 @@ def configure_fault(control: Client, rule: dict[str, Any]) -> None:
     outcome, _ = control.request("PUT", "/v1/rule", rule)
     if outcome.status != 200:
         raise RuntimeError(f"fault rule configuration returned {outcome}")
+
+
+def wait_for_fault_event(control: Client, timeout: float = 30) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        outcome, state = control.request("GET", "/v1/state")
+        events = state.get("events", []) if isinstance(state, dict) else []
+        if outcome.status == 200 and events:
+            return state
+        time.sleep(0.1)
+    raise RuntimeError("timed out waiting for in-flight fault gate")
+
+
+def wait_for_table(client: Client, path: str, timeout: float = 90) -> dict[str, Any]:
+    deadline = time.monotonic() + timeout
+    last = HttpOutcome("disconnected", None)
+    while time.monotonic() < deadline:
+        last, document = client.request("GET", path)
+        if last.status == 200 and isinstance(document, dict):
+            return document
+        time.sleep(0.5)
+    raise RuntimeError(f"catalog did not recover table after restart: {last}")
+
+
+def restart_catalog(args: argparse.Namespace) -> None:
+    environment = os.environ.copy()
+    environment["CATALOG_BENCH_RUN_ID"] = args.run_id
+    subprocess.run(
+        [
+            "docker", "compose",
+            "--project-directory", args.repository_root,
+            "--file", os.path.join(args.repository_root, "docker-compose.yml"),
+            "--file", os.path.join(args.repository_root, "docker-compose.clean.yml"),
+            "--file", os.path.join(args.repository_root, "docker-compose.fault.yml"),
+            "restart", "--timeout", "2", args.restart_service,
+        ],
+        check=True,
+        env=environment,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        timeout=60,
+    )
 
 
 def config_and_prefix(client: Client, warehouse: str, static_prefix: str | None) -> tuple[dict[str, Any], str]:
@@ -247,13 +291,53 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         }
         initial = table_metadata(final)
 
+    property_name = "c3-02.restart"
+    body = commit_body(initial, property_name, "accepted")
+    configure_fault(
+        control,
+        {
+            "id": "commit-restart",
+            "method": "POST",
+            "path_contains": table_path,
+            "occurrence": 1,
+            "injections": 1,
+            "phase": "during-upstream",
+            "action": "pause-request-body",
+        },
+    )
+    with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+        pending = executor.submit(proxy.request, "POST", table_path, body)
+        gate_state = wait_for_fault_event(control)
+        restart_catalog(args)
+        release, _ = control.request("POST", "/v1/release")
+        if release.status != 200:
+            raise RuntimeError(f"in-flight gate release failed: {release}")
+        interrupted, _ = pending.result(timeout=30)
+    after_restart = wait_for_table(direct, table_path)
+    observed = property_value(after_restart, property_name)
+    if observed is not None:
+        raise RuntimeError(f"partial in-flight request mutated state before exact retry: {observed!r}")
+    retry, _ = proxy.request("POST", table_path, body)
+    if retry.status != 200:
+        raise RuntimeError(f"restart exact retry failed: {retry}")
+    final = wait_for_table(direct, table_path)
+    if property_value(final, property_name) != "accepted":
+        raise RuntimeError("restart exact retry did not reach accepted state")
+    cases["restart_during_commit"] = {
+        "request_outcome": asdict(interrupted),
+        "observed_before_retry": observed,
+        "retry_status": retry.status,
+        "final_property": "accepted",
+        "fault_events": gate_state.get("events", []),
+    }
+
     drop, _ = direct.request("DELETE", table_path)
     drop_namespace, _ = direct.request("DELETE", namespace_path)
     if drop.status not in {200, 204} or drop_namespace.status not in {200, 204}:
         raise RuntimeError(f"cleanup failed: table={drop} namespace={drop_namespace}")
 
     return {
-        "schema_version": "catalog-bench.catalog-recovery-probe.v1",
+        "schema_version": "catalog-bench.catalog-recovery-probe.v2",
         "catalog": args.catalog,
         "fixture_id": args.fixture_id,
         "routing": {"prefix_sha256": sha256(root), "oauth": args.oauth},
@@ -284,6 +368,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--warehouse", default="")
     parser.add_argument("--static-prefix")
     parser.add_argument("--location")
+    parser.add_argument("--repository-root", required=True)
+    parser.add_argument("--run-id", required=True)
+    parser.add_argument("--restart-service", required=True)
     parser.add_argument("--oauth", action="store_true")
     parser.add_argument("--oauth-client-id-env", default="CATALOG_BENCH_POLARIS_CLIENT_ID")
     parser.add_argument("--oauth-client-secret-env", default="CATALOG_BENCH_POLARIS_CLIENT_SECRET")
@@ -295,6 +382,12 @@ def parse_args() -> argparse.Namespace:
         parsed = urllib.parse.urlparse(getattr(args, name))
         if parsed.scheme not in {"http", "https"} or not parsed.netloc or parsed.username or parsed.query or parsed.fragment:
             parser.error(f"{name.replace('_', '-')} must be an absolute credential-free HTTP(S) URL")
+    if os.path.abspath(args.repository_root) != args.repository_root:
+        parser.error("repository-root must be absolute")
+    if re.fullmatch(r"[a-z0-9][a-z0-9-]*", args.restart_service) is None:
+        parser.error("restart-service must be a Compose service name")
+    if args.run_id != args.fixture_id:
+        parser.error("run-id must equal fixture-id")
     return args
 
 

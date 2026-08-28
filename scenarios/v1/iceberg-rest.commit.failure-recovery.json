@@ -2,9 +2,9 @@
   "contract_version": "catalog-bench/v1",
   "kind": "scenario",
   "id": "iceberg-rest.commit.failure-recovery",
-  "version": 1,
-  "title": "Iceberg REST commit response-loss recovery",
-  "description": "Exercise exact commit retry before upstream admission and reconciliation after an accepted response is lost, with config-gated idempotency content binding.",
+  "version": 2,
+  "title": "Iceberg REST commit failure and restart recovery",
+  "description": "Exercise exact commit retry before upstream admission, reconciliation after an accepted response is lost, and durable recovery when a catalog restarts while a request body is in flight, with config-gated idempotency content binding.",
   "family": "operations",
   "classification": "strict-v1",
   "tags": ["fault-injection", "commit", "retry", "accepted-state-ambiguity", "idempotency"],
@@ -23,7 +23,8 @@
     "before_fault_injections": 1,
     "after_fault_injections": 1,
     "idempotency_advertisement_pointers": ["/idempotency-key-lifetime", "/defaults/idempotency-key-lifetime", "/overrides/idempotency-key-lifetime"],
-    "state_observation": "direct-catalog-endpoint"
+    "state_observation": "direct-catalog-endpoint",
+    "restart_gate": "transmit-one-body-byte-then-pause"
   },
   "steps": [
     {"id": "prepare-fixture", "actor": "harness", "operation": "iceberg-rest.fixture.create", "description": "Create a run-owned namespace and table through standard Iceberg REST."},
@@ -32,7 +33,10 @@
     {"id": "lose-after-upstream", "actor": "catalog", "operation": "table.commit.disconnect-after-upstream", "description": "Forward one commit, observe upstream success, and disconnect its response.", "depends_on": ["reconcile-before"]},
     {"id": "reconcile-after", "actor": "harness", "operation": "table.load-and-retry-exact", "description": "Prove accepted state directly and retry exactly, accepting equivalent success or safe CAS conflict.", "depends_on": ["lose-after-upstream"]},
     {"id": "probe-idempotency-drift", "actor": "client", "operation": "table.commit.reject-idempotency-content-drift", "description": "When advertised, send different content with the same UUIDv7 key and prove it cannot mutate state.", "depends_on": ["reconcile-after"]},
-    {"id": "clean-fixture", "actor": "harness", "operation": "iceberg-rest.fixture.drop", "description": "Drop the table and namespace and remove the fresh Docker project and volumes.", "depends_on": ["probe-idempotency-drift"]}
+    {"id": "pause-in-flight", "actor": "harness", "operation": "table.commit.pause-request-body", "description": "Transmit the first commit-body byte to the catalog and hold the rest at a deterministic proxy gate.", "depends_on": ["probe-idempotency-drift"]},
+    {"id": "restart-catalog", "actor": "harness", "operation": "catalog.restart", "description": "Restart only the catalog service while the standard Iceberg REST request remains in flight, then release the held connection.", "depends_on": ["pause-in-flight"]},
+    {"id": "reconcile-restart", "actor": "harness", "operation": "table.load-and-retry-exact", "description": "Prove the partial request did not mutate durable state, retry the exact request, and prove accepted state after recovery.", "depends_on": ["restart-catalog"]},
+    {"id": "clean-fixture", "actor": "harness", "operation": "iceberg-rest.fixture.drop", "description": "Drop the table and namespace and remove the fresh Docker project and volumes.", "depends_on": ["reconcile-restart"]}
   ],
   "assertions": [
     {"id": "before-request-disconnected", "step": "lose-before-upstream", "required": true, "description": "The first before-upstream commit returns no HTTP response.", "check": {"kind": "custom", "name": "querygraph/catalog-bench/client-disconnected-v1", "configuration": {"expected": true}}},
@@ -42,6 +46,9 @@
     {"id": "after-state-accepted", "step": "reconcile-after", "required": true, "description": "Direct load proves the property was accepted before retry.", "check": {"kind": "custom", "name": "querygraph/catalog-bench/property-state-v1", "configuration": {"before_retry": "accepted"}}},
     {"id": "after-exact-retry-safe", "step": "reconcile-after", "required": true, "description": "Exact retry is equivalent success or a safe conflict, with accepted state unchanged.", "check": {"kind": "http-status", "allowed": [200, 409]}},
     {"id": "idempotency-content-bound", "step": "probe-idempotency-drift", "required": false, "description": "When advertised, same-key different-content cannot mutate state and should return conflict rather than cached success.", "check": {"kind": "custom", "name": "querygraph/catalog-bench/idempotency-content-binding-v1", "configuration": {"expected_status": 409, "state_mutated": false}}},
+    {"id": "request-observed-in-flight", "step": "pause-in-flight", "required": true, "description": "The proxy records exactly one sanitized during-upstream event before catalog restart.", "check": {"kind": "custom", "name": "querygraph/catalog-bench/in-flight-request-gate-v1", "configuration": {"phase": "during-upstream", "events": 1}}},
+    {"id": "partial-request-not-accepted", "step": "reconcile-restart", "required": true, "description": "Direct load after restart proves the partial request did not set the property.", "check": {"kind": "custom", "name": "querygraph/catalog-bench/property-state-v1", "configuration": {"before_retry": null}}},
+    {"id": "restart-exact-retry-accepted", "step": "reconcile-restart", "required": true, "description": "The exact retry succeeds and durable state contains the accepted property.", "check": {"kind": "http-status", "allowed": [200]}},
     {"id": "fixture-cleaned", "step": "clean-fixture", "required": true, "description": "The table, namespace, project containers, and project volumes are removed.", "check": {"kind": "custom", "name": "querygraph/catalog-bench/fresh-project-cleanup-v1", "configuration": {"catalog_fixture": "removed", "volumes": "removed"}}}
   ]
 }

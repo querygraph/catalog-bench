@@ -45,6 +45,7 @@ python3 "$ROOT_DIR/clients/faults/catalog_recovery.py" \
   --proxy-base http://127.0.0.1:19201/catalog \
   --direct-base http://127.0.0.1:8181/catalog \
   --control-base http://127.0.0.1:19101 \
+  --repository-root "$ROOT_DIR" --run-id "$RUN_ID" --restart-service lakecat \
   --warehouse local --location s3://warehouse/lakecat >"$OUTPUT_DIR/lakecat.json"
 
 CATALOG_BENCH_POLARIS_CLIENT_ID=root \
@@ -54,19 +55,23 @@ python3 "$ROOT_DIR/clients/faults/catalog_recovery.py" \
   --proxy-base http://127.0.0.1:19202/api/catalog \
   --direct-base http://127.0.0.1:8185/api/catalog \
   --control-base http://127.0.0.1:19102 \
+  --repository-root "$ROOT_DIR" --run-id "$RUN_ID" --restart-service polaris \
   --warehouse bench --static-prefix bench --oauth >"$OUTPUT_DIR/polaris.json"
 
 python3 "$ROOT_DIR/clients/faults/catalog_recovery.py" \
   --catalog gravitino --fixture-id "$RUN_ID" \
   --proxy-base http://127.0.0.1:19203/iceberg \
   --direct-base http://127.0.0.1:9002/iceberg \
-  --control-base http://127.0.0.1:19103 >"$OUTPUT_DIR/gravitino.json"
+  --control-base http://127.0.0.1:19103 \
+  --repository-root "$ROOT_DIR" --run-id "$RUN_ID" --restart-service gravitino \
+  >"$OUTPUT_DIR/gravitino.json"
 
 python3 "$ROOT_DIR/clients/faults/catalog_recovery.py" \
   --catalog lakekeeper --fixture-id "$RUN_ID" \
   --proxy-base http://127.0.0.1:19204/catalog \
   --direct-base http://127.0.0.1:8186/catalog \
   --control-base http://127.0.0.1:19104 \
+  --repository-root "$ROOT_DIR" --run-id "$RUN_ID" --restart-service lakekeeper \
   --warehouse bench >"$OUTPUT_DIR/lakekeeper.json"
 
 node - "$OUTPUT_DIR" "$RUN_ID" <<'NODE' >"$OUTPUT_DIR/summary.json"
@@ -79,13 +84,16 @@ const hash = name => "sha256:" + crypto.createHash("sha256").update(fs.readFileS
 const results = {};
 for (const catalog of catalogs) {
   const value = JSON.parse(fs.readFileSync(path.join(directory, `${catalog}.json`), "utf8"));
-  if (value.schema_version !== "catalog-bench.catalog-recovery-probe.v1" || value.catalog !== catalog) throw new Error(`${catalog}: identity mismatch`);
+  if (value.schema_version !== "catalog-bench.catalog-recovery-probe.v2" || value.catalog !== catalog) throw new Error(`${catalog}: identity mismatch`);
   const before = value.cases.before_upstream;
   const after = value.cases.after_upstream;
   if (!before.client_disconnected || before.observed_before_retry !== null || before.retry_status !== 200 || before.final_property !== "accepted") throw new Error(`${catalog}: before-upstream recovery failed`);
   if (!after.client_disconnected || after.observed_before_retry !== "accepted" || ![200, 409].includes(after.retry_status) || after.final_property !== "accepted") throw new Error(`${catalog}: after-upstream recovery failed`);
   if (before.fault_events.length !== 1 || before.fault_events[0].upstream_status != null) throw new Error(`${catalog}: before fault evidence mismatch`);
   if (after.fault_events.length !== 1 || after.fault_events[0].upstream_status !== 200) throw new Error(`${catalog}: after fault evidence mismatch`);
+  const restart = value.cases.restart_during_commit;
+  if (restart.observed_before_retry !== null || restart.retry_status !== 200 || restart.final_property !== "accepted") throw new Error(`${catalog}: restart recovery failed`);
+  if (restart.fault_events.length !== 1 || restart.fault_events[0].phase !== "during-upstream") throw new Error(`${catalog}: restart fault evidence mismatch`);
   if (!value.cleanup.table_dropped || !value.cleanup.namespace_dropped) throw new Error(`${catalog}: cleanup failed`);
   results[catalog] = {
     artifact_sha256: hash(`${catalog}.json`),
@@ -93,11 +101,13 @@ for (const catalog of catalogs) {
     after_retry_status: after.retry_status,
     idempotency_advertised: after.idempotency_advertised,
     idempotency_drift_status: after.drift_status,
-    idempotency_drift_mutated: after.drift_mutated
+    idempotency_drift_mutated: after.drift_mutated,
+    restart_request_outcome: restart.request_outcome,
+    restart_retry_status: restart.retry_status
   };
 }
 process.stdout.write(JSON.stringify({
-  schema_version: "catalog-bench.catalog-recovery-run.v1",
+  schema_version: "catalog-bench.catalog-recovery-run.v2",
   run_id: runId,
   status: "verified",
   scenario: "iceberg-rest.commit.failure-recovery",
