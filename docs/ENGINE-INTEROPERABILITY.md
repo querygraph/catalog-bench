@@ -956,6 +956,14 @@ and executed Spark images. Its independently observed
 artifact verifier. This closes runtime provenance only; behavioral publication
 still requires the fresh four-catalog run and reviewed admission below.
 
+The hardened Spark and Flink containers remain read-only, but their bounded
+512-MiB ephemeral `/tmp` mounts permit execution. This is required because the
+pinned JVM dependencies extract architecture-specific compression and network
+libraries before loading them. A no-exec mount deterministically reaches table
+creation and then fails the first Parquet write when `zstd-jni` cannot map its
+Linux ARM64 library; the production topology freezes the smallest writable,
+ephemeral executable boundary instead of making the image filesystem writable.
+
 ## Reviewed live-run envelope
 
 Raw transcript validity does not establish when, where, or under which runtime

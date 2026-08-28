@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C2-02 JVM native-library runtime boundary: preserve read-only Spark/Flink
+  containers while marking only their bounded 512-MiB ephemeral `/tmp` tmpfs as
+  executable. A fresh stock-Spark reproduction proved the no-exec mount caused
+  `zstd-jni` to fail mapping its Linux ARM64 library at the first Parquet write;
+  deployment coverage now freezes the narrow executable tmpfs requirement.
+
 - C2-02 Spark v2 runtime materialization: build the optimized Linux ARM64 runner
   from public `catalog-bench@59840b95c33e`, prove its 4,986,064-byte ELF is
   byte-identical in the donor and Spark 4.1.3 images, record exact OCI identities

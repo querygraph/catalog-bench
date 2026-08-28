@@ -320,6 +320,10 @@ fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
     let runtime = compose_service(&compose, "spark");
     let engine_runner = compose_service(&compose, "engine-runner-image");
     let engine = compose_service(&compose, "spark-engine");
+    assert!(
+        compose.matches("/tmp:size=512m,mode=1777,exec").count() >= 2,
+        "stock JVM engines must execute bounded native libraries from ephemeral tmpfs mounts"
+    );
     let runtime_defaults = compose_extension(&compose, "x-spark-runtime");
     for required in [
         "target: connector",

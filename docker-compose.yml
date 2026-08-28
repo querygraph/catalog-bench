@@ -77,7 +77,9 @@ x-spark-runtime: &spark-runtime
   cap_drop: ["ALL"]
   security_opt: ["no-new-privileges:true"]
   tmpfs:
-    - /tmp:size=512m,mode=1777
+    # JVM dependencies extract architecture-specific native libraries here.
+    # The bounded ephemeral mount must therefore permit execution.
+    - /tmp:size=512m,mode=1777,exec
   volumes:
     - ./profiles:/contracts/profiles:ro
     - ./scenarios:/contracts/scenarios:ro
@@ -95,7 +97,7 @@ x-flink-runtime: &flink-runtime
   cap_drop: ["ALL"]
   security_opt: ["no-new-privileges:true"]
   tmpfs:
-    - /tmp:size=512m,mode=1777
+    - /tmp:size=512m,mode=1777,exec
   volumes:
     - ./profiles:/contracts/profiles:ro
     - ./scenarios:/contracts/scenarios:ro
