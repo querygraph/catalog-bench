@@ -133,6 +133,14 @@ impl TrinoLauncherInvocation {
             arguments: vec![
                 "--etc-dir".to_owned(),
                 path_argument(configuration)?,
+                "--data-dir".to_owned(),
+                path_argument(
+                    configuration
+                        .parent()
+                        .ok_or(TrinoInvocationError)?
+                        .join("data")
+                        .as_path(),
+                )?,
                 "run".to_owned(),
             ],
         })

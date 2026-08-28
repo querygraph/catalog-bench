@@ -31,7 +31,13 @@ fn launcher_uses_only_the_verified_stock_program_and_private_configuration() {
     assert_eq!(invocation.executable(), Path::new(TRINO_LAUNCHER_LOCATION));
     assert_eq!(
         invocation.arguments(),
-        ["--etc-dir", "/run/catalog-bench/trino/etc", "run"]
+        [
+            "--etc-dir",
+            "/run/catalog-bench/trino/etc",
+            "--data-dir",
+            "/run/catalog-bench/trino/data",
+            "run"
+        ]
     );
 }
 

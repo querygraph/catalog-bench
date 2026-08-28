@@ -1,5 +1,10 @@
 # Changelog
 
+- Pass Trino's private staged data directory through Airlift's `--data-dir`
+  launcher option. Airlift resolves its PID/log paths before Trino expands
+  `${ENV:...}` in `node.properties`; without the explicit option it attempted
+  to create a literal root-level environment-reference directory and exited.
+
 - Advance the materialized Trino runner pin to `catalog-bench@0bbf0c40`, the
   verified launcher-grammar correction, before producing any replacement live
   evidence. The earlier `6131423f` image remains diagnostic-only.
