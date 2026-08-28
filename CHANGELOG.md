@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- C2-06 strict Trino CLI read decoder: consume Trino 483's stock JSON output as
+  one bounded object per newline, reject missing final LF, malformed or blank
+  rows, duplicate/missing/extra columns, nested values, excess rows, and input
+  over 16 MiB. Reconstruct the shared compact JSON-array-per-row canonical bytes
+  in oracle column order and expose only rows, bytes, and SHA-256 for the child
+  state machine's exact oracle comparison. Separate tests cover key-order
+  independence, duplicate and shape rejection, row/byte bounds, trailing LF,
+  and the zero-row identity. No raw CLI output enters evidence.
+
 - C2-06 Trino child state machine: add a transport-free `TrinoEffects` algebra
   and deterministic runner over the closed eight-operation program. Runtime,
   catalog initialization, fixture preflight, namespace/table creation,

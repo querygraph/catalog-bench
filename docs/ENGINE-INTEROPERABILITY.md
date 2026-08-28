@@ -612,6 +612,22 @@ Every produced stream is serialized back through the shared decoder in tests.
 The next unit must implement the effects with only the verified stock launcher
 and CLI, bound all parsed output, and supervise the complete process group.
 
+### Strict Trino CLI read boundary
+
+Trino 483's pinned `JsonPrinter` writes each result row as one JSON object and a
+trailing LF, using result-column names as object keys. The harness admits at
+most 16 MiB and rejects a missing final LF, blank or malformed row, duplicate
+key, missing or extra column, nested array/object value, or any row beyond the
+scenario oracle. The decoder never trusts object key order.
+
+For canonical comparison it projects values in the oracle's declared column
+order, serializes each row as one compact RFC 8259 JSON array plus LF, and
+computes only row count, byte count, and SHA-256. The child state machine emits
+read evidence only if all three equal the checked-in oracle. Raw CLI JSON,
+values, parser diagnostics, and stderr cannot enter evidence. Tests cover
+reordered keys, duplicate/missing/extra keys, nested values, malformed and blank
+lines, absent LF, excess rows, the 16 MiB boundary, and the empty-output hash.
+
 This event change deliberately advances the scenario revision and transcript
 format to v2. The decoder does not use an untagged legacy alternative whose
 shape could become ambiguous as engines are added. The checked-in immutable

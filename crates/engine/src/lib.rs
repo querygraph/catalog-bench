@@ -18,6 +18,7 @@ mod sql;
 mod transcript;
 mod trino;
 mod trino_child;
+mod trino_cli;
 mod workflow;
 
 pub use adapters::{
@@ -46,6 +47,7 @@ pub use transcript::{
 };
 pub use trino::*;
 pub use trino_child::*;
+pub use trino_cli::*;
 pub use workflow::{
     run_engine_workflow, EngineBehaviorChecks, EngineBehaviorClassification,
     EngineCatalogConnection, EngineCatalogConnectionEvidence, EngineCatalogConnectionFailure,
