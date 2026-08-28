@@ -1,5 +1,9 @@
 # Changelog
 
+- Advance the runnable Trino profile to `catalog-bench@eeac1003` and bind the
+  corrected readiness timeout to the rebuilt runner and composite stock Trino
+  image identities.
+
 - Give the stock Trino CLI readiness query an independent bounded execution
   timeout instead of accidentally limiting each JVM invocation to the 250 ms
   polling interval; cover the boundary with a delayed-success regression.
