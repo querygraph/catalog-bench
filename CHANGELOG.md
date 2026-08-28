@@ -52,6 +52,8 @@
   transmits the first request-body byte, records a sanitized pause event, and
   blocks the remainder until an explicit control-plane release. Real-socket
   tests prove the upstream cannot complete before release.
+- C3-02 immutable gate delivery: advance the shared infrastructure image and
+  deployment audit to the reviewed in-flight-gate source revision.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope
