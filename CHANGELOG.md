@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add an immutable Flink 2.1.3 source candidate that preserves the admitted
+  `catalog-bench@36906515` runner while advancing only LakeCat to `65f0a4c3`,
+  the revision proven by Spark to support catalog-owned field IDs and multipart
+  REST namespace probes. The preserved 2026-08-27 candidate remains unchanged.
+
 - Publish the reviewed fresh stock-Spark v2 correctness bundle from run
   `sparkv2_08280548`: LakeCat, Polaris, Gravitino, and Lakekeeper each pass all
   14 required assertions. Archive the four sanitized transcripts and review,
