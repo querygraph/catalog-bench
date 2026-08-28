@@ -633,7 +633,7 @@ impl DuckDbProductionEffects {
             _ => return None,
         }
         attach.push_str(");");
-        Some(format!("LOAD httpfs; LOAD iceberg; CREATE OR REPLACE TEMP SECRET catalog_bench_s3 (TYPE s3, PROVIDER config, KEY_ID {}, SECRET {}, REGION {}, ENDPOINT {}, URL_STYLE 'path', USE_SSL {}); {attach}", crate::sql::literal(&self.access_key), crate::sql::literal(&self.secret_key), crate::sql::literal(&self.program.file_io.region), crate::sql::literal(&endpoint), endpoint_is_https(&self.program.file_io.endpoint)))
+        Some(format!("LOAD httpfs; LOAD iceberg; CREATE SECRET catalog_bench_s3 (TYPE s3, PROVIDER config, KEY_ID {}, SECRET {}, REGION {}, ENDPOINT {}, URL_STYLE 'path', USE_SSL {}); {attach}", crate::sql::literal(&self.access_key), crate::sql::literal(&self.secret_key), crate::sql::literal(&self.program.file_io.region), crate::sql::literal(&endpoint), endpoint_is_https(&self.program.file_io.endpoint)))
     }
 
     async fn query(&self, sql: &str) -> Result<Vec<serde_json::Value>, ()> {

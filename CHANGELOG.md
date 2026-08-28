@@ -1,5 +1,8 @@
 # Changelog
 
+- Use DuckDB's accepted in-memory `CREATE SECRET` grammar for each isolated CLI
+  invocation.
+
 - Materialize the source-complete DuckDB composite image, runner, connector
   stack, and exact observed artifact digests into a runnable four-catalog
   profile.
