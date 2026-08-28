@@ -103,7 +103,7 @@
       "reference": "lakecat-service:5d62f1c46c89",
       "image_id": {
         "algorithm": "sha256",
-        "value": "95751b40fd4fc692b974f0575c33df6fed6ebd2a4d559f8e7891056ac40a9096"
+        "value": "444a1362af6f0b4c19117965f541245c3d849ffbe1ae632defda91ddd30e637d"
       },
       "operating_system": "linux",
       "architecture": "arm64",

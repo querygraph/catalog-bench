@@ -279,7 +279,7 @@
         "digest_scope": "local-image",
         "digest": {
           "algorithm": "sha256",
-          "value": "95751b40fd4fc692b974f0575c33df6fed6ebd2a4d559f8e7891056ac40a9096"
+          "value": "444a1362af6f0b4c19117965f541245c3d849ffbe1ae632defda91ddd30e637d"
         },
         "embedded_artifacts": [
           {
@@ -926,7 +926,7 @@
     "querygraph/iceberg-rest-spec": "Apache Iceberg 1.11.0 OpenAPI at source revision 6976e020b894f6a6777704df2b8c4458cb291ae9; exact YAML SHA-256 80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a",
     "querygraph/materialization": {
       "format": "catalog-bench/spark-profile-materialization/v1",
-      "observation_sha256": "5e0e7b10e4d23baf76d23a390eee534014b71b12bd6e654acffef3cac53535bc",
+      "observation_sha256": "1e613a022061420cd0155161673237091aab5752d4a3ecf81e34c448f823505b",
       "scope": "engine.iceberg.write-read-evolution/v2",
       "source_profile": {
         "digest": {
