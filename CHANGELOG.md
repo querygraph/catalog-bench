@@ -36,6 +36,18 @@
 - Publish the reviewed `objfault_0828a` source evidence and reproduction guide,
   explicitly limiting it to the C3-01 injection substrate rather than claiming
   catalog recovery or performance.
+- C3-02 recovery probe foundation: add a dependency-free protocol-native
+  Iceberg REST client that negotiates routing/OAuth, injects lost commit
+  responses, reconciles through a direct endpoint, performs exact retry and
+  advertised idempotency-drift checks, cleans fixtures, and emits sanitized
+  evidence. Catalog proxy data listeners remain loopback-only.
+- Pin the fault overlay's LakeCat service to the accepted `b8be6bc9` staged-
+  create revision and explicit shared-MinIO warehouse root without changing the
+  already-published Phase 1/2 base topology.
+- C3-02 common recovery workflow: define the engine-neutral response-loss
+  scenario and a fresh-state four-catalog runner that verifies direct-state
+  reconciliation, exact retry, optional idempotency drift behavior, sanitized
+  fault events, fixture cleanup, and project-volume cleanup.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope

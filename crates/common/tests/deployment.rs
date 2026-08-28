@@ -696,6 +696,26 @@ fn object_fault_runner_is_fresh_state_bounded_and_checks_both_persistence_sides(
 }
 
 #[test]
+fn catalog_recovery_runner_covers_all_four_fault_proxies_and_cleans_state() {
+    let root = repository_root();
+    let runner = fs::read_to_string(root.join("docker/run-catalog-recovery.sh"))
+        .expect("read catalog recovery runner");
+    for required in [
+        "lakecat-fault-proxy polaris-fault-proxy gravitino-fault-proxy lakekeeper-fault-proxy",
+        "clients/faults/catalog_recovery.py",
+        "before.observed_before_retry !== null",
+        "after.observed_before_retry !== \"accepted\"",
+        "[200, 409].includes(after.retry_status)",
+        "down --volumes --remove-orphans",
+    ] {
+        assert!(
+            runner.contains(required),
+            "catalog recovery runner must contain `{required}`"
+        );
+    }
+}
+
+#[test]
 fn clean_contention_run_rejects_reused_persistent_state() {
     let root = repository_root();
     let overlay = fs::read_to_string(root.join("docker-compose.clean.yml"))

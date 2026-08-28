@@ -16,8 +16,16 @@ services:
       disable: true
 
   lakecat:
+    build:
+      context: ./docker/lakecat
+      args:
+        LAKECAT_SOURCE_REVISION: b8be6bc9e92fd728636b51fc3698b4d94b0e0fdb
+      additional_contexts:
+        lakecat-source: "https://github.com/querygraph/lakecat.git#b8be6bc9e92fd728636b51fc3698b4d94b0e0fdb"
+    image: lakecat-service:b8be6bc9e92f
     environment:
       AWS_ENDPOINT: http://object-store-fault-proxy:8080
+      LAKECAT_WAREHOUSE_LOCATION: s3://warehouse/lakecat
     depends_on:
       object-store-fault-proxy:
         condition: service_started
@@ -66,7 +74,9 @@ services:
     entrypoint: ["/usr/local/bin/fault-proxy"]
     command: ["--upstream", "http://lakecat:8181", "--listen", ":8080", "--control-listen", ":8081"]
     expose: ["8080", "8081"]
-    ports: ["127.0.0.1:${LAKECAT_FAULT_CONTROL_PORT:-19101}:8081"]
+    ports:
+      - "127.0.0.1:${LAKECAT_FAULT_DATA_PORT:-19201}:8080"
+      - "127.0.0.1:${LAKECAT_FAULT_CONTROL_PORT:-19101}:8081"
     depends_on:
       lakecat-ready:
         condition: service_completed_successfully
@@ -80,7 +90,9 @@ services:
     entrypoint: ["/usr/local/bin/fault-proxy"]
     command: ["--upstream", "http://polaris:8181", "--listen", ":8080", "--control-listen", ":8081"]
     expose: ["8080", "8081"]
-    ports: ["127.0.0.1:${POLARIS_FAULT_CONTROL_PORT:-19102}:8081"]
+    ports:
+      - "127.0.0.1:${POLARIS_FAULT_DATA_PORT:-19202}:8080"
+      - "127.0.0.1:${POLARIS_FAULT_CONTROL_PORT:-19102}:8081"
     depends_on:
       polaris-ready:
         condition: service_completed_successfully
@@ -94,7 +106,9 @@ services:
     entrypoint: ["/usr/local/bin/fault-proxy"]
     command: ["--upstream", "http://gravitino:9001", "--listen", ":8080", "--control-listen", ":8081"]
     expose: ["8080", "8081"]
-    ports: ["127.0.0.1:${GRAVITINO_FAULT_CONTROL_PORT:-19103}:8081"]
+    ports:
+      - "127.0.0.1:${GRAVITINO_FAULT_DATA_PORT:-19203}:8080"
+      - "127.0.0.1:${GRAVITINO_FAULT_CONTROL_PORT:-19103}:8081"
     depends_on:
       gravitino-ready:
         condition: service_completed_successfully
@@ -108,7 +122,9 @@ services:
     entrypoint: ["/usr/local/bin/fault-proxy"]
     command: ["--upstream", "http://lakekeeper:8181", "--listen", ":8080", "--control-listen", ":8081"]
     expose: ["8080", "8081"]
-    ports: ["127.0.0.1:${LAKEKEEPER_FAULT_CONTROL_PORT:-19104}:8081"]
+    ports:
+      - "127.0.0.1:${LAKEKEEPER_FAULT_DATA_PORT:-19204}:8080"
+      - "127.0.0.1:${LAKEKEEPER_FAULT_CONTROL_PORT:-19104}:8081"
     depends_on:
       lakekeeper-ready:
         condition: service_completed_successfully
