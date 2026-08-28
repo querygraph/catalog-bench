@@ -14,6 +14,10 @@
 - C3-01 retry-resistant faults: make each rule declare a bounded injection
   count, with overflow/cap validation and real-socket proof that a configured
   range disconnects retries before allowing later traffic through.
+- C3-01 metadata persistence probe: add a source-built, signed-S3 probe that
+  arms the proxy, performs one metadata PUT, observes the object directly, and
+  emits bounded JSON proving absence before upstream admission and presence
+  after an upstream success whose response was disconnected.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope
