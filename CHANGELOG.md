@@ -1,5 +1,9 @@
 # Changelog
 
+- Advance the runnable Trino profile to `catalog-bench@f9097f77` and bind the
+  successful-query readiness supervisor to its rebuilt runner and composite
+  stock Trino image identities.
+
 - Make Trino readiness depend on successful execution of the fixed stock-CLI
   `SELECT 1` probe instead of its presentation format; benchmark reads and
   scalar observations retain their strict bounded JSON decoders.

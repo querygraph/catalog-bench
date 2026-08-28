@@ -13,7 +13,7 @@ use crate::profile_runtime_policy::{LAKECAT_IMAGE, MINIO_IMAGE};
 
 const TRINO_BASE_DIGEST: &str =
     "sha256:db58cc93e593a2706553745f276bb119c9810e69918be56ecde088ba7ccb0534";
-const ENGINE_RUNNER_SOURCE_REVISION: &str = "33b3d656479aea5e915faf57095f9f9daf402d6e";
+const ENGINE_RUNNER_SOURCE_REVISION: &str = "f9097f77460e4124917c746ebca4262cc81cfe06";
 
 const MATERIALIZED_COMPONENTS: &[&str] = &[
     "rust-runner",
