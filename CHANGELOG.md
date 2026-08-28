@@ -1,5 +1,8 @@
 # Changelog
 
+- Advance the Trino runner to the committed warehouse-root topology and corrected
+  schema-evolution implementation before collecting fresh four-catalog evidence.
+
 - Add a Trino-only LakeCat `b424f778` service with a configured S3 warehouse
   root, preserving the already-published Spark/Flink LakeCat image while Trino
   exercises standard REST warehouse selection without explicit table location.

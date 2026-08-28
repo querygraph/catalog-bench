@@ -1,10 +1,10 @@
 {
   "contract_version": "catalog-bench/v1",
   "kind": "profile",
-  "id": "catalog-community-trino-483-engine-6ea0f80-lakecat-b424f778-2026-08-28-linux-arm64",
+  "id": "catalog-community-trino-483-engine-46ca526-lakecat-b424f778-2026-08-28-linux-arm64",
   "title": "Trino 483, Iceberg 1.11.0, source-bound runner, and LakeCat b424f778 interoperability profile",
-  "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with Trino 483 and the optimized Rust effects runner bound to catalog-bench@6ea0f80.",
-  "resolved_at": "2026-08-28T08:32:13Z",
+  "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with Trino 483 and the optimized Rust effects runner bound to catalog-bench@46ca526.",
+  "resolved_at": "2026-08-28T08:38:27Z",
   "purpose": "conformance",
   "readiness": {
     "status": "runnable"
@@ -45,10 +45,10 @@
       "id": "catalog-bench-engine",
       "kind": "benchmark-harness",
       "name": "catalog-bench stock-engine runner",
-      "version": "6ea0f803e4c99a0eeb90c9303c038c97567698db",
+      "version": "46ca526725e769c8cd0f49bde527960a84aafd00",
       "source": {
         "repository": "https://github.com/querygraph/catalog-bench.git",
-        "revision": "6ea0f803e4c99a0eeb90c9303c038c97567698db"
+        "revision": "46ca526725e769c8cd0f49bde527960a84aafd00"
       },
       "build": {
         "toolchain": "Rust 1.97.1",
@@ -76,11 +76,11 @@
       },
       "artifact": {
         "kind": "container-image",
-        "reference": "catalog-bench-engine-trino:6ea0f803e4c9",
+        "reference": "catalog-bench-engine-trino:46ca526725e7",
         "digest_scope": "local-image",
         "digest": {
           "algorithm": "sha256",
-          "value": "e124de1cffd8174b1bce06633b529638b55eb1c16b1f130a5e54a0863aa0d99f"
+          "value": "c674fb0a0cd365326aa5639e52f14f6def80c9c818203bcec7b31df9ac7b66dd"
         },
         "embedded_artifacts": [
           {
@@ -88,10 +88,10 @@
             "media_type": "application/vnd.elf",
             "digest": {
               "algorithm": "sha256",
-              "value": "b6443e410e8c7fc066b5fc8049904c4f6f78cf085618a58091b948bc01a363a0"
+              "value": "97449b7016724a5897fdcdcf8b2fc1574762a3281de6d7783042261aaa19be3d"
             },
             "bytes": 5248208,
-            "description": "Production-optimized stock-engine runner built from catalog-bench@6ea0f80."
+            "description": "Production-optimized stock-engine runner built from catalog-bench@46ca526."
           }
         ]
       },
@@ -102,7 +102,7 @@
             "com.docker.compose.project": "catalog-bench",
             "com.docker.compose.service": "trino-engine-runner-base",
             "com.docker.compose.version": "5.1.3",
-            "org.opencontainers.image.revision": "6ea0f803e4c99a0eeb90c9303c038c97567698db"
+            "org.opencontainers.image.revision": "46ca526725e769c8cd0f49bde527960a84aafd00"
           },
           "operating_system": "linux"
         }
@@ -507,11 +507,11 @@
       },
       "artifact": {
         "kind": "container-image",
-        "reference": "catalog-bench/trino:483-runner-6ea0f803e4c9",
+        "reference": "catalog-bench/trino:483-runner-46ca526725e7",
         "digest_scope": "local-image",
         "digest": {
           "algorithm": "sha256",
-          "value": "c43baf8565b24b27731a8e7b8c8b002df86c2bfec37c943804aa36bb5d88b3e6"
+          "value": "eb5ee089544b866d2abeef2a241fb55fb0612867011bdb66f7803ef7fbc12d55"
         },
         "embedded_artifacts": [
           {
@@ -579,10 +579,10 @@
             "media_type": "application/vnd.elf",
             "digest": {
               "algorithm": "sha256",
-              "value": "b6443e410e8c7fc066b5fc8049904c4f6f78cf085618a58091b948bc01a363a0"
+              "value": "97449b7016724a5897fdcdcf8b2fc1574762a3281de6d7783042261aaa19be3d"
             },
             "bytes": 5248208,
-            "description": "Production-optimized stock-engine runner built from catalog-bench@6ea0f80."
+            "description": "Production-optimized stock-engine runner built from catalog-bench@46ca526."
           }
         ]
       },
@@ -604,7 +604,7 @@
             "io.k8s.description": "Very small image which doesn't install the package manager.",
             "io.k8s.display-name": "Red Hat Universal Base Image 10 Micro",
             "io.openshift.expose-services": "",
-            "io.querygraph.catalog-bench.runner-source-revision": "6ea0f803e4c99a0eeb90c9303c038c97567698db",
+            "io.querygraph.catalog-bench.runner-source-revision": "46ca526725e769c8cd0f49bde527960a84aafd00",
             "maintainer": "Red Hat, Inc.",
             "name": "ubi10/ubi-micro",
             "org.opencontainers.image.base.digest": "sha256:db58cc93e593a2706553745f276bb119c9810e69918be56ecde088ba7ccb0534",
@@ -985,12 +985,12 @@
     "querygraph/iceberg-rest-spec": "Apache Iceberg 1.11.0 OpenAPI at source revision 6976e020b894f6a6777704df2b8c4458cb291ae9; exact YAML SHA-256 80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a",
     "querygraph/materialization": {
       "format": "catalog-bench/trino-profile-materialization/v1",
-      "observation_sha256": "effc96d462c6e6f926452a73d0d3a0296aebd86488e61b6db5a8fe535e2811d7",
+      "observation_sha256": "17b5e8e122c52e630592af7ed68924af285bb20d8cc26512ce9f83b752801e90",
       "scope": "engine.iceberg.write-read-evolution/v2",
       "source_profile": {
         "digest": {
           "algorithm": "sha256",
-          "value": "5c913cea689fe683595da936d07224a8d6552211f58c6fd4172bdded36794c79"
+          "value": "ca48e0e82e3114dd4c0e29ab11f2e6ed4fefd2a4e04a2bdaba872695b7a4a61e"
         },
         "id": "catalog-community-trino-candidate-483-lakecat-b424f778-2026-08-28-linux-arm64"
       }
