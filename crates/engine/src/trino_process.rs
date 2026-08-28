@@ -286,7 +286,7 @@ impl RunningTrinoServer {
         command.stdout(Stdio::null());
         let mut child = command.spawn().map_err(|_| TrinoServerFailure::Spawn)?;
         let probe =
-            TrinoCliInvocation::new(cli_executable, "SELECT 1 AS ready", TrinoCliOutput::Json)
+            TrinoCliInvocation::new(cli_executable, "SELECT 1 AS ready", TrinoCliOutput::Discard)
                 .map_err(|_| TrinoServerFailure::Probe)?;
         let probe_timeout = probe_interval.min(Duration::from_secs(5));
         let executor = TrinoCommandExecutor::new(probe_timeout)
@@ -297,10 +297,8 @@ impl RunningTrinoServer {
                 Ok(Some(_)) | Err(_) => return Err(TrinoServerFailure::Exited),
                 Ok(None) => {}
             }
-            if let Ok(output) = executor.execute_cli(&probe, root, 1024).await {
-                if crate::decode_trino_single_u64(&output, "ready") == Ok(1) {
-                    return Ok(Self { child });
-                }
+            if executor.execute_cli(&probe, root, 1024).await.is_ok() {
+                return Ok(Self { child });
             }
             if started.elapsed() >= startup_timeout {
                 terminate_child(&mut child).await;

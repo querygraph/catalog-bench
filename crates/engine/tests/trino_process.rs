@@ -210,7 +210,7 @@ async fn bounded_executor_rejects_output_exit_timeout_and_invalid_limits() {
 }
 
 #[tokio::test]
-async fn server_supervisor_waits_for_typed_readiness_and_stops_the_process_group() {
+async fn server_supervisor_waits_for_a_successful_stock_query_and_stops_the_process_group() {
     let directory = TempDir::new().unwrap();
     let captured = directory.path().join("environment");
     let launcher = script(
@@ -226,7 +226,7 @@ async fn server_supervisor_waits_for_typed_readiness_and_stops_the_process_group
         &directory,
         "cli.sh",
         &format!(
-            "count=0; test ! -f '{0}' || count=$(cat '{0}'); count=$((count + 1)); printf '%s' \"$count\" > '{0}'; if test \"$count\" -lt 3; then exit 1; fi; printf '{{\"ready\":1}}\\n'",
+            "count=0; test ! -f '{0}' || count=$(cat '{0}'); count=$((count + 1)); printf '%s' \"$count\" > '{0}'; if test \"$count\" -lt 3; then exit 1; fi",
             counter.display()
         ),
     );
