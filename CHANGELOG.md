@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C2-04 supervised stock Trino server lifecycle: start only the closed verified
+  launcher against the private staged configuration, discard server output,
+  retain the isolated process-group boundary, and wait within positive bounds
+  for a typed stock-CLI `SELECT 1` readiness result. Classify invalid limits,
+  spawn failure, early server exit, probe-construction failure, and readiness
+  timeout without retaining child output; terminate and reap the complete
+  process group on explicit shutdown, timeout, or drop. Fake launcher/CLI tests
+  prove delayed readiness, exact probe retries, early exit, bounded timeout,
+  invalid configuration, and post-shutdown process removal. Concrete Trino
+  effects and live interoperability evidence remain separate.
+
 - C1-09 Phase 1 behavioral publication: archive a fresh optimized 5-scenario by
   5-catalog matrix covering config, namespace, table, deterministic commit, and
   stock PyIceberg workflows; bind all 25 value-safe transcripts to a runnable

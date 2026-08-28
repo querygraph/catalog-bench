@@ -609,8 +609,9 @@ Separate fake-effect tests prove all twelve successful events, exact effect
 order, collision non-mutation, initial-read mismatch before evolution,
 malformed-operation rejection without panic, and value-free failure mapping.
 Every produced stream is serialized back through the shared decoder in tests.
-The next unit must implement the effects with only the verified stock launcher
-and CLI, bound all parsed output, and supervise the complete process group.
+The remaining implementation must map concrete effects onto only the verified
+stock launcher and CLI while preserving every bounded typed decoder. Server
+lifecycle supervision is implemented independently below.
 
 The process boundary first closes the subprocess grammar independently of
 process I/O. Server startup has exactly one shape: the profile-verified stock
@@ -621,8 +622,7 @@ progress disabled and either `JSON` or `NULL` output. Executable/configuration
 paths must be absolute and control-free; SQL must be nonempty, control-free,
 and no larger than 1 MiB. No shell, inherited arguments, interactive mode, or
 alternate server URI is representable. This grammar does not itself spawn the
-server or CLI; bounded execution and lifecycle supervision remain the next
-effect unit.
+server or CLI; bounded execution and lifecycle supervision consume it.
 
 CLI execution reuses the common stock-engine process boundary: inherited
 environment is cleared to the public runtime allowlist, HOME/TMPDIR/current
@@ -632,8 +632,27 @@ concurrently only to an explicit positive limit no larger than 16 MiB. A
 nonzero exit, read/wait failure, elapsed timeout, or one byte beyond the limit
 fails closed; timeout and excess output terminate the complete group. Tests use
 fake executables to prove capture, environment, exit, timeout, and byte-limit
-behavior without requiring Trino. Server supervision and concrete effect
-mapping remain separate.
+behavior without requiring Trino. The server supervisor reuses this executor
+for readiness; concrete effect mapping remains separate.
+
+### Supervised Trino server lifecycle
+
+The lifecycle boundary starts only the closed launcher command against the
+private staged configuration and discards server output so an unread pipe
+cannot block the process. The launcher remains in the sanitized, isolated
+process group established by the common command boundary. Readiness is not a
+port-open heuristic: the supervisor repeatedly runs the closed stock CLI query
+`SELECT 1 AS ready`, admits only the exact typed unsigned value `1`, and stops
+at the positive startup deadline. An early launcher exit is distinct from a
+readiness timeout; invalid limits, spawn failure, and probe-construction failure
+also have closed value-free classifications.
+
+Explicit shutdown terminates and reaps the complete process group. Timeout and
+drop also force group termination, so failed setup and abandoned supervisors do
+not leave a server or descendants behind. Fake launcher and CLI tests prove
+delayed readiness with exact retries, early exit, timeout, invalid limits, and
+post-shutdown process removal without requiring a Trino image. This unit makes
+no live-interoperability claim; the concrete effects adapter remains next.
 
 ### Private Trino server staging
 
@@ -648,9 +667,9 @@ catalog or storage configuration in a stable ambient path.
 The staged catalog properties retain environment placeholders for benchmark
 credentials. Secret values are supplied only through the already-sanitized
 child environment and are not written into configuration files. This unit does
-not yet supervise a live Trino server or claim interoperability evidence; the
-next process unit must bind the staged roots to launcher start, readiness,
-bounded CLI execution, and guaranteed stop.
+not itself claim interoperability evidence. The supervisor binds the staged
+roots to launcher start, typed readiness, bounded CLI execution, and guaranteed
+stop; the next process unit must implement the concrete effect mapping.
 
 ### Strict Trino CLI read boundary
 

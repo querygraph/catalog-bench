@@ -3,6 +3,7 @@
 use std::fs::OpenOptions;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
+use std::process::Stdio;
 use std::time::{Duration, Instant};
 
 use tempfile::{Builder as TempDirBuilder, TempDir};
@@ -165,6 +166,87 @@ pub enum TrinoCommandFailure {
     OutputTooLarge,
     Timeout,
     Exit,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum TrinoServerFailure {
+    InvalidTimeout,
+    Spawn,
+    Exited,
+    Probe,
+    Timeout,
+}
+
+#[derive(Debug)]
+pub struct RunningTrinoServer {
+    child: tokio::process::Child,
+}
+
+impl RunningTrinoServer {
+    pub async fn start(
+        launcher: &TrinoLauncherInvocation,
+        cli_executable: &Path,
+        root: &Path,
+        startup_timeout: Duration,
+        probe_interval: Duration,
+    ) -> Result<Self, TrinoServerFailure> {
+        if startup_timeout.is_zero() || probe_interval.is_zero() {
+            return Err(TrinoServerFailure::InvalidTimeout);
+        }
+        let mut command = Command::new(launcher.executable());
+        command.args(launcher.arguments());
+        configure_sanitized_process(&mut command, root);
+        command.stdout(Stdio::null());
+        let mut child = command.spawn().map_err(|_| TrinoServerFailure::Spawn)?;
+        let probe =
+            TrinoCliInvocation::new(cli_executable, "SELECT 1 AS ready", TrinoCliOutput::Json)
+                .map_err(|_| TrinoServerFailure::Probe)?;
+        let probe_timeout = probe_interval.min(Duration::from_secs(5));
+        let executor = TrinoCommandExecutor::new(probe_timeout)
+            .map_err(|_| TrinoServerFailure::InvalidTimeout)?;
+        let started = Instant::now();
+        loop {
+            match child.try_wait() {
+                Ok(Some(_)) | Err(_) => return Err(TrinoServerFailure::Exited),
+                Ok(None) => {}
+            }
+            if let Ok(output) = executor.execute_cli(&probe, root, 1024).await {
+                if crate::decode_trino_single_u64(&output, "ready") == Ok(1) {
+                    return Ok(Self { child });
+                }
+            }
+            if started.elapsed() >= startup_timeout {
+                terminate_child(&mut child).await;
+                return Err(TrinoServerFailure::Timeout);
+            }
+            tokio::time::sleep(
+                probe_interval.min(startup_timeout.saturating_sub(started.elapsed())),
+            )
+            .await;
+        }
+    }
+
+    pub async fn shutdown(mut self) {
+        terminate_child(&mut self.child).await;
+    }
+
+    pub fn process_id(&self) -> Option<u32> {
+        self.child.id()
+    }
+}
+
+impl Drop for RunningTrinoServer {
+    fn drop(&mut self) {
+        #[cfg(unix)]
+        if let Some(id) = self.child.id().and_then(|id| i32::try_from(id).ok()) {
+            // SAFETY: the child was started in its own process group and no Rust
+            // memory is dereferenced. A negative PID targets the isolated group.
+            unsafe {
+                libc::kill(-id, libc::SIGKILL);
+            }
+        }
+        let _ = self.child.start_kill();
+    }
 }
 
 #[derive(Debug, Clone)]

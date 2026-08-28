@@ -3,9 +3,10 @@ use std::time::Duration;
 
 use catalog_bench_common::contract::{parse_contract, ComponentId, ContractDocument};
 use catalog_bench_engine::{
-    InteroperabilityPlan, StagedTrinoServer, TrinoCliInvocation, TrinoCliOutput,
-    TrinoCommandExecutor, TrinoCommandFailure, TrinoLauncherInvocation, TrinoRenderedProgram,
-    TrinoServerConfiguration, TRINO_CLI_LOCATION, TRINO_LAUNCHER_LOCATION,
+    InteroperabilityPlan, RunningTrinoServer, StagedTrinoServer, TrinoCliInvocation,
+    TrinoCliOutput, TrinoCommandExecutor, TrinoCommandFailure, TrinoLauncherInvocation,
+    TrinoRenderedProgram, TrinoServerConfiguration, TrinoServerFailure, TRINO_CLI_LOCATION,
+    TRINO_LAUNCHER_LOCATION,
 };
 use tempfile::TempDir;
 
@@ -200,6 +201,82 @@ async fn bounded_executor_rejects_output_exit_timeout_and_invalid_limits() {
         TrinoCommandExecutor::new(Duration::ZERO),
         Err(TrinoCommandFailure::InvalidTimeout)
     ));
+}
+
+#[tokio::test]
+async fn server_supervisor_waits_for_typed_readiness_and_stops_the_process_group() {
+    let directory = TempDir::new().unwrap();
+    let launcher = script(&directory, "launcher.sh", "while :; do sleep 1; done");
+    let counter = directory.path().join("counter");
+    let cli = script(
+        &directory,
+        "cli.sh",
+        &format!(
+            "count=0; test ! -f '{0}' || count=$(cat '{0}'); count=$((count + 1)); printf '%s' \"$count\" > '{0}'; if test \"$count\" -lt 3; then exit 1; fi; printf '{{\"ready\":1}}\\n'",
+            counter.display()
+        ),
+    );
+    let invocation = TrinoLauncherInvocation::new(&launcher, directory.path()).unwrap();
+    let server = RunningTrinoServer::start(
+        &invocation,
+        &cli,
+        directory.path(),
+        Duration::from_secs(2),
+        Duration::from_millis(20),
+    )
+    .await
+    .unwrap();
+    let pid = server.process_id().unwrap();
+    assert_eq!(std::fs::read_to_string(counter).unwrap(), "3");
+    server.shutdown().await;
+    #[cfg(unix)]
+    assert_eq!(unsafe { libc::kill(i32::try_from(pid).unwrap(), 0) }, -1);
+}
+
+#[tokio::test]
+async fn server_supervisor_classifies_exit_timeout_and_invalid_configuration() {
+    let directory = TempDir::new().unwrap();
+    let cli = script(&directory, "cli.sh", "exit 1");
+    let exited = script(&directory, "exit.sh", "exit 7");
+    let invocation = TrinoLauncherInvocation::new(&exited, directory.path()).unwrap();
+    assert_eq!(
+        RunningTrinoServer::start(
+            &invocation,
+            &cli,
+            directory.path(),
+            Duration::from_secs(1),
+            Duration::from_millis(10),
+        )
+        .await
+        .unwrap_err(),
+        TrinoServerFailure::Exited
+    );
+    let running = script(&directory, "running.sh", "while :; do sleep 1; done");
+    let invocation = TrinoLauncherInvocation::new(&running, directory.path()).unwrap();
+    assert_eq!(
+        RunningTrinoServer::start(
+            &invocation,
+            &cli,
+            directory.path(),
+            Duration::from_millis(80),
+            Duration::from_millis(10),
+        )
+        .await
+        .unwrap_err(),
+        TrinoServerFailure::Timeout
+    );
+    assert_eq!(
+        RunningTrinoServer::start(
+            &invocation,
+            &cli,
+            directory.path(),
+            Duration::ZERO,
+            Duration::from_millis(10),
+        )
+        .await
+        .unwrap_err(),
+        TrinoServerFailure::InvalidTimeout
+    );
 }
 
 #[cfg(unix)]
