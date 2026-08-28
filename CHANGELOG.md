@@ -1,5 +1,8 @@
 # Changelog
 
+- Admit the canonical stock-Trino launcher in reviewed engine evidence, enabling
+  validated Trino bundle publication through the existing engine pipeline.
+
 - Advance the Trino runner to the committed relative-snapshot and compressed
   metadata observer before collecting replacement evidence.
 

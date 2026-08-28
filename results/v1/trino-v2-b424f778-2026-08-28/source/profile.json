@@ -1,0 +1,1000 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "profile",
+  "id": "catalog-community-trino-483-engine-f26c25a-lakecat-b424f778-2026-08-28-linux-arm64",
+  "title": "Trino 483, Iceberg 1.11.0, source-bound runner, and LakeCat b424f778 interoperability profile",
+  "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with Trino 483 and the optimized Rust effects runner bound to catalog-bench@f26c25a.",
+  "resolved_at": "2026-08-28T08:52:43Z",
+  "purpose": "conformance",
+  "readiness": {
+    "status": "runnable"
+  },
+  "platform": {
+    "operating_system": "Linux",
+    "architecture": "aarch64",
+    "mode": "docker-compose",
+    "container_runtime": "rust-runner",
+    "network": "catalog-bench-net",
+    "shared_object_store": "minio",
+    "warehouse_uri": "s3://warehouse",
+    "extensions": {
+      "querygraph/execution-rule": "All catalogs, clients, engines, and benchmark processes execute in containers on this one Docker network."
+    }
+  },
+  "components": [
+    {
+      "id": "rust-runner",
+      "kind": "container-runtime",
+      "name": "Rust production build runner",
+      "version": "Rust 1.97.1 on Debian bookworm",
+      "artifact": {
+        "kind": "container-image",
+        "reference": "rust:1.97.1-bookworm",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "6e957ef098dcc77d33e310261e4ed5843bb108d5c3b5dc2b476cbc8b6caf53fa"
+        }
+      }
+    },
+    {
+      "id": "catalog-bench-engine",
+      "kind": "benchmark-harness",
+      "name": "catalog-bench stock-engine runner",
+      "version": "f26c25a75be7112782ffc29638ada44afcaa1c0b",
+      "source": {
+        "repository": "https://github.com/querygraph/catalog-bench.git",
+        "revision": "f26c25a75be7112782ffc29638ada44afcaa1c0b"
+      },
+      "build": {
+        "toolchain": "Rust 1.97.1",
+        "target": "aarch64-unknown-linux-gnu",
+        "profile": "release",
+        "options": [
+          "package=catalog-bench-engine",
+          "binary=catalog-bench-engine",
+          "jobs=1"
+        ],
+        "compiler_flags": [
+          "-Dwarnings",
+          "-Ctarget-cpu=native"
+        ],
+        "locked": true,
+        "environment": {
+          "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_RELEASE_DEBUG": "false",
+          "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+          "CARGO_PROFILE_RELEASE_LTO": "fat",
+          "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+          "CARGO_PROFILE_RELEASE_PANIC": "abort",
+          "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+        }
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "catalog-bench-engine-trino:f26c25a75be7",
+        "digest_scope": "local-image",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "506e47d94984d891d4e16599c1f93b2f9cbfcfbf6b79a03b4098408eed879cdb"
+        },
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/local/bin/catalog-bench-engine",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "2bc7122f897b00dcffff2f2d646198c16a50015a4b605647757256546daff15e"
+            },
+            "bytes": 5248208,
+            "description": "Production-optimized stock-engine runner built from catalog-bench@f26c25a."
+          }
+        ]
+      },
+      "extensions": {
+        "querygraph/materialized-image-observation": {
+          "architecture": "arm64",
+          "labels": {
+            "com.docker.compose.project": "catalog-bench",
+            "com.docker.compose.service": "trino-engine-runner-base",
+            "com.docker.compose.version": "5.1.3",
+            "org.opencontainers.image.revision": "f26c25a75be7112782ffc29638ada44afcaa1c0b"
+          },
+          "operating_system": "linux"
+        }
+      }
+    },
+    {
+      "id": "minio",
+      "kind": "object-store",
+      "name": "MinIO",
+      "version": "RELEASE.2025-10-15T17-29-55Z",
+      "source": {
+        "repository": "https://github.com/minio/minio.git",
+        "revision": "9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a",
+        "tag": "RELEASE.2025-10-15T17-29-55Z"
+      },
+      "build": {
+        "toolchain": "Go 1.24.8 in pinned golang:1.24.8-bookworm image",
+        "target": "linux/arm64",
+        "profile": "release",
+        "options": [
+          "tag=RELEASE.2025-10-15T17-29-55Z",
+          "revision=9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a",
+          "verify fetched tag resolves to revision",
+          "run infrastructure helper tests in the build",
+          "set upstream MINIO_RELEASE=RELEASE identity"
+        ],
+        "compiler_flags": [
+          "-tags=kqueue",
+          "-trimpath",
+          "upstream-generated release ldflags"
+        ],
+        "locked": true,
+        "environment": {
+          "CGO_ENABLED": "0",
+          "GOARCH": "arm64",
+          "GOOS": "linux",
+          "MINIO_RELEASE": "RELEASE"
+        },
+        "extensions": {
+          "querygraph/helper-source": {
+            "repository": "https://github.com/querygraph/catalog-bench.git",
+            "revision": "f2f66ee45574a64d1e76330e95e7aa551c3a148b"
+          },
+          "querygraph/toolchain-image": "golang:1.24.8-bookworm@sha256:4ed690d6649d63c312b99a6120025ec79ce3b542968a37da53d6236c7c61a848"
+        }
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z",
+        "digest_scope": "local-image",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "6ed436d0b5030603da533ab6747c01451cdd890e75e4cee7169efe476838cd5b"
+        },
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/local/bin/minio",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "16020fd2829fb8f23b29b2d108b35bfecfd73aa9ada05d499939bfb59abbe582"
+            },
+            "bytes": 105251000,
+            "description": "Stripped upstream MinIO server built from the exact community release revision with its release identity and pinned Go toolchain."
+          },
+          {
+            "location": "image:/usr/local/bin/ensure-bucket",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "8152050fbe456b964902f547e5c2b38fe3f0503944aaf0d4383441a67d9606dd"
+            },
+            "bytes": 7078072,
+            "description": "Idempotent shared-warehouse initializer built from the pinned public catalog-bench helper source."
+          },
+          {
+            "location": "image:/usr/local/bin/healthcheck",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "63108d653e6e6e8c152973b43b16c0ebb30066bc603759ef99311e0729669dd8"
+            },
+            "bytes": 6553784,
+            "description": "MinIO readiness probe built from the pinned public catalog-bench helper source."
+          },
+          {
+            "location": "image:/usr/local/bin/lakekeeper-setup",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "0d140420e2775f78251955340b04195874f303062a90a1543b7713b082f7f107"
+            },
+            "bytes": 6750392,
+            "description": "Typed Lakekeeper bootstrap and warehouse reconciler built from the pinned public catalog-bench helper source."
+          },
+          {
+            "location": "image:/usr/local/bin/polaris-setup",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "7109f6ec37d62f64488e30fcfbf46ca8e89372e8528dbc934352abb6f606c3f0"
+            },
+            "bytes": 6750392,
+            "description": "Typed Polaris bootstrap and credential-vending setup helper built from the pinned public catalog-bench helper source."
+          },
+          {
+            "location": "image:/usr/local/bin/wait-http",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "2069bfb8047ac2e0a41a23d1328be009a1c543ec4d8c76ff0d9b1b3da1d8032c"
+            },
+            "bytes": 6553784,
+            "description": "Protocol-level catalog readiness probe built from the pinned public catalog-bench helper source."
+          }
+        ]
+      },
+      "extensions": {
+        "querygraph/materialized-image-observation": {
+          "architecture": "arm64",
+          "labels": {
+            "com.docker.compose.project": "catalog-bench",
+            "com.docker.compose.service": "minio",
+            "com.docker.compose.version": "5.1.3",
+            "io.querygraph.catalog-bench.helper-source-revision": "f2f66ee45574a64d1e76330e95e7aa551c3a148b",
+            "org.opencontainers.image.description": "Exact source-built MinIO for catalog interoperability evidence",
+            "org.opencontainers.image.licenses": "AGPL-3.0-only",
+            "org.opencontainers.image.revision": "9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a",
+            "org.opencontainers.image.source": "https://github.com/minio/minio",
+            "org.opencontainers.image.title": "catalog-bench MinIO",
+            "org.opencontainers.image.version": "RELEASE.2025-10-15T17-29-55Z"
+          },
+          "operating_system": "linux"
+        }
+      }
+    },
+    {
+      "id": "lakecat",
+      "kind": "catalog",
+      "name": "LakeCat",
+      "version": "0.3.0-54-gb424f778",
+      "source": {
+        "repository": "https://github.com/querygraph/lakecat.git",
+        "revision": "b424f778109d4f4d5f3588e1b84f72613cce8058"
+      },
+      "build": {
+        "toolchain": "Rust 1.97.1",
+        "target": "aarch64-unknown-linux-gnu",
+        "profile": "release",
+        "options": [
+          "package=lakecat-service",
+          "binary=lakecat-service",
+          "features=turso-local,sail-local",
+          "jobs=1"
+        ],
+        "compiler_flags": [
+          "-Dwarnings",
+          "-Ctarget-cpu=native"
+        ],
+        "locked": true,
+        "environment": {
+          "CARGO_PROFILE_RELEASE_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_RELEASE_DEBUG": "false",
+          "CARGO_PROFILE_RELEASE_INCREMENTAL": "false",
+          "CARGO_PROFILE_RELEASE_LTO": "fat",
+          "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+          "CARGO_PROFILE_RELEASE_PANIC": "abort",
+          "CARGO_PROFILE_RELEASE_STRIP": "symbols"
+        }
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "lakecat-service:b424f778109d",
+        "digest_scope": "local-image",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "835ed3e8ffb9213cfe2dc8724b57081a492fe1f71d3780e251f310e4f1603c28"
+        },
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/local/bin/lakecat-service",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "af0fc78d1f9808fa28c38949d51d4d969c892544a3ce5a08dcfc83adcba30efc"
+            },
+            "bytes": 19691168,
+            "description": "Stripped LakeCat service built with Rust 1.97.1, optimization level 3, fat LTO, one codegen unit, native CPU features, aborting panics, and the turso-local,sail-local feature set."
+          }
+        ]
+      },
+      "extensions": {
+        "querygraph/materialized-image-observation": {
+          "architecture": "arm64",
+          "labels": {
+            "com.docker.compose.project": "catalog-bench",
+            "com.docker.compose.service": "trino-lakecat",
+            "com.docker.compose.version": "5.1.3",
+            "org.opencontainers.image.revision": "b424f778109d4f4d5f3588e1b84f72613cce8058"
+          },
+          "operating_system": "linux"
+        },
+        "querygraph/sail-source": {
+          "repository": "https://github.com/querygraph/sail.git",
+          "revision": "bddb1706ba2308e5029d47f04f03121236edbfa6"
+        }
+      }
+    },
+    {
+      "id": "lakecat-turso",
+      "kind": "state-store",
+      "name": "Turso embedded state store",
+      "version": "0.7.0-pre.10",
+      "artifact": {
+        "kind": "package",
+        "ecosystem": "crates.io",
+        "package": "turso",
+        "version": "0.7.0-pre.10",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "1d01c4d88407d9f140d7c20700820a3ed848a0f38f1502557b731cb7432e7025"
+        }
+      }
+    },
+    {
+      "id": "polaris",
+      "kind": "catalog",
+      "name": "Apache Polaris",
+      "version": "1.7.0",
+      "source": {
+        "repository": "https://github.com/apache/polaris.git",
+        "revision": "4ac2f059d1cce149453d0a5f1ff1dff980ec97cc",
+        "tag": "apache-polaris-1.7.0"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "apache/polaris:1.7.0",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "3495f67f38cca33892a045f7dd3f46eb52387f0fd52d4145538a772fd8aedad7"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "53022013a54121d6f81a130b80df85e2c3c1961c592c39e7e3e2353db2ab7acf"
+        }
+      }
+    },
+    {
+      "id": "gravitino",
+      "kind": "catalog",
+      "name": "Apache Gravitino",
+      "version": "1.3.0",
+      "source": {
+        "repository": "https://github.com/apache/gravitino.git",
+        "revision": "40fdf6ab96ac87b47e6d3e14e7c4dc0d815e68f0",
+        "tag": "v1.3.0"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "apache/gravitino-iceberg-rest:1.3.0",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "80136ae753ee77735153fc1482a389018f8c2638a54f453cb96967c7194584c7"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "01cf367b77f91652da6c545ad5253d94c11f4e3dd71c5442863eaa330d8a1088"
+        }
+      }
+    },
+    {
+      "id": "lakekeeper",
+      "kind": "catalog",
+      "name": "Lakekeeper",
+      "version": "0.13.3",
+      "source": {
+        "repository": "https://github.com/lakekeeper/lakekeeper.git",
+        "revision": "12bb82fc0859a82b584afda70e311a0399124a39",
+        "tag": "v0.13.3"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "quay.io/lakekeeper/catalog:v0.13.3",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "db2ba6168eb107f22242fb7f2edc4016fa35e57bdcc606894e809c418e32e8dc"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "ba9424131ff088e8eb5263dbdf66e63c2aec0e71687971673ca37a97389394f2"
+        }
+      }
+    },
+    {
+      "id": "postgresql",
+      "kind": "state-store",
+      "name": "PostgreSQL",
+      "version": "17.11-bookworm",
+      "artifact": {
+        "kind": "container-image",
+        "reference": "postgres:17.11-bookworm",
+        "digest_scope": "index",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "051f7b7b3abdd564d5d1bd1e8c4b9c1b6e77087d1dd22020ede611c096a272e0"
+        },
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "b260573038b3770e3d1aba5a9a033bdd19c4b16304b104d4b4256c75d8f15123"
+        }
+      }
+    },
+    {
+      "id": "iceberg-java",
+      "kind": "connector",
+      "name": "Apache Iceberg Java engine runtimes",
+      "version": "1.11.0",
+      "source": {
+        "repository": "https://github.com/apache/iceberg.git",
+        "revision": "6976e020b894f6a6777704df2b8c4458cb291ae9",
+        "tag": "apache-iceberg-1.11.0"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "catalog-bench/trino-iceberg-runtime:1.11.0-trino483",
+        "digest_scope": "local-image",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "a46e6ad90f431f01eef600508c3126c0f4af3b15644eb0db26685fe437717063"
+        },
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/lib/trino/plugin/iceberg/org.apache.iceberg_iceberg-core-1.11.0.jar",
+            "media_type": "application/java-archive",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "53b9eb7a8c34fb9958ea7d9a4d19ba5bc96f592d0f05e8625b0778c70b1f0090"
+            },
+            "bytes": 2575099,
+            "description": "Apache Iceberg 1.11.0 core JAR shipped by stock Trino 483."
+          },
+          {
+            "location": "image:/usr/lib/trino/plugin/iceberg/org.apache.iceberg_iceberg-aws-1.11.0.jar",
+            "media_type": "application/java-archive",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "4cfe4a7ba3a4fb247a29e60c614678c3b7a1e9b4b91f54e0ca3406419c9338f0"
+            },
+            "bytes": 230377,
+            "description": "Apache Iceberg 1.11.0 AWS JAR shipped by stock Trino 483."
+          }
+        ]
+      },
+      "extensions": {
+        "querygraph/materialized-image-observation": {
+          "architecture": "arm64",
+          "labels": {
+            "architecture": "aarch64",
+            "build-date": "2026-06-30T05:27:56Z",
+            "com.docker.compose.project": "catalog-bench",
+            "com.docker.compose.service": "trino-iceberg-runtime",
+            "com.docker.compose.version": "5.1.3",
+            "com.redhat.component": "ubi10-micro-container",
+            "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI",
+            "cpe": "cpe:/o:redhat:enterprise_linux:10.2",
+            "description": "Very small image which doesn't install the package manager.",
+            "distribution-scope": "public",
+            "io.buildah.version": "1.44.0",
+            "io.k8s.description": "Very small image which doesn't install the package manager.",
+            "io.k8s.display-name": "Red Hat Universal Base Image 10 Micro",
+            "io.openshift.expose-services": "",
+            "maintainer": "Red Hat, Inc.",
+            "name": "ubi10/ubi-micro",
+            "org.opencontainers.image.created": "2026-06-30T05:27:56Z",
+            "org.opencontainers.image.revision": "6976e020b894f6a6777704df2b8c4458cb291ae9",
+            "org.opencontainers.image.source": "https://github.com/apache/iceberg",
+            "org.opencontainers.image.version": "1.11.0",
+            "release": "1782797142",
+            "summary": "ubi10 micro image",
+            "url": "https://catalog.redhat.com/en/search?searchType=containers",
+            "vcs-ref": "361d6894432a9d546c936ce96df22f5bf0601fe0",
+            "vcs-type": "git",
+            "vendor": "Red Hat, Inc.",
+            "version": "10.2"
+          },
+          "operating_system": "linux"
+        }
+      }
+    },
+    {
+      "id": "trino",
+      "kind": "engine",
+      "name": "Trino",
+      "version": "483",
+      "source": {
+        "repository": "https://github.com/trinodb/trino.git",
+        "revision": "50b0b50b75abd47f830b7805ee1b51716eb4065e",
+        "tag": "483"
+      },
+      "artifact": {
+        "kind": "container-image",
+        "reference": "catalog-bench/trino:483-runner-f26c25a75be7",
+        "digest_scope": "local-image",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "eb6c4f565be5fbe6aaaa7fc9e9578d648b749898f05aa623ff6b9b7db004632f"
+        },
+        "embedded_artifacts": [
+          {
+            "location": "image:/usr/lib/trino/bin/run-trino",
+            "media_type": "application/x-shellscript",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "fe59c9e6a2e28f67d227c2d4893d3770429bed136c766df1d17625df80f19f9f"
+            },
+            "bytes": 242,
+            "description": "Stock Trino 483 server launcher wrapper."
+          },
+          {
+            "location": "image:/usr/lib/trino/bin/launcher",
+            "media_type": "application/x-shellscript",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "cda6ce2ec8ea2ab2412c08275f9d0fa4ad7492828dff7e6743ecd5f6e1a4a6d6"
+            },
+            "bytes": 1087,
+            "description": "Stock Trino 483 architecture-selecting launcher."
+          },
+          {
+            "location": "image:/usr/lib/trino/bin/linux-arm64/launcher",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "88396cd880f0b51212b402901882a096d6027607100070e0bdbb090ab07f9370"
+            },
+            "bytes": 3932322,
+            "description": "Stock Trino 483 ARM64 Airlift native launcher."
+          },
+          {
+            "location": "image:/usr/bin/trino",
+            "media_type": "application/java-archive",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "182a1daca97bd14e7aa9b25cb62c6d0fd96fa80313e5431ac91da3184cebb601"
+            },
+            "bytes": 15771559,
+            "description": "Stock Trino 483 executable CLI archive."
+          },
+          {
+            "location": "image:/usr/lib/trino/plugin/iceberg/org.apache.iceberg_iceberg-core-1.11.0.jar",
+            "media_type": "application/java-archive",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "53b9eb7a8c34fb9958ea7d9a4d19ba5bc96f592d0f05e8625b0778c70b1f0090"
+            },
+            "bytes": 2575099,
+            "description": "Apache Iceberg 1.11.0 core JAR shipped by stock Trino 483."
+          },
+          {
+            "location": "image:/usr/lib/trino/plugin/iceberg/org.apache.iceberg_iceberg-aws-1.11.0.jar",
+            "media_type": "application/java-archive",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "4cfe4a7ba3a4fb247a29e60c614678c3b7a1e9b4b91f54e0ca3406419c9338f0"
+            },
+            "bytes": 230377,
+            "description": "Apache Iceberg 1.11.0 AWS JAR shipped by stock Trino 483."
+          },
+          {
+            "location": "image:/usr/local/bin/catalog-bench-engine",
+            "media_type": "application/vnd.elf",
+            "digest": {
+              "algorithm": "sha256",
+              "value": "2bc7122f897b00dcffff2f2d646198c16a50015a4b605647757256546daff15e"
+            },
+            "bytes": 5248208,
+            "description": "Production-optimized stock-engine runner built from catalog-bench@f26c25a."
+          }
+        ]
+      },
+      "extensions": {
+        "querygraph/materialized-image-observation": {
+          "architecture": "arm64",
+          "labels": {
+            "architecture": "aarch64",
+            "build-date": "2026-06-30T05:27:56Z",
+            "com.docker.compose.project": "catalog-bench",
+            "com.docker.compose.service": "trino",
+            "com.docker.compose.version": "5.1.3",
+            "com.redhat.component": "ubi10-micro-container",
+            "com.redhat.license_terms": "https://www.redhat.com/en/about/red-hat-end-user-license-agreements#UBI",
+            "cpe": "cpe:/o:redhat:enterprise_linux:10.2",
+            "description": "Very small image which doesn't install the package manager.",
+            "distribution-scope": "public",
+            "io.buildah.version": "1.44.0",
+            "io.k8s.description": "Very small image which doesn't install the package manager.",
+            "io.k8s.display-name": "Red Hat Universal Base Image 10 Micro",
+            "io.openshift.expose-services": "",
+            "io.querygraph.catalog-bench.runner-source-revision": "f26c25a75be7112782ffc29638ada44afcaa1c0b",
+            "maintainer": "Red Hat, Inc.",
+            "name": "ubi10/ubi-micro",
+            "org.opencontainers.image.base.digest": "sha256:db58cc93e593a2706553745f276bb119c9810e69918be56ecde088ba7ccb0534",
+            "org.opencontainers.image.created": "2026-06-30T05:27:56Z",
+            "org.opencontainers.image.revision": "50b0b50b75abd47f830b7805ee1b51716eb4065e",
+            "org.opencontainers.image.source": "https://github.com/trinodb/trino",
+            "org.opencontainers.image.version": "483",
+            "release": "1782797142",
+            "summary": "ubi10 micro image",
+            "url": "https://catalog.redhat.com/en/search?searchType=containers",
+            "vcs-ref": "361d6894432a9d546c936ce96df22f5bf0601fe0",
+            "vcs-type": "git",
+            "vendor": "Red Hat, Inc.",
+            "version": "10.2"
+          },
+          "operating_system": "linux"
+        }
+      }
+    }
+  ],
+  "services": [
+    {
+      "component": "catalog-bench-engine",
+      "role": "engine-runner"
+    },
+    {
+      "component": "minio",
+      "role": "shared-object-store",
+      "endpoint": "http://minio:9000",
+      "settings": {
+        "bucket": "warehouse",
+        "host_ports": "none",
+        "path_style_access": true,
+        "region": "us-east-1",
+        "state_volume": "minio-data"
+      }
+    },
+    {
+      "component": "postgresql",
+      "role": "lakekeeper-private-state-store",
+      "endpoint": "postgresql://postgresql:5432",
+      "settings": {
+        "database": "lakekeeper",
+        "isolation": "dedicated process, role, database, and named volume",
+        "state_volume": "lakekeeper-postgres-data"
+      }
+    },
+    {
+      "component": "lakecat",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://trino-lakecat:8181/catalog",
+      "private_state": "lakecat-turso",
+      "settings": {
+        "state_mode": "file-backed Turso",
+        "state_volume": "trino-lakecat-data",
+        "warehouse": "local",
+        "warehouse_location": "s3://warehouse/lakecat"
+      }
+    },
+    {
+      "component": "polaris",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://polaris:8181/api/catalog",
+      "private_state": "postgresql",
+      "settings": {
+        "state_isolation": "dedicated Polaris database/schema",
+        "warehouse": "s3://warehouse/"
+      }
+    },
+    {
+      "component": "gravitino",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://gravitino:9001/iceberg",
+      "settings": {
+        "state_backend": "file-backed SQLite JDBC inside the pinned image",
+        "warehouse": "s3://warehouse/"
+      }
+    },
+    {
+      "component": "lakekeeper",
+      "role": "iceberg-rest-catalog",
+      "endpoint": "http://lakekeeper:8181/catalog",
+      "private_state": "postgresql",
+      "settings": {
+        "config_warehouse": "bench",
+        "project_id": "00000000-0000-0000-0000-000000000000",
+        "readiness": "healthcheck plus typed bootstrap, warehouse reconciliation, and config negotiation",
+        "state_isolation": "dedicated PostgreSQL process, role, database, and named volume",
+        "warehouse": "s3://warehouse/lakekeeper"
+      }
+    },
+    {
+      "component": "iceberg-java",
+      "role": "engine-connector"
+    },
+    {
+      "component": "trino",
+      "role": "stock-engine"
+    }
+  ],
+  "catalog_capabilities": [
+    {
+      "id": "iceberg-rest.config.read",
+      "description": "Negotiate catalog configuration through the standard config route.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.config.endpoint-advertisement",
+      "description": "Interpret the optional standard endpoint advertisement without inventing routes.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.config.warehouse-routing",
+      "description": "Resolve the configured warehouse and resulting protocol route prefix.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.create",
+      "description": "Create a namespace through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.list",
+      "description": "List namespaces through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.load",
+      "description": "Load namespace metadata through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.update-properties",
+      "description": "Set and remove namespace properties through the standard optional operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.drop",
+      "description": "Drop an empty namespace through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.hierarchy",
+      "description": "Create and list multipart namespace hierarchy without flattening identifiers.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.pagination",
+      "description": "Traverse namespace pages using page-size and page-token.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.error.duplicate",
+      "description": "Return a spec-shaped conflict when a namespace already exists.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.namespace.error.missing-parent",
+      "description": "Return a spec-shaped not-found response for a missing parent namespace.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.create",
+      "description": "Create an Iceberg table through the standard REST operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.list",
+      "description": "List table identifiers through Iceberg REST with pagination where available.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.load",
+      "description": "Load current table metadata through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.register",
+      "description": "Register an existing metadata file through the standard optional operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.rename",
+      "description": "Rename a table through the standard optional operation.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.update",
+      "description": "Apply requirements and updates through the standard updateTable route.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.drop",
+      "description": "Drop a table through Iceberg REST.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.error.spec-shape",
+      "description": "Preserve Iceberg error status, type, message, and code semantics.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.commit.set-properties",
+      "description": "Commit a standard set-properties update with explicit requirements.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.commit.requirements",
+      "description": "Enforce standard commit requirements rather than accepting stale state.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.commit.stale-pointer-rejection",
+      "description": "Reject a commit based on a stale metadata pointer or requirement.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.table.commit.exact-retry",
+      "description": "Resolve an exact retried commit without inventing a second semantic update.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "iceberg-rest.idempotency-key.content-binding",
+      "description": "Bind reuse of an Idempotency-Key to identical request content and reject drift.",
+      "specification": "https://github.com/apache/iceberg/blob/apache-iceberg-1.11.0/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "id": "client.pyiceberg.round-trip",
+      "description": "Run the largest common no-shim PyIceberg create, append, load, scan, and cleanup workflow."
+    },
+    {
+      "id": "client.pyiceberg.property-update",
+      "description": "Update and remove table properties through the stock PyIceberg transaction API."
+    },
+    {
+      "id": "client.pyiceberg.schema-evolution",
+      "description": "Add an optional column through stock PyIceberg and append data under the evolved schema."
+    },
+    {
+      "id": "client.pyiceberg.row-delete",
+      "description": "Delete selected rows through stock PyIceberg and verify the rewritten table contents."
+    },
+    {
+      "id": "client.pyiceberg.table-register",
+      "description": "Register retained Iceberg metadata through the stock PyIceberg REST catalog API."
+    },
+    {
+      "id": "client.pyiceberg.table-rename",
+      "description": "Rename a table through the stock PyIceberg REST catalog API."
+    },
+    {
+      "id": "client.pyiceberg.conflict-recovery",
+      "description": "Observe a stale snapshot conflict and complete a refresh-and-retry through stock PyIceberg."
+    },
+    {
+      "id": "client.pyiceberg.credential-vending",
+      "description": "Request delegated access and prove whether returned table credentials drive object-store I/O."
+    },
+    {
+      "id": "client.pyiceberg.view-lifecycle",
+      "description": "Create, load, list, and drop a view through stock PyIceberg when the pinned client exposes that lifecycle."
+    },
+    {
+      "id": "client.pyiceberg.pagination",
+      "description": "Traverse namespace and table page tokens through stock PyIceberg when the pinned client exposes pagination controls."
+    },
+    {
+      "id": "iceberg-rest.concurrency.same-table-contention",
+      "description": "Run concurrent writers against one table while preserving conflicts and request errors."
+    }
+  ],
+  "catalog_adapters": [
+    {
+      "catalog": "lakecat",
+      "protocol": "iceberg-rest-v1",
+      "endpoint": {
+        "base_url": "http://trino-lakecat:8181/catalog",
+        "config": {
+          "path": "/v1/config",
+          "query": {
+            "warehouse": "local"
+          }
+        },
+        "route_prefix": {
+          "kind": "unprefixed"
+        }
+      },
+      "authentication": {
+        "kind": "anonymous"
+      },
+      "request_handling": {
+        "kind": "protocol-native"
+      },
+      "capabilities": {
+        "mode": "exercise-all"
+      }
+    },
+    {
+      "catalog": "polaris",
+      "protocol": "iceberg-rest-v1",
+      "endpoint": {
+        "base_url": "http://polaris:8181/api/catalog",
+        "config": {
+          "path": "/v1/config",
+          "query": {
+            "warehouse": "bench"
+          }
+        },
+        "route_prefix": {
+          "kind": "static",
+          "value": "bench"
+        }
+      },
+      "authentication": {
+        "kind": "oauth2-client-credentials",
+        "token_path": "/v1/oauth/tokens",
+        "scope": "PRINCIPAL_ROLE:ALL",
+        "client_id_env": "CATALOG_BENCH_POLARIS_CLIENT_ID",
+        "client_secret_env": "CATALOG_BENCH_POLARIS_CLIENT_SECRET"
+      },
+      "request_handling": {
+        "kind": "protocol-native"
+      },
+      "capabilities": {
+        "mode": "exercise-all"
+      }
+    },
+    {
+      "catalog": "gravitino",
+      "protocol": "iceberg-rest-v1",
+      "endpoint": {
+        "base_url": "http://gravitino:9001/iceberg",
+        "config": {
+          "path": "/v1/config"
+        },
+        "route_prefix": {
+          "kind": "unprefixed"
+        }
+      },
+      "authentication": {
+        "kind": "anonymous"
+      },
+      "request_handling": {
+        "kind": "protocol-native"
+      },
+      "capabilities": {
+        "mode": "exercise-all"
+      }
+    },
+    {
+      "catalog": "lakekeeper",
+      "protocol": "iceberg-rest-v1",
+      "endpoint": {
+        "base_url": "http://lakekeeper:8181/catalog",
+        "config": {
+          "path": "/v1/config",
+          "query": {
+            "warehouse": "bench"
+          }
+        },
+        "route_prefix": {
+          "kind": "negotiated",
+          "config_json_pointer": "/defaults/prefix"
+        }
+      },
+      "authentication": {
+        "kind": "anonymous"
+      },
+      "request_handling": {
+        "kind": "protocol-native"
+      },
+      "capabilities": {
+        "mode": "exercise-all"
+      }
+    }
+  ],
+  "extensions": {
+    "querygraph/iceberg-rest-spec": "Apache Iceberg 1.11.0 OpenAPI at source revision 6976e020b894f6a6777704df2b8c4458cb291ae9; exact YAML SHA-256 80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a",
+    "querygraph/materialization": {
+      "format": "catalog-bench/trino-profile-materialization/v1",
+      "observation_sha256": "1a2d9123991be996589d7fb9b455a3df46e293d8bb2b047b2ba69c684b545fe4",
+      "scope": "engine.iceberg.write-read-evolution/v2",
+      "source_profile": {
+        "digest": {
+          "algorithm": "sha256",
+          "value": "30039585568cf29d1b79387f781fc17e2195edd31db4de38327d45ca1db14fd6"
+        },
+        "id": "catalog-community-trino-candidate-483-lakecat-b424f778-2026-08-28-linux-arm64"
+      }
+    },
+    "querygraph/profile-state": "Runnable scenario-scoped profile; every selected runtime artifact has an immutable identity."
+  }
+}

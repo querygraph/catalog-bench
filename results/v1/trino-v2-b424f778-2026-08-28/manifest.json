@@ -1,0 +1,155 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "manifest",
+  "id": "trino-v2-b424f778-2026-08-28",
+  "title": "Stock Trino 483 Iceberg REST interoperability across LakeCat, Polaris, Gravitino, and Lakekeeper",
+  "created_at": "2026-08-28T08:58:44Z",
+  "provenance": {
+    "kind": "live-run",
+    "runner": "catalog-bench-engine",
+    "sanitized_invocation": "docker/run-trino-interoperability.sh \"trino_0828f26c\"",
+    "started_at": "2026-08-28T08:54:02Z",
+    "completed_at": "2026-08-28T08:57:53Z"
+  },
+  "profile": {
+    "location": "source/profile.json",
+    "media_type": "application/json",
+    "digest": {
+      "algorithm": "sha256",
+      "value": "a41a6ff3f95486220ac754a2825fb04b7a92a864da78377e59e6870b341401e9"
+    },
+    "bytes": 39364,
+    "description": "Exact runnable stock-engine profile admitted by the review."
+  },
+  "scenarios": [
+    {
+      "location": "source/scenario.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "b80868f651fce1912b9e6b2608fa16d3c9e445d0ba1e7bb9f66e68db64bc3654"
+      },
+      "bytes": 17529,
+      "description": "Exact common stock-engine interoperability scenario admitted by the review."
+    }
+  ],
+  "results": [
+    {
+      "location": "gravitino.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "c543a638283f94d586e213551d5b25f11523a478396ae3ed03fbbf920ca280cf"
+      },
+      "bytes": 6989,
+      "description": "Stock-engine interoperability result for Apache Gravitino."
+    },
+    {
+      "location": "lakecat.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "17af3f0629e9162fa165140e001337961142d11cc53778c70eb9186cca552f51"
+      },
+      "bytes": 6976,
+      "description": "Stock-engine interoperability result for LakeCat."
+    },
+    {
+      "location": "lakekeeper.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "b3270839e3b8018dfe181c88d37884e3166f9c74fcb8ecbc40581deb9db059bb"
+      },
+      "bytes": 6982,
+      "description": "Stock-engine interoperability result for Lakekeeper."
+    },
+    {
+      "location": "polaris.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "539cd71a576ef57e7cfbea554d28110b77b1d451b57ce34201b8bbb50a8732be"
+      },
+      "bytes": 6977,
+      "description": "Stock-engine interoperability result for Apache Polaris."
+    }
+  ],
+  "source_evidence": [
+    {
+      "location": "source/review.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "b3bee117d62e4c7b68d4a8301f48f74c5f3e190b9c24dd3e7ed7210bebb0ce38"
+      },
+      "bytes": 3682,
+      "description": "Reviewed live-run, environment, source-identity, and redaction metadata."
+    },
+    {
+      "location": "source/transcripts/gravitino.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "bcb64660f15e881fcbaa91eae92b1e8f6c7c880697e289780f2f96cbae23fa3a"
+      },
+      "bytes": 16580,
+      "description": "Canonical sanitized stock-engine transcript for Apache Gravitino."
+    },
+    {
+      "location": "source/transcripts/lakecat.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "56a689a9c386eedba03e68afba5b18bd26e0fe59196e812664c26a41d25fe9d8"
+      },
+      "bytes": 16385,
+      "description": "Canonical sanitized stock-engine transcript for LakeCat."
+    },
+    {
+      "location": "source/transcripts/lakekeeper.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "b5b164bcae6e63ee54b9a2a4e33cbf10d020c8221ca1676d8cc14bd9adfd0295"
+      },
+      "bytes": 16365,
+      "description": "Canonical sanitized stock-engine transcript for Lakekeeper."
+    },
+    {
+      "location": "source/transcripts/polaris.json",
+      "media_type": "application/json",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "27a5de32b2936729dbb9b5679d88df85d96d570f1e7d8e59afe5193624c4dcb8"
+      },
+      "bytes": 16654,
+      "description": "Canonical sanitized stock-engine transcript for Apache Polaris."
+    }
+  ],
+  "redaction": {
+    "reviewed": true,
+    "policy": "catalog-bench/value-safe-engine-v1 plus manual source review",
+    "removed_fields": [
+      "catalog OAuth client credentials and bearer tokens",
+      "object-store access and secret keys",
+      "raw engine rows and response bodies",
+      "raw backend exception and log detail"
+    ]
+  },
+  "extensions": {
+    "querygraph/classifications": {
+      "fail": 0,
+      "fixture_collision": 0,
+      "pass": 4,
+      "total": 4
+    },
+    "querygraph/fixture-id": "trino_0828f26c",
+    "querygraph/interoperability": {
+      "execution_order": "sequential",
+      "ranking": false,
+      "shared_docker_network": "catalog-bench-net",
+      "workflow": "engine.iceberg.write-read-evolution"
+    }
+  }
+}

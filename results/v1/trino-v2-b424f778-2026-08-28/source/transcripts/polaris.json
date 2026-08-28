@@ -1,0 +1,495 @@
+{
+  "format": "catalog-bench/engine-interoperability-transcript/v2",
+  "scenario": {
+    "id": "engine.iceberg.write-read-evolution",
+    "version": 2
+  },
+  "contract_digests": {
+    "profile_sha256": "a41a6ff3f95486220ac754a2825fb04b7a92a864da78377e59e6870b341401e9",
+    "scenario_sha256": "b80868f651fce1912b9e6b2608fa16d3c9e445d0ba1e7bb9f66e68db64bc3654"
+  },
+  "profile": {
+    "id": "catalog-community-trino-483-engine-f26c25a-lakecat-b424f778-2026-08-28-linux-arm64",
+    "resolved_at": "2026-08-28T08:52:43Z"
+  },
+  "components": {
+    "runner": {
+      "id": "catalog-bench-engine",
+      "name": "catalog-bench stock-engine runner",
+      "version": "f26c25a75be7112782ffc29638ada44afcaa1c0b",
+      "source_revision": "f26c25a75be7112782ffc29638ada44afcaa1c0b"
+    },
+    "catalog": {
+      "id": "polaris",
+      "name": "Apache Polaris",
+      "version": "1.7.0",
+      "source_revision": "4ac2f059d1cce149453d0a5f1ff1dff980ec97cc"
+    },
+    "engine": {
+      "id": "trino",
+      "name": "Trino",
+      "version": "483",
+      "source_revision": "50b0b50b75abd47f830b7805ee1b51716eb4065e"
+    },
+    "connector": {
+      "id": "iceberg-java",
+      "name": "Apache Iceberg Java engine runtimes",
+      "version": "1.11.0",
+      "source_revision": "6976e020b894f6a6777704df2b8c4458cb291ae9"
+    },
+    "object_store": {
+      "id": "minio",
+      "name": "MinIO",
+      "version": "RELEASE.2025-10-15T17-29-55Z",
+      "source_revision": "9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a"
+    }
+  },
+  "fixture": {
+    "id": "trino_0828f26c",
+    "namespace": "cb_c201_polaris_trino_0828f26c",
+    "table": "events"
+  },
+  "execution": {
+    "process": {
+      "runtime": {
+        "platform": {
+          "expected_operating_system": "Linux",
+          "observed_operating_system": "linux",
+          "operating_system_matches": true,
+          "expected_architecture": "aarch64",
+          "observed_architecture": "aarch64",
+          "architecture_matches": true
+        },
+        "artifacts": [
+          {
+            "location": "/usr/bin/trino",
+            "media_type": "application/java-archive",
+            "components": [
+              "trino"
+            ],
+            "expected_bytes": 15771559,
+            "expected_sha256": "182a1daca97bd14e7aa9b25cb62c6d0fd96fa80313e5431ac91da3184cebb601",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 15771559,
+              "observed_sha256": "182a1daca97bd14e7aa9b25cb62c6d0fd96fa80313e5431ac91da3184cebb601"
+            }
+          },
+          {
+            "location": "/usr/lib/trino/bin/launcher",
+            "media_type": "application/x-shellscript",
+            "components": [
+              "trino"
+            ],
+            "expected_bytes": 1087,
+            "expected_sha256": "cda6ce2ec8ea2ab2412c08275f9d0fa4ad7492828dff7e6743ecd5f6e1a4a6d6",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 1087,
+              "observed_sha256": "cda6ce2ec8ea2ab2412c08275f9d0fa4ad7492828dff7e6743ecd5f6e1a4a6d6"
+            }
+          },
+          {
+            "location": "/usr/lib/trino/bin/linux-arm64/launcher",
+            "media_type": "application/vnd.elf",
+            "components": [
+              "trino"
+            ],
+            "expected_bytes": 3932322,
+            "expected_sha256": "88396cd880f0b51212b402901882a096d6027607100070e0bdbb090ab07f9370",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 3932322,
+              "observed_sha256": "88396cd880f0b51212b402901882a096d6027607100070e0bdbb090ab07f9370"
+            }
+          },
+          {
+            "location": "/usr/lib/trino/bin/run-trino",
+            "media_type": "application/x-shellscript",
+            "components": [
+              "trino"
+            ],
+            "expected_bytes": 242,
+            "expected_sha256": "fe59c9e6a2e28f67d227c2d4893d3770429bed136c766df1d17625df80f19f9f",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 242,
+              "observed_sha256": "fe59c9e6a2e28f67d227c2d4893d3770429bed136c766df1d17625df80f19f9f"
+            }
+          },
+          {
+            "location": "/usr/lib/trino/plugin/iceberg/org.apache.iceberg_iceberg-aws-1.11.0.jar",
+            "media_type": "application/java-archive",
+            "components": [
+              "iceberg-java",
+              "trino"
+            ],
+            "expected_bytes": 230377,
+            "expected_sha256": "4cfe4a7ba3a4fb247a29e60c614678c3b7a1e9b4b91f54e0ca3406419c9338f0",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 230377,
+              "observed_sha256": "4cfe4a7ba3a4fb247a29e60c614678c3b7a1e9b4b91f54e0ca3406419c9338f0"
+            }
+          },
+          {
+            "location": "/usr/lib/trino/plugin/iceberg/org.apache.iceberg_iceberg-core-1.11.0.jar",
+            "media_type": "application/java-archive",
+            "components": [
+              "iceberg-java",
+              "trino"
+            ],
+            "expected_bytes": 2575099,
+            "expected_sha256": "53b9eb7a8c34fb9958ea7d9a4d19ba5bc96f592d0f05e8625b0778c70b1f0090",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 2575099,
+              "observed_sha256": "53b9eb7a8c34fb9958ea7d9a4d19ba5bc96f592d0f05e8625b0778c70b1f0090"
+            }
+          },
+          {
+            "location": "/usr/local/bin/catalog-bench-engine",
+            "media_type": "application/vnd.elf",
+            "components": [
+              "catalog-bench-engine",
+              "trino"
+            ],
+            "expected_bytes": 5248208,
+            "expected_sha256": "2bc7122f897b00dcffff2f2d646198c16a50015a4b605647757256546daff15e",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 5248208,
+              "observed_sha256": "2bc7122f897b00dcffff2f2d646198c16a50015a4b605647757256546daff15e"
+            }
+          }
+        ]
+      },
+      "outcome": {
+        "status": "completed"
+      },
+      "capture": {
+        "events": [
+          {
+            "event": "runtime-ready",
+            "runtime": {
+              "engine_version": "483",
+              "dependencies": {
+                "java": "25.0.3"
+              },
+              "operating_system": "linux",
+              "architecture": "aarch64"
+            }
+          },
+          {
+            "event": "catalog-ready"
+          },
+          {
+            "event": "fixture-preflight",
+            "absent": true
+          },
+          {
+            "event": "namespace-ready",
+            "listed_exactly": true
+          },
+          {
+            "event": "table-ready",
+            "table": {
+              "table_uuid": "98b84d04-0340-4317-9eca-c918388eaa61",
+              "metadata_location": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e/metadata/00000-49915aac-60da-4b2e-8736-e6ef0762f0d9.metadata.json",
+              "location": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e",
+              "format_version": 2,
+              "last_column_id": 3,
+              "schema": [
+                {
+                  "id": 1,
+                  "name": "id",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 2,
+                  "name": "category",
+                  "required": false,
+                  "field_type": "string"
+                },
+                {
+                  "id": 3,
+                  "name": "amount_cents",
+                  "required": true,
+                  "field_type": "long"
+                }
+              ],
+              "snapshots": 1,
+              "properties": {
+                "catalog-bench.owner": "match",
+                "write.metadata.delete-after-commit.enabled": "match",
+                "write.metadata.previous-versions-max": "match"
+              }
+            }
+          },
+          {
+            "event": "initial-appended",
+            "snapshots": 2
+          },
+          {
+            "event": "initial-read",
+            "read": {
+              "rows": 16,
+              "bytes": 346,
+              "sha256": "e78b526d7e757090a9a90c80802c2a543cbf8166cfac6d6ed48c618926e85a15"
+            }
+          },
+          {
+            "event": "schema-evolved",
+            "table": {
+              "table_uuid": "98b84d04-0340-4317-9eca-c918388eaa61",
+              "metadata_location": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e/metadata/00002-ec913a53-7d71-4bf6-bfd1-e46b1c8e059c.metadata.json",
+              "location": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e",
+              "format_version": 2,
+              "last_column_id": 4,
+              "schema": [
+                {
+                  "id": 1,
+                  "name": "id",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 2,
+                  "name": "category",
+                  "required": false,
+                  "field_type": "string"
+                },
+                {
+                  "id": 3,
+                  "name": "amount_cents",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 4,
+                  "name": "note",
+                  "required": false,
+                  "field_type": "string"
+                }
+              ],
+              "snapshots": 2,
+              "properties": {
+                "catalog-bench.owner": "match",
+                "write.metadata.delete-after-commit.enabled": "match",
+                "write.metadata.previous-versions-max": "match"
+              }
+            }
+          },
+          {
+            "event": "evolved-appended",
+            "snapshots": 3
+          },
+          {
+            "event": "evolved-read",
+            "read": {
+              "rows": 20,
+              "bytes": 570,
+              "sha256": "b2af6f475851e07d1ace3706d8867530c13dd5938bee90cfcc62d3939e01bea2"
+            }
+          },
+          {
+            "event": "final-table",
+            "table": {
+              "table_uuid": "98b84d04-0340-4317-9eca-c918388eaa61",
+              "metadata_location": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e/metadata/00003-db885963-73f8-459e-bf77-f64dd448223e.metadata.json",
+              "location": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e",
+              "format_version": 2,
+              "last_column_id": 4,
+              "schema": [
+                {
+                  "id": 1,
+                  "name": "id",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 2,
+                  "name": "category",
+                  "required": false,
+                  "field_type": "string"
+                },
+                {
+                  "id": 3,
+                  "name": "amount_cents",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 4,
+                  "name": "note",
+                  "required": false,
+                  "field_type": "string"
+                }
+              ],
+              "snapshots": 3,
+              "properties": {
+                "catalog-bench.owner": "match",
+                "write.metadata.delete-after-commit.enabled": "match",
+                "write.metadata.previous-versions-max": "match"
+              }
+            }
+          },
+          {
+            "event": "completed"
+          }
+        ],
+        "stdout_bytes_observed": 0
+      },
+      "exit_code": 0,
+      "process_elapsed_micros": 31556760
+    },
+    "catalog_connection": {
+      "status": "ready",
+      "negotiation": {
+        "adapter": {
+          "catalog": "polaris",
+          "name": "Apache Polaris",
+          "version": "1.7.0",
+          "protocol": "iceberg-rest-v1",
+          "request_handling": {
+            "kind": "protocol-native"
+          }
+        },
+        "authentication": {
+          "mode": "o-auth2-client-credentials",
+          "outcome": "ready",
+          "http_status": 200
+        },
+        "config": {
+          "http_status": 200,
+          "response_bytes": 2160,
+          "prefix": "static",
+          "namespace_separator": "configured"
+        },
+        "redactions_observed": 3
+      }
+    },
+    "catalog_state": {
+      "status": "succeeded",
+      "output": {
+        "status": "present",
+        "http_status": 200,
+        "response_bytes": 6452,
+        "state": {
+          "current_schema_id": 1,
+          "table": {
+            "table_uuid": "98b84d04-0340-4317-9eca-c918388eaa61",
+            "metadata_location": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e/metadata/00003-db885963-73f8-459e-bf77-f64dd448223e.metadata.json",
+            "location": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e",
+            "format_version": 2,
+            "last_column_id": 4,
+            "schema": [
+              {
+                "id": 1,
+                "name": "id",
+                "required": true,
+                "field_type": "long"
+              },
+              {
+                "id": 2,
+                "name": "category",
+                "required": false,
+                "field_type": "string"
+              },
+              {
+                "id": 3,
+                "name": "amount_cents",
+                "required": true,
+                "field_type": "long"
+              },
+              {
+                "id": 4,
+                "name": "note",
+                "required": false,
+                "field_type": "string"
+              }
+            ],
+            "snapshots": 3,
+            "properties": {
+              "catalog-bench.owner": "match",
+              "write.metadata.delete-after-commit.enabled": "match",
+              "write.metadata.previous-versions-max": "match"
+            }
+          }
+        }
+      }
+    },
+    "object_state": {
+      "status": "succeeded",
+      "output": {
+        "table_root": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e",
+        "metadata_objects": 4,
+        "metadata_bytes": 16194,
+        "parquet_objects": 2,
+        "parquet_bytes": 1352,
+        "referenced_metadata_location": "s3://warehouse/bench/cb_c201_polaris_trino_0828f26c/events-25cc7d8735f0426fbb64b08bd340f89e/metadata/00003-db885963-73f8-459e-bf77-f64dd448223e.metadata.json",
+        "referenced_metadata_exists": true
+      }
+    },
+    "cleanup": {
+      "drop_table_without_purge": {
+        "status": "succeeded",
+        "output": {
+          "http_status": 204,
+          "response_bytes": 0,
+          "already_absent": false
+        }
+      },
+      "verify_table_absent": {
+        "status": "succeeded",
+        "output": {
+          "status": "absent",
+          "http_status": 404,
+          "response_bytes": 124
+        }
+      },
+      "drop_namespace": {
+        "status": "succeeded",
+        "output": {
+          "http_status": 204,
+          "response_bytes": 0,
+          "already_absent": false
+        }
+      },
+      "verify_namespace_absent": {
+        "status": "succeeded",
+        "output": {
+          "status": "absent",
+          "http_status": 404,
+          "response_bytes": 125
+        }
+      }
+    },
+    "checks": {
+      "engine_runtime_pinned": true,
+      "stock_rest_catalog_ready": true,
+      "fixture_isolated": true,
+      "namespace_round_trip": true,
+      "table_round_trip": true,
+      "initial_append_committed": true,
+      "initial_read_exact": true,
+      "schema_evolved": true,
+      "evolved_append_committed": true,
+      "evolved_read_exact": true,
+      "catalog_state_correlated": true,
+      "shared_object_evidence_complete": true,
+      "fixture_clean": true
+    },
+    "classification": "pass"
+  },
+  "sanitization": {
+    "policy": "catalog-bench/value-safe-engine-v1",
+    "negotiation_redactions_observed": 3,
+    "raw_secrets_persisted": false,
+    "raw_engine_rows_persisted": false,
+    "raw_response_body_persisted": false,
+    "raw_backend_failure_detail_persisted": false,
+    "transcript_sanitized": true
+  }
+}

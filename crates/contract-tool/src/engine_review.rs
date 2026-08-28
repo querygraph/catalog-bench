@@ -289,16 +289,47 @@ fn validate_reviewed_invocation(
         .components
         .engine
         .name;
-    let launcher = match engine_name.as_str() {
-        "Apache Spark" => "docker/run-spark-interoperability.sh",
-        "Apache Flink" => "docker/run-flink-interoperability.sh",
-        _ => bail!("reviewed engine has no canonical interoperability launcher"),
-    };
+    let launcher = canonical_interoperability_launcher(engine_name)?;
     let expected = format!("{launcher} \"{}\"", review.run.fixture_id);
     if review.run.sanitized_invocation != expected {
         bail!("reviewed invocation does not match the canonical engine launcher");
     }
     Ok(())
+}
+
+fn canonical_interoperability_launcher(engine_name: &str) -> Result<&'static str> {
+    Ok(match engine_name {
+        "Apache Spark" => "docker/run-spark-interoperability.sh",
+        "Apache Flink" => "docker/run-flink-interoperability.sh",
+        "Trino" => "docker/run-trino-interoperability.sh",
+        _ => {
+            return Err(anyhow::anyhow!(
+                "reviewed engine has no canonical interoperability launcher"
+            ))
+        }
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::canonical_interoperability_launcher;
+
+    #[test]
+    fn every_stock_engine_has_one_canonical_launcher() {
+        assert_eq!(
+            canonical_interoperability_launcher("Apache Spark").unwrap(),
+            "docker/run-spark-interoperability.sh"
+        );
+        assert_eq!(
+            canonical_interoperability_launcher("Apache Flink").unwrap(),
+            "docker/run-flink-interoperability.sh"
+        );
+        assert_eq!(
+            canonical_interoperability_launcher("Trino").unwrap(),
+            "docker/run-trino-interoperability.sh"
+        );
+        assert!(canonical_interoperability_launcher("unknown").is_err());
+    }
 }
 
 fn validate_transcript_review_order(transcripts: &[ReviewedTranscript]) -> Result<()> {
