@@ -71,14 +71,23 @@ x-trino-build: &trino-build
     TRINO_SOURCE_REVISION: 50b0b50b75abd47f830b7805ee1b51716eb4065e
   additional_contexts:
     catalog-bench-engine-runner: "service:trino-engine-runner-base"
-x-duckdb-image: &duckdb-image catalog-bench/duckdb:1.5.3-arm64
+x-duckdb-base-image: &duckdb-base-image catalog-bench/duckdb:1.5.3-arm64
+x-duckdb-image: &duckdb-image catalog-bench/duckdb:1.5.3-runner-da6cc4e
+x-duckdb-engine-runner-image: &duckdb-engine-runner-image catalog-bench-engine-duckdb:da6cc4e
+x-duckdb-engine-runner-build: &duckdb-engine-runner-build
+  context: "https://github.com/querygraph/catalog-bench.git#da6cc4ec26584e2ff5cbbc120db7fbfcc1242932"
+  dockerfile: docker/bench.Dockerfile
+  args:
+    CATALOG_BENCH_SOURCE_REVISION: da6cc4ec26584e2ff5cbbc120db7fbfcc1242932
 x-duckdb-build: &duckdb-build
   context: .
   dockerfile: docker/duckdb/Dockerfile
   args:
     DUCKDB_SOURCE_REVISION: 14eca11bd9d4a0de2ea0f078be588a9c1c5b279c
+    CATALOG_BENCH_SOURCE_REVISION: da6cc4ec26584e2ff5cbbc120db7fbfcc1242932
   additional_contexts:
     duckdb-source: "https://github.com/duckdb/duckdb.git#14eca11bd9d4a0de2ea0f078be588a9c1c5b279c"
+    catalog-bench-engine-runner: "service:duckdb-engine-runner-base"
 x-rust-runner: &rust-runner
   build: *bench-build
   image: *bench-image
@@ -168,7 +177,21 @@ x-polaris-setup-environment: &polaris-setup-environment
 
 services:
   duckdb-runtime-base:
-    build: *duckdb-build
+    build:
+      <<: *duckdb-build
+      target: runtime
+    image: *duckdb-base-image
+    profiles: ["duckdb"]
+
+  duckdb-engine-runner-base:
+    build: *duckdb-engine-runner-build
+    image: *duckdb-engine-runner-image
+    profiles: ["duckdb"]
+
+  duckdb-benchmark-base:
+    build:
+      <<: *duckdb-build
+      target: benchmark
     image: *duckdb-image
     profiles: ["duckdb"]
 

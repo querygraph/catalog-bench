@@ -1,5 +1,8 @@
 # Changelog
 
+- Bind the verified DuckDB runtime to the exact catalog-bench engine runner
+  revision in a minimal composite benchmark image.
+
 - Execute DuckDB's full stock Iceberg REST workflow through its CLI, inject
   credentials only over child stdin, and cross-check table metadata through
   independent REST and object-store observations.

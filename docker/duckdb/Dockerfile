@@ -1,5 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
+FROM catalog-bench-engine-runner AS runner
+
 FROM rust:1.97.1-bookworm@sha256:0e2bcaef56d041a486784e54104a81aebe0da44bd03019bd70bc0401e42e4a97 AS build
 ARG DUCKDB_SOURCE_REVISION
 RUN apt-get update \
@@ -58,3 +60,12 @@ LABEL org.opencontainers.image.source="https://github.com/duckdb/duckdb" \
       io.querygraph.catalog-bench.duckdb-avro-revision="7f423d69709045e38f8431b3470e0395fce1a595"
 USER duckdb
 ENTRYPOINT ["/usr/local/bin/duckdb"]
+
+FROM runtime AS benchmark
+ARG CATALOG_BENCH_SOURCE_REVISION
+USER root
+COPY --from=runner /usr/local/bin/catalog-bench-engine /usr/local/bin/catalog-bench-engine
+RUN test -x /usr/local/bin/catalog-bench-engine
+LABEL io.querygraph.catalog-bench.runner-source-revision="${CATALOG_BENCH_SOURCE_REVISION}"
+USER duckdb
+ENTRYPOINT ["/usr/local/bin/catalog-bench-engine"]

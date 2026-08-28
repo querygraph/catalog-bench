@@ -10,6 +10,7 @@ const BUILD_SCRIPT: &str = concat!(
 );
 const COMPOSE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docker-compose.yml");
 const SOURCE_REVISION: &str = "14eca11bd9d4a0de2ea0f078be588a9c1c5b279c";
+const RUNNER_REVISION: &str = "da6cc4ec26584e2ff5cbbc120db7fbfcc1242932";
 
 #[test]
 fn duckdb_image_is_source_pinned_with_offline_signed_extensions() {
@@ -51,6 +52,25 @@ fn duckdb_build_verifies_version_extensions_and_platform() {
         assert!(build.contains(required), "DuckDB build lost `{required}`");
     }
     assert_eq!(compose.matches(SOURCE_REVISION).count(), 2);
+    assert_eq!(compose.matches(RUNNER_REVISION).count(), 3);
     assert!(compose.contains("duckdb-runtime-base:"));
+    assert!(compose.contains("duckdb-benchmark-base:"));
     assert!(compose.contains("catalog-bench/duckdb:1.5.3-arm64"));
+    assert!(compose.contains("catalog-bench/duckdb:1.5.3-runner-da6cc4e"));
+}
+
+#[test]
+fn composite_image_adds_only_the_source_bound_runner() {
+    let source = fs::read_to_string(DOCKERFILE).unwrap();
+    for required in [
+        "FROM catalog-bench-engine-runner AS runner",
+        "FROM runtime AS benchmark",
+        "COPY --from=runner /usr/local/bin/catalog-bench-engine",
+        "ENTRYPOINT [\"/usr/local/bin/catalog-bench-engine\"]",
+    ] {
+        assert!(
+            source.contains(required),
+            "composite image lost `{required}`"
+        );
+    }
 }
