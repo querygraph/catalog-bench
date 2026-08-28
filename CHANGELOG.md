@@ -1,5 +1,16 @@
 # Changelog
 
+- C2-06 Trino transcript dispatch: select the production stock Trino runner
+  whenever the runnable profile resolves a Trino execution plan, while retaining
+  the same negotiation, three-authority reconciliation, cleanup, sanitization,
+  and immutable transcript pipeline used by Spark and Flink.
+
+- C2-06 production Trino effects: wire the verified stock Trino server and CLI
+  into the closed state machine, admit credentials without serializing them,
+  probe the live engine version, execute catalog-neutral SQL, decode bounded
+  reads, and independently observe each catalog-returned metadata pointer via a
+  confined object-store read and strict Iceberg v2 decoder.
+
 - C2-06 confined metadata retrieval: extend the shared object-store auditor
   with a size-checked read that accepts only an Iceberg metadata pointer inside
   its validated table root, rejects bucket/path escape, and rechecks the final

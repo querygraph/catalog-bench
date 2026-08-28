@@ -126,6 +126,27 @@ impl EngineProcessExecution {
         }
     }
 
+    pub(crate) fn from_in_process_events(
+        runtime: RuntimeVerification,
+        exit_code: i32,
+        events: Vec<crate::EngineEvent>,
+        process_elapsed_micros: u64,
+    ) -> Self {
+        let capture = EngineEventCapture {
+            events,
+            failure: None,
+            stdout_bytes_observed: 0,
+        };
+        let outcome = EngineProcessOutcome::from_terminal(Some(exit_code), &capture);
+        Self {
+            runtime,
+            outcome,
+            capture: Some(capture),
+            exit_code: Some(exit_code),
+            process_elapsed_micros: Some(process_elapsed_micros),
+        }
+    }
+
     #[must_use]
     pub fn passed(&self) -> bool {
         matches!(self.outcome, EngineProcessOutcome::Completed {})

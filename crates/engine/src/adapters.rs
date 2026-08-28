@@ -1,20 +1,36 @@
+use std::collections::BTreeMap;
+use std::path::Path;
 use std::sync::Arc;
+use std::time::{Duration, Instant};
 
-use catalog_bench_commit::store::{ObjectStoreAuditor, ObjectStoreFailure};
+use catalog_bench_commit::store::{ObjectStoreAuditor, ObjectStoreFailure, TableRoot};
 use catalog_bench_common::contract::Profile;
 use catalog_bench_conformance::{
     connect_catalog_adapter, CatalogConnectionOutcome, CatalogNegotiationFailureStage,
     CATALOG_RESPONSE_LIMIT_BYTES,
 };
+use zeroize::Zeroize as _;
 
 use crate::{
-    EngineCatalogConnection, EngineCatalogConnectionFailure, EngineCatalogConnectionFailureKind,
-    EngineCatalogConnector, EngineCatalogNegotiationEvidence, EngineObjectStoreConnector,
-    EngineProcessExecution, EngineRunner, FlinkProcessExecutor, InteroperabilityPlan,
-    RestEngineCatalog, RuntimeVerifier, SecretRead, SecretSource, SparkProcessExecutor,
+    decode_iceberg_table_metadata, decode_trino_canonical_read, decode_trino_single_text,
+    decode_trino_single_u64, run_trino_child, EngineCatalog, EngineCatalogConnection,
+    EngineCatalogConnectionFailure, EngineCatalogConnectionFailureKind, EngineCatalogConnector,
+    EngineCatalogNegotiationEvidence, EngineCredentialFailure, EngineCredentialFailureKind,
+    EngineCredentialKind, EngineObjectStoreConnector, EngineProcessExecution, EngineProcessOutcome,
+    EngineRunner, EngineRuntimeObservation, EngineTableLoad, FlinkProcessExecutor,
+    InteroperabilityPlan, RestEngineCatalog, RuntimeVerifier, SecretRead, SecretSource,
+    SparkProcessExecutor, StagedTrinoServer, TrinoCatalogSetup, TrinoCliInvocation, TrinoCliOutput,
+    TrinoCommandExecutor, TrinoEffectFailure, TrinoEffects, TrinoFixtureTarget,
+    TrinoLauncherInvocation, TrinoObservationPolicy, TrinoOperation, TrinoRenderedProgram,
+    TrinoServerConfiguration, TrinoServerEnvironment, TRINO_CLI_LOCATION, TRINO_JAVA_VERSION,
+    TRINO_LAUNCHER_LOCATION,
 };
 
 const CATALOG_REQUEST_TIMEOUT_MS: u64 = 30_000;
+const TRINO_STARTUP_TIMEOUT: Duration = Duration::from_secs(120);
+const TRINO_PROBE_INTERVAL: Duration = Duration::from_millis(250);
+const TRINO_QUERY_TIMEOUT: Duration = Duration::from_secs(60);
+const TRINO_METADATA_LIMIT: usize = 4 * 1024 * 1024;
 
 pub struct StockSparkRunner<S> {
     executor: SparkProcessExecutor,
@@ -116,6 +132,401 @@ where
             .execute_with_source(plan, &self.verifier, self.secrets.as_ref())
             .await
     }
+}
+
+pub struct StockTrinoRunner<S> {
+    profile: Arc<Profile>,
+    verifier: RuntimeVerifier,
+    secrets: Arc<S>,
+}
+
+impl<S> StockTrinoRunner<S> {
+    #[must_use]
+    pub fn production(profile: Arc<Profile>, secrets: Arc<S>) -> Self {
+        Self {
+            profile,
+            verifier: RuntimeVerifier::host(),
+            secrets,
+        }
+    }
+}
+
+impl<S> Clone for StockTrinoRunner<S> {
+    fn clone(&self) -> Self {
+        Self {
+            profile: Arc::clone(&self.profile),
+            verifier: self.verifier.clone(),
+            secrets: Arc::clone(&self.secrets),
+        }
+    }
+}
+
+impl<S> EngineRunner for StockTrinoRunner<S>
+where
+    S: SecretSource + Send + Sync + 'static,
+{
+    async fn execute(&self, plan: &InteroperabilityPlan) -> EngineProcessExecution {
+        let runtime = self.verifier.verify(plan);
+        if !runtime.passed() {
+            return EngineProcessExecution::before_process(
+                runtime,
+                EngineProcessOutcome::RuntimeRejected {},
+            );
+        }
+        let Some(trino) = plan.trino() else {
+            return EngineProcessExecution::before_process(
+                runtime,
+                EngineProcessOutcome::PreparationFailed {
+                    kind: crate::EnginePreparationFailureKind::ExecutionPlanMismatch,
+                },
+            );
+        };
+        let program = match TrinoRenderedProgram::render(trino) {
+            Ok(program) => program,
+            Err(_) => {
+                return EngineProcessExecution::before_process(
+                    runtime,
+                    EngineProcessOutcome::PreparationFailed {
+                        kind: crate::EnginePreparationFailureKind::RenderPlan,
+                    },
+                )
+            }
+        };
+        let access_key = match required_runner_secret(
+            self.secrets.as_ref(),
+            &plan.object_store().access_key_env,
+            EngineCredentialKind::ObjectStoreAccessKey,
+        ) {
+            Ok(value) => value,
+            Err(failure) => return credential_rejected(runtime, failure),
+        };
+        let secret_key = match required_runner_secret(
+            self.secrets.as_ref(),
+            &plan.object_store().secret_key_env,
+            EngineCredentialKind::ObjectStoreSecretKey,
+        ) {
+            Ok(value) => value,
+            Err(failure) => return credential_rejected(runtime, failure),
+        };
+        let oauth = match plan.credential_source() {
+            crate::CatalogCredentialSource::Anonymous => None,
+            crate::CatalogCredentialSource::OAuth2ClientCredentials {
+                client_id_env,
+                client_secret_env,
+            } => {
+                let mut id = match required_runner_secret(
+                    self.secrets.as_ref(),
+                    client_id_env,
+                    EngineCredentialKind::CatalogClientId,
+                ) {
+                    Ok(value) => value,
+                    Err(failure) => return credential_rejected(runtime, failure),
+                };
+                let mut secret = match required_runner_secret(
+                    self.secrets.as_ref(),
+                    client_secret_env,
+                    EngineCredentialKind::CatalogClientSecret,
+                ) {
+                    Ok(value) => value,
+                    Err(failure) => return credential_rejected(runtime, failure),
+                };
+                let credential = format!("{id}:{secret}");
+                id.zeroize();
+                secret.zeroize();
+                Some(credential)
+            }
+        };
+        let configuration = match TrinoServerConfiguration::render(&program) {
+            Ok(configuration) => configuration,
+            Err(_) => return preparation_failed(runtime),
+        };
+        let staged = match StagedTrinoServer::create(&configuration) {
+            Ok(staged) => staged,
+            Err(_) => return preparation_failed(runtime),
+        };
+        let environment = match TrinoServerEnvironment::new(
+            format!("catalog-bench-{}", plan.fixture().namespace),
+            staged.data().to_owned(),
+            access_key,
+            secret_key,
+            oauth,
+        ) {
+            Ok(environment) => environment,
+            Err(_) => return preparation_failed(runtime),
+        };
+        let launcher = match TrinoLauncherInvocation::new(
+            Path::new(TRINO_LAUNCHER_LOCATION),
+            staged.configuration(),
+        ) {
+            Ok(launcher) => launcher,
+            Err(_) => return preparation_failed(runtime),
+        };
+        let server = match crate::RunningTrinoServer::start(
+            &launcher,
+            Path::new(TRINO_CLI_LOCATION),
+            staged.root(),
+            &environment,
+            TRINO_STARTUP_TIMEOUT,
+            TRINO_PROBE_INTERVAL,
+        )
+        .await
+        {
+            Ok(server) => server,
+            Err(_) => {
+                return EngineProcessExecution::before_process(
+                    runtime,
+                    EngineProcessOutcome::SpawnFailed {},
+                )
+            }
+        };
+        let catalog =
+            match connect_observation_catalog(&self.profile, plan, self.secrets.as_ref()).await {
+                Some(catalog) => catalog,
+                None => {
+                    server.shutdown().await;
+                    return preparation_failed(runtime);
+                }
+            };
+        let store = match ObjectStoreAuditor::from_connection(plan.object_store(), |name| {
+            optional_secret(self.secrets.as_ref(), name)
+        }) {
+            Ok(store) => store,
+            Err(_) => {
+                server.shutdown().await;
+                return preparation_failed(runtime);
+            }
+        };
+        let started = Instant::now();
+        let handle = tokio::runtime::Handle::current();
+        let root = staged.root().to_owned();
+        let task = tokio::task::spawn_blocking(move || {
+            let mut effects = ProductionTrinoEffects {
+                handle,
+                executor: TrinoCommandExecutor::new(TRINO_QUERY_TIMEOUT)
+                    .expect("nonzero fixed timeout"),
+                root,
+                server: Some(server),
+                program: program.clone(),
+                catalog,
+                store,
+            };
+            let run = run_trino_child(&program, &mut effects);
+            (run, effects.server.take())
+        })
+        .await;
+        let Ok((run, server)) = task else {
+            return EngineProcessExecution::before_process(
+                runtime,
+                EngineProcessOutcome::WaitFailed {},
+            );
+        };
+        if let Some(server) = server {
+            server.shutdown().await;
+        }
+        EngineProcessExecution::from_in_process_events(
+            runtime,
+            run.exit_code,
+            run.events,
+            u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX),
+        )
+    }
+}
+
+struct ProductionTrinoEffects {
+    handle: tokio::runtime::Handle,
+    executor: TrinoCommandExecutor,
+    root: std::path::PathBuf,
+    server: Option<crate::RunningTrinoServer>,
+    program: TrinoRenderedProgram,
+    catalog: RestEngineCatalog,
+    store: ObjectStoreAuditor,
+}
+
+impl ProductionTrinoEffects {
+    fn query(
+        &self,
+        sql: &str,
+        output: TrinoCliOutput,
+        limit: usize,
+    ) -> Result<Vec<u8>, TrinoEffectFailure> {
+        let invocation = TrinoCliInvocation::new(Path::new(TRINO_CLI_LOCATION), sql, output)
+            .map_err(|_| TrinoEffectFailure)?;
+        self.handle
+            .block_on(self.executor.execute_cli(&invocation, &self.root, limit))
+            .map_err(|_| TrinoEffectFailure)
+    }
+}
+
+impl TrinoEffects for ProductionTrinoEffects {
+    fn runtime_observation(&mut self) -> Result<EngineRuntimeObservation, TrinoEffectFailure> {
+        let output = self.query(
+            "SELECT version() AS version",
+            TrinoCliOutput::Json,
+            64 * 1024,
+        )?;
+        let version =
+            decode_trino_single_text(&output, "version").map_err(|_| TrinoEffectFailure)?;
+        Ok(EngineRuntimeObservation {
+            engine_version: version,
+            dependencies: BTreeMap::from([("java".to_owned(), TRINO_JAVA_VERSION.to_owned())]),
+            operating_system: std::env::consts::OS.to_owned(),
+            architecture: std::env::consts::ARCH.to_owned(),
+        })
+    }
+
+    fn initialize_catalog(
+        &mut self,
+        catalog: &TrinoCatalogSetup,
+        configuration: &TrinoServerConfiguration,
+    ) -> Result<(), TrinoEffectFailure> {
+        if self.server.is_some()
+            && catalog == &self.program.catalog
+            && configuration
+                == &TrinoServerConfiguration::render(&self.program)
+                    .map_err(|_| TrinoEffectFailure)?
+        {
+            Ok(())
+        } else {
+            Err(TrinoEffectFailure)
+        }
+    }
+
+    fn fixture_absent(&mut self, fixture: &TrinoFixtureTarget) -> Result<bool, TrinoEffectFailure> {
+        let sql = format!(
+            "SELECT count(*) AS matches FROM information_schema.tables WHERE table_schema = {} AND table_name = {}",
+            crate::sql::literal(&fixture.namespace),
+            crate::sql::literal(&fixture.table)
+        );
+        let output = self.query(&sql, TrinoCliOutput::Json, 64 * 1024)?;
+        Ok(decode_trino_single_u64(&output, "matches").map_err(|_| TrinoEffectFailure)? == 0)
+    }
+
+    fn execute(&mut self, operation: &TrinoOperation) -> Result<(), TrinoEffectFailure> {
+        self.query(operation.sql(), TrinoCliOutput::Discard, 1024)
+            .map(|_| ())
+    }
+
+    fn namespace_listed_exactly(
+        &mut self,
+        fixture: &TrinoFixtureTarget,
+    ) -> Result<bool, TrinoEffectFailure> {
+        let sql = format!(
+            "SELECT count(*) AS matches FROM information_schema.schemata WHERE schema_name = {}",
+            crate::sql::literal(&fixture.namespace)
+        );
+        let output = self.query(&sql, TrinoCliOutput::Json, 64 * 1024)?;
+        Ok(decode_trino_single_u64(&output, "matches").map_err(|_| TrinoEffectFailure)? == 1)
+    }
+
+    fn observe_table(
+        &mut self,
+        fixture: &TrinoFixtureTarget,
+        policy: &TrinoObservationPolicy,
+    ) -> Result<crate::EngineTableObservation, TrinoEffectFailure> {
+        let load = self
+            .handle
+            .block_on(self.catalog.load_table())
+            .map_err(|_| TrinoEffectFailure)?;
+        let EngineTableLoad::Present { state, .. } = load else {
+            return Err(TrinoEffectFailure);
+        };
+        let root = TableRoot::new(
+            &state.table.location,
+            &state.table.metadata_location,
+            &fixture.bucket,
+        )
+        .map_err(|_| TrinoEffectFailure)?;
+        let bytes = self
+            .handle
+            .block_on(self.store.read_metadata(
+                &root,
+                &state.table.metadata_location,
+                TRINO_METADATA_LIMIT,
+            ))
+            .map_err(|_| TrinoEffectFailure)?;
+        decode_iceberg_table_metadata(&bytes, &state.table.metadata_location, fixture, policy)
+            .map_err(|_| TrinoEffectFailure)
+    }
+
+    fn read(
+        &mut self,
+        operation: &TrinoOperation,
+    ) -> Result<crate::RowReadObservation, TrinoEffectFailure> {
+        let expected = match operation {
+            TrinoOperation::InitialRead { expected, .. }
+            | TrinoOperation::EvolvedRead { expected, .. } => expected,
+            _ => return Err(TrinoEffectFailure),
+        };
+        let output = self.query(operation.sql(), TrinoCliOutput::Json, 16 * 1024 * 1024)?;
+        decode_trino_canonical_read(&output, expected).map_err(|_| TrinoEffectFailure)
+    }
+
+    fn snapshot_count(&mut self, operation: &TrinoOperation) -> Result<u64, TrinoEffectFailure> {
+        let sql = format!("SELECT count(*) AS snapshots FROM ({})", operation.sql());
+        let output = self.query(&sql, TrinoCliOutput::Json, 64 * 1024)?;
+        decode_trino_single_u64(&output, "snapshots").map_err(|_| TrinoEffectFailure)
+    }
+}
+
+async fn connect_observation_catalog(
+    profile: &Profile,
+    plan: &InteroperabilityPlan,
+    secrets: &(impl SecretSource + ?Sized),
+) -> Option<RestEngineCatalog> {
+    let attempt = connect_catalog_adapter(
+        profile,
+        &plan.catalog().id,
+        CATALOG_REQUEST_TIMEOUT_MS,
+        CATALOG_RESPONSE_LIMIT_BYTES,
+        |name| optional_secret(secrets, name),
+    )
+    .await
+    .ok()?;
+    let CatalogConnectionOutcome::Ready(session) = attempt.outcome else {
+        return None;
+    };
+    RestEngineCatalog::from_plan(session, plan).ok()
+}
+
+fn required_runner_secret(
+    source: &(impl SecretSource + ?Sized),
+    name: &str,
+    credential: EngineCredentialKind,
+) -> Result<String, EngineCredentialFailure> {
+    match source.read_secret(name) {
+        SecretRead::Missing => Err(EngineCredentialFailure {
+            credential,
+            kind: EngineCredentialFailureKind::Missing,
+        }),
+        SecretRead::Unreadable => Err(EngineCredentialFailure {
+            credential,
+            kind: EngineCredentialFailureKind::Unreadable,
+        }),
+        SecretRead::Value(value) if value.is_empty() => Err(EngineCredentialFailure {
+            credential,
+            kind: EngineCredentialFailureKind::Empty,
+        }),
+        SecretRead::Value(value) => Ok(value),
+    }
+}
+
+fn credential_rejected(
+    runtime: crate::RuntimeVerification,
+    failure: EngineCredentialFailure,
+) -> EngineProcessExecution {
+    EngineProcessExecution::before_process(
+        runtime,
+        EngineProcessOutcome::CredentialRejected { failure },
+    )
+}
+
+fn preparation_failed(runtime: crate::RuntimeVerification) -> EngineProcessExecution {
+    EngineProcessExecution::before_process(
+        runtime,
+        EngineProcessOutcome::PreparationFailed {
+            kind: crate::EnginePreparationFailureKind::RenderPlan,
+        },
+    )
 }
 
 pub struct RestEngineCatalogConnector<S> {
