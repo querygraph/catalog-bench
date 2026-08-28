@@ -7,6 +7,7 @@ This page is generated from validated immutable manifests. Smoke evidence under 
 | [2026-08-08 same-table commit ranking](2026-08-08/manifest.json) | 2026-08-26T18:00:00-04:00 | historical-import | 1 | 4 | 3 | 1 |
 | [2026-08-27 production same-table contention ranking](2026-08-27/manifest.json) | 2026-08-27T05:24:26Z | live-run | 1 | 5 | 3 | 2 |
 | [2026-08-28 Phase 1 catalog behavior and stock-client interoperability](2026-08-28-phase1/manifest.json) | 2026-08-28T04:48:00Z | live-run | 5 | 25 | 20 | 5 |
+| [Stock DuckDB 1.5.3 Iceberg REST interoperability across LakeCat, Polaris, Gravitino, and Lakekeeper](duckdb-v2-b8be6bc9-2026-08-28/manifest.json) | 2026-08-28T11:08:42Z | live-run | 1 | 4 | 4 | 0 |
 | [Stock Flink 2.1.3 Iceberg REST interoperability across LakeCat, Polaris, Gravitino, and Lakekeeper](flink-v2-65f0a4c3-2026-08-28/manifest.json) | 2026-08-28T06:37:54Z | live-run | 1 | 4 | 4 | 0 |
 | [Stock Spark 4.1.3 Iceberg REST interoperability across LakeCat, Polaris, Gravitino, and Lakekeeper](spark-v2-65f0a4c3-2026-08-28/manifest.json) | 2026-08-28T05:49:08Z | live-run | 1 | 4 | 4 | 0 |
 | [Stock Trino 483 Iceberg REST interoperability across LakeCat, Polaris, Gravitino, and Lakekeeper](trino-v2-b424f778-2026-08-28/manifest.json) | 2026-08-28T08:58:44Z | live-run | 1 | 4 | 4 | 0 |

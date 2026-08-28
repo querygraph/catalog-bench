@@ -302,6 +302,7 @@ fn canonical_interoperability_launcher(engine_name: &str) -> Result<&'static str
         "Apache Spark" => "docker/run-spark-interoperability.sh",
         "Apache Flink" => "docker/run-flink-interoperability.sh",
         "Trino" => "docker/run-trino-interoperability.sh",
+        "DuckDB" => "docker/run-duckdb-interoperability.sh",
         _ => {
             return Err(anyhow::anyhow!(
                 "reviewed engine has no canonical interoperability launcher"
@@ -327,6 +328,10 @@ mod tests {
         assert_eq!(
             canonical_interoperability_launcher("Trino").unwrap(),
             "docker/run-trino-interoperability.sh"
+        );
+        assert_eq!(
+            canonical_interoperability_launcher("DuckDB").unwrap(),
+            "docker/run-duckdb-interoperability.sh"
         );
         assert!(canonical_interoperability_launcher("unknown").is_err());
     }
