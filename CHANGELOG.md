@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Execute the one-shot stock Flink child with its supported `local` deployment
+  target. Retained diagnostic logs proved the default target submitted INSERT
+  jobs to an absent remote JobManager at `0.0.0.0:8081`; the exact invocation
+  contract now requires the catalog-neutral local target.
+
 - Rematerialize the Flink candidate at `catalog-bench@df38c81` with the admitted
   Hadoop client pair. The source-derived profile, image identities, eight
   runtime artifacts, and live byte checks now agree; a stock SQL-client probe

@@ -512,6 +512,8 @@ fn configure_flink_command(
 ) {
     command
         .arg("run")
+        .arg("--target")
+        .arg("local")
         .arg("--class")
         .arg(FLINK_RUNNER_MAIN_CLASS)
         .arg(runner)

@@ -216,6 +216,10 @@ fn artifact_bytes<'a>(location: &str, cli_script: &'a [u8]) -> &'a [u8] {
         b"test Iceberg Flink runtime"
     } else if location.contains("iceberg-aws-bundle") {
         b"test Iceberg AWS bundle"
+    } else if location.contains("hadoop-client-api") {
+        b"test Hadoop client API"
+    } else if location.contains("hadoop-client-runtime") {
+        b"test Hadoop client runtime"
     } else {
         panic!("unexpected Flink runtime artifact `{location}`");
     }
@@ -224,16 +228,18 @@ fn artifact_bytes<'a>(location: &str, cli_script: &'a [u8]) -> &'a [u8] {
 fn collision_script() -> Vec<u8> {
     let mut script = String::from(
         "#!/bin/sh\n\
-         [ \"$#\" -eq 6 ] || exit 80\n\
+         [ \"$#\" -eq 8 ] || exit 80\n\
          [ \"$1\" = \"run\" ] || exit 81\n\
-         [ \"$2\" = \"--class\" ] || exit 82\n\
-         [ \"$3\" = \"org.querygraph.catalogbench.flink.Runner\" ] || exit 83\n\
-         [ \"$5\" = \"--program\" ] || exit 84\n\
-         [ -f \"$4\" ] || exit 85\n\
-         [ -f \"$6\" ] || exit 86\n\
-         grep -q '\"operation\":\"add-column\"' \"$6\" || exit 87\n\
-         grep -q '\"expected\":{\"bytes\":346' \"$6\" || exit 88\n\
-         ! grep -q 'flink-process-secret' \"$6\" || exit 89\n\
+         [ \"$2\" = \"--target\" ] || exit 82\n\
+         [ \"$3\" = \"local\" ] || exit 83\n\
+         [ \"$4\" = \"--class\" ] || exit 84\n\
+         [ \"$5\" = \"org.querygraph.catalogbench.flink.Runner\" ] || exit 85\n\
+         [ \"$7\" = \"--program\" ] || exit 86\n\
+         [ -f \"$6\" ] || exit 87\n\
+         [ -f \"$8\" ] || exit 88\n\
+         grep -q '\"operation\":\"add-column\"' \"$8\" || exit 89\n\
+         grep -q '\"expected\":{\"bytes\":346' \"$8\" || exit 90\n\
+         ! grep -q 'flink-process-secret' \"$8\" || exit 91\n\
          [ \"$AWS_ACCESS_KEY_ID\" = \"flink-process-access\" ] || exit 90\n\
          [ \"$AWS_SECRET_ACCESS_KEY\" = \"flink-process-secret\" ] || exit 91\n\
          [ \"$CATALOG_BENCH_ENGINE_CLIENT_ID\" = \"flink-process-client\" ] || exit 92\n\
