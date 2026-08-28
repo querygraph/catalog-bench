@@ -50,6 +50,14 @@ const ICEBERG_ARTIFACTS: &[ArtifactPolicy] = &[
         location: "image:/opt/iceberg/iceberg-aws-bundle-1.11.0.jar",
         media_type: "application/java-archive",
     },
+    ArtifactPolicy {
+        location: "image:/opt/iceberg/hadoop-client-api-3.4.3.jar",
+        media_type: "application/java-archive",
+    },
+    ArtifactPolicy {
+        location: "image:/opt/iceberg/hadoop-client-runtime-3.4.3.jar",
+        media_type: "application/java-archive",
+    },
 ];
 
 const FLINK_ARTIFACTS: &[ArtifactPolicy] = &[
@@ -67,6 +75,14 @@ const FLINK_ARTIFACTS: &[ArtifactPolicy] = &[
     },
     ArtifactPolicy {
         location: "image:/opt/flink/lib/iceberg-aws-bundle-1.11.0.jar",
+        media_type: "application/java-archive",
+    },
+    ArtifactPolicy {
+        location: "image:/opt/flink/lib/hadoop-client-api-3.4.3.jar",
+        media_type: "application/java-archive",
+    },
+    ArtifactPolicy {
+        location: "image:/opt/flink/lib/hadoop-client-runtime-3.4.3.jar",
         media_type: "application/java-archive",
     },
     ArtifactPolicy {
@@ -91,6 +107,18 @@ const ARTIFACT_COPIES: &[ArtifactCopyPolicy] = &[
         source_location: "image:/opt/iceberg/iceberg-aws-bundle-1.11.0.jar",
         destination_component: "flink",
         destination_location: "image:/opt/flink/lib/iceberg-aws-bundle-1.11.0.jar",
+    },
+    ArtifactCopyPolicy {
+        source_component: "iceberg-java",
+        source_location: "image:/opt/iceberg/hadoop-client-api-3.4.3.jar",
+        destination_component: "flink",
+        destination_location: "image:/opt/flink/lib/hadoop-client-api-3.4.3.jar",
+    },
+    ArtifactCopyPolicy {
+        source_component: "iceberg-java",
+        source_location: "image:/opt/iceberg/hadoop-client-runtime-3.4.3.jar",
+        destination_component: "flink",
+        destination_location: "image:/opt/flink/lib/hadoop-client-runtime-3.4.3.jar",
     },
     ArtifactCopyPolicy {
         source_component: "catalog-bench-engine",
@@ -123,6 +151,10 @@ const ICEBERG_LABELS: &[RequiredLabelPolicy] = &[
     RequiredLabelPolicy {
         label: "io.querygraph.catalog-bench.iceberg-aws-bundle-coordinate",
         value: "org.apache.iceberg:iceberg-aws-bundle:1.11.0",
+    },
+    RequiredLabelPolicy {
+        label: "io.querygraph.catalog-bench.hadoop-client-version",
+        value: "3.4.3",
     },
 ];
 

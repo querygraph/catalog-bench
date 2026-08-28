@@ -133,6 +133,16 @@ fn flink_profile_is_runnable_common_and_source_bound() -> Result<()> {
             "image:/opt/flink/lib/iceberg-aws-bundle-1.11.0.jar",
         ),
         (
+            "iceberg-java",
+            "image:/opt/iceberg/hadoop-client-api-3.4.3.jar",
+            "image:/opt/flink/lib/hadoop-client-api-3.4.3.jar",
+        ),
+        (
+            "iceberg-java",
+            "image:/opt/iceberg/hadoop-client-runtime-3.4.3.jar",
+            "image:/opt/flink/lib/hadoop-client-runtime-3.4.3.jar",
+        ),
+        (
             "catalog-bench-engine",
             "image:/usr/local/bin/catalog-bench-engine",
             "image:/usr/local/bin/catalog-bench-engine",
@@ -245,6 +255,7 @@ fn connector_image() -> Value {
                 "org.apache.iceberg:iceberg-flink-runtime-2.1:1.11.0",
             "io.querygraph.catalog-bench.iceberg-aws-bundle-coordinate":
                 "org.apache.iceberg:iceberg-aws-bundle:1.11.0",
+            "io.querygraph.catalog-bench.hadoop-client-version": "3.4.3",
         }),
         vec![
             artifact(
@@ -256,6 +267,16 @@ fn connector_image() -> Value {
                 "image:/opt/iceberg/iceberg-aws-bundle-1.11.0.jar",
                 "application/java-archive",
                 '4',
+            ),
+            artifact(
+                "image:/opt/iceberg/hadoop-client-api-3.4.3.jar",
+                "application/java-archive",
+                '7',
+            ),
+            artifact(
+                "image:/opt/iceberg/hadoop-client-runtime-3.4.3.jar",
+                "application/java-archive",
+                '8',
             ),
         ],
     )
@@ -295,6 +316,16 @@ fn flink_image() -> Value {
                 "image:/opt/flink/lib/iceberg-aws-bundle-1.11.0.jar",
                 "application/java-archive",
                 '4',
+            ),
+            artifact(
+                "image:/opt/flink/lib/hadoop-client-api-3.4.3.jar",
+                "application/java-archive",
+                '7',
+            ),
+            artifact(
+                "image:/opt/flink/lib/hadoop-client-runtime-3.4.3.jar",
+                "application/java-archive",
+                '8',
             ),
             artifact(
                 "image:/usr/local/bin/catalog-bench-engine",

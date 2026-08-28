@@ -19,11 +19,15 @@ fn flink_image_definition_is_checksum_locked_and_source_correlated() {
         "--strict-checksums",
         "sha256:39e658d876f253815b4b17c6676bebf6a24d517afe93a21298106d1d7fa97331",
         "sha256:38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f",
+        "sha256:6443332781f26a7199009d9517cd1eb013fbf54ca1c9759a2a9e487542b1d52a",
+        "sha256:bd20267b0555766ae84697dd888f074ca326d8e2ec3c0008928a6ac2966c67de",
         "sha256:99a499ed147b28d358486066ab8308e351b232b2ac81aff69157fdb349c84e18",
         "/opt/catalog-bench/catalog-bench-flink-runner.jar",
         "/usr/local/bin/catalog-bench-engine",
         "/opt/flink/lib/iceberg-flink-runtime-2.1-1.11.0.jar",
         "/opt/flink/lib/iceberg-aws-bundle-1.11.0.jar",
+        "/opt/flink/lib/hadoop-client-api-3.4.3.jar",
+        "/opt/flink/lib/hadoop-client-runtime-3.4.3.jar",
         "USER flink",
     ] {
         assert!(source.contains(required), "Flink image lost `{required}`");

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add checksum-locked Hadoop 3.4.3 client API and runtime JARs to the Flink
+  connector/runtime boundary. Stock Flink initialization proved Iceberg's REST
+  catalog factory requires Hadoop configuration classes; materialization now
+  requires both source artifacts and byte-identical runtime copies.
+
 - Advance and rematerialize the unpublished Flink profile at
   `catalog-bench@701f2b9`, binding the profile-aware CLI dispatcher into the
   optimized runner and final stock runtime with newly observed image and ELF

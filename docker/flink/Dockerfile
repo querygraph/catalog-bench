@@ -45,7 +45,8 @@ LABEL org.opencontainers.image.title="Apache Iceberg Flink 2.1 runtime" \
       org.opencontainers.image.version="1.11.0" \
       org.opencontainers.image.revision="$ICEBERG_SOURCE_REVISION" \
       io.querygraph.catalog-bench.iceberg-flink-runtime-coordinate="org.apache.iceberg:iceberg-flink-runtime-2.1:1.11.0" \
-      io.querygraph.catalog-bench.iceberg-aws-bundle-coordinate="org.apache.iceberg:iceberg-aws-bundle:1.11.0"
+      io.querygraph.catalog-bench.iceberg-aws-bundle-coordinate="org.apache.iceberg:iceberg-aws-bundle:1.11.0" \
+      io.querygraph.catalog-bench.hadoop-client-version="3.4.3"
 
 ADD --checksum=sha256:39e658d876f253815b4b17c6676bebf6a24d517afe93a21298106d1d7fa97331 \
     https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-flink-runtime-2.1/1.11.0/iceberg-flink-runtime-2.1-1.11.0.jar \
@@ -53,6 +54,12 @@ ADD --checksum=sha256:39e658d876f253815b4b17c6676bebf6a24d517afe93a21298106d1d7f
 ADD --checksum=sha256:38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f \
     https://repo.maven.apache.org/maven2/org/apache/iceberg/iceberg-aws-bundle/1.11.0/iceberg-aws-bundle-1.11.0.jar \
     /opt/iceberg/iceberg-aws-bundle-1.11.0.jar
+ADD --checksum=sha256:6443332781f26a7199009d9517cd1eb013fbf54ca1c9759a2a9e487542b1d52a \
+    https://repo.maven.apache.org/maven2/org/apache/hadoop/hadoop-client-api/3.4.3/hadoop-client-api-3.4.3.jar \
+    /opt/iceberg/hadoop-client-api-3.4.3.jar
+ADD --checksum=sha256:bd20267b0555766ae84697dd888f074ca326d8e2ec3c0008928a6ac2966c67de \
+    https://repo.maven.apache.org/maven2/org/apache/hadoop/hadoop-client-runtime/3.4.3/hadoop-client-runtime-3.4.3.jar \
+    /opt/iceberg/hadoop-client-runtime-3.4.3.jar
 
 CMD ["/opt/iceberg/iceberg-flink-runtime-2.1-1.11.0.jar"]
 
@@ -110,6 +117,12 @@ COPY --from=connector --chown=flink:flink \
 COPY --from=connector --chown=flink:flink \
     /opt/iceberg/iceberg-aws-bundle-1.11.0.jar \
     /opt/flink/lib/iceberg-aws-bundle-1.11.0.jar
+COPY --from=connector --chown=flink:flink \
+    /opt/iceberg/hadoop-client-api-3.4.3.jar \
+    /opt/flink/lib/hadoop-client-api-3.4.3.jar
+COPY --from=connector --chown=flink:flink \
+    /opt/iceberg/hadoop-client-runtime-3.4.3.jar \
+    /opt/flink/lib/hadoop-client-runtime-3.4.3.jar
 
 LABEL org.opencontainers.image.title="catalog-bench Flink interoperability runtime" \
       org.opencontainers.image.source="https://github.com/apache/flink" \
