@@ -7,6 +7,9 @@
 - Publish reviewed `tpcds_0828d` source evidence: five tables, 30 physical
   fields, 15 rows, exact model/data/source/image hashes, and zero cleanup residue.
 
+- Extend the clean TPC-DS flow with realized-schema hashes, a governed policy
+  binding, and exact upstream artifact CAS publication/read-after-write in LakeCat.
+
 ## Unreleased
 
 - Publish reviewed `hadoop_0828i` evidence for the stock Spark/Iceberg

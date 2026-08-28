@@ -38,12 +38,14 @@ compose run --rm --no-deps -v "$QUERYGRAPH_ROOT:/querygraph:ro" \
   --entrypoint /opt/spark/bin/spark-submit spark \
   /querygraph/python/querygraph/tpcds_fixture_live.py --model /evidence/model.json \
   --rest-uri http://lakecat:8181/catalog --warehouse local --s3-endpoint http://minio:9000 \
-  --namespace tpcds --output /evidence/result.json
+  --namespace tpcds --output /evidence/result.json \
+  --artifact-uri https://raw.githubusercontent.com/apache/ossie/1d9ebcea2932d3381c0840cc8304f0850d366509/examples/tpcds_semantic_model.yaml \
+  --artifact-hash sha256:438372de9b8ca0f074aed72806f92ac9b84047851a0385423f004748efe5a316
 
 python3 - "$OUTPUT_DIR" "$RUN_ID" "$QUERYGRAPH_REVISION" <<'PY'
 import hashlib,json,pathlib,sys
 root=pathlib.Path(sys.argv[1]); result=json.loads((root/'runtime/result.json').read_text())
-if result.get('status')!='verified' or len(result.get('tables',[]))!=5 or any(x['row-count']!=3 for x in result['tables']): raise SystemExit('TPC-DS fixture verification failed')
+if result.get('status')!='verified' or len(result.get('tables',[]))!=5 or any(x['row-count']!=3 for x in result['tables']) or result.get('publication',{}).get('version')!=1: raise SystemExit('TPC-DS fixture/publication verification failed')
 summary={'contract':'catalog-bench/querygraph-tpcds-fixture/v1','run_id':sys.argv[2],'querygraph_revision':sys.argv[3],'status':'verified','result':result}
 encoded=json.dumps(summary,sort_keys=True,separators=(',',':')).encode(); summary['content_sha256']='sha256:'+hashlib.sha256(encoded).hexdigest()
 (root/'summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
