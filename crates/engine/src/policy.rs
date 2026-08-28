@@ -44,6 +44,7 @@ pub const TRINO_COMPONENT_NAME: &str = "Trino";
 pub const TRINO_COMPONENT_VERSION: &str = "483";
 pub const TRINO_JAVA_VERSION: &str = "25.0.3";
 pub const TRINO_SERVER_LOCATION: &str = "/usr/lib/trino/bin/run-trino";
+pub const TRINO_LAUNCHER_LOCATION: &str = "/usr/lib/trino/bin/launcher";
 pub const TRINO_CLI_LOCATION: &str = "/usr/bin/trino";
 pub const S3_ACCESS_KEY_ENV: &str = "CATALOG_BENCH_S3_ACCESS_KEY_ID";
 pub const S3_SECRET_KEY_ENV: &str = "CATALOG_BENCH_S3_SECRET_ACCESS_KEY";
@@ -838,6 +839,23 @@ fn validate_execution_artifact(
         }
     }
     if matches!(execution, EngineExecutionPlan::Trino(_)) {
+        let matches = artifacts
+            .iter()
+            .filter(|artifact| artifact.location == TRINO_LAUNCHER_LOCATION)
+            .collect::<Vec<_>>();
+        let [artifact] = matches.as_slice() else {
+            return Err(PolicyError::new(format!(
+                "Trino runtime must contain exactly one `{TRINO_LAUNCHER_LOCATION}` artifact"
+            )));
+        };
+        if artifact.media_type != "text/x-python"
+            || artifact.bytes == 0
+            || artifact.components.as_slice() != std::slice::from_ref(engine)
+        {
+            return Err(PolicyError::new(
+                "Trino launcher must be a nonempty engine-owned Python program",
+            ));
+        }
         let matches = artifacts
             .iter()
             .filter(|artifact| artifact.location == TRINO_CLI_LOCATION)

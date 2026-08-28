@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- C2-06 stock Trino launcher provenance: require the engine image to contain
+  Trino 483's nonempty engine-owned `/usr/lib/trino/bin/launcher` Python program
+  in addition to `run-trino` and the CLI JAR. The process adapter needs the
+  underlying stock launcher because `run-trino` hardcodes `/etc/trino`, while
+  benchmark configuration is staged into a private run-owned `--etc-dir`.
+  Synthetic materialized-profile tests reject an absent or wrongly attributed
+  launcher before credentials, staging, or process creation. This provenance
+  unit starts no process and makes no runtime claim.
+
 - C2-06 closed Trino server configuration: deterministically project the typed
   rendered program into a complete private `--etc-dir` tree using the exact
   Trino 483 single-node and JVM defaults, fixed task concurrency, static Iceberg

@@ -9,8 +9,8 @@ use catalog_bench_engine::{
     SparkAuthentication, ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE,
     ENGINE_TRANSCRIPT_FORMAT, FLINK_COMPONENT_VERSION, FLINK_JAVA_VERSION, FLINK_PLAN_FORMAT,
     FLINK_SCALA_VERSION, ICEBERG_CONNECTOR_VERSION, SPARK_COMPONENT_VERSION, SPARK_PLAN_FORMAT,
-    TRINO_CLI_LOCATION, TRINO_COMPONENT_VERSION, TRINO_JAVA_VERSION, TRINO_PLAN_FORMAT,
-    TRINO_SERVER_LOCATION,
+    TRINO_CLI_LOCATION, TRINO_COMPONENT_VERSION, TRINO_JAVA_VERSION, TRINO_LAUNCHER_LOCATION,
+    TRINO_PLAN_FORMAT, TRINO_SERVER_LOCATION,
 };
 use serde_json::json;
 
@@ -412,6 +412,30 @@ fn trino_selection_rejects_runtime_and_cli_drift() {
     )
     .unwrap_err();
     assert!(error.to_string().contains(TRINO_SERVER_LOCATION));
+
+    let (mut missing_launcher_program, _) = runnable_trino_contracts();
+    let trino = missing_launcher_program
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == "trino")
+        .unwrap();
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut trino.artifact
+    else {
+        panic!("Trino fixture must be an image");
+    };
+    embedded_artifacts.retain(|artifact| {
+        artifact.location.strip_prefix("image:") != Some(TRINO_LAUNCHER_LOCATION)
+    });
+    let error = InteroperabilityPlan::from_contracts(
+        &missing_launcher_program,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "trino02",
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains(TRINO_LAUNCHER_LOCATION));
 }
 
 #[test]

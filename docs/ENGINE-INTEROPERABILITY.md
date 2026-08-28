@@ -516,8 +516,9 @@ type system, not an engine-name branch in shared execution code.
 
 Before a Trino plan can exist, the materialized image must contain the
 engine-owned `/usr/lib/trino/bin/run-trino` shell launcher and `/usr/bin/trino`
-CLI JAR, the source-correlated optimized Rust runner, and byte-correlated
-Iceberg 1.11.0 connector artifacts. These paths and Trino's Java 25.0.3 runtime
+CLI JAR, the engine-owned `/usr/lib/trino/bin/launcher` Python program, the
+source-correlated optimized Rust runner, and byte-correlated Iceberg 1.11.0
+connector artifacts. These paths and Trino's Java 25.0.3 runtime
 come from revision `50b0b50b75abd47f830b7805ee1b51716eb4065e`: its Dockerfile
 copies the CLI JAR and selects the server launcher, while its root build pins
 Iceberg 1.11.0 and Temurin `jdk-25.0.3+9`. Synthetic profile tests exercise only
@@ -579,6 +580,13 @@ tests prove the closed file set, exact JVM boundary, required references,
 anonymous/OAuth distinction, and property-injection failure. Staging with safe
 permissions, launcher supervision, readiness, CLI execution, and cleanup remain
 the next process-boundary unit.
+
+The stock `run-trino` wrapper always supplies `--etc-dir /etc/trino`. The
+benchmark cannot use that wrapper with a private run-owned configuration tree,
+so the runtime profile also proves the underlying stock
+`/usr/lib/trino/bin/launcher` program. The future adapter invokes only that
+verified program as `launcher run --etc-dir <private-tree>`; it does not replace
+Trino's launcher or server.
 
 This event change deliberately advances the scenario revision and transcript
 format to v2. The decoder does not use an untagged legacy alternative whose

@@ -1,7 +1,7 @@
 use catalog_bench_common::contract::{Profile, RuntimeArtifact};
 use catalog_bench_engine::{
     ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE, FLINK_RUNNER_LOCATION,
-    TRINO_CLI_LOCATION, TRINO_SERVER_LOCATION,
+    TRINO_CLI_LOCATION, TRINO_LAUNCHER_LOCATION, TRINO_SERVER_LOCATION,
 };
 
 #[allow(dead_code)]
@@ -170,6 +170,17 @@ pub(crate) fn select_synthetic_materialized_trino(profile: &mut Profile, candida
     cli.bytes = Some(54_321);
     cli.description = Some("Synthetic stock Trino CLI fixture.".to_owned());
     embedded_artifacts.push(cli);
+    let mut launcher = embedded_artifacts
+        .iter()
+        .find(|artifact| artifact.location == format!("image:{TRINO_SERVER_LOCATION}"))
+        .expect("synthetic Trino fixture needs a server launcher identity")
+        .clone();
+    launcher.location = format!("image:{TRINO_LAUNCHER_LOCATION}");
+    launcher.media_type = "text/x-python".to_owned();
+    launcher.digest.value = "c".repeat(64);
+    launcher.bytes = Some(67_890);
+    launcher.description = Some("Synthetic stock Trino launcher fixture.".to_owned());
+    embedded_artifacts.push(launcher);
     profile.components.push(trino);
     profile
         .services
