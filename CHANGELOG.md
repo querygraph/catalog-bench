@@ -1,5 +1,10 @@
 # Changelog
 
+- Correct the stock Airlift launcher grammar from live Trino 483 help output:
+  global `--etc-dir` must precede the `run` command. The previous order caused
+  all four diagnostic executions in `trino_0828070341` to fail before startup;
+  that run is not publication evidence.
+
 - C2-06 fresh Trino launcher: build and independently admit the pinned profile,
   create one run-owned Docker topology, execute the same stock Trino workflow
   against LakeCat, Polaris, Gravitino, and Lakekeeper, and require a complete,

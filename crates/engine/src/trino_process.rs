@@ -131,9 +131,9 @@ impl TrinoLauncherInvocation {
         Ok(Self {
             executable: executable.to_owned(),
             arguments: vec![
-                "run".to_owned(),
                 "--etc-dir".to_owned(),
                 path_argument(configuration)?,
+                "run".to_owned(),
             ],
         })
     }

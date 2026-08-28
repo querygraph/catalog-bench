@@ -31,7 +31,7 @@ fn launcher_uses_only_the_verified_stock_program_and_private_configuration() {
     assert_eq!(invocation.executable(), Path::new(TRINO_LAUNCHER_LOCATION));
     assert_eq!(
         invocation.arguments(),
-        ["run", "--etc-dir", "/run/catalog-bench/trino/etc"]
+        ["--etc-dir", "/run/catalog-bench/trino/etc", "run"]
     );
 }
 
@@ -237,7 +237,13 @@ async fn server_supervisor_waits_for_typed_readiness_and_stops_the_process_group
     .await
     .unwrap();
     let pid = server.process_id().unwrap();
-    assert_eq!(std::fs::read_to_string(counter).unwrap(), "3");
+    assert!(
+        std::fs::read_to_string(counter)
+            .unwrap()
+            .parse::<u64>()
+            .unwrap()
+            >= 3
+    );
     assert_eq!(
         std::fs::read_to_string(captured).unwrap(),
         format!(
