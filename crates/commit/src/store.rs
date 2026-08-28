@@ -140,6 +140,7 @@ pub enum ObjectStoreFailureKind {
     Configuration,
     Authentication,
     List,
+    Read,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -167,6 +168,13 @@ impl ObjectStoreFailure {
     fn listing(detail: impl Into<String>) -> Self {
         Self {
             kind: ObjectStoreFailureKind::List,
+            detail: detail.into(),
+        }
+    }
+
+    fn reading(detail: impl Into<String>) -> Self {
+        Self {
+            kind: ObjectStoreFailureKind::Read,
             detail: detail.into(),
         }
     }
@@ -300,6 +308,49 @@ impl ObjectStoreAuditor {
             bucket: bucket.into(),
             sensitive_values: Arc::new(Vec::new()),
         }
+    }
+
+    pub async fn read_metadata(
+        &self,
+        root: &TableRoot,
+        metadata_location: &str,
+        maximum_bytes: usize,
+    ) -> Result<Vec<u8>, ObjectStoreFailure> {
+        if maximum_bytes == 0 || root.bucket != self.bucket {
+            return Err(ObjectStoreFailure::configuration(
+                "invalid bounded metadata read",
+            ));
+        }
+        let path = root.metadata_path(metadata_location)?;
+        let metadata = self.store.head(&path).await.map_err(|error| {
+            ObjectStoreFailure::reading(redact_and_bound(
+                &format!("failed to inspect metadata object: {error}"),
+                &self.sensitive_values,
+            ))
+        })?;
+        if metadata.size > maximum_bytes {
+            return Err(ObjectStoreFailure::reading(
+                "metadata object exceeds its byte limit",
+            ));
+        }
+        let result = self.store.get(&path).await.map_err(|error| {
+            ObjectStoreFailure::reading(redact_and_bound(
+                &format!("failed to open metadata object: {error}"),
+                &self.sensitive_values,
+            ))
+        })?;
+        let bytes = result.bytes().await.map_err(|error| {
+            ObjectStoreFailure::reading(redact_and_bound(
+                &format!("failed to read metadata object: {error}"),
+                &self.sensitive_values,
+            ))
+        })?;
+        if bytes.len() > maximum_bytes {
+            return Err(ObjectStoreFailure::reading(
+                "metadata object exceeds its byte limit",
+            ));
+        }
+        Ok(bytes.to_vec())
     }
 }
 

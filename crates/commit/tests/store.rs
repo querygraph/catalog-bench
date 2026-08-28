@@ -85,6 +85,55 @@ async fn audit_reports_missing_pointer_without_fabricating_an_object() {
     assert!(!audit.referenced_metadata_exists);
 }
 
+#[tokio::test]
+async fn metadata_read_is_bounded_and_confined_to_the_validated_table_root() {
+    let store = Arc::new(InMemory::new());
+    let path = Path::parse("root/table/metadata/00000.metadata.json").unwrap();
+    store
+        .put(&path, PutPayload::from_static(b"metadata"))
+        .await
+        .unwrap();
+    let root = TableRoot::new(
+        "s3://warehouse/root/table",
+        "s3://warehouse/root/table/metadata/00000.metadata.json",
+        "warehouse",
+    )
+    .unwrap();
+    let auditor = ObjectStoreAuditor::for_store(store, "warehouse");
+
+    assert_eq!(
+        auditor
+            .read_metadata(
+                &root,
+                "s3://warehouse/root/table/metadata/00000.metadata.json",
+                8,
+            )
+            .await
+            .unwrap(),
+        b"metadata"
+    );
+    assert_eq!(
+        auditor
+            .read_metadata(
+                &root,
+                "s3://warehouse/root/table/metadata/00000.metadata.json",
+                7,
+            )
+            .await
+            .unwrap_err()
+            .kind,
+        ObjectStoreFailureKind::Read
+    );
+    assert!(auditor
+        .read_metadata(
+            &root,
+            "s3://warehouse/root/sibling/metadata/00000.metadata.json",
+            8,
+        )
+        .await
+        .is_err());
+}
+
 #[test]
 fn table_root_rejects_bucket_drift_escape_and_nonmetadata_pointers() {
     let wrong_bucket = snapshot(

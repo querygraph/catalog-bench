@@ -1,5 +1,10 @@
 # Changelog
 
+- C2-06 confined metadata retrieval: extend the shared object-store auditor
+  with a size-checked read that accepts only an Iceberg metadata pointer inside
+  its validated table root, rejects bucket/path escape, and rechecks the final
+  payload bound before returning bytes to an engine observer.
+
 - C2-06 Trino launcher secret boundary: introduce a validated, redacted,
   zeroizing server environment and inject only the generated node/data values,
   S3 credentials, and optional REST OAuth credential after process environment
