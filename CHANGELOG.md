@@ -7,6 +7,10 @@
   accepted-state ambiguity.
 - C3-01 source binding: compile the fault proxy into the exact source-built
   infrastructure image from its immutable implementation revision.
+- C3-01 isolated fault topology: add a Compose overlay with one object-store
+  proxy and per-catalog REST proxies, private benchmark-network upstreams,
+  loopback-only control ports, and fault-specific Lakekeeper/Polaris/Gravitino/
+  Nessie/LakeCat object-store endpoints.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope

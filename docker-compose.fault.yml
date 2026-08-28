@@ -1,0 +1,116 @@
+# Phase 3 deterministic fault-injection overlay. Apply only with the base file:
+# docker compose -f docker-compose.yml -f docker-compose.fault.yml ...
+
+services:
+  object-store-fault-proxy:
+    image: catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z
+    networks: [lakehouse-net]
+    entrypoint: ["/usr/local/bin/fault-proxy"]
+    command: ["--upstream", "http://minio:9000", "--listen", ":8080", "--control-listen", ":8081"]
+    expose: ["8080", "8081"]
+    ports: ["127.0.0.1:${OBJECT_STORE_FAULT_CONTROL_PORT:-19100}:8081"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    healthcheck:
+      disable: true
+
+  lakecat:
+    environment:
+      AWS_ENDPOINT: http://object-store-fault-proxy:8080
+    depends_on:
+      object-store-fault-proxy:
+        condition: service_started
+
+  trino-lakecat:
+    environment:
+      AWS_ENDPOINT: http://object-store-fault-proxy:8080
+    depends_on:
+      object-store-fault-proxy:
+        condition: service_started
+
+  gravitino:
+    environment:
+      GRAVITINO_ICEBERG_REST_S3_ENDPOINT: http://object-store-fault-proxy:8080
+    depends_on:
+      object-store-fault-proxy:
+        condition: service_started
+
+  nessie:
+    environment:
+      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_ENDPOINT: http://object-store-fault-proxy:8080
+      NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_EXTERNAL_ENDPOINT: http://object-store-fault-proxy:8080
+    depends_on:
+      object-store-fault-proxy:
+        condition: service_started
+
+  polaris-bootstrap:
+    environment:
+      POLARIS_S3_ENDPOINT: http://object-store-fault-proxy:8080
+      POLARIS_S3_STS_ENDPOINT: http://object-store-fault-proxy:8080
+    depends_on:
+      object-store-fault-proxy:
+        condition: service_started
+
+  lakekeeper-warehouse:
+    command: ["warehouse", "/fault-bootstrap/warehouse.json"]
+    volumes:
+      - ./docker/lakekeeper-fault:/fault-bootstrap:ro
+    depends_on:
+      object-store-fault-proxy:
+        condition: service_started
+
+  lakecat-fault-proxy:
+    image: catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z
+    networks: [lakehouse-net]
+    entrypoint: ["/usr/local/bin/fault-proxy"]
+    command: ["--upstream", "http://lakecat:8181", "--listen", ":8080", "--control-listen", ":8081"]
+    expose: ["8080", "8081"]
+    ports: ["127.0.0.1:${LAKECAT_FAULT_CONTROL_PORT:-19101}:8081"]
+    depends_on:
+      lakecat-ready:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
+
+  polaris-fault-proxy:
+    image: catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z
+    networks: [lakehouse-net]
+    profiles: ["polaris"]
+    entrypoint: ["/usr/local/bin/fault-proxy"]
+    command: ["--upstream", "http://polaris:8181", "--listen", ":8080", "--control-listen", ":8081"]
+    expose: ["8080", "8081"]
+    ports: ["127.0.0.1:${POLARIS_FAULT_CONTROL_PORT:-19102}:8081"]
+    depends_on:
+      polaris-ready:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
+
+  gravitino-fault-proxy:
+    image: catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z
+    networks: [lakehouse-net]
+    profiles: ["gravitino"]
+    entrypoint: ["/usr/local/bin/fault-proxy"]
+    command: ["--upstream", "http://gravitino:9001", "--listen", ":8080", "--control-listen", ":8081"]
+    expose: ["8080", "8081"]
+    ports: ["127.0.0.1:${GRAVITINO_FAULT_CONTROL_PORT:-19103}:8081"]
+    depends_on:
+      gravitino-ready:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true
+
+  lakekeeper-fault-proxy:
+    image: catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z
+    networks: [lakehouse-net]
+    profiles: ["lakekeeper"]
+    entrypoint: ["/usr/local/bin/fault-proxy"]
+    command: ["--upstream", "http://lakekeeper:8181", "--listen", ":8080", "--control-listen", ":8081"]
+    expose: ["8080", "8081"]
+    ports: ["127.0.0.1:${LAKEKEEPER_FAULT_CONTROL_PORT:-19104}:8081"]
+    depends_on:
+      lakekeeper-ready:
+        condition: service_completed_successfully
+    healthcheck:
+      disable: true

@@ -638,6 +638,40 @@ fn minio_helpers_are_built_from_an_immutable_public_source() {
 }
 
 #[test]
+fn fault_overlay_routes_catalog_and_object_store_traffic_through_owned_proxies() {
+    let root = repository_root();
+    let overlay =
+        fs::read_to_string(root.join("docker-compose.fault.yml")).expect("read fault overlay");
+    let warehouse = fs::read_to_string(root.join("docker/lakekeeper-fault/warehouse.json"))
+        .expect("read fault Lakekeeper warehouse");
+
+    for required in [
+        "--upstream\", \"http://minio:9000",
+        "AWS_ENDPOINT: http://object-store-fault-proxy:8080",
+        "GRAVITINO_ICEBERG_REST_S3_ENDPOINT: http://object-store-fault-proxy:8080",
+        "NESSIE_CATALOG_SERVICE_S3_DEFAULT_OPTIONS_ENDPOINT: http://object-store-fault-proxy:8080",
+        "POLARIS_S3_ENDPOINT: http://object-store-fault-proxy:8080",
+        "--upstream\", \"http://lakecat:8181",
+        "--upstream\", \"http://polaris:8181",
+        "--upstream\", \"http://gravitino:9001",
+        "--upstream\", \"http://lakekeeper:8181",
+    ] {
+        assert!(
+            overlay.contains(required),
+            "fault overlay must contain `{required}`"
+        );
+    }
+    assert!(
+        warehouse.contains("http://object-store-fault-proxy:8080"),
+        "Lakekeeper fault warehouse must use the owned object-store proxy"
+    );
+    assert!(
+        !overlay.contains("network_mode: host"),
+        "fault proxies must stay on the owned benchmark network"
+    );
+}
+
+#[test]
 fn clean_contention_run_rejects_reused_persistent_state() {
     let root = repository_root();
     let overlay = fs::read_to_string(root.join("docker-compose.clean.yml"))
