@@ -219,7 +219,7 @@ impl TrinoRenderedProgram {
         )?;
         let evolution = &scenario.schema_evolution.field;
         let add_column = format!(
-            "ALTER TABLE {qualified_table} ADD {} {}{}",
+            "ALTER TABLE {qualified_table} ADD COLUMN {} {}{}",
             evolved_column,
             render_type(evolution.field_type),
             if evolution.required { " NOT NULL" } else { "" }

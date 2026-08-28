@@ -1,5 +1,8 @@
 # Changelog
 
+- Render Trino schema evolution with the required `ALTER TABLE ... ADD COLUMN`
+  grammar, covered by the catalog-neutral program test.
+
 - Advance the runnable Trino profile to `catalog-bench@6ea0f803` and bind the
   closed scenario-property allowlist to the rebuilt runner and composite stock
   Trino image identities.

@@ -73,6 +73,8 @@ fn renders_the_complete_stock_trino_program_for_every_catalog() {
         let evolved = statement(&program, TrinoOperationPurpose::EvolvedAppend);
         assert_eq!(evolved.matches("), (").count(), 3);
         assert!(evolved.contains("(19, 'category-3', 1907, 'evolved-19')"));
+        assert!(statement(&program, TrinoOperationPurpose::AddColumn)
+            .contains(" ADD COLUMN \"note\" VARCHAR"));
         assert!(statement(&program, TrinoOperationPurpose::SnapshotRead)
             .contains("\"events$snapshots\""));
 
