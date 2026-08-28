@@ -404,7 +404,7 @@ script performs no prune, reset, volume removal, or unrelated image deletion.
 
 Compose keeps this source line independent of the already materialized Spark
 line. The exact public catalog-bench revision
-`df3a68da787de82ae83d1a5034228b731f3bc588` supplies both the optimized Rust
+`701f2b976f36b1046637e6f8fff7043518d7f7a5` supplies both the optimized Rust
 donor build and the Flink Docker context. Four inspectable services represent
 the provenance chain:
 
@@ -459,7 +459,7 @@ The existing broad candidate also supplies the already materialized Spark
 profile and identifies an older source-bound runner revision. Rewriting it
 would invalidate that immutable evidence. Flink therefore receives a separate
 candidate whose `catalog-bench-engine` component names revision
-`df3a68da787de82ae83d1a5034228b731f3bc588`. That checked-in candidate is a
+`701f2b976f36b1046637e6f8fff7043518d7f7a5`. That checked-in candidate is a
 tested minimal projection: every unrelated identity and policy remains equal to
 the preserved broad source profile.
 

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Advance and rematerialize the unpublished Flink profile at
+  `catalog-bench@701f2b9`, binding the profile-aware CLI dispatcher into the
+  optimized runner and final stock runtime with newly observed image and ELF
+  digests. Live artifact verification passes for every copied byte.
+
 - Dispatch the production engine CLI from the profile-selected engine instead
   of unconditionally invoking the Spark executor. Flink profiles now use the
   verified Flink process path, with a CLI regression test that distinguishes
