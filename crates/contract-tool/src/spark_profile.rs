@@ -18,6 +18,8 @@ const ENGINE_RUNNER_SOURCE_REVISION_V1: &str = "5e10f36e7e99815df273c7b567e46674
 const ENGINE_RUNNER_SOURCE_REVISION_V2: &str = "59840b95c33e753919f5c984d10d6df45c834243";
 const ENGINE_V2_SOURCE_PROFILE_ID: &str =
     "catalog-community-engine-v2-source-2026-08-28-linux-arm64";
+const ENGINE_V2_LAKECAT_SOURCE_PROFILE_ID: &str =
+    "catalog-community-engine-v2-lakecat-5d62f1c4-source-2026-08-28-linux-arm64";
 
 const MATERIALIZED_COMPONENTS: &[&str] = &[
     "rust-runner",
@@ -279,7 +281,7 @@ pub fn check_spark_profile(
 fn policy_for_source(source: &[u8]) -> Result<&'static ScenarioProfilePolicy> {
     let document: serde_json::Value = serde_json::from_slice(source)?;
     match document.get("id").and_then(serde_json::Value::as_str) {
-        Some(ENGINE_V2_SOURCE_PROFILE_ID) => Ok(&POLICY_V2),
+        Some(ENGINE_V2_SOURCE_PROFILE_ID | ENGINE_V2_LAKECAT_SOURCE_PROFILE_ID) => Ok(&POLICY_V2),
         Some("catalog-community-current-2026-08-27-linux-arm64") => Ok(&POLICY_V1),
         _ => bail!("unsupported Spark source profile identity"),
     }

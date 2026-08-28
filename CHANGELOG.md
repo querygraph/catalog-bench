@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Advance the source-built LakeCat benchmark image to `lakecat@5d62f1c4`,
+  which assigns catalog-owned positive Iceberg field IDs for stock Spark
+  `createTable` requests. Preserve the first v2 runtime generation while
+  admitting a new immutable source profile for the corrected four-catalog run.
+
 - C2-02 JVM native-library runtime boundary: preserve read-only Spark/Flink
   containers while marking only their bounded 512-MiB ephemeral `/tmp` tmpfs as
   executable. A fresh stock-Spark reproduction proved the no-exec mount caused

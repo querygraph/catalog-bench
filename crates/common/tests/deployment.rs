@@ -538,8 +538,10 @@ fn contention_runner_is_source_pinned_optimized_and_same_docker() {
 fn lakecat_image_is_public_source_pinned_optimized_and_labeled() {
     let root = repository_root();
     let profile: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root.join("profiles/v1/current-2026-08-26.json"))
-            .expect("read current profile"),
+        &fs::read_to_string(
+            root.join("profiles/v1/current-engine-v2-lakecat-5d62f1c4-2026-08-28.json"),
+        )
+        .expect("read current profile"),
     )
     .expect("parse current profile");
     let lakecat = profile["components"]
