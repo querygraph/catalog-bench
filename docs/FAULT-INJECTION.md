@@ -102,3 +102,29 @@ mutating state. This is a disclosed content-binding defect, not an exactly-once
 claim. Polaris uses its benchmark image's ephemeral persistence mode, so its
 restart failure does not generalize to external database deployments. This
 scenario makes no performance, rolling-upgrade, or backup/restore claim.
+
+## Cold backup and restore
+
+`docker/run-catalog-backup-restore.sh backup_local` creates a standard Iceberg
+REST table in each catalog, stops every state owner, archives the run-owned
+Turso, SQLite, and PostgreSQL volumes, deletes and recreates those volumes,
+restores their bytes and numeric ownership, restarts the catalogs, and compares
+the table UUID and metadata-location hash. The runner refuses reused state and
+removes all project containers and volumes.
+
+Fresh run `backup_0828a` at `catalog-bench@52c157d` produced reviewed summary
+hash `sha256:592e122218671efc08ea7d1bed726ff40677db3454bb24422a9516739efdea0a`.
+Sanitized identity evidence is under `results/source/backup/backup_0828a/`.
+Archives are deliberately retained by digest rather than committed:
+
+| State | Bytes | Archive SHA-256 | Restored identity |
+| --- | ---: | --- | --- |
+| LakeCat Turso | 4,959 | `cd7b1097bbe3b302ff83076d7eb6fb7a0f742a159e0686a4eb6fd717a14c33a1` | pass |
+| Gravitino SQLite | 699 | `b51980245e36c9b5a65e4b4c49d21faf25025dc7939b8697591111a595a26853` | pass |
+| Lakekeeper PostgreSQL | 7,898,765 | `6fa0c37829952cc9d3283ca744d56d7111d2e9f70a23440636ce9507b6a29f7b` | pass |
+| Polaris ephemeral state | — | — | fail: fixture absent (HTTP 404) |
+
+The Polaris row describes only this no-volume benchmark configuration. The
+workflow is a cold byte-level backup, not a vendor-supported logical backup,
+online backup, point-in-time recovery, rolling upgrade, or disaster-recovery
+SLA. The single-service restart comparison remains in `restart_0828d`.

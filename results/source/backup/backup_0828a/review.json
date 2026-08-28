@@ -1,0 +1,9 @@
+{
+  "schema_version": "catalog-bench.catalog-backup-review.v1",
+  "run_id": "backup_0828a",
+  "reviewed_source_revision": "52c157d",
+  "summary_sha256": "sha256:592e122218671efc08ea7d1bed726ff40677db3454bb24422a9516739efdea0a",
+  "archives_retained_by_hash_only": true,
+  "fresh_project_cleanup": {"containers_remaining": 0, "volumes_remaining": 0},
+  "review": "accepted comparative cold backup/restore evidence with one disclosed unsupported persistence result"
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": "catalog-bench.catalog-backup-restore.v1",
+  "run_id": "backup_0828a",
+  "status": "verified_with_failures",
+  "failures": 1,
+  "results": {
+    "lakecat": {
+      "restored": true,
+      "identity_preserved": true,
+      "status": 200
+    },
+    "polaris": {
+      "restored": false,
+      "identity_preserved": false,
+      "status": 404
+    },
+    "gravitino": {
+      "restored": true,
+      "identity_preserved": true,
+      "status": 200
+    },
+    "lakekeeper": {
+      "restored": true,
+      "identity_preserved": true,
+      "status": 200
+    }
+  },
+  "archives": {
+    "lakecat.tar.gz": {
+      "bytes": 4959,
+      "sha256": "sha256:cd7b1097bbe3b302ff83076d7eb6fb7a0f742a159e0686a4eb6fd717a14c33a1"
+    },
+    "gravitino.tar.gz": {
+      "bytes": 699,
+      "sha256": "sha256:b51980245e36c9b5a65e4b4c49d21faf25025dc7939b8697591111a595a26853"
+    },
+    "lakekeeper-postgres.tar.gz": {
+      "bytes": 7898765,
+      "sha256": "sha256:6fa0c37829952cc9d3283ca744d56d7111d2e9f70a23440636ce9507b6a29f7b"
+    }
+  }
+}

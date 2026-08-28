@@ -234,6 +234,9 @@
   Polaris persistence, and removes all project state.
 - Address immutable helper build context by the exact Git commit rather than a
   moving branch-plus-checksum pair that becomes unbuildable after later commits.
+- Publish the reviewed `backup_0828a` cold restore matrix, sanitized before/after
+  identities, archive sizes and hashes, cleanup proof, and scoped Polaris
+  persistence failure without committing database archives.
 
 - Add the exact-source DuckDB 1.5.3 four-catalog launcher and runnable profile,
   including official signed offline extensions, bounded result decoding, OAuth
