@@ -329,7 +329,7 @@ impl TrinoServerConfiguration {
             ),
         ]))?;
         let node = render_property_file(&BTreeMap::from([
-            ("node.environment".to_owned(), "catalog-bench".to_owned()),
+            ("node.environment".to_owned(), "catalog_bench".to_owned()),
             (
                 "node.id".to_owned(),
                 environment_reference("CATALOG_BENCH_TRINO_NODE_ID"),

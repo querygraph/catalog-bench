@@ -1,5 +1,9 @@
 # Changelog
 
+- Correct the generated Trino node environment from `catalog-bench` to
+  `catalog_bench`; Trino 483 requires `[a-z0-9][_a-z0-9]*` and rejected the
+  hyphenated value during configuration admission.
+
 - Advance the Trino materialization to `catalog-bench@836a3cd0`, which binds
   Airlift's private data directory before server startup. Both earlier Trino
   diagnostic runs remain excluded from publication.
