@@ -1,5 +1,8 @@
 # Changelog
 
+- Decode standard gzip-compressed Iceberg metadata under the same bounded,
+  strict projection used for JSON metadata, enabling Lakekeeper observation.
+
 - Reconcile stock-engine snapshot counts relative to the table-creation
   baseline, covering engines such as Trino that create an initial snapshot.
 

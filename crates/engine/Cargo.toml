@@ -15,6 +15,7 @@ catalog-bench-commit = { workspace = true }
 catalog-bench-common = { workspace = true }
 catalog-bench-conformance = { workspace = true }
 clap = { workspace = true }
+flate2 = { workspace = true }
 libc = { workspace = true }
 reqwest = { workspace = true }
 serde = { workspace = true }

@@ -1388,6 +1388,7 @@ dependencies = [
  "catalog-bench-common",
  "catalog-bench-conformance",
  "clap",
+ "flate2",
  "libc",
  "reqwest",
  "serde",

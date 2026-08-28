@@ -1,7 +1,9 @@
 //! Bounded projection of an Iceberg v2 metadata object into engine evidence.
 
 use std::fmt::{Display, Formatter};
+use std::io::Read;
 
+use flate2::read::GzDecoder;
 use serde_json::Value;
 use url::Url;
 use uuid::Uuid;
@@ -53,7 +55,8 @@ pub fn decode_iceberg_table_metadata(
     if bytes.len() > MAXIMUM_ICEBERG_METADATA_BYTES {
         return Err(IcebergMetadataError::TooLarge);
     }
-    let document = decode_strict_json(bytes).map_err(|_| IcebergMetadataError::Malformed)?;
+    let decoded = decode_metadata_bytes(bytes, metadata_location)?;
+    let document = decode_strict_json(&decoded).map_err(|_| IcebergMetadataError::Malformed)?;
     let object = document
         .as_object()
         .ok_or(IcebergMetadataError::Malformed)?;
@@ -146,6 +149,26 @@ pub fn decode_iceberg_table_metadata(
         snapshots,
         properties,
     })
+}
+
+fn decode_metadata_bytes(
+    bytes: &[u8],
+    metadata_location: &str,
+) -> Result<Vec<u8>, IcebergMetadataError> {
+    if !metadata_location.ends_with(".gz.metadata.json") {
+        return Ok(bytes.to_vec());
+    }
+    let limit = u64::try_from(MAXIMUM_ICEBERG_METADATA_BYTES)
+        .map_err(|_| IcebergMetadataError::TooLarge)?;
+    let mut decoder = GzDecoder::new(bytes).take(limit + 1);
+    let mut decoded = Vec::new();
+    decoder
+        .read_to_end(&mut decoded)
+        .map_err(|_| IcebergMetadataError::Malformed)?;
+    if decoded.len() > MAXIMUM_ICEBERG_METADATA_BYTES {
+        return Err(IcebergMetadataError::TooLarge);
+    }
+    Ok(decoded)
 }
 
 fn decode_field(value: &Value) -> Result<EngineFieldObservation, IcebergMetadataError> {

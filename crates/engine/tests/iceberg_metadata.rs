@@ -3,7 +3,10 @@ use catalog_bench_engine::{
     decode_iceberg_table_metadata, EnginePropertyObservation, IcebergMetadataError,
     InteroperabilityPlan, TrinoRenderedProgram,
 };
+use flate2::write::GzEncoder;
+use flate2::Compression;
 use serde_json::{json, Value};
+use std::io::Write;
 
 mod support;
 
@@ -41,6 +44,27 @@ fn projects_initial_and_evolved_v2_metadata_into_closed_evidence() {
     assert_eq!(observed.schema[3].name, "note");
     assert!(!observed.schema[3].required);
     assert_eq!(observed.snapshots, 2);
+}
+
+#[test]
+fn projects_standard_gzip_compressed_metadata() {
+    let program = program();
+    let metadata = serde_json::to_vec(&metadata(&program, false, 1)).unwrap();
+    let mut encoder = GzEncoder::new(Vec::new(), Compression::default());
+    encoder.write_all(&metadata).unwrap();
+    let compressed = encoder.finish().unwrap();
+    let location = METADATA_LOCATION.replace(".metadata.json", ".gz.metadata.json");
+
+    let observed = decode_iceberg_table_metadata(
+        &compressed,
+        &location,
+        &program.fixture,
+        &program.observation,
+    )
+    .unwrap();
+
+    assert_eq!(observed.snapshots, 1);
+    assert_eq!(observed.metadata_location, location);
 }
 
 #[test]
