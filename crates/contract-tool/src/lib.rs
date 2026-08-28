@@ -8,6 +8,7 @@ mod engine_bundle;
 mod engine_evidence;
 mod engine_matrix;
 mod engine_review;
+mod flink_profile;
 mod legacy_commit;
 mod matrix;
 mod profile_materialization;
@@ -29,6 +30,7 @@ pub use engine_evidence::{
 };
 pub use engine_matrix::render_engine_matrix;
 pub use engine_review::{validate_engine_result_review, ValidatedEngineResultReview};
+pub use flink_profile::{check_flink_profile, render_flink_profile, write_flink_profile};
 pub use legacy_commit::{check_historical_commit_bundle, write_historical_commit_bundle};
 pub use matrix::{render_commit_matrix, render_matrix};
 pub use profile_materialization::{

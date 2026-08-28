@@ -431,6 +431,54 @@ nonexistent Docker socket and are green. Actual image construction, artifact
 extraction, and profile materialization still require a healthy Docker data
 volume; no result claim follows from topology validation alone.
 
+### Deterministic Flink profile materialization
+
+The Flink profile materializer is a typed policy over the shared, pure
+scenario-profile projection. It accepts exactly two authoritative inputs: a
+dedicated source-bound Flink candidate profile and an image-observation
+sidecar. It produces an ordinary runnable profile scoped to
+`engine.iceberg.write-read-evolution/v2`, or fails without producing a weaker
+profile. In particular, the policy requires:
+
+- the exact Linux ARM64 child of the selected Flink 2.1.3 image index;
+- the Iceberg 1.11.0 Flink 2.1 runtime and AWS bundle with their Maven
+  coordinates and source revision;
+- the optimized Rust runner and source-bound Java child JAR in the composite
+  runner image; and
+- byte-identical copies of both connector JARs and both runner artifacts in
+  the final Flink image, including digest, byte count, and media type.
+
+The common materializer independently correlates every observed image's OCI
+source revision with its selected profile component. Flink-specific labels add
+the audited platform-child digest and correlate the final image with the exact
+Iceberg and runner source revisions. This keeps common provenance checks DRY
+while leaving engine-specific requirements explicit.
+
+The existing broad candidate also supplies the already materialized Spark
+profile and identifies an older source-bound runner revision. Rewriting it
+would invalidate that immutable evidence. Flink therefore receives a separate
+candidate whose `catalog-bench-engine` component names revision
+`36906515b69a61ac26d44327b2a9ff94c2b84551`; the next unit will check in and
+validate that candidate before any image observation is admitted.
+
+Once production images can safely be built and inspected, the deterministic
+commands are:
+
+```console
+cargo run -p catalog-bench-contract --locked -- profile materialize-flink \
+  --source-profile <flink-candidate.json> \
+  --materialization <flink-image-observations.json> \
+  --output <runnable-flink-profile.json>
+cargo run -p catalog-bench-contract --locked -- profile check-flink \
+  --source-profile <flink-candidate.json> \
+  --materialization <flink-image-observations.json> \
+  --output <runnable-flink-profile.json>
+```
+
+`check-flink` rerenders from those inputs and requires byte-for-byte agreement.
+The current unit tests use synthetic observations only to exercise this closed
+policy. They are not image-build, interoperability-result, or ranking evidence.
+
 ## Reusable runtime-identity boundary
 
 Runtime-ready evidence contains a neutral engine version, an exact sorted map of

@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- C2-06 typed Flink profile materialization: add a deterministic projection
+  from a dedicated source-bound Flink candidate and strict image-observation
+  sidecar into the runnable v2 interoperability profile. The policy requires
+  the audited stock Flink 2.1.3 Linux ARM64 child, Iceberg 1.11.0 connector
+  coordinates, the optimized Rust runner, and the Java child JAR; all four
+  donor-to-runtime artifact copies must retain exact digest, byte count, and
+  media type. New `materialize-flink` and `check-flink` commands expose the
+  shared pure materializer, while separate tests prove the selected topology
+  and reject base-image, runner-copy, or connector drift. This unit defines and
+  verifies materialization policy only: it neither rewrites the immutable Spark
+  candidate nor claims that the Flink images have been built or executed.
+
 - C2-06 Flink image topology: add a non-destructive launcher that resolves the
   selected Linux ARM64 child from the immutable Flink index, pulls that child
   by digest, verifies its descriptor and platform, and creates a local build

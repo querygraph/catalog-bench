@@ -6,10 +6,10 @@ use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
     check_contention_profile, check_contention_result_bundle, check_engine_result_bundle,
-    check_historical_commit_bundle, check_spark_profile, load_bundle, render_matrix,
-    validate_engine_evidence_set, validate_engine_result_review, write_contention_profile,
-    write_contention_result_bundle, write_engine_result_bundle, write_historical_commit_bundle,
-    write_spark_profile,
+    check_flink_profile, check_historical_commit_bundle, check_spark_profile, load_bundle,
+    render_matrix, validate_engine_evidence_set, validate_engine_result_review,
+    write_contention_profile, write_contention_result_bundle, write_engine_result_bundle,
+    write_flink_profile, write_historical_commit_bundle, write_spark_profile,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -124,6 +124,10 @@ enum ProfileCommand {
     MaterializeSpark(ProfileFiles),
     /// Check that the Spark interoperability profile exactly matches its inputs.
     CheckSpark(ProfileFiles),
+    /// Derive the runnable Flink interoperability profile.
+    MaterializeFlink(ProfileFiles),
+    /// Check that the Flink interoperability profile exactly matches its inputs.
+    CheckFlink(ProfileFiles),
 }
 
 #[derive(Debug, Args)]
@@ -258,6 +262,24 @@ fn run(cli: Cli) -> Result<()> {
                 output,
             }) => {
                 check_spark_profile(&source_profile, &materialization, &output)?;
+                println!("{} matches its materialization inputs", output.display());
+                Ok(())
+            }
+            ProfileCommand::MaterializeFlink(ProfileFiles {
+                source_profile,
+                materialization,
+                output,
+            }) => {
+                write_flink_profile(&source_profile, &materialization, &output)?;
+                println!("wrote {}", output.display());
+                Ok(())
+            }
+            ProfileCommand::CheckFlink(ProfileFiles {
+                source_profile,
+                materialization,
+                output,
+            }) => {
+                check_flink_profile(&source_profile, &materialization, &output)?;
                 println!("{} matches its materialization inputs", output.display());
                 Ok(())
             }
