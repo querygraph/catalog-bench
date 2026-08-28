@@ -604,13 +604,11 @@ fn minio_helpers_are_built_from_an_immutable_public_source() {
         fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
     let dockerfile =
         fs::read_to_string(root.join("docker/minio/Dockerfile")).expect("read MinIO Dockerfile");
-    let revision = "f2f66ee45574a64d1e76330e95e7aa551c3a148b";
+    let revision = "573866d48b7291767ba61a27d9a9dbf6981941a2";
 
     for required in [
         format!("CATALOG_BENCH_HELPER_SOURCE_REVISION: {revision}"),
-        format!(
-            "catalog-bench-helper-source: \"https://github.com/querygraph/catalog-bench.git#{revision}\""
-        ),
+        format!("catalog-bench-helper-source: \"https://github.com/querygraph/catalog-bench.git?ref=refs/heads/codex/catalog-community-phase-1&checksum={revision}\""),
     ] {
         assert!(
             compose.lines().any(|line| line.trim() == required),

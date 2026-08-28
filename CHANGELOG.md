@@ -5,6 +5,8 @@
   occurrence matching, sanitized hash-only event evidence, strict control input,
   and real-socket tests that distinguish definite non-persistence from
   accepted-state ambiguity.
+- C3-01 source binding: compile the fault proxy into the exact source-built
+  infrastructure image from its immutable implementation revision.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope
