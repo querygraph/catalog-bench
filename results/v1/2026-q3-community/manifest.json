@@ -1,0 +1,17 @@
+{
+  "contract": "catalog-bench/community-release-manifest/v1",
+  "files": [
+    {"path":"../../source/semantic/tpcds_0828e/review.json","sha256":"c28169d2a487f673f681c2ca35fb77349d06ad265ce5ef8bfb61789456848419"},
+    {"path":"../../source/semantic/tpcds_0828e/summary.json","sha256":"9ffe002c3cb1a12094c2f7e8e7a98463b59c8ea3069dd3e26fd7cc5b0aa52903"},
+    {"path":"../../source/semantic/tpcds_0828g/proof.json","sha256":"329eb0acf6ebe0ed8b35032f8a12a007fade52090cda64999553333c5c1d0621"},
+    {"path":"../../source/semantic/tpcds_0828g/review.json","sha256":"25a6b4d095b32a527d658d94bd97daebe99e841bfaa3e7c0e755a87d1aa31cc7"},
+    {"path":"../2026-08-28-phase1/manifest.json","sha256":"8ca7e5957a51588afe5a1d6a983e3b15dcafdb458349fc2e0d1b74acec299296"},
+    {"path":"../duckdb-v2-b8be6bc9-2026-08-28/manifest.json","sha256":"ca861ea662e241fb801a54f574ee036c4e508489f1fc0596a0970a9a87a9611b"},
+    {"path":"../flink-v2-65f0a4c3-2026-08-28/manifest.json","sha256":"4e7b590636b9cc6b9f95c5dc0bb4b44df2205d4df879f5481fd2e40e58ba35b5"},
+    {"path":"../spark-v2-65f0a4c3-2026-08-28/manifest.json","sha256":"bcae2c2d9c105192e8e23f3fbaee340f5b97ac2ca721503981a85d05357a3351"},
+    {"path":"../trino-v2-b424f778-2026-08-28/manifest.json","sha256":"068894c111698091249f2a7e1858117686c16ba18975176c8d1c1b70c17bd42d"}
+  ],
+  "period": "2026-Q3",
+  "sanitized": true,
+  "status": "immutable-index"
+}

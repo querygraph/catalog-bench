@@ -15,6 +15,8 @@
   graph/OpenLineage replay implementation for the full TPC-DS proof run.
 - Publish reviewed `tpcds_0828g` answer, graph/OpenLineage replay, seven-basis
   proof, six-dimension drift rejection, source provenance, and cleanup evidence.
+- Publish the 2026-Q3 community report, immutable cross-bundle index,
+  reproduction guide, catalog-specific review packets, and feedback backlog v2.
 
 ## Unreleased
 
