@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- C2-02 immutable Spark v2 source selection: preserve the prior v1 profile and
+  materialization, add a distinct draft v2 source profile, and pin the optimized
+  runner donor plus Spark copy to public `catalog-bench@59840b95c33e`. Advance
+  the materialization policy scope and production launcher paths to new v2
+  artifacts, which intentionally do not exist until independently observed.
+
 - C2-02 Spark image build topology: make the standalone builder default to the
   complete catalog profile set required by Compose dependency validation while
   preserving an explicitly supplied profile set from the fresh-run launcher.

@@ -22,18 +22,18 @@ x-bench-build: &bench-build
   dockerfile: docker/bench.Dockerfile
   args:
     CATALOG_BENCH_SOURCE_REVISION: e5345a260a42148aa5cd1044fb3f43acfc2232d2
-x-engine-runner-image: &engine-runner-image catalog-bench-engine:5e10f36e7e99
+x-engine-runner-image: &engine-runner-image catalog-bench-engine:59840b95c33e
 x-engine-runner-build: &engine-runner-build
-  context: "https://github.com/querygraph/catalog-bench.git#5e10f36e7e99815df273c7b567e466749f04d4be"
+  context: "https://github.com/querygraph/catalog-bench.git#59840b95c33e753919f5c984d10d6df45c834243"
   dockerfile: docker/bench.Dockerfile
   args:
-    CATALOG_BENCH_SOURCE_REVISION: 5e10f36e7e99815df273c7b567e466749f04d4be
+    CATALOG_BENCH_SOURCE_REVISION: 59840b95c33e753919f5c984d10d6df45c834243
 x-spark-image: &spark-image catalog-bench/spark:4.1.3-iceberg1.11.0
 x-spark-build: &spark-build
   context: .
   dockerfile: docker/spark/Dockerfile
   args:
-    CATALOG_BENCH_SOURCE_REVISION: 5e10f36e7e99815df273c7b567e466749f04d4be
+    CATALOG_BENCH_SOURCE_REVISION: 59840b95c33e753919f5c984d10d6df45c834243
     SPARK_BASE_IMAGE: catalog-bench/spark-base:4.1.3-arm64-bf9d035a
     SPARK_SOURCE_REVISION: 77bbf77e86ad48f58b5dfbc6ac882b3e70cf1989
     ICEBERG_SOURCE_REVISION: 6976e020b894f6a6777704df2b8c4458cb291ae9

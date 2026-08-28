@@ -3,7 +3,7 @@
 Profiles separate environment selection from benchmark results. A profile says
 what would run; only a result plus its immutable manifest says what did run.
 
-Six v1 profiles preserve the Phase 0 boundary and carry the measured work
+Seven v1 profiles preserve the Phase 0 boundary and carry the measured work
 forward:
 
 - [`reproduction-2026-08-08.json`](../profiles/v1/reproduction-2026-08-08.json)
@@ -22,6 +22,10 @@ forward:
   preserves that broad candidate while advancing only the stock-engine runner
   to the exact source revision used by the source-bound Flink image. It remains
   a `draft` input contract, not runtime evidence.
+- [`current-engine-v2-2026-08-28.json`](../profiles/v1/current-engine-v2-2026-08-28.json)
+  is the immutable draft source pinset for fresh Spark v2 materialization. It
+  advances only the optimized engine runner to public
+  `catalog-bench@59840b95c33e`; it is not runnable and cannot back results.
 - [`contention-2026-08-27.json`](../profiles/v1/contention-2026-08-27.json) is
   the generated, `runnable` Linux ARM64 performance profile for the same-table
   contention v2 scenario only. It retains all five catalog adapters but removes
@@ -34,7 +38,7 @@ forward:
   Spark images. It remains infrastructure evidence rather than a claim that the
   interoperability scenario passed.
 
-All six target Linux ARM64 and one Docker network. All catalog, client, engine,
+All seven target Linux ARM64 and one Docker network. All catalog, client, engine,
 and benchmark processes must run in that container environment against the same
 MinIO warehouse. Each catalog may have only its necessary private state backend.
 

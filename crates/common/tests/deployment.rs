@@ -256,7 +256,7 @@ fn pyiceberg_image_is_profile_pinned_hash_locked_and_hardened() {
 fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
     let root = repository_root();
     let profile: serde_json::Value = serde_json::from_str(
-        &fs::read_to_string(root.join("profiles/v1/current-2026-08-27.json"))
+        &fs::read_to_string(root.join("profiles/v1/current-engine-v2-2026-08-28.json"))
             .expect("read stock-engine source profile"),
     )
     .expect("parse current profile");
@@ -746,8 +746,9 @@ fn spark_launcher_runs_all_four_catalogs_in_one_fresh_topology() {
         "build --provenance=false minio lakecat",
         "\"$script_dir/build-spark-images.sh\"",
         "\"$script_dir/verify-profile-artifacts.sh\"",
-        "profiles/v1/current-2026-08-27.json",
-        "materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json",
+        "profiles/v1/current-engine-v2-2026-08-28.json",
+        "materializations/v1/spark-v2-2026-08-28.json",
+        "profiles/v1/spark-v2-2026-08-28.json",
         "for catalog in \"${catalogs[@]}\"",
         "catalog_bench_clean_compose \"$repository_root\" run --rm spark-engine",
         "--scenario /contracts/scenarios/v1/engine.iceberg.write-read-evolution.v2.json",

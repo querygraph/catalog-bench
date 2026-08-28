@@ -17,9 +17,9 @@ run_id="$1"
 catalog_bench_validate_run_id "$run_id"
 
 evidence_dir="${CATALOG_BENCH_SPARK_EVIDENCE_DIR:-$repository_root/target/spark-evidence}"
-source_profile="$repository_root/profiles/v1/current-2026-08-27.json"
-materialization="$repository_root/materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json"
-runnable_profile="$repository_root/profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json"
+source_profile="$repository_root/profiles/v1/current-engine-v2-2026-08-28.json"
+materialization="$repository_root/materializations/v1/spark-v2-2026-08-28.json"
+runnable_profile="$repository_root/profiles/v1/spark-v2-2026-08-28.json"
 run_directory="$evidence_dir/$run_id"
 catalogs=(lakecat polaris gravitino lakekeeper)
 
@@ -59,7 +59,7 @@ for catalog in "${catalogs[@]}"; do
 
   set +e
   catalog_bench_clean_compose "$repository_root" run --rm spark-engine \
-    --profile /contracts/profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json \
+    --profile /contracts/profiles/v1/spark-v2-2026-08-28.json \
     --scenario /contracts/scenarios/v1/engine.iceberg.write-read-evolution.v2.json \
     --catalog "$catalog" \
     --fixture-id "$run_id" \
