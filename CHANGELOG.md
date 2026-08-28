@@ -1,5 +1,8 @@
 # Changelog
 
+- Reconcile stock-engine snapshot counts relative to the table-creation
+  baseline, covering engines such as Trino that create an initial snapshot.
+
 - Advance the Trino runner to the committed warehouse-root topology and corrected
   schema-evolution implementation before collecting fresh four-catalog evidence.
 

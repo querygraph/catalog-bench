@@ -61,6 +61,36 @@ async fn complete_workflow_reconciles_all_three_authorities_before_cleanup() {
 }
 
 #[tokio::test]
+async fn complete_workflow_accepts_an_engine_created_snapshot_baseline() {
+    let plan = plan("baseline01");
+    let mut fixture = PassingFixture::new(&plan);
+    fixture.initial.snapshots += 1;
+    fixture.evolved.snapshots += 1;
+    fixture.final_table.snapshots += 1;
+    let log = OperationLog::default();
+    let mut process = fixture.process(&plan);
+    let capture = process.capture.as_mut().expect("passing capture");
+    for event in &mut capture.events {
+        match event {
+            EngineEvent::InitialAppended { snapshots }
+            | EngineEvent::EvolvedAppended { snapshots } => *snapshots += 1,
+            _ => {}
+        }
+    }
+
+    let execution = run_engine_workflow(
+        &plan,
+        FakeRunner::new(process, log.clone()),
+        FakeCatalogConnector::ready(fixture.catalog(), log.clone()),
+        FakeObjectStoreConnector::ready(fixture.object_audit(), log),
+    )
+    .await;
+
+    assert!(execution.passed(), "{execution:#?}");
+    assert!(execution.checks.all_passed());
+}
+
+#[tokio::test]
 async fn collision_and_runtime_rejection_never_open_harness_effects() {
     let plan = plan("premutation01");
     for process in [collision_process(&plan), runtime_rejected_process(&plan)] {

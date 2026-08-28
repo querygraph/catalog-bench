@@ -78,28 +78,36 @@ pub(super) fn evaluate_checks(
     let evolved_last_id = evolved_fields
         .as_ref()
         .and_then(|fields| fields.iter().map(|field| field.id).max());
+    let snapshot_sequence = events.table_ready.and_then(|table| {
+        let initial = table.snapshots.checked_add(1)?;
+        let evolved = initial.checked_add(1)?;
+        Some((table.snapshots, initial, evolved))
+    });
     let table_round_trip = events.table_ready.is_some_and(|table| {
-        initial_last_id
-            .is_some_and(|last_id| table_matches_shape(plan, table, &initial_fields, last_id, 0))
+        initial_last_id.is_some_and(|last_id| {
+            table_matches_shape(plan, table, &initial_fields, last_id, table.snapshots)
+        })
     });
     let schema_evolved = events.schema_evolved.is_some_and(|table| {
         evolved_fields.as_ref().is_some_and(|fields| {
             evolved_last_id.is_some_and(|last_id| {
-                table_matches_shape(plan, table, fields, last_id, 1)
-                    && events
-                        .table_ready
-                        .is_some_and(|initial| table_identity_preserved(initial, table))
+                snapshot_sequence.is_some_and(|(_, initial, _)| {
+                    table_matches_shape(plan, table, fields, last_id, initial)
+                }) && events
+                    .table_ready
+                    .is_some_and(|initial| table_identity_preserved(initial, table))
             })
         })
     });
     let final_table_matches = events.final_table.is_some_and(|table| {
         evolved_fields.as_ref().is_some_and(|fields| {
             evolved_last_id.is_some_and(|last_id| {
-                table_matches_shape(plan, table, fields, last_id, 2)
-                    && events.schema_evolved.is_some_and(|evolved| {
-                        table_identity_preserved(evolved, table)
-                            && evolved.metadata_location != table.metadata_location
-                    })
+                snapshot_sequence.is_some_and(|(_, _, evolved)| {
+                    table_matches_shape(plan, table, fields, last_id, evolved)
+                }) && events.schema_evolved.is_some_and(|evolved| {
+                    table_identity_preserved(evolved, table)
+                        && evolved.metadata_location != table.metadata_location
+                })
             })
         })
     });
@@ -134,12 +142,14 @@ pub(super) fn evaluate_checks(
         fixture_isolated: events.fixture_absent,
         namespace_round_trip: events.namespace_listed_exactly,
         table_round_trip,
-        initial_append_committed: events.initial_snapshots == Some(1),
+        initial_append_committed: snapshot_sequence
+            .is_some_and(|(_, initial, _)| events.initial_snapshots == Some(initial)),
         initial_read_exact: events
             .initial_read
             .is_some_and(|read| read_matches(read, &plan.scenario().canonical_reads.initial)),
         schema_evolved,
-        evolved_append_committed: events.evolved_snapshots == Some(2),
+        evolved_append_committed: snapshot_sequence
+            .is_some_and(|(_, _, evolved)| events.evolved_snapshots == Some(evolved)),
         evolved_read_exact: events.evolved_read.is_some_and(|read| {
             read_matches(read, &plan.scenario().canonical_reads.after_evolution)
         }),
