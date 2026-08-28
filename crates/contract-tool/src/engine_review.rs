@@ -184,6 +184,7 @@ pub fn validate_engine_result_review(
         &evidence_directory,
         &review.run.fixture_id,
     )?;
+    validate_reviewed_invocation(&review, &evidence)?;
 
     verify_source_bytes(&review.profile, evidence.profile_bytes(), "profile")?;
     verify_source_bytes(&review.scenario, evidence.scenario_bytes(), "scenario")?;
@@ -255,14 +256,6 @@ fn validate_review_shape(review: &EngineResultReview) -> Result<()> {
         bail!("reviewed run and bundle timestamps are not strictly ordered");
     }
 
-    let expected_invocation = format!(
-        "docker/run-spark-interoperability.sh \"{}\"",
-        review.run.fixture_id
-    );
-    if review.run.sanitized_invocation != expected_invocation {
-        bail!("reviewed invocation does not match the canonical Spark launcher");
-    }
-
     validate_source(&review.profile, "profile source")?;
     validate_source(&review.scenario, "scenario source")?;
     validate_transcript_review_order(&review.transcripts)?;
@@ -283,6 +276,27 @@ fn validate_review_shape(review: &EngineResultReview) -> Result<()> {
         if !removed_fields.insert(field) {
             bail!("redaction review contains a duplicate removed field category");
         }
+    }
+    Ok(())
+}
+
+fn validate_reviewed_invocation(
+    review: &EngineResultReview,
+    evidence: &ValidatedEngineEvidenceSet,
+) -> Result<()> {
+    let engine_name = &evidence.transcripts()[0]
+        .transcript()
+        .components
+        .engine
+        .name;
+    let launcher = match engine_name.as_str() {
+        "Apache Spark" => "docker/run-spark-interoperability.sh",
+        "Apache Flink" => "docker/run-flink-interoperability.sh",
+        _ => bail!("reviewed engine has no canonical interoperability launcher"),
+    };
+    let expected = format!("{launcher} \"{}\"", review.run.fixture_id);
+    if review.run.sanitized_invocation != expected {
+        bail!("reviewed invocation does not match the canonical engine launcher");
     }
     Ok(())
 }

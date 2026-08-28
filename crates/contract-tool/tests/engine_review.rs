@@ -156,7 +156,7 @@ async fn rejects_time_invocation_environment_and_redaction_drift() {
     fixture.reset_review();
     fixture.review["run"]["sanitized_invocation"] = Value::String("spark-submit".to_owned());
     fixture.write_review();
-    assert_error_contains(fixture.validate(), "canonical Spark launcher");
+    assert_error_contains(fixture.validate(), "canonical engine launcher");
 
     fixture.reset_review();
     fixture.review["environment"]["architecture"] = Value::String("x86_64".to_owned());

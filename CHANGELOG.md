@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Publish the reviewed fresh stock-Flink v2 correctness bundle from run
+  `flinkv2_08280635`: LakeCat, Polaris, Gravitino, and Lakekeeper each pass all
+  required assertions. Generalize review admission to require the canonical
+  launcher selected by the evidenced engine rather than hard-coding Spark.
+
 - Rematerialize the local-target Flink runtime at `catalog-bench@ce0c11f` and
   verify every source, image, and embedded-artifact identity. A direct complete
   LakeCat v2 workflow now passes writes, reads, schema evolution, three-way
