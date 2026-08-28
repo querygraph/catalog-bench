@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Advance the unpublished Flink candidate and Compose source pin to
+  `catalog-bench@df3a68da`, the first revision whose pinned-JDK build topology
+  can actually compile the Java effects runner. No prior Flink materialization
+  or result exists, so the corrected draft supersedes the unbuildable pin.
+
 - Build the source-bound Flink Java effects runner in an immutable Linux ARM64
   Eclipse Temurin 17 JDK stage instead of the stock Flink JRE image. The first
   production build proved Maven had no `javac`; the executed runtime remains the

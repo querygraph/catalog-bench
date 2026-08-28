@@ -14,13 +14,13 @@ const FLINK_SOURCE_PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/flink-candidate-2.1.3-2026-08-27.json");
 const SPARK_MATERIALIZATION: &[u8] =
     include_bytes!("../../../materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
-const RUNNER_REVISION: &str = "36906515b69a61ac26d44327b2a9ff94c2b84551";
+const RUNNER_REVISION: &str = "df3a68da787de82ae83d1a5034228b731f3bc588";
 
 #[test]
 fn checked_in_candidate_advances_only_identity_and_runner_source() -> Result<()> {
     assert_eq!(
         sha256(FLINK_SOURCE_PROFILE),
-        "4accf24289c5249bc9b4998dc41370689fe47841d63b1407e8a288250746ed37"
+        "d27bc0c59f65aa1dc57b70a80ea6a5d3de86a8984a8b95a5992ac1e2b6e5603a"
     );
     let mut expected: Value = serde_json::from_slice(BROAD_SOURCE_PROFILE)?;
     expected["id"] = json!("catalog-community-flink-candidate-2.1.3-2026-08-27-linux-arm64");
