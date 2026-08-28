@@ -288,10 +288,11 @@ impl RunningTrinoServer {
         let probe =
             TrinoCliInvocation::new(cli_executable, "SELECT 1 AS ready", TrinoCliOutput::Discard)
                 .map_err(|_| TrinoServerFailure::Probe)?;
-        let probe_timeout = probe_interval.min(Duration::from_secs(5));
+        let probe_timeout = startup_timeout.min(Duration::from_secs(10));
         let executor = TrinoCommandExecutor::new(probe_timeout)
             .map_err(|_| TrinoServerFailure::InvalidTimeout)?;
         let started = Instant::now();
+        tokio::time::sleep(probe_interval.min(startup_timeout)).await;
         loop {
             match child.try_wait() {
                 Ok(Some(_)) | Err(_) => return Err(TrinoServerFailure::Exited),

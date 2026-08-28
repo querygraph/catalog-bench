@@ -226,7 +226,7 @@ async fn server_supervisor_waits_for_a_successful_stock_query_and_stops_the_proc
         &directory,
         "cli.sh",
         &format!(
-            "count=0; test ! -f '{0}' || count=$(cat '{0}'); count=$((count + 1)); printf '%s' \"$count\" > '{0}'; if test \"$count\" -lt 3; then exit 1; fi",
+            "count=0; test ! -f '{0}' || count=$(cat '{0}'); count=$((count + 1)); printf '%s' \"$count\" > '{0}'; if test \"$count\" -lt 3; then exit 1; fi; sleep 0.1",
             counter.display()
         ),
     );
