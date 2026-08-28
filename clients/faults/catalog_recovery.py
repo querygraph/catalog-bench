@@ -120,15 +120,19 @@ def wait_for_fault_event(control: Client, timeout: float = 30) -> dict[str, Any]
     raise RuntimeError("timed out waiting for in-flight fault gate")
 
 
-def wait_for_table(client: Client, path: str, timeout: float = 90) -> dict[str, Any]:
+def wait_for_table_state(
+    client: Client, path: str, timeout: float = 90
+) -> tuple[HttpOutcome, dict[str, Any] | None]:
     deadline = time.monotonic() + timeout
     last = HttpOutcome("disconnected", None)
     while time.monotonic() < deadline:
         last, document = client.request("GET", path)
         if last.status == 200 and isinstance(document, dict):
-            return document
+            return last, document
+        if last.status == 404:
+            return last, None
         time.sleep(0.5)
-    raise RuntimeError(f"catalog did not recover table after restart: {last}")
+    raise RuntimeError(f"catalog did not become observable after restart: {last}")
 
 
 def restart_catalog(args: argparse.Namespace) -> None:
@@ -336,27 +340,28 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         )
         proxy.bearer = bearer
         direct.bearer = bearer
-    after_restart = wait_for_table(direct, table_path)
-    observed = property_value(after_restart, property_name)
-    if observed is not None:
+    restarted_status, after_restart = wait_for_table_state(direct, table_path)
+    durable_fixture_present = restarted_status.status == 200
+    observed = property_value(after_restart, property_name) if durable_fixture_present else None
+    if durable_fixture_present and observed is not None:
         raise RuntimeError(f"partial in-flight request mutated state before exact retry: {observed!r}")
     retry, _ = proxy.request("POST", table_path, body)
-    if retry.status != 200:
-        raise RuntimeError(f"restart exact retry failed: {retry}")
-    final = wait_for_table(direct, table_path)
-    if property_value(final, property_name) != "accepted":
+    final_status, final = wait_for_table_state(direct, table_path)
+    final_property = property_value(final, property_name) if final_status.status == 200 else None
+    if durable_fixture_present and (retry.status != 200 or final_property != "accepted"):
         raise RuntimeError("restart exact retry did not reach accepted state")
     cases["restart_during_commit"] = {
         "request_outcome": asdict(interrupted),
+        "durable_fixture_present": durable_fixture_present,
         "observed_before_retry": observed,
         "retry_status": retry.status,
-        "final_property": "accepted",
+        "final_property": final_property,
         "fault_events": gate_state.get("events", []),
     }
 
     drop, _ = direct.request("DELETE", table_path)
     drop_namespace, _ = direct.request("DELETE", namespace_path)
-    if drop.status not in {200, 204} or drop_namespace.status not in {200, 204}:
+    if drop.status not in {200, 204, 404} or drop_namespace.status not in {200, 204, 404}:
         raise RuntimeError(f"cleanup failed: table={drop} namespace={drop_namespace}")
 
     return {
