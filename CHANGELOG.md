@@ -4,6 +4,9 @@
   pinned TPC-DS model and creates five relationship-connected Iceberg tables
   through LakeCat REST on isolated MinIO.
 
+- Publish reviewed `tpcds_0828d` source evidence: five tables, 30 physical
+  fields, 15 rows, exact model/data/source/image hashes, and zero cleanup residue.
+
 ## Unreleased
 
 - Publish reviewed `hadoop_0828i` evidence for the stock Spark/Iceberg

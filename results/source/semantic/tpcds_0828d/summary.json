@@ -1,0 +1,18 @@
+{
+  "content_sha256": "sha256:e84f3f0d1f08ce68af4278f07552464b4665c819b973e6162c0fd0e2cb22f54a",
+  "contract": "catalog-bench/querygraph-tpcds-fixture/v1",
+  "querygraph_revision": "53a0008d6565753022d82ea6dbaaf230e681a7ba",
+  "result": {
+    "model-hash": "sha256:3400c9e7e4a4c8b283868f7d9bcc6ca5646200bad8a3da069bb7a1dfc16dd74b",
+    "status": "verified",
+    "tables": [
+      {"columns":["ss_sold_date_sk","ss_item_sk","ss_customer_sk","ss_store_sk","ss_quantity","ss_sales_price","ss_ext_sales_price","ss_net_profit"],"data-hash":"sha256:5694c890fba41a23bb18d06ae34458a0ffc3fe106b76a7dc15f7e14e3eb0e6f5","name":"store_sales","row-count":3},
+      {"columns":["d_date_sk","d_date","d_year","d_quarter_name","d_month_name"],"data-hash":"sha256:38ac79b99bc41c4487875eb5c13fdea73b8d2dcc402d14384b2a898e8c9ef589","name":"date_dim","row-count":3},
+      {"columns":["c_customer_sk","c_customer_id","c_first_name","c_last_name","c_email_address"],"data-hash":"sha256:d26292b269dacc2cdc1e9982e3963519f9342bfd68e31f0b70504ef492cdb267","name":"customer","row-count":3},
+      {"columns":["i_item_sk","i_item_id","i_item_desc","i_brand","i_category","i_current_price"],"data-hash":"sha256:50913a44ab691909544f3dcb78e3db5b1e0a71b3f66223ba7e30f9920825ba6d","name":"item","row-count":3},
+      {"columns":["s_store_sk","s_store_id","s_store_name","s_city","s_state","s_number_employees"],"data-hash":"sha256:8cade24506be248ace6f7dac54ea48887aedbf973688bbcf1e6eca37a9f91392","name":"store","row-count":3}
+    ]
+  },
+  "run_id": "tpcds_0828d",
+  "status": "verified"
+}
