@@ -226,6 +226,8 @@
   lifecycle probe for cold backup/restore comparison across the four catalogs.
 - Preserve archived numeric ownership on restore so unprivileged Gravitino and
   PostgreSQL processes can reopen their restored run-owned state.
+- Advance the immutable infrastructure source pin to the reviewed ownership-
+  preserving archive implementation.
 
 - Add the exact-source DuckDB 1.5.3 four-catalog launcher and runnable profile,
   including official signed offline extensions, bounded result decoding, OAuth

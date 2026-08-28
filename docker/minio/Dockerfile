@@ -2,7 +2,7 @@
 # 2025-10-15 release. Build that exact upstream source revision with its pinned
 # Go toolchain instead of silently substituting an older binary.
 ARG GO_IMAGE=golang:1.24.8-bookworm@sha256:4ed690d6649d63c312b99a6120025ec79ce3b542968a37da53d6236c7c61a848
-ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=2130ae1e08ce7ce5102effbdcddce7df0a926552
+ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=ec4590b5f7828573b80cb2f85a5d14c9e2a770f1
 
 FROM --platform=$BUILDPLATFORM ${GO_IMAGE} AS tool-build
 ARG TARGETARCH
@@ -50,7 +50,7 @@ RUN --mount=type=cache,target=/go/pkg/mod,sharing=locked \
 FROM scratch
 ARG MINIO_TAG=RELEASE.2025-10-15T17-29-55Z
 ARG MINIO_REVISION=9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
-ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=2130ae1e08ce7ce5102effbdcddce7df0a926552
+ARG CATALOG_BENCH_HELPER_SOURCE_REVISION=ec4590b5f7828573b80cb2f85a5d14c9e2a770f1
 LABEL org.opencontainers.image.title="catalog-bench MinIO" \
       org.opencontainers.image.description="Exact source-built MinIO for catalog interoperability evidence" \
       org.opencontainers.image.source="https://github.com/minio/minio" \
