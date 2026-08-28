@@ -2,9 +2,22 @@
 
 ## Unreleased
 
+- C2-06 catalog-neutral Trino renderer: translate the closed Trino plan into
+  exact Trino 483 REST-catalog and `fs.s3.enabled` properties plus an ordered
+  eight-operation SQL program for schema/table creation, deterministic appends
+  and canonical reads, additive evolution, and `$snapshots` inspection. Preserve
+  scenario-owned Iceberg properties through Trino's `extra_properties` map,
+  carry only typed secret-free authentication setup, and reject execution,
+  routing, policy, identifier, generator, or file-I/O drift before mutation.
+  Extract overflow-checked row and insert generation into one shared Rust module
+  used by Flink and Trino. Separate tests cover all four catalogs, exact SQL and
+  oracles, closed serialization, authentication, drift, and absence of catalog
+  branches or direct transports. This unit does not start Trino or claim a
+  runtime result.
+
 - C2-06 closed Trino execution policy: add a typed Trino 483 plan variant over
   the shared catalog, fixture, scenario, authentication, and object-store
-  representations. Preserve Trino's actual native-S3 configuration as its own
+  representations. Preserve Trino's actual `fs.s3.enabled` configuration as its own
   file-I/O ADT instead of mislabeling it as Iceberg `S3FileIO`; require the
   stock server launcher, engine-owned CLI JAR, source-correlated optimized Rust
   runner, and byte-correlated Iceberg 1.11.0 connector artifacts before plan

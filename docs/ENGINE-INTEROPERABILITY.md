@@ -139,9 +139,9 @@ can serialize `plan.json`. An adapter paired with the wrong execution-plan
 variant fails preparation with a closed `execution-plan-mismatch` category; it
 cannot reinterpret another engine's settings or panic. Flink now has a closed
 renderer, process adapter, child protocol, and stock-engine effect
-implementation. Trino has a typed policy variant but no renderer or process
-adapter. Those adapters must reuse the same scenario, fixture, evidence, and
-classification policy.
+implementation. Trino has a typed policy variant and catalog-neutral renderer,
+but no process adapter. Those adapters must reuse the same scenario, fixture,
+evidence, and classification policy.
 
 ### Pinned Flink capability decision
 
@@ -510,7 +510,7 @@ for deterministic local execution and a catalog named `bench`.
 
 Trino's stock Iceberg connector does not use the external Iceberg `S3FileIO`
 class configured by Spark and Flink. The plan therefore uses a separate
-`TrinoS3FileIoPlan` that requires native S3, the shared MinIO endpoint and
+`TrinoS3FileIoPlan` that requires `fs.s3.enabled`, the shared MinIO endpoint and
 bucket, region, and path-style access. This is an algebraic distinction in the
 type system, not an engine-name branch in shared execution code.
 
@@ -522,7 +522,36 @@ come from revision `50b0b50b75abd47f830b7805ee1b51716eb4065e`: its Dockerfile
 copies the CLI JAR and selects the server launcher, while its root build pins
 Iceberg 1.11.0 and Temurin `jdk-25.0.3+9`. Synthetic profile tests exercise only
 the pure policy and fail closed on launcher, CLI, connector, runner, engine, or
-Java drift. No Trino SQL has been rendered or executed by this unit.
+Java drift. That policy unit renders or executes no Trino SQL.
+
+### Catalog-neutral Trino renderer
+
+The Rust renderer converts only `TrinoExecutionPlan` into a closed,
+secret-free program. Catalog configuration uses Trino 483's exact property
+vocabulary: `connector.name=iceberg`, `iceberg.catalog.type=rest`, the selected
+REST URI/prefix/warehouse, `fs.s3.enabled=true`, and the shared MinIO endpoint,
+region, and path-style mode. Anonymous or OAuth2 remains an ADT; OAuth server
+and scope may enter configuration, but the credential itself is never
+serialized. A future process boundary must inject it from the already selected
+environment binding.
+
+The renderer emits exactly eight ordered effects: `CREATE SCHEMA`, `CREATE
+TABLE`, initial insert and canonical read, additive `ALTER TABLE ... ADD`,
+evolved insert and canonical read, and the stock `"table$snapshots"` metadata
+query. Trino's double-quoted identifiers, `VARCHAR` type, `format_version`,
+`location`, and `extra_properties = MAP(...)` syntax remain local to this
+dialect. Scenario-owned Iceberg properties are preserved through
+`extra_properties` rather than dropped or translated into engine settings.
+
+Flink and Trino share one overflow-checked row generator and insertion
+primitive, so the affine amounts, modulo labels, evolved notes, batch bounds,
+literal escaping, and row order cannot drift between engines. Their quoting,
+types, table properties, catalog setup, and metadata syntax remain separate
+because those are real dialect differences. Tests render all four required
+catalog profiles and reject unknown wire fields, malformed identifiers,
+generator overflow/modulus drift, policy changes, file-I/O changes, or any
+catalog-specific branch or direct REST transport. These pure tests are not a
+Trino process or interoperability result.
 
 This event change deliberately advances the scenario revision and transcript
 format to v2. The decoder does not use an untagged legacy alternative whose

@@ -334,7 +334,7 @@ fn derives_a_closed_trino_plan_from_a_materialized_profile() {
     assert_eq!(trino.format, TRINO_PLAN_FORMAT);
     assert_eq!(trino.execution.task_concurrency, 1);
     assert_eq!(trino.catalog.name, "bench");
-    assert!(trino.file_io.native_s3);
+    assert!(trino.file_io.enabled);
     assert_eq!(trino.file_io.endpoint, "http://minio:9000");
     assert_eq!(trino.file_io.bucket, "warehouse");
     assert_eq!(trino.fixture.namespace, "cb_c201_lakecat_trino01");

@@ -14,7 +14,9 @@ mod process;
 mod protocol;
 mod reconcile;
 mod runtime;
+mod sql;
 mod transcript;
+mod trino;
 mod workflow;
 
 pub use adapters::{
@@ -41,6 +43,7 @@ pub use transcript::{
     EngineTranscriptProfile, EngineTranscriptSanitization, EngineTranscriptValidationFailure,
     EngineTranscriptValidationFailureKind,
 };
+pub use trino::*;
 pub use workflow::{
     run_engine_workflow, EngineBehaviorChecks, EngineBehaviorClassification,
     EngineCatalogConnection, EngineCatalogConnectionEvidence, EngineCatalogConnectionFailure,

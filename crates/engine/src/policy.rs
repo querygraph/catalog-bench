@@ -354,7 +354,7 @@ pub struct TrinoExecutionSettings {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct TrinoS3FileIoPlan {
-    pub native_s3: bool,
+    pub enabled: bool,
     pub endpoint: String,
     pub bucket: String,
     pub region: String,
@@ -768,7 +768,7 @@ fn execution_plan(
                 },
                 catalog: catalog(TRINO_CATALOG_NAME, authentication)?,
                 file_io: TrinoS3FileIoPlan {
-                    native_s3: true,
+                    enabled: true,
                     endpoint: object_store.endpoint.clone(),
                     bucket: object_store.bucket.clone(),
                     region: object_store.region.clone(),

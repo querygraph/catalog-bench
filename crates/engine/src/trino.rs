@@ -9,23 +9,23 @@ use crate::sql::{
     literal, render_insert, render_read, render_rows, valid_identifier, SqlGenerationError,
 };
 use crate::{
-    CanonicalRead, ConnectorPolicy, EngineCatalogAuthentication, EvolutionField,
-    FlinkExecutionPlan, ForbiddenPolicy, IcebergField, IcebergPrimitiveType, SyntaxRenderingPolicy,
-    UnsupportedPolicy, ENGINE_TRANSCRIPT_FORMAT, FLINK_CATALOG_NAME, FLINK_PLAN_FORMAT,
+    CanonicalRead, ConnectorPolicy, EngineCatalogAuthentication, EvolutionField, ForbiddenPolicy,
+    IcebergField, IcebergPrimitiveType, SyntaxRenderingPolicy, TrinoExecutionPlan,
+    UnsupportedPolicy, ENGINE_TRANSCRIPT_FORMAT, TRINO_CATALOG_NAME, TRINO_PLAN_FORMAT,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct FlinkRenderError(&'static str);
+pub struct TrinoRenderError(&'static str);
 
-impl Display for FlinkRenderError {
+impl Display for TrinoRenderError {
     fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
         formatter.write_str(self.0)
     }
 }
 
-impl Error for FlinkRenderError {}
+impl Error for TrinoRenderError {}
 
-impl From<SqlGenerationError> for FlinkRenderError {
+impl From<SqlGenerationError> for TrinoRenderError {
     fn from(error: SqlGenerationError) -> Self {
         Self(error.0)
     }
@@ -33,7 +33,7 @@ impl From<SqlGenerationError> for FlinkRenderError {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct FlinkCatalogSetup {
+pub struct TrinoCatalogSetup {
     pub name: String,
     pub properties: BTreeMap<String, String>,
     pub authentication: EngineCatalogAuthentication,
@@ -41,7 +41,7 @@ pub struct FlinkCatalogSetup {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub enum FlinkOperationPurpose {
+pub enum TrinoOperationPurpose {
     CreateNamespace,
     CreateTable,
     InitialAppend,
@@ -54,7 +54,7 @@ pub enum FlinkOperationPurpose {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct FlinkFixtureTarget {
+pub struct TrinoFixtureTarget {
     pub namespace: String,
     pub table: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -64,7 +64,7 @@ pub struct FlinkFixtureTarget {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct FlinkObservationPolicy {
+pub struct TrinoObservationPolicy {
     pub format_version: u8,
     pub initial_schema: Vec<IcebergField>,
     pub evolved_field: EvolutionField,
@@ -73,7 +73,7 @@ pub struct FlinkObservationPolicy {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "operation", rename_all = "kebab-case", deny_unknown_fields)]
-pub enum FlinkOperation {
+pub enum TrinoOperation {
     CreateNamespace {
         sql: String,
     },
@@ -102,18 +102,18 @@ pub enum FlinkOperation {
     },
 }
 
-impl FlinkOperation {
+impl TrinoOperation {
     #[must_use]
-    pub fn purpose(&self) -> FlinkOperationPurpose {
+    pub fn purpose(&self) -> TrinoOperationPurpose {
         match self {
-            Self::CreateNamespace { .. } => FlinkOperationPurpose::CreateNamespace,
-            Self::CreateTable { .. } => FlinkOperationPurpose::CreateTable,
-            Self::InitialAppend { .. } => FlinkOperationPurpose::InitialAppend,
-            Self::InitialRead { .. } => FlinkOperationPurpose::InitialRead,
-            Self::AddColumn { .. } => FlinkOperationPurpose::AddColumn,
-            Self::EvolvedAppend { .. } => FlinkOperationPurpose::EvolvedAppend,
-            Self::EvolvedRead { .. } => FlinkOperationPurpose::EvolvedRead,
-            Self::SnapshotRead { .. } => FlinkOperationPurpose::SnapshotRead,
+            Self::CreateNamespace { .. } => TrinoOperationPurpose::CreateNamespace,
+            Self::CreateTable { .. } => TrinoOperationPurpose::CreateTable,
+            Self::InitialAppend { .. } => TrinoOperationPurpose::InitialAppend,
+            Self::InitialRead { .. } => TrinoOperationPurpose::InitialRead,
+            Self::AddColumn { .. } => TrinoOperationPurpose::AddColumn,
+            Self::EvolvedAppend { .. } => TrinoOperationPurpose::EvolvedAppend,
+            Self::EvolvedRead { .. } => TrinoOperationPurpose::EvolvedRead,
+            Self::SnapshotRead { .. } => TrinoOperationPurpose::SnapshotRead,
         }
     }
 
@@ -134,20 +134,22 @@ impl FlinkOperation {
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct FlinkRenderedProgram {
-    pub parallelism: u32,
-    pub catalog: FlinkCatalogSetup,
-    pub fixture: FlinkFixtureTarget,
-    pub observation: FlinkObservationPolicy,
-    pub operations: Vec<FlinkOperation>,
+pub struct TrinoRenderedProgram {
+    pub task_concurrency: u32,
+    pub catalog: TrinoCatalogSetup,
+    pub fixture: TrinoFixtureTarget,
+    pub observation: TrinoObservationPolicy,
+    pub operations: Vec<TrinoOperation>,
 }
 
-impl FlinkRenderedProgram {
-    pub fn render(plan: &FlinkExecutionPlan) -> Result<Self, FlinkRenderError> {
+impl TrinoRenderedProgram {
+    pub fn render(plan: &TrinoExecutionPlan) -> Result<Self, TrinoRenderError> {
         validate_plan(plan)?;
         let namespace = identifier(&plan.fixture.namespace)?;
         let table = identifier(&plan.fixture.table)?;
-        let qualified_table = format!("{namespace}.{table}");
+        let catalog = identifier(&plan.catalog.name)?;
+        let qualified_namespace = format!("{catalog}.{namespace}");
+        let qualified_table = format!("{qualified_namespace}.{table}");
         let scenario = &plan.scenario;
         let schema = scenario
             .table
@@ -157,23 +159,35 @@ impl FlinkRenderedProgram {
             .map(render_field)
             .collect::<Result<Vec<_>, _>>()?
             .join(", ");
-        let mut table_properties = scenario.table.properties.clone();
-        table_properties.insert(
-            "format-version".to_owned(),
-            scenario.table.format_version.to_string(),
-        );
-        table_properties.insert(
-            "write.format.default".to_owned(),
-            match scenario.table.file_format {
-                crate::FileFormat::Parquet => "parquet".to_owned(),
-            },
-        );
+        let mut table_properties = vec![
+            "format = 'PARQUET'".to_owned(),
+            format!("format_version = {}", scenario.table.format_version),
+        ];
         if let Some(location) = &plan.fixture.requested_location {
-            table_properties.insert("location".to_owned(), location.clone());
+            table_properties.push(format!("location = {}", literal(location)));
+        }
+        if !scenario.table.properties.is_empty() {
+            table_properties.push(format!(
+                "extra_properties = MAP(ARRAY[{}], ARRAY[{}])",
+                scenario
+                    .table
+                    .properties
+                    .keys()
+                    .map(|key| literal(key))
+                    .collect::<Vec<_>>()
+                    .join(", "),
+                scenario
+                    .table
+                    .properties
+                    .values()
+                    .map(|value| literal(value))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
         }
         let create_table = format!(
             "CREATE TABLE {qualified_table} ({schema}) WITH ({})",
-            render_properties(&table_properties)
+            table_properties.join(", ")
         );
         let initial_columns = scenario
             .table
@@ -211,47 +225,47 @@ impl FlinkRenderedProgram {
         );
 
         Ok(Self {
-            parallelism: plan.execution.parallelism,
-            catalog: FlinkCatalogSetup {
+            task_concurrency: plan.execution.task_concurrency,
+            catalog: TrinoCatalogSetup {
                 name: plan.catalog.name.clone(),
                 properties: catalog_properties(plan),
                 authentication: plan.catalog.authentication.clone(),
             },
-            fixture: FlinkFixtureTarget {
+            fixture: TrinoFixtureTarget {
                 namespace: plan.fixture.namespace.clone(),
                 table: plan.fixture.table.clone(),
                 requested_location: plan.fixture.requested_location.clone(),
                 bucket: plan.file_io.bucket.clone(),
             },
-            observation: FlinkObservationPolicy {
+            observation: TrinoObservationPolicy {
                 format_version: scenario.table.format_version,
                 initial_schema: scenario.table.schema.fields.clone(),
                 evolved_field: scenario.schema_evolution.field.clone(),
                 properties: scenario.table.properties.clone(),
             },
             operations: vec![
-                FlinkOperation::CreateNamespace {
-                    sql: format!("CREATE DATABASE IF NOT EXISTS {namespace}"),
+                TrinoOperation::CreateNamespace {
+                    sql: format!("CREATE SCHEMA IF NOT EXISTS {qualified_namespace}"),
                 },
-                FlinkOperation::CreateTable { sql: create_table },
-                FlinkOperation::InitialAppend {
+                TrinoOperation::CreateTable { sql: create_table },
+                TrinoOperation::InitialAppend {
                     sql: render_insert(&qualified_table, &initial_columns, &initial_values),
                 },
-                FlinkOperation::InitialRead {
+                TrinoOperation::InitialRead {
                     sql: initial_read,
                     expected: scenario.canonical_reads.initial.clone(),
                 },
-                FlinkOperation::AddColumn { sql: add_column },
-                FlinkOperation::EvolvedAppend {
+                TrinoOperation::AddColumn { sql: add_column },
+                TrinoOperation::EvolvedAppend {
                     sql: render_insert(&qualified_table, &evolved_columns, &evolved_values),
                 },
-                FlinkOperation::EvolvedRead {
+                TrinoOperation::EvolvedRead {
                     sql: evolved_read,
                     expected: scenario.canonical_reads.after_evolution.clone(),
                 },
-                FlinkOperation::SnapshotRead {
+                TrinoOperation::SnapshotRead {
                     sql: format!(
-                        "SELECT * FROM {namespace}.`{}$snapshots`",
+                        "SELECT * FROM {qualified_namespace}.\"{}$snapshots\"",
                         plan.fixture.table
                     ),
                 },
@@ -260,28 +274,28 @@ impl FlinkRenderedProgram {
     }
 }
 
-fn validate_plan(plan: &FlinkExecutionPlan) -> Result<(), FlinkRenderError> {
-    if plan.format != FLINK_PLAN_FORMAT {
-        return Err(FlinkRenderError("unsupported Flink plan format"));
+fn validate_plan(plan: &TrinoExecutionPlan) -> Result<(), TrinoRenderError> {
+    if plan.format != TRINO_PLAN_FORMAT {
+        return Err(TrinoRenderError("unsupported Trino plan format"));
     }
-    if plan.execution.parallelism != 1 {
-        return Err(FlinkRenderError("unsupported Flink execution settings"));
+    if plan.execution.task_concurrency != 1 {
+        return Err(TrinoRenderError("unsupported Trino execution settings"));
     }
-    if plan.catalog.name != FLINK_CATALOG_NAME
+    if plan.catalog.name != TRINO_CATALOG_NAME
         || !credential_free_http_url(&plan.catalog.uri)
-        || plan.file_io.implementation != "org.apache.iceberg.aws.s3.S3FileIO"
+        || !plan.file_io.enabled
         || !credential_free_http_url(&plan.file_io.endpoint)
         || plan.file_io.bucket.is_empty()
         || plan.file_io.region.is_empty()
         || !plan.file_io.path_style_access
     {
-        return Err(FlinkRenderError(
-            "unsupported Flink catalog or file IO policy",
+        return Err(TrinoRenderError(
+            "unsupported Trino catalog or file IO policy",
         ));
     }
     if let Some(location) = &plan.fixture.requested_location {
         let Ok(location) = Url::parse(location) else {
-            return Err(FlinkRenderError("invalid Flink table location"));
+            return Err(TrinoRenderError("invalid Trino table location"));
         };
         if location.scheme() != "s3"
             || location.host_str() != Some(plan.file_io.bucket.as_str())
@@ -290,7 +304,7 @@ fn validate_plan(plan: &FlinkExecutionPlan) -> Result<(), FlinkRenderError> {
             || location.query().is_some()
             || location.fragment().is_some()
         {
-            return Err(FlinkRenderError("invalid Flink table location"));
+            return Err(TrinoRenderError("invalid Trino table location"));
         }
     }
     let policy = &plan.scenario.engine_policy;
@@ -305,8 +319,8 @@ fn validate_plan(plan: &FlinkExecutionPlan) -> Result<(), FlinkRenderError> {
             .namespace
             .starts_with(&format!("{}_", plan.scenario.fixture_prefix))
     {
-        return Err(FlinkRenderError(
-            "scenario policy does not authorize the Flink renderer",
+        return Err(TrinoRenderError(
+            "scenario policy does not authorize the Trino renderer",
         ));
     }
     Ok(())
@@ -323,12 +337,15 @@ fn credential_free_http_url(value: &str) -> bool {
     })
 }
 
-fn catalog_properties(plan: &FlinkExecutionPlan) -> BTreeMap<String, String> {
+fn catalog_properties(plan: &TrinoExecutionPlan) -> BTreeMap<String, String> {
     let mut properties = BTreeMap::from([
-        ("type".to_owned(), "iceberg".to_owned()),
-        ("catalog-type".to_owned(), "rest".to_owned()),
-        ("uri".to_owned(), plan.catalog.uri.clone()),
-        ("io-impl".to_owned(), plan.file_io.implementation.clone()),
+        ("connector.name".to_owned(), "iceberg".to_owned()),
+        ("iceberg.catalog.type".to_owned(), "rest".to_owned()),
+        (
+            "iceberg.rest-catalog.uri".to_owned(),
+            plan.catalog.uri.clone(),
+        ),
+        ("fs.s3.enabled".to_owned(), plan.file_io.enabled.to_string()),
         ("s3.endpoint".to_owned(), plan.file_io.endpoint.clone()),
         ("s3.region".to_owned(), plan.file_io.region.clone()),
         (
@@ -337,15 +354,43 @@ fn catalog_properties(plan: &FlinkExecutionPlan) -> BTreeMap<String, String> {
         ),
     ]);
     if let Some(warehouse) = &plan.catalog.warehouse {
-        properties.insert("warehouse".to_owned(), warehouse.clone());
+        properties.insert(
+            "iceberg.rest-catalog.warehouse".to_owned(),
+            warehouse.clone(),
+        );
     }
     if let Some(prefix) = &plan.catalog.prefix {
-        properties.insert("prefix".to_owned(), prefix.clone());
+        properties.insert("iceberg.rest-catalog.prefix".to_owned(), prefix.clone());
+    }
+    match &plan.catalog.authentication {
+        EngineCatalogAuthentication::Anonymous => {
+            properties.insert(
+                "iceberg.rest-catalog.security".to_owned(),
+                "NONE".to_owned(),
+            );
+        }
+        EngineCatalogAuthentication::OAuth2ClientCredentials {
+            oauth2_server_uri,
+            scope,
+        } => {
+            properties.insert(
+                "iceberg.rest-catalog.security".to_owned(),
+                "OAUTH2".to_owned(),
+            );
+            properties.insert(
+                "iceberg.rest-catalog.oauth2.server-uri".to_owned(),
+                oauth2_server_uri.clone(),
+            );
+            properties.insert(
+                "iceberg.rest-catalog.oauth2.scope".to_owned(),
+                scope.clone(),
+            );
+        }
     }
     properties
 }
 
-fn render_field(field: &crate::IcebergField) -> Result<String, FlinkRenderError> {
+fn render_field(field: &crate::IcebergField) -> Result<String, TrinoRenderError> {
     Ok(format!(
         "{} {}{}",
         identifier(&field.name)?,
@@ -357,23 +402,15 @@ fn render_field(field: &crate::IcebergField) -> Result<String, FlinkRenderError>
 fn render_type(field_type: IcebergPrimitiveType) -> &'static str {
     match field_type {
         IcebergPrimitiveType::Long => "BIGINT",
-        IcebergPrimitiveType::String => "STRING",
+        IcebergPrimitiveType::String => "VARCHAR",
     }
 }
 
-fn render_properties(properties: &BTreeMap<String, String>) -> String {
-    properties
-        .iter()
-        .map(|(key, value)| format!("{}={}", literal(key), literal(value)))
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
-fn identifier(value: &str) -> Result<String, FlinkRenderError> {
+fn identifier(value: &str) -> Result<String, TrinoRenderError> {
     if !valid_identifier(value) {
-        return Err(FlinkRenderError(
-            "Flink identifier is outside the closed vocabulary",
+        return Err(TrinoRenderError(
+            "Trino identifier is outside the closed vocabulary",
         ));
     }
-    Ok(format!("`{value}`"))
+    Ok(format!("\"{value}\""))
 }
