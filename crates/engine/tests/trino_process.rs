@@ -5,8 +5,8 @@ use catalog_bench_common::contract::{parse_contract, ComponentId, ContractDocume
 use catalog_bench_engine::{
     InteroperabilityPlan, RunningTrinoServer, StagedTrinoServer, TrinoCliInvocation,
     TrinoCliOutput, TrinoCommandExecutor, TrinoCommandFailure, TrinoLauncherInvocation,
-    TrinoRenderedProgram, TrinoServerConfiguration, TrinoServerFailure, TRINO_CLI_LOCATION,
-    TRINO_LAUNCHER_LOCATION,
+    TrinoRenderedProgram, TrinoServerConfiguration, TrinoServerEnvironment, TrinoServerFailure,
+    TRINO_CLI_LOCATION, TRINO_LAUNCHER_LOCATION,
 };
 use tempfile::TempDir;
 
@@ -206,7 +206,15 @@ async fn bounded_executor_rejects_output_exit_timeout_and_invalid_limits() {
 #[tokio::test]
 async fn server_supervisor_waits_for_typed_readiness_and_stops_the_process_group() {
     let directory = TempDir::new().unwrap();
-    let launcher = script(&directory, "launcher.sh", "while :; do sleep 1; done");
+    let captured = directory.path().join("environment");
+    let launcher = script(
+        &directory,
+        "launcher.sh",
+        &format!(
+            "printf '%s\\n%s\\n%s\\n%s\\n%s' \"$CATALOG_BENCH_TRINO_NODE_ID\" \"$CATALOG_BENCH_TRINO_DATA_DIR\" \"$CATALOG_BENCH_S3_ACCESS_KEY_ID\" \"$CATALOG_BENCH_S3_SECRET_ACCESS_KEY\" \"$CATALOG_BENCH_ENGINE_OAUTH_CREDENTIAL\" > '{}'; while :; do sleep 1; done",
+            captured.display()
+        ),
+    );
     let counter = directory.path().join("counter");
     let cli = script(
         &directory,
@@ -217,10 +225,12 @@ async fn server_supervisor_waits_for_typed_readiness_and_stops_the_process_group
         ),
     );
     let invocation = TrinoLauncherInvocation::new(&launcher, directory.path()).unwrap();
+    let environment = environment(&directory);
     let server = RunningTrinoServer::start(
         &invocation,
         &cli,
         directory.path(),
+        &environment,
         Duration::from_secs(2),
         Duration::from_millis(20),
     )
@@ -228,6 +238,17 @@ async fn server_supervisor_waits_for_typed_readiness_and_stops_the_process_group
     .unwrap();
     let pid = server.process_id().unwrap();
     assert_eq!(std::fs::read_to_string(counter).unwrap(), "3");
+    assert_eq!(
+        std::fs::read_to_string(captured).unwrap(),
+        format!(
+            "catalog-bench-test-node\n{}\naccess-value\nsecret-value\nclient-id:client-secret",
+            directory.path().join("data").display()
+        )
+    );
+    let debug = format!("{environment:?}");
+    assert!(!debug.contains("access-value"));
+    assert!(!debug.contains("secret-value"));
+    assert!(!debug.contains("client-secret"));
     server.shutdown().await;
     #[cfg(unix)]
     assert_eq!(unsafe { libc::kill(i32::try_from(pid).unwrap(), 0) }, -1);
@@ -239,11 +260,13 @@ async fn server_supervisor_classifies_exit_timeout_and_invalid_configuration() {
     let cli = script(&directory, "cli.sh", "exit 1");
     let exited = script(&directory, "exit.sh", "exit 7");
     let invocation = TrinoLauncherInvocation::new(&exited, directory.path()).unwrap();
+    let environment = environment(&directory);
     assert_eq!(
         RunningTrinoServer::start(
             &invocation,
             &cli,
             directory.path(),
+            &environment,
             Duration::from_secs(1),
             Duration::from_millis(10),
         )
@@ -258,6 +281,7 @@ async fn server_supervisor_classifies_exit_timeout_and_invalid_configuration() {
             &invocation,
             &cli,
             directory.path(),
+            &environment,
             Duration::from_millis(80),
             Duration::from_millis(10),
         )
@@ -270,6 +294,7 @@ async fn server_supervisor_classifies_exit_timeout_and_invalid_configuration() {
             &invocation,
             &cli,
             directory.path(),
+            &environment,
             Duration::ZERO,
             Duration::from_millis(10),
         )
@@ -277,6 +302,37 @@ async fn server_supervisor_classifies_exit_timeout_and_invalid_configuration() {
         .unwrap_err(),
         TrinoServerFailure::InvalidTimeout
     );
+}
+
+#[test]
+fn server_environment_rejects_empty_secret_and_relative_data_paths() {
+    assert!(TrinoServerEnvironment::new(
+        "node".to_owned(),
+        "relative".into(),
+        "access".to_owned(),
+        "secret".to_owned(),
+        None,
+    )
+    .is_err());
+    assert!(TrinoServerEnvironment::new(
+        "node".to_owned(),
+        "/data".into(),
+        String::new(),
+        "secret".to_owned(),
+        None,
+    )
+    .is_err());
+}
+
+fn environment(directory: &TempDir) -> TrinoServerEnvironment {
+    TrinoServerEnvironment::new(
+        "catalog-bench-test-node".to_owned(),
+        directory.path().join("data"),
+        "access-value".to_owned(),
+        "secret-value".to_owned(),
+        Some("client-id:client-secret".to_owned()),
+    )
+    .unwrap()
 }
 
 #[cfg(unix)]

@@ -1,5 +1,11 @@
 # Changelog
 
+- C2-06 Trino launcher secret boundary: introduce a validated, redacted,
+  zeroizing server environment and inject only the generated node/data values,
+  S3 credentials, and optional REST OAuth credential after process environment
+  sanitization. Tests prove the exact values reach the stock launcher without
+  appearing in debug output and reject empty or unsafe inputs.
+
 ## Unreleased
 
 - Correct Trino 483 launcher provenance from the live pinned ARM64 image:

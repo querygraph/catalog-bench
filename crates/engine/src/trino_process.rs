@@ -1,5 +1,6 @@
 //! Closed subprocess grammar for the pinned stock Trino launcher and CLI.
 
+use std::fmt::{Debug, Formatter};
 use std::fs::OpenOptions;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -10,14 +11,18 @@ use tempfile::{Builder as TempDirBuilder, TempDir};
 use tokio::io::AsyncReadExt;
 use tokio::process::Command;
 use tokio::time::timeout;
+use zeroize::Zeroize as _;
 
 use crate::process::{configure_sanitized_process, terminate_child};
-use crate::{TrinoServerConfiguration, TRINO_CATALOG_NAME};
+use crate::{TrinoServerConfiguration, S3_ACCESS_KEY_ENV, S3_SECRET_KEY_ENV, TRINO_CATALOG_NAME};
 
 const TRINO_SERVER_URI: &str = "http://127.0.0.1:8080";
 const TRINO_USER: &str = "catalog_bench";
 const MAXIMUM_TRINO_SQL_BYTES: usize = 1024 * 1024;
 const MAXIMUM_TRINO_CAPTURE_BYTES: usize = 16 * 1024 * 1024;
+const TRINO_NODE_ID_ENV: &str = "CATALOG_BENCH_TRINO_NODE_ID";
+const TRINO_DATA_DIR_ENV: &str = "CATALOG_BENCH_TRINO_DATA_DIR";
+const TRINO_OAUTH_CREDENTIAL_ENV: &str = "CATALOG_BENCH_ENGINE_OAUTH_CREDENTIAL";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrinoInvocationError;
@@ -177,6 +182,78 @@ pub enum TrinoServerFailure {
     Timeout,
 }
 
+pub struct TrinoServerEnvironment {
+    node_id: String,
+    data_directory: PathBuf,
+    object_store_access_key: String,
+    object_store_secret_key: String,
+    catalog_oauth_credential: Option<String>,
+}
+
+impl TrinoServerEnvironment {
+    pub fn new(
+        node_id: String,
+        data_directory: PathBuf,
+        object_store_access_key: String,
+        object_store_secret_key: String,
+        catalog_oauth_credential: Option<String>,
+    ) -> Result<Self, TrinoInvocationError> {
+        if !valid_environment_value(&node_id)
+            || !data_directory.is_absolute()
+            || path_argument(&data_directory).is_err()
+            || !valid_environment_value(&object_store_access_key)
+            || !valid_environment_value(&object_store_secret_key)
+            || catalog_oauth_credential
+                .as_deref()
+                .is_some_and(|value| !valid_environment_value(value))
+        {
+            return Err(TrinoInvocationError);
+        }
+        Ok(Self {
+            node_id,
+            data_directory,
+            object_store_access_key,
+            object_store_secret_key,
+            catalog_oauth_credential,
+        })
+    }
+
+    fn apply(&self, command: &mut Command) {
+        command
+            .env(TRINO_NODE_ID_ENV, &self.node_id)
+            .env(TRINO_DATA_DIR_ENV, &self.data_directory)
+            .env(S3_ACCESS_KEY_ENV, &self.object_store_access_key)
+            .env(S3_SECRET_KEY_ENV, &self.object_store_secret_key);
+        if let Some(credential) = &self.catalog_oauth_credential {
+            command.env(TRINO_OAUTH_CREDENTIAL_ENV, credential);
+        }
+    }
+}
+
+impl Debug for TrinoServerEnvironment {
+    fn fmt(&self, formatter: &mut Formatter<'_>) -> std::fmt::Result {
+        formatter
+            .debug_struct("TrinoServerEnvironment")
+            .field("node_id", &self.node_id)
+            .field("data_directory", &self.data_directory)
+            .field("object_store_access_key", &"<redacted>")
+            .field("object_store_secret_key", &"<redacted>")
+            .field(
+                "catalog_oauth_credential",
+                &self.catalog_oauth_credential.as_ref().map(|_| "<redacted>"),
+            )
+            .finish()
+    }
+}
+
+impl Drop for TrinoServerEnvironment {
+    fn drop(&mut self) {
+        self.object_store_access_key.zeroize();
+        self.object_store_secret_key.zeroize();
+        self.catalog_oauth_credential.zeroize();
+    }
+}
+
 #[derive(Debug)]
 pub struct RunningTrinoServer {
     child: tokio::process::Child,
@@ -187,6 +264,7 @@ impl RunningTrinoServer {
         launcher: &TrinoLauncherInvocation,
         cli_executable: &Path,
         root: &Path,
+        environment: &TrinoServerEnvironment,
         startup_timeout: Duration,
         probe_interval: Duration,
     ) -> Result<Self, TrinoServerFailure> {
@@ -196,6 +274,7 @@ impl RunningTrinoServer {
         let mut command = Command::new(launcher.executable());
         command.args(launcher.arguments());
         configure_sanitized_process(&mut command, root);
+        environment.apply(&mut command);
         command.stdout(Stdio::null());
         let mut child = command.spawn().map_err(|_| TrinoServerFailure::Spawn)?;
         let probe =
@@ -410,6 +489,10 @@ impl TrinoCliInvocation {
 
 fn valid_sql(sql: &str) -> bool {
     !sql.is_empty() && sql.len() <= MAXIMUM_TRINO_SQL_BYTES && !sql.chars().any(char::is_control)
+}
+
+fn valid_environment_value(value: &str) -> bool {
+    !value.is_empty() && !value.chars().any(|character| character == '\0')
 }
 
 fn path_argument(path: &Path) -> Result<String, TrinoInvocationError> {
