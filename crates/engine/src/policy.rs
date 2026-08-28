@@ -38,6 +38,13 @@ pub const FLINK_SCALA_VERSION: &str = "2.12.20";
 pub const FLINK_JAVA_VERSION: &str = "17.0.20";
 pub const FLINK_CLI_LOCATION: &str = "/opt/flink/bin/flink";
 pub const FLINK_RUNNER_LOCATION: &str = "/opt/catalog-bench/catalog-bench-flink-runner.jar";
+pub const TRINO_PLAN_FORMAT: &str = "catalog-bench/trino-engine-plan/v1";
+pub const TRINO_CATALOG_NAME: &str = "bench";
+pub const TRINO_COMPONENT_NAME: &str = "Trino";
+pub const TRINO_COMPONENT_VERSION: &str = "483";
+pub const TRINO_JAVA_VERSION: &str = "25.0.3";
+pub const TRINO_SERVER_LOCATION: &str = "/usr/lib/trino/bin/run-trino";
+pub const TRINO_CLI_LOCATION: &str = "/usr/bin/trino";
 pub const S3_ACCESS_KEY_ENV: &str = "CATALOG_BENCH_S3_ACCESS_KEY_ID";
 pub const S3_SECRET_KEY_ENV: &str = "CATALOG_BENCH_S3_SECRET_ACCESS_KEY";
 pub const ENGINE_OAUTH_CLIENT_ID_ENV: &str = "CATALOG_BENCH_ENGINE_CLIENT_ID";
@@ -338,11 +345,39 @@ pub struct FlinkExecutionPlan {
     pub scenario: EngineScenarioParameters,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TrinoExecutionSettings {
+    pub task_concurrency: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TrinoS3FileIoPlan {
+    pub native_s3: bool,
+    pub endpoint: String,
+    pub bucket: String,
+    pub region: String,
+    pub path_style_access: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TrinoExecutionPlan {
+    pub format: String,
+    pub execution: TrinoExecutionSettings,
+    pub catalog: RestCatalogPlan,
+    pub file_io: TrinoS3FileIoPlan,
+    pub fixture: Fixture,
+    pub scenario: EngineScenarioParameters,
+}
+
 /// Renderer-specific execution policy selected by the runnable profile.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EngineExecutionPlan {
     Spark(SparkExecutionPlan),
     Flink(FlinkExecutionPlan),
+    Trino(TrinoExecutionPlan),
 }
 
 impl EngineExecutionPlan {
@@ -351,6 +386,7 @@ impl EngineExecutionPlan {
         match self {
             Self::Spark(plan) => &plan.fixture,
             Self::Flink(plan) => &plan.fixture,
+            Self::Trino(plan) => &plan.fixture,
         }
     }
 
@@ -359,6 +395,7 @@ impl EngineExecutionPlan {
         match self {
             Self::Spark(plan) => &plan.scenario,
             Self::Flink(plan) => &plan.scenario,
+            Self::Trino(plan) => &plan.scenario,
         }
     }
 
@@ -367,6 +404,7 @@ impl EngineExecutionPlan {
         match self {
             Self::Spark(plan) => Some(plan),
             Self::Flink(_) => None,
+            Self::Trino(_) => None,
         }
     }
 
@@ -375,6 +413,15 @@ impl EngineExecutionPlan {
         match self {
             Self::Spark(_) => None,
             Self::Flink(plan) => Some(plan),
+            Self::Trino(_) => None,
+        }
+    }
+
+    #[must_use]
+    pub fn trino(&self) -> Option<&TrinoExecutionPlan> {
+        match self {
+            Self::Spark(_) | Self::Flink(_) => None,
+            Self::Trino(plan) => Some(plan),
         }
     }
 
@@ -404,6 +451,14 @@ impl EngineExecutionPlan {
                         .dependencies
                         .get("scala")
                         .is_some_and(|version| version == FLINK_SCALA_VERSION)
+            }
+            Self::Trino(_) => {
+                observation.engine_version == TRINO_COMPONENT_VERSION
+                    && observation.dependencies.len() == 1
+                    && observation
+                        .dependencies
+                        .get("java")
+                        .is_some_and(|version| version == TRINO_JAVA_VERSION)
             }
         }
     }
@@ -648,6 +703,11 @@ impl InteroperabilityPlan {
     pub fn flink(&self) -> Option<&FlinkExecutionPlan> {
         self.execution.flink()
     }
+
+    #[must_use]
+    pub fn trino(&self) -> Option<&TrinoExecutionPlan> {
+        self.execution.trino()
+    }
 }
 
 fn execution_plan(
@@ -700,6 +760,24 @@ fn execution_plan(
                 scenario,
             }))
         }
+        (TRINO_COMPONENT_NAME, TRINO_COMPONENT_VERSION) => {
+            Ok(EngineExecutionPlan::Trino(TrinoExecutionPlan {
+                format: TRINO_PLAN_FORMAT.to_owned(),
+                execution: TrinoExecutionSettings {
+                    task_concurrency: 1,
+                },
+                catalog: catalog(TRINO_CATALOG_NAME, authentication)?,
+                file_io: TrinoS3FileIoPlan {
+                    native_s3: true,
+                    endpoint: object_store.endpoint.clone(),
+                    bucket: object_store.bucket.clone(),
+                    region: object_store.region.clone(),
+                    path_style_access: object_store.path_style_access,
+                },
+                fixture,
+                scenario,
+            }))
+        }
         _ => Err(PolicyError::new(format!(
             "no stock renderer supports {} {}",
             engine.name, engine.version
@@ -716,6 +794,7 @@ fn validate_execution_artifact(
     let (location, label) = match execution {
         EngineExecutionPlan::Spark(_) => (SPARK_SUBMIT_LOCATION, "Spark submission"),
         EngineExecutionPlan::Flink(_) => (FLINK_CLI_LOCATION, "Flink CLI"),
+        EngineExecutionPlan::Trino(_) => (TRINO_SERVER_LOCATION, "Trino server launcher"),
     };
     let matches = artifacts
         .iter()
@@ -755,6 +834,25 @@ fn validate_execution_artifact(
         {
             return Err(PolicyError::new(
                 "Flink runner must be one nonempty source-bound runner-and-engine-owned JAR",
+            ));
+        }
+    }
+    if matches!(execution, EngineExecutionPlan::Trino(_)) {
+        let matches = artifacts
+            .iter()
+            .filter(|artifact| artifact.location == TRINO_CLI_LOCATION)
+            .collect::<Vec<_>>();
+        let [artifact] = matches.as_slice() else {
+            return Err(PolicyError::new(format!(
+                "Trino runtime must contain exactly one `{TRINO_CLI_LOCATION}` artifact"
+            )));
+        };
+        if artifact.media_type != "application/java-archive"
+            || artifact.bytes == 0
+            || artifact.components.as_slice() != std::slice::from_ref(engine)
+        {
+            return Err(PolicyError::new(
+                "Trino CLI must be a nonempty engine-owned Java archive",
             ));
         }
     }

@@ -9,12 +9,17 @@ use catalog_bench_engine::{
     SparkAuthentication, ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE,
     ENGINE_TRANSCRIPT_FORMAT, FLINK_COMPONENT_VERSION, FLINK_JAVA_VERSION, FLINK_PLAN_FORMAT,
     FLINK_SCALA_VERSION, ICEBERG_CONNECTOR_VERSION, SPARK_COMPONENT_VERSION, SPARK_PLAN_FORMAT,
+    TRINO_CLI_LOCATION, TRINO_COMPONENT_VERSION, TRINO_JAVA_VERSION, TRINO_PLAN_FORMAT,
+    TRINO_SERVER_LOCATION,
 };
 use serde_json::json;
 
 mod support;
 
-use support::{remove_engine_runner, select_synthetic_materialized_flink, RUNNER_REVISION};
+use support::{
+    remove_engine_runner, select_synthetic_materialized_flink, select_synthetic_materialized_trino,
+    RUNNER_REVISION,
+};
 
 const PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
@@ -311,6 +316,102 @@ fn flink_selection_rejects_runtime_and_artifact_drift() {
     assert!(error
         .to_string()
         .contains("requires a source-bound engine runner component"));
+}
+
+#[test]
+fn derives_a_closed_trino_plan_from_a_materialized_profile() {
+    let (profile, scenario) = runnable_trino_contracts();
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "trino01",
+    )
+    .unwrap();
+    let trino = plan.trino().unwrap();
+
+    assert_eq!(plan.engine().version, TRINO_COMPONENT_VERSION);
+    assert_eq!(trino.format, TRINO_PLAN_FORMAT);
+    assert_eq!(trino.execution.task_concurrency, 1);
+    assert_eq!(trino.catalog.name, "bench");
+    assert!(trino.file_io.native_s3);
+    assert_eq!(trino.file_io.endpoint, "http://minio:9000");
+    assert_eq!(trino.file_io.bucket, "warehouse");
+    assert_eq!(trino.fixture.namespace, "cb_c201_lakecat_trino01");
+    assert!(plan.spark().is_none());
+    assert!(plan.flink().is_none());
+    assert!(plan
+        .execution()
+        .runtime_identity_matches(&EngineRuntimeObservation {
+            engine_version: TRINO_COMPONENT_VERSION.to_owned(),
+            dependencies: BTreeMap::from([("java".to_owned(), TRINO_JAVA_VERSION.to_owned())]),
+            operating_system: "Linux".to_owned(),
+            architecture: "aarch64".to_owned(),
+        }));
+}
+
+#[test]
+fn trino_selection_rejects_runtime_and_cli_drift() {
+    let (mut profile, scenario) = runnable_trino_contracts();
+    let runtime = EngineRuntimeObservation {
+        engine_version: TRINO_COMPONENT_VERSION.to_owned(),
+        dependencies: BTreeMap::from([("java".to_owned(), "25.0.2".to_owned())]),
+        operating_system: "Linux".to_owned(),
+        architecture: "aarch64".to_owned(),
+    };
+    let plan = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "trino02",
+    )
+    .unwrap();
+    assert!(!plan.execution().runtime_identity_matches(&runtime));
+
+    let trino = profile
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == "trino")
+        .unwrap();
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut trino.artifact
+    else {
+        panic!("Trino fixture must be an image");
+    };
+    embedded_artifacts
+        .retain(|artifact| artifact.location.strip_prefix("image:") != Some(TRINO_CLI_LOCATION));
+    let error = InteroperabilityPlan::from_contracts(
+        &profile,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "trino02",
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains(TRINO_CLI_LOCATION));
+
+    let (mut missing_launcher, _) = runnable_trino_contracts();
+    let trino = missing_launcher
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == "trino")
+        .unwrap();
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut trino.artifact
+    else {
+        panic!("Trino fixture must be an image");
+    };
+    embedded_artifacts
+        .retain(|artifact| artifact.location.strip_prefix("image:") != Some(TRINO_SERVER_LOCATION));
+    let error = InteroperabilityPlan::from_contracts(
+        &missing_launcher,
+        &scenario,
+        &ComponentId::from("lakecat"),
+        "trino02",
+    )
+    .unwrap_err();
+    assert!(error.to_string().contains(TRINO_SERVER_LOCATION));
 }
 
 #[test]
@@ -702,6 +803,15 @@ fn runnable_flink_contracts() -> (Profile, Scenario) {
         panic!("candidate fixture must be a profile");
     };
     select_synthetic_materialized_flink(&mut profile, &candidate);
+    (profile, scenario)
+}
+
+fn runnable_trino_contracts() -> (Profile, Scenario) {
+    let (mut profile, scenario) = contracts();
+    let ContractDocument::Profile(candidate) = parse_contract(CANDIDATE_PROFILE).unwrap() else {
+        panic!("candidate fixture must be a profile");
+    };
+    select_synthetic_materialized_trino(&mut profile, &candidate);
     (profile, scenario)
 }
 

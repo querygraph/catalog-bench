@@ -1,6 +1,7 @@
 use catalog_bench_common::contract::{Profile, RuntimeArtifact};
 use catalog_bench_engine::{
     ENGINE_RUNNER_COMPONENT_ID, ENGINE_RUNNER_LOCATION, ENGINE_RUNNER_ROLE, FLINK_RUNNER_LOCATION,
+    TRINO_CLI_LOCATION, TRINO_SERVER_LOCATION,
 };
 
 #[allow(dead_code)]
@@ -124,6 +125,80 @@ pub(crate) fn select_synthetic_materialized_flink(profile: &mut Profile, candida
         if artifact.location.contains("iceberg-spark-runtime-4.1_2.13") {
             artifact.location =
                 "image:/opt/iceberg/iceberg-flink-runtime-2.1-1.11.0.jar".to_owned();
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub(crate) fn select_synthetic_materialized_trino(profile: &mut Profile, candidate: &Profile) {
+    let mut trino = candidate
+        .components
+        .iter()
+        .find(|component| component.id.as_str() == "trino")
+        .expect("candidate fixture must contain Trino")
+        .clone();
+    let spark_index = profile
+        .components
+        .iter()
+        .position(|component| component.id.as_str() == "spark-4.1")
+        .expect("materialized fixture must contain Spark");
+    trino.artifact = profile.components.remove(spark_index).artifact;
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut trino.artifact
+    else {
+        panic!("materialized engine fixture must be an image");
+    };
+    for artifact in &mut *embedded_artifacts {
+        if artifact.location == "image:/opt/spark/bin/spark-submit" {
+            artifact.location = format!("image:{TRINO_SERVER_LOCATION}");
+        } else if artifact.location.contains("iceberg-spark-runtime-4.1_2.13") {
+            artifact.location =
+                "image:/usr/lib/trino/plugin/iceberg/iceberg-core-1.11.0.jar".to_owned();
+        } else if artifact.location.contains("iceberg-aws-bundle") {
+            artifact.location =
+                "image:/usr/lib/trino/plugin/iceberg/iceberg-aws-1.11.0.jar".to_owned();
+        }
+    }
+    let mut cli = embedded_artifacts
+        .iter()
+        .find(|artifact| artifact.media_type == "application/java-archive")
+        .expect("synthetic Trino fixture needs a Java archive identity")
+        .clone();
+    cli.location = format!("image:{TRINO_CLI_LOCATION}");
+    cli.digest.value = "b".repeat(64);
+    cli.bytes = Some(54_321);
+    cli.description = Some("Synthetic stock Trino CLI fixture.".to_owned());
+    embedded_artifacts.push(cli);
+    profile.components.push(trino);
+    profile
+        .services
+        .retain(|service| service.component.as_str() != "spark-4.1");
+    profile.services.push(
+        candidate
+            .services
+            .iter()
+            .find(|service| service.component.as_str() == "trino")
+            .expect("candidate fixture must bind Trino")
+            .clone(),
+    );
+
+    let connector = profile
+        .components
+        .iter_mut()
+        .find(|component| component.id.as_str() == "iceberg-java")
+        .expect("materialized fixture must contain the Iceberg connector");
+    let RuntimeArtifact::ContainerImage {
+        embedded_artifacts, ..
+    } = &mut connector.artifact
+    else {
+        panic!("connector fixture must be an image");
+    };
+    for artifact in embedded_artifacts {
+        if artifact.location.contains("iceberg-spark-runtime-4.1_2.13") {
+            artifact.location = "image:/opt/iceberg/iceberg-core-1.11.0.jar".to_owned();
+        } else if artifact.location.contains("iceberg-aws-bundle") {
+            artifact.location = "image:/opt/iceberg/iceberg-aws-1.11.0.jar".to_owned();
         }
     }
 }

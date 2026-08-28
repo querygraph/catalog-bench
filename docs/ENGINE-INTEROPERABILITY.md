@@ -137,10 +137,11 @@ implicit “first engine” rule from affecting execution.
 The Spark process adapter must explicitly select that Spark variant before it
 can serialize `plan.json`. An adapter paired with the wrong execution-plan
 variant fails preparation with a closed `execution-plan-mismatch` category; it
-cannot reinterpret another engine's settings or panic. Flink now has a policy
-variant but not yet a renderer or process adapter; Trino has neither. Those
-adapters must reuse the same scenario, fixture, evidence, and classification
-policy.
+cannot reinterpret another engine's settings or panic. Flink now has a closed
+renderer, process adapter, child protocol, and stock-engine effect
+implementation. Trino has a typed policy variant but no renderer or process
+adapter. Those adapters must reuse the same scenario, fixture, evidence, and
+classification policy.
 
 ### Pinned Flink capability decision
 
@@ -493,9 +494,35 @@ The Spark variant requires engine version `4.1.3` and exactly `java=21.0.11`
 plus `scala=2.13.17`. Its renderer rejects missing or extra dependency names,
 legacy `spark_version`/`scala_version`/`java_version` shapes, non-text values,
 and unbounded text before emitting an event. The Flink policy variant requires
-engine version `2.1.3` and exactly `java=17.0.20` plus `scala=2.12.20`; its future
-renderer must enforce that shape before emitting an event. Each engine variant
-owns its exact dependency set without weakening the common vocabulary.
+engine version `2.1.3` and exactly `java=17.0.20` plus `scala=2.12.20`; its
+renderer enforces that shape before emitting an event. The Trino policy variant
+requires engine version `483` and exactly `java=25.0.3`; Trino does not expose a
+Scala runtime dependency in the evidence contract. Each engine variant owns its
+exact dependency set without weakening the common vocabulary.
+
+### Closed Trino execution policy
+
+The Trino plan is selected only for the exact profile identity `Trino 483`.
+Like Spark and Flink, it receives the shared REST catalog, authentication,
+fixture, canonical-read oracles, schema evolution, and object-store routing.
+Its engine-specific settings are deliberately small: one task-concurrency unit
+for deterministic local execution and a catalog named `bench`.
+
+Trino's stock Iceberg connector does not use the external Iceberg `S3FileIO`
+class configured by Spark and Flink. The plan therefore uses a separate
+`TrinoS3FileIoPlan` that requires native S3, the shared MinIO endpoint and
+bucket, region, and path-style access. This is an algebraic distinction in the
+type system, not an engine-name branch in shared execution code.
+
+Before a Trino plan can exist, the materialized image must contain the
+engine-owned `/usr/lib/trino/bin/run-trino` shell launcher and `/usr/bin/trino`
+CLI JAR, the source-correlated optimized Rust runner, and byte-correlated
+Iceberg 1.11.0 connector artifacts. These paths and Trino's Java 25.0.3 runtime
+come from revision `50b0b50b75abd47f830b7805ee1b51716eb4065e`: its Dockerfile
+copies the CLI JAR and selects the server launcher, while its root build pins
+Iceberg 1.11.0 and Temurin `jdk-25.0.3+9`. Synthetic profile tests exercise only
+the pure policy and fail closed on launcher, CLI, connector, runner, engine, or
+Java drift. No Trino SQL has been rendered or executed by this unit.
 
 This event change deliberately advances the scenario revision and transcript
 format to v2. The decoder does not use an untagged legacy alternative whose
@@ -857,9 +884,10 @@ C2-05 work is the fresh optimized production run, review, and publication.
 C2-06 first extracts engine-neutral process evidence and then separates common
 scenario and fixture semantics from renderer-specific execution policy. It also
 versions the evidence contract while replacing Spark-named runtime fields with
-plan-owned neutral runtime identity. Spark remains the only implemented
-execution-plan variant and production adapter; Flink and Trino are not yet
-claimed.
+plan-owned neutral runtime identity. Spark and Flink now have implemented plan
+variants and process adapters; Trino has a policy variant only. None is claimed
+as production interoperability evidence until its complete optimized run is
+materialized and validated.
 
 The remaining independently committed units will:
 

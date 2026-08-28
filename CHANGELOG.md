@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+- C2-06 closed Trino execution policy: add a typed Trino 483 plan variant over
+  the shared catalog, fixture, scenario, authentication, and object-store
+  representations. Preserve Trino's actual native-S3 configuration as its own
+  file-I/O ADT instead of mislabeling it as Iceberg `S3FileIO`; require the
+  stock server launcher, engine-owned CLI JAR, source-correlated optimized Rust
+  runner, and byte-correlated Iceberg 1.11.0 connector artifacts before plan
+  construction. Runtime admission requires exactly Trino 483 and Java 25.0.3.
+  Separate synthetic-profile tests prove the closed plan and reject Java or CLI
+  drift. This policy-only unit has no Trino renderer, process adapter, image,
+  runtime result, or ranking claim.
+
 - C2-06 immutable Flink candidate: preserve the broad stock-engine and
   already-materialized Spark inputs byte-for-byte while deriving a dedicated
   Flink 2.1.3 candidate whose only semantic changes are its document identity
