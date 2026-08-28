@@ -29,4 +29,4 @@ fi
 COMPOSE_PROFILES=lakekeeper,polaris,gravitino,trino docker compose \
   --project-directory "$repository_root" \
   --file "$repository_root/docker-compose.yml" \
-  build --provenance=false trino-engine-runner-base trino
+  build --provenance=false trino-engine-runner-base trino-iceberg-runtime trino

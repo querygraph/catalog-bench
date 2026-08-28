@@ -724,10 +724,28 @@ services:
     entrypoint: ["/usr/local/bin/catalog-bench-engine"]
     command: ["--help"]
 
+  # Independently inspectable stock Iceberg plugin bytes with Iceberg source
+  # provenance; the final Trino image retains byte-identical copies.
+  trino-iceberg-runtime:
+    build:
+      <<: *trino-build
+      target: connector
+    image: catalog-bench/trino-iceberg-runtime:1.11.0-trino483
+    platform: linux/arm64
+    profiles: ["trino"]
+    network_mode: none
+    read_only: true
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    entrypoint: ["/usr/bin/trino"]
+    command: ["--version"]
+
   # Trino 483's stock server, CLI, and Iceberg plugin plus the benchmark ELF.
   trino:
     <<: *trino-runtime
-    build: *trino-build
+    build:
+      <<: *trino-build
+      target: runtime
     command: ["--help"]
 
   # The harness starts and supervises the stock server inside this one image.

@@ -1,5 +1,16 @@
 # Changelog
 
+- C2-06 live Trino profile materialization: bind the exact built runner donor,
+  independently labeled stock Iceberg plugin donor, and final Trino image to
+  their live ARM64 image IDs, labels, artifact digests, and byte counts. Add
+  byte-for-byte rerender/check tests and prove CLI dispatch from the runnable
+  profile selects Trino.
+
+- C2-06 deterministic Trino profile policy: require the exact source-bound
+  runner, Trino server shell launcher, native ARM64 launcher, stock CLI, and
+  Iceberg 1.11.0 core/AWS plugin bytes from the one executed image, with exact
+  base-image and runner-source labels and no artifact-copy assumptions.
+
 - C2-06 stock Trino image topology: compose the exact pinned Linux ARM64 Trino
   483 child with only the source-bound optimized Rust runner, verify the base
   descriptor and platform before construction, and expose a hardened one-shot

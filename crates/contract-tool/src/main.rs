@@ -7,11 +7,12 @@ use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
     check_contention_profile, check_contention_result_bundle, check_engine_result_bundle,
     check_flink_profile, check_historical_commit_bundle, check_phase1_profile,
-    check_phase1_result_bundle, check_publication, check_spark_profile, load_bundle, render_matrix,
-    validate_engine_evidence_set, validate_engine_result_review, write_contention_profile,
-    write_contention_result_bundle, write_engine_result_bundle, write_flink_profile,
-    write_historical_commit_bundle, write_phase1_profile, write_phase1_result_bundle,
-    write_publication, write_spark_profile, PublicationProfile,
+    check_phase1_result_bundle, check_publication, check_spark_profile, check_trino_profile,
+    load_bundle, render_matrix, validate_engine_evidence_set, validate_engine_result_review,
+    write_contention_profile, write_contention_result_bundle, write_engine_result_bundle,
+    write_flink_profile, write_historical_commit_bundle, write_phase1_profile,
+    write_phase1_result_bundle, write_publication, write_spark_profile, write_trino_profile,
+    PublicationProfile,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -144,6 +145,10 @@ enum ProfileCommand {
     MaterializeFlink(ProfileFiles),
     /// Check that the Flink interoperability profile exactly matches its inputs.
     CheckFlink(ProfileFiles),
+    /// Derive the runnable Trino interoperability profile.
+    MaterializeTrino(ProfileFiles),
+    /// Check that the Trino interoperability profile exactly matches its inputs.
+    CheckTrino(ProfileFiles),
 }
 
 #[derive(Debug, Args)]
@@ -344,6 +349,24 @@ fn run(cli: Cli) -> Result<()> {
                 output,
             }) => {
                 check_flink_profile(&source_profile, &materialization, &output)?;
+                println!("{} matches its materialization inputs", output.display());
+                Ok(())
+            }
+            ProfileCommand::MaterializeTrino(ProfileFiles {
+                source_profile,
+                materialization,
+                output,
+            }) => {
+                write_trino_profile(&source_profile, &materialization, &output)?;
+                println!("wrote {}", output.display());
+                Ok(())
+            }
+            ProfileCommand::CheckTrino(ProfileFiles {
+                source_profile,
+                materialization,
+                output,
+            }) => {
+                check_trino_profile(&source_profile, &materialization, &output)?;
                 println!("{} matches its materialization inputs", output.display());
                 Ok(())
             }

@@ -18,6 +18,7 @@ mod profile_materialization;
 mod profile_runtime_policy;
 mod publication;
 mod spark_profile;
+mod trino_profile;
 
 use sha2::{Digest as _, Sha256};
 
@@ -45,6 +46,7 @@ pub use profile_materialization::{
     ScenarioProfilePolicy,
 };
 pub use spark_profile::{check_spark_profile, render_spark_profile, write_spark_profile};
+pub use trino_profile::{check_trino_profile, render_trino_profile, write_trino_profile};
 
 fn sha256_hex(bytes: &[u8]) -> String {
     const HEX: &[u8; 16] = b"0123456789abcdef";
