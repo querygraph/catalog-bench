@@ -42,7 +42,9 @@ if [[ "$(docker image inspect --format '{{.Id}}' "$base_local_reference")" \
   exit 1
 fi
 
-COMPOSE_PROFILES=spark docker compose \
+: "${COMPOSE_PROFILES:=lakekeeper,polaris,gravitino,spark}"
+export COMPOSE_PROFILES
+docker compose \
   --project-directory "$repository_root" \
   --file "$repository_root/docker-compose.yml" \
   build --provenance=false engine-runner-image iceberg-spark-runtime spark

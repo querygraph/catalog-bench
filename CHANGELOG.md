@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- C2-02 Spark image build topology: make the standalone builder default to the
+  complete catalog profile set required by Compose dependency validation while
+  preserving an explicitly supplied profile set from the fresh-run launcher.
+  Deployment tests freeze the dependency-complete default and shell syntax.
+
 - C2-02 Spark v2 launch contract: advance the four-catalog production launcher
   to the current engine interoperability v2 scenario and freeze that exact path
   in deployment tests, while explicitly rejecting the superseded v1 selection.

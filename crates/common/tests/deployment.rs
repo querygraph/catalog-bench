@@ -412,6 +412,7 @@ fn spark_image_pins_the_profile_runtime_and_hash_locked_iceberg_jars() {
         "{{.Descriptor.digest}}",
         "expected linux/arm64",
         "docker tag \"$base_reference\" \"$base_local_reference\"",
+        ": \"${COMPOSE_PROFILES:=lakekeeper,polaris,gravitino,spark}\"",
         "build --provenance=false engine-runner-image iceberg-spark-runtime spark",
     ] {
         assert!(
