@@ -1,0 +1,281 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "result",
+  "id": "spark-v2-65f0a4c3-2026-08-28-lakecat",
+  "scenario": {
+    "id": "engine.iceberg.write-read-evolution",
+    "version": 2,
+    "digest": {
+      "algorithm": "sha256",
+      "value": "b80868f651fce1912b9e6b2608fa16d3c9e445d0ba1e7bb9f66e68db64bc3654"
+    }
+  },
+  "profile": {
+    "id": "catalog-community-spark-v2-engine-59840b9-lakecat-65f0a4c3-2026-08-28-linux-arm64",
+    "digest": {
+      "algorithm": "sha256",
+      "value": "861f3b340af01860e568720e7c323d327c779790d6771e0e34bb4e7a9e81e7e7"
+    }
+  },
+  "catalog": {
+    "profile_component": "lakecat",
+    "name": "LakeCat",
+    "version": "0.3.0-51-g65f0a4c3"
+  },
+  "client": {
+    "profile_component": "spark-4.1",
+    "name": "Apache Spark",
+    "version": "4.1.3"
+  },
+  "adapters": [
+    "iceberg-java"
+  ],
+  "run": {
+    "kind": "single",
+    "id": "sparkv2_08280548-lakecat",
+    "started_at": "2026-08-28T05:46:58Z",
+    "finished_at": "2026-08-28T05:48:20Z",
+    "repetition": 1
+  },
+  "outcome": {
+    "status": "pass",
+    "summary": "All 14 required stock-engine interoperability assertions passed."
+  },
+  "environment": {
+    "operating_system": "Linux",
+    "architecture": "aarch64",
+    "cpu_model": {
+      "precision": "unknown",
+      "explanation": "The LinuxKit container boundary did not expose a stable CPU model; no host model is substituted."
+    },
+    "logical_cpus": {
+      "precision": "exact",
+      "value": 10
+    },
+    "memory_bytes": {
+      "precision": "exact",
+      "value": 8321712128
+    },
+    "network": "catalog-bench-net",
+    "container_runtime": {
+      "precision": "exact",
+      "value": "Docker Engine 29.4.3 via Docker Desktop"
+    },
+    "runtime_flags": {
+      "claim_scope": "correctness only; elapsed time and resource utilization are not benchmark measurements",
+      "docker_compose": "fresh run-owned project and volumes; source builds use --provenance=false",
+      "same_docker_boundary": "all catalogs, Spark processes, reconciliation, and shared MinIO",
+      "workflow_execution_order": "sequential LakeCat, Polaris, Gravitino, Lakekeeper"
+    }
+  },
+  "assertions": [
+    {
+      "assertion": "engine-runtime-pinned",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "stock-rest-catalog-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "namespace-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "table-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "initial-append-committed",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "initial-read-exact",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "schema-evolved",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "evolved-append-committed",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "evolved-read-exact",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "catalog-state-correlated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "shared-object-evidence-complete",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      },
+      "evidence": [
+        "engine-transcript"
+      ]
+    }
+  ],
+  "evidence": [
+    {
+      "id": "engine-transcript",
+      "kind": "query-output",
+      "artifact": {
+        "location": "source/transcripts/lakecat.json",
+        "media_type": "application/json",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "2c8d48387c4afd520a7042db2160a212a0f937ae965218a13aa48b51d9b0f3eb"
+        },
+        "bytes": 15450,
+        "description": "Canonical sanitized stock-engine transcript for LakeCat."
+      },
+      "sanitized": true,
+      "redactions": [
+        "catalog OAuth client credentials and bearer tokens",
+        "object-store access and secret keys",
+        "raw engine rows and response bodies",
+        "raw backend exception and log detail"
+      ],
+      "extensions": {
+        "querygraph/classification": "pass",
+        "querygraph/transcript-format": "catalog-bench/engine-interoperability-transcript/v2"
+      }
+    },
+    {
+      "id": "materialization-review",
+      "kind": "other",
+      "artifact": {
+        "location": "source/review.json",
+        "media_type": "application/json",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "fa8107f6da144e55124f050e27cffbfb172020f69481011d75531dccfb4c499c"
+        },
+        "bytes": 3695,
+        "description": "Reviewed live-run, environment, source-identity, and redaction metadata."
+      },
+      "sanitized": true,
+      "redactions": [
+        "catalog OAuth client credentials and bearer tokens",
+        "object-store access and secret keys",
+        "raw engine rows and response bodies",
+        "raw backend exception and log detail"
+      ],
+      "extensions": {
+        "querygraph/reviewed": true
+      }
+    }
+  ],
+  "extensions": {
+    "querygraph/execution": {
+      "classification": "pass",
+      "exit_code": 0,
+      "failed_required_assertions": [],
+      "process_outcome": "completed"
+    },
+    "querygraph/request-handling": {
+      "behavior_changing_shim": false,
+      "connector": "iceberg-java",
+      "protocol": "iceberg-rest-v1"
+    },
+    "querygraph/run-interval": {
+      "catalogs_executed_sequentially": true,
+      "scope": "complete-four-catalog-launcher"
+    }
+  }
+}

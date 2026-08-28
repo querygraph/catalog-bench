@@ -1,0 +1,98 @@
+{
+  "format": "catalog-bench/engine-result-review/v1",
+  "bundle": {
+    "id": "spark-v2-65f0a4c3-2026-08-28",
+    "title": "Stock Spark 4.1.3 Iceberg REST interoperability across LakeCat, Polaris, Gravitino, and Lakekeeper",
+    "output_directory": "results/v1/spark-v2-65f0a4c3-2026-08-28",
+    "created_at": "2026-08-28T05:49:08Z"
+  },
+  "run": {
+    "fixture_id": "sparkv2_08280548",
+    "sanitized_invocation": "docker/run-spark-interoperability.sh \"sparkv2_08280548\"",
+    "started_at": "2026-08-28T05:46:58Z",
+    "started_at_basis": "Earliest run-owned service creation timestamp captured by Docker after the launcher completed its verified image-build stage.",
+    "completed_at": "2026-08-28T05:48:20Z",
+    "completed_at_basis": "Filesystem completion timestamp of the final sanitized transcript after all four sequential runner processes returned."
+  },
+  "profile": {
+    "location": "profiles/v1/spark-v2-lakecat-65f0a4c3-2026-08-28.json",
+    "sha256": "861f3b340af01860e568720e7c323d327c779790d6771e0e34bb4e7a9e81e7e7",
+    "bytes": 37167
+  },
+  "scenario": {
+    "location": "scenarios/v1/engine.iceberg.write-read-evolution.v2.json",
+    "sha256": "b80868f651fce1912b9e6b2608fa16d3c9e445d0ba1e7bb9f66e68db64bc3654",
+    "bytes": 17529
+  },
+  "transcripts": [
+    {
+      "catalog": "gravitino",
+      "source": {
+        "location": "results/source/engine/sparkv2_08280548/transcripts/gravitino.json",
+        "sha256": "5386cdd2aa42635c26df6f691e30305052540506991b161d34da6480b6310f75",
+        "bytes": 15237
+      }
+    },
+    {
+      "catalog": "lakecat",
+      "source": {
+        "location": "results/source/engine/sparkv2_08280548/transcripts/lakecat.json",
+        "sha256": "2c8d48387c4afd520a7042db2160a212a0f937ae965218a13aa48b51d9b0f3eb",
+        "bytes": 15450
+      }
+    },
+    {
+      "catalog": "lakekeeper",
+      "source": {
+        "location": "results/source/engine/sparkv2_08280548/transcripts/lakekeeper.json",
+        "sha256": "6d1332a5905c863475142108dd99abc97c5dfce7f704130abccd3a93140fd299",
+        "bytes": 15303
+      }
+    },
+    {
+      "catalog": "polaris",
+      "source": {
+        "location": "results/source/engine/sparkv2_08280548/transcripts/polaris.json",
+        "sha256": "28bd496a572b8fdbd936ba3bde979a5d127abe53dce638cbc9acd6154c65e8c5",
+        "bytes": 15311
+      }
+    }
+  ],
+  "environment": {
+    "operating_system": "Linux",
+    "architecture": "aarch64",
+    "cpu_model": {
+      "precision": "unknown",
+      "explanation": "The LinuxKit container boundary did not expose a stable CPU model; no host model is substituted."
+    },
+    "logical_cpus": {
+      "precision": "exact",
+      "value": 10
+    },
+    "memory_bytes": {
+      "precision": "exact",
+      "value": 8321712128
+    },
+    "network": "catalog-bench-net",
+    "container_runtime": {
+      "precision": "exact",
+      "value": "Docker Engine 29.4.3 via Docker Desktop"
+    },
+    "runtime_flags": {
+      "docker_compose": "fresh run-owned project and volumes; source builds use --provenance=false",
+      "same_docker_boundary": "all catalogs, Spark processes, reconciliation, and shared MinIO",
+      "workflow_execution_order": "sequential LakeCat, Polaris, Gravitino, Lakekeeper",
+      "claim_scope": "correctness only; elapsed time and resource utilization are not benchmark measurements"
+    }
+  },
+  "redaction": {
+    "reviewed": true,
+    "policy": "catalog-bench/value-safe-engine-v1 plus manual source review",
+    "removed_fields": [
+      "catalog OAuth client credentials and bearer tokens",
+      "object-store access and secret keys",
+      "raw engine rows and response bodies",
+      "raw backend exception and log detail"
+    ]
+  }
+}

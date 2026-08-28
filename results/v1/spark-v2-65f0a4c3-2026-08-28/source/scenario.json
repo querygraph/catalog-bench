@@ -1,0 +1,500 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "engine.iceberg.write-read-evolution",
+  "version": 2,
+  "title": "Stock engine Iceberg write, read, and schema evolution",
+  "description": "Runs one catalog-neutral workflow through a pinned stock query engine and its standard Iceberg REST connector: verify runtime identity, initialize the catalog without request rewriting, prove fixture ownership, create a namespace and format-v2 table, append and read deterministic rows, add one optional column, append and read the evolved schema, correlate the engine result with independent REST and shared-MinIO evidence, reconcile the fixture without purge, and emit a sanitized transcript.",
+  "family": "client-interoperability",
+  "classification": "strict-v1",
+  "tags": [
+    "stock-engine",
+    "iceberg-rest",
+    "write",
+    "read",
+    "schema-evolution",
+    "shared-minio",
+    "no-shim"
+  ],
+  "capabilities": [
+    {
+      "capability": "engine.iceberg.rest-round-trip",
+      "level": "required",
+      "description": "Use the pinned engine's stock Iceberg connector and the profile's protocol-native REST binding to create a run-owned namespace and table, append deterministic rows, and read them exactly.",
+      "specification": "https://github.com/apache/iceberg/blob/6976e020b894f6a6777704df2b8c4458cb291ae9/open-api/rest-catalog-open-api.yaml"
+    },
+    {
+      "capability": "engine.iceberg.additive-schema-evolution",
+      "level": "required",
+      "description": "Add one optional field without changing existing field identity, append rows under the evolved schema, and read old and new rows through the stock engine.",
+      "specification": "https://github.com/apache/iceberg/blob/6976e020b894f6a6777704df2b8c4458cb291ae9/format/spec.md#schema-evolution"
+    }
+  ],
+  "parameters": {
+    "catalog_protocol": "iceberg-rest-v1",
+    "engine_policy": {
+      "catalog_specific_branches": "forbidden",
+      "catalog_specific_shims": "forbidden",
+      "connector": "stock-profile-component",
+      "syntax_rendering": "engine-specific-but-catalog-neutral",
+      "unsupported": "classify-before-mutation-without-a-substitute-request"
+    },
+    "fixture_prefix": "cb_c201",
+    "table": {
+      "file_format": "parquet",
+      "format_version": 2,
+      "properties": {
+        "catalog-bench.owner": "catalog-bench",
+        "write.metadata.delete-after-commit.enabled": "false",
+        "write.metadata.previous-versions-max": "100000"
+      },
+      "schema": {
+        "fields": [
+          {
+            "id": 1,
+            "name": "id",
+            "required": true,
+            "type": "long"
+          },
+          {
+            "id": 2,
+            "name": "category",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "id": 3,
+            "name": "amount_cents",
+            "required": true,
+            "type": "long"
+          }
+        ],
+        "schema-id": 0,
+        "type": "struct"
+      }
+    },
+    "schema_evolution": {
+      "field": {
+        "name": "note",
+        "required": false,
+        "type": "string"
+      },
+      "preserve_existing_field_ids": true
+    },
+    "row_generator": {
+      "amount_cents": {
+        "kind": "affine",
+        "multiplier": 100,
+        "offset": 7
+      },
+      "category": {
+        "kind": "modulo-label",
+        "modulus": 4,
+        "prefix": "category-"
+      },
+      "note": {
+        "kind": "id-label",
+        "prefix": "evolved-"
+      }
+    },
+    "batches": {
+      "initial": {
+        "id_start": 0,
+        "rows": 16
+      },
+      "evolved": {
+        "id_start": 16,
+        "rows": 4
+      }
+    },
+    "canonical_reads": {
+      "encoding": "compact-rfc8259-json-array-per-row-utf8-lf",
+      "initial": {
+        "bytes": 346,
+        "columns": [
+          "id",
+          "category",
+          "amount_cents"
+        ],
+        "rows": 16,
+        "sha256": "e78b526d7e757090a9a90c80802c2a543cbf8166cfac6d6ed48c618926e85a15"
+      },
+      "order_by": [
+        "id"
+      ],
+      "after_evolution": {
+        "bytes": 570,
+        "columns": [
+          "id",
+          "category",
+          "amount_cents",
+          "note"
+        ],
+        "rows": 20,
+        "sha256": "b2af6f475851e07d1ace3706d8867530c13dd5938bee90cfcc62d3939e01bea2"
+      },
+      "trailing_lf": true
+    },
+    "object_audit": {
+      "minimum_metadata_objects": 4,
+      "minimum_parquet_objects": 2,
+      "scope": "returned-table-root-in-profile-shared-object-store"
+    },
+    "transcript_format": "catalog-bench/engine-interoperability-transcript/v2"
+  },
+  "steps": [
+    {
+      "id": "verify-engine-runtime",
+      "actor": "harness",
+      "operation": "engine.verify-pinned-runtime",
+      "description": "Require the exact profile-selected engine, connector, operating system, architecture, and immutable runtime artifacts before any credential or network access."
+    },
+    {
+      "id": "initialize-catalog",
+      "actor": "engine",
+      "operation": "engine.iceberg-rest.initialize",
+      "description": "Initialize the stock engine connector from the profile's Iceberg REST endpoint, authentication, route-prefix, warehouse, and shared-object-store settings without a behavior-changing shim.",
+      "depends_on": [
+        "verify-engine-runtime"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "preflight-fixture",
+      "actor": "engine",
+      "operation": "engine.namespace.verify-absence",
+      "description": "Use the stock engine to require the exact run-owned namespace to be absent; refuse every mutation on a collision.",
+      "depends_on": [
+        "initialize-catalog"
+      ],
+      "timeout_ms": 60000
+    },
+    {
+      "id": "create-namespace",
+      "actor": "engine",
+      "operation": "engine.namespace.create-list",
+      "description": "Create the run-owned namespace through stock engine syntax and prove that the same engine lists the exact identifier.",
+      "depends_on": [
+        "preflight-fixture"
+      ],
+      "timeout_ms": 60000
+    },
+    {
+      "id": "create-table",
+      "actor": "engine",
+      "operation": "engine.table.create-load",
+      "description": "Create and reload the scenario's unpartitioned format-v2 Parquet table with exact Iceberg field semantics and metadata-retention properties.",
+      "depends_on": [
+        "create-namespace"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "append-initial",
+      "actor": "engine",
+      "operation": "engine.table.insert-generated-batch",
+      "description": "Append the deterministic initial batch through the stock engine and require one successful snapshot-producing write.",
+      "depends_on": [
+        "create-table"
+      ],
+      "parameters": {
+        "batch": "initial"
+      },
+      "timeout_ms": 180000
+    },
+    {
+      "id": "read-initial",
+      "actor": "engine",
+      "operation": "engine.table.read-canonical-rows",
+      "description": "Reload through the stock engine, order by ID, and hash the exact initial row projection with the scenario's canonical encoding.",
+      "depends_on": [
+        "append-initial"
+      ],
+      "parameters": {
+        "expected": "canonical_reads.initial"
+      },
+      "timeout_ms": 120000
+    },
+    {
+      "id": "evolve-schema",
+      "actor": "engine",
+      "operation": "engine.table.add-optional-column",
+      "description": "Add the scenario's optional note field through stock engine syntax, reload the table, and preserve every existing Iceberg field ID.",
+      "depends_on": [
+        "read-initial"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "append-evolved",
+      "actor": "engine",
+      "operation": "engine.table.insert-generated-batch",
+      "description": "Append the deterministic evolved batch with non-null note values through the stock engine.",
+      "depends_on": [
+        "evolve-schema"
+      ],
+      "parameters": {
+        "batch": "evolved"
+      },
+      "timeout_ms": 180000
+    },
+    {
+      "id": "read-evolved",
+      "actor": "engine",
+      "operation": "engine.table.read-canonical-rows",
+      "description": "Reload through the stock engine and prove the complete evolved projection, including null notes for old rows and exact notes for new rows.",
+      "depends_on": [
+        "append-evolved"
+      ],
+      "parameters": {
+        "expected": "canonical_reads.after_evolution"
+      },
+      "timeout_ms": 120000
+    },
+    {
+      "id": "audit-catalog-state",
+      "actor": "harness",
+      "operation": "iceberg-rest.audit-engine-table",
+      "description": "Independently load the table through the same profile adapter and correlate its UUID, current metadata pointer, format version, schema, snapshots, and scenario-owned properties with the engine observations.",
+      "depends_on": [
+        "read-evolved"
+      ],
+      "timeout_ms": 60000
+    },
+    {
+      "id": "audit-object-state",
+      "actor": "object-store",
+      "operation": "object-store.audit-engine-table-root",
+      "description": "Traverse the exact returned table root in the profile's shared object store and verify the current metadata object plus minimum metadata and Parquet evidence.",
+      "depends_on": [
+        "audit-catalog-state"
+      ],
+      "timeout_ms": 60000
+    },
+    {
+      "id": "cleanup-fixture",
+      "actor": "harness",
+      "operation": "iceberg-rest.reconcile-engine-fixture",
+      "description": "After any post-mutation outcome, use the profile's standard REST adapter to drop every run-owned table candidate without purge, drop the namespace, and prove all identifiers absent; a failed collision preflight forbids cleanup mutation.",
+      "depends_on": [
+        "audit-object-state"
+      ],
+      "timeout_ms": 120000
+    },
+    {
+      "id": "sanitize-transcript",
+      "actor": "harness",
+      "operation": "evidence.sanitize-engine-interoperability-transcript",
+      "description": "Persist only pinned component identities, fixed query classifications, catalog and object digests, canonical row counts and hashes, bounded safe error classes, and cleanup outcomes.",
+      "depends_on": [
+        "cleanup-fixture"
+      ]
+    }
+  ],
+  "assertions": [
+    {
+      "id": "engine-runtime-pinned",
+      "step": "verify-engine-runtime",
+      "required": true,
+      "description": "The observed stock engine, connector, operating system, architecture, and runtime artifact identities exactly match the immutable execution profile.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-runtime-v1",
+        "configuration": {
+          "artifact_identity": "exact",
+          "profile_component_kinds": [
+            "engine",
+            "connector"
+          ]
+        }
+      }
+    },
+    {
+      "id": "stock-rest-catalog-ready",
+      "step": "initialize-catalog",
+      "required": true,
+      "description": "The stock connector initializes through the profile's protocol-native binding without request rewriting or a catalog-specific branch.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-rest-init-v1",
+        "configuration": {
+          "catalog_specific_branch": false,
+          "request_handling": "protocol-native",
+          "shim": false
+        }
+      }
+    },
+    {
+      "id": "fixture-isolated",
+      "step": "preflight-fixture",
+      "required": true,
+      "description": "The stock engine observed the run-owned namespace as absent before the first mutation.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-fixture-isolation-v1",
+        "configuration": {
+          "collision_policy": "refuse-without-mutation"
+        }
+      }
+    },
+    {
+      "id": "namespace-round-trip",
+      "step": "create-namespace",
+      "required": true,
+      "description": "The stock engine creates and lists exactly the run-owned namespace without identifier flattening or substitution.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-namespace-v1",
+        "configuration": {
+          "compare": "exact-identifier"
+        }
+      }
+    },
+    {
+      "id": "table-round-trip",
+      "step": "create-table",
+      "required": true,
+      "description": "The stock engine creates and reloads an unpartitioned format-v2 Parquet table with the exact initial field semantics and scenario-owned properties.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-table-v1",
+        "configuration": {
+          "file_format": "parquet",
+          "format_version": 2,
+          "partitioning": "unpartitioned"
+        }
+      }
+    },
+    {
+      "id": "initial-append-committed",
+      "step": "append-initial",
+      "required": true,
+      "description": "The initial stock-engine write commits exactly one logical batch and advances the table to a snapshot containing its data files.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-append-v1",
+        "configuration": {
+          "batch": "initial",
+          "logical_rows": 16,
+          "snapshots_added": 1
+        }
+      }
+    },
+    {
+      "id": "initial-read-exact",
+      "step": "read-initial",
+      "required": true,
+      "description": "The stock engine returns all 16 initial rows exactly once under the initial schema.",
+      "check": {
+        "kind": "data-read",
+        "expectation": "16 ID-ordered canonical rows, 346 bytes, SHA-256 e78b526d7e757090a9a90c80802c2a543cbf8166cfac6d6ed48c618926e85a15"
+      }
+    },
+    {
+      "id": "schema-evolved",
+      "step": "evolve-schema",
+      "required": true,
+      "description": "The current schema adds exactly one optional string field named note and preserves every existing field ID and semantic type.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-add-column-v1",
+        "configuration": {
+          "field": "note",
+          "preserve_existing_field_ids": true,
+          "required": false,
+          "type": "string"
+        }
+      }
+    },
+    {
+      "id": "evolved-append-committed",
+      "step": "append-evolved",
+      "required": true,
+      "description": "The evolved stock-engine write commits exactly one logical batch with the expected non-null note values.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-append-v1",
+        "configuration": {
+          "batch": "evolved",
+          "logical_rows": 4,
+          "snapshots_added": 1
+        }
+      }
+    },
+    {
+      "id": "evolved-read-exact",
+      "step": "read-evolved",
+      "required": true,
+      "description": "The stock engine returns all 20 rows exactly once under the evolved schema, with null notes for old rows and deterministic notes for new rows.",
+      "check": {
+        "kind": "data-read",
+        "expectation": "20 ID-ordered canonical rows, 570 bytes, SHA-256 b2af6f475851e07d1ace3706d8867530c13dd5938bee90cfcc62d3939e01bea2"
+      }
+    },
+    {
+      "id": "catalog-state-correlated",
+      "step": "audit-catalog-state",
+      "required": true,
+      "description": "Independent standard REST evidence agrees with the engine on table identity, metadata pointer, format, schema, two appended snapshots, and scenario-owned properties.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-catalog-correlation-v1",
+        "configuration": {
+          "appended_snapshots": 2,
+          "compare": [
+            "table-uuid",
+            "metadata-location",
+            "format-version",
+            "schema",
+            "scenario-properties"
+          ]
+        }
+      }
+    },
+    {
+      "id": "shared-object-evidence-complete",
+      "step": "audit-object-state",
+      "required": true,
+      "description": "The profile's shared MinIO contains the current metadata pointer, at least four retained metadata objects, and at least two Parquet data objects under the exact table root.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-object-audit-v1",
+        "configuration": {
+          "current_metadata_exists": true,
+          "minimum_metadata_objects": 4,
+          "minimum_parquet_objects": 2,
+          "shared_object_store": true
+        }
+      }
+    },
+    {
+      "id": "fixture-clean",
+      "step": "cleanup-fixture",
+      "required": true,
+      "description": "Every run-owned catalog identifier is absent after non-purging reconciliation while immutable object evidence remains available.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/engine-cleanup-v1",
+        "configuration": {
+          "object_evidence_retained": true,
+          "purge_requested": false
+        }
+      }
+    },
+    {
+      "id": "transcript-sanitized",
+      "step": "sanitize-transcript",
+      "required": true,
+      "description": "No credential, bearer token, raw row, raw response body, unbounded log, or raw exception message enters the persisted transcript.",
+      "check": {
+        "kind": "custom",
+        "name": "querygraph/catalog-bench/sanitized-engine-transcript-v1",
+        "configuration": {
+          "credential_policy": "identifiers-and-categories-only",
+          "error_policy": "bounded-class-and-fixed-explanation-only",
+          "row_policy": "count-byte-length-and-sha256-only"
+        }
+      }
+    }
+  ]
+}

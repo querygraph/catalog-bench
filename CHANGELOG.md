@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Publish the reviewed fresh stock-Spark v2 correctness bundle from run
+  `sparkv2_08280548`: LakeCat, Polaris, Gravitino, and Lakekeeper each pass all
+  14 required assertions. Archive the four sanitized transcripts and review,
+  bind exact profile/scenario/runtime identities, and deterministically emit
+  four records, an unranked matrix, and a complete immutable manifest.
+
 - Advance the source-built LakeCat image to `lakecat@65f0a4c3`, whose REST
   table routes decode multipart namespaces for Spark's standard metadata-table
   probe. Preserve both earlier v2 generations while admitting this exact

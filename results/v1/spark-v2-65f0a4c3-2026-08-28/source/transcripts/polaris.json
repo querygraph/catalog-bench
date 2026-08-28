@@ -1,0 +1,468 @@
+{
+  "format": "catalog-bench/engine-interoperability-transcript/v2",
+  "scenario": {
+    "id": "engine.iceberg.write-read-evolution",
+    "version": 2
+  },
+  "contract_digests": {
+    "profile_sha256": "861f3b340af01860e568720e7c323d327c779790d6771e0e34bb4e7a9e81e7e7",
+    "scenario_sha256": "b80868f651fce1912b9e6b2608fa16d3c9e445d0ba1e7bb9f66e68db64bc3654"
+  },
+  "profile": {
+    "id": "catalog-community-spark-v2-engine-59840b9-lakecat-65f0a4c3-2026-08-28-linux-arm64",
+    "resolved_at": "2026-08-28T05:45:32Z"
+  },
+  "components": {
+    "runner": {
+      "id": "catalog-bench-engine",
+      "name": "catalog-bench stock-engine runner",
+      "version": "59840b95c33e753919f5c984d10d6df45c834243",
+      "source_revision": "59840b95c33e753919f5c984d10d6df45c834243"
+    },
+    "catalog": {
+      "id": "polaris",
+      "name": "Apache Polaris",
+      "version": "1.7.0",
+      "source_revision": "4ac2f059d1cce149453d0a5f1ff1dff980ec97cc"
+    },
+    "engine": {
+      "id": "spark-4.1",
+      "name": "Apache Spark",
+      "version": "4.1.3",
+      "source_revision": "77bbf77e86ad48f58b5dfbc6ac882b3e70cf1989"
+    },
+    "connector": {
+      "id": "iceberg-java",
+      "name": "Apache Iceberg Java engine runtimes",
+      "version": "1.11.0",
+      "source_revision": "6976e020b894f6a6777704df2b8c4458cb291ae9"
+    },
+    "object_store": {
+      "id": "minio",
+      "name": "MinIO",
+      "version": "RELEASE.2025-10-15T17-29-55Z",
+      "source_revision": "9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a"
+    }
+  },
+  "fixture": {
+    "id": "sparkv2_08280548",
+    "namespace": "cb_c201_polaris_sparkv2_08280548",
+    "table": "events"
+  },
+  "execution": {
+    "process": {
+      "runtime": {
+        "platform": {
+          "expected_operating_system": "Linux",
+          "observed_operating_system": "linux",
+          "operating_system_matches": true,
+          "expected_architecture": "aarch64",
+          "observed_architecture": "aarch64",
+          "architecture_matches": true
+        },
+        "artifacts": [
+          {
+            "location": "/opt/spark/bin/spark-submit",
+            "media_type": "application/x-shellscript",
+            "components": [
+              "spark-4.1"
+            ],
+            "expected_bytes": 1040,
+            "expected_sha256": "98e6f3b89b9092938a0b163a656c2b9051099821966fc7ab5ef9888fa9f62c6a",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 1040,
+              "observed_sha256": "98e6f3b89b9092938a0b163a656c2b9051099821966fc7ab5ef9888fa9f62c6a"
+            }
+          },
+          {
+            "location": "/opt/spark/jars/iceberg-aws-bundle-1.11.0.jar",
+            "media_type": "application/java-archive",
+            "components": [
+              "iceberg-java",
+              "spark-4.1"
+            ],
+            "expected_bytes": 63613165,
+            "expected_sha256": "38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 63613165,
+              "observed_sha256": "38f01da7e96850cdd05e6616d758b77b43314b712a8808e3f9a824d56976162f"
+            }
+          },
+          {
+            "location": "/opt/spark/jars/iceberg-spark-runtime-4.1_2.13-1.11.0.jar",
+            "media_type": "application/java-archive",
+            "components": [
+              "iceberg-java",
+              "spark-4.1"
+            ],
+            "expected_bytes": 47959591,
+            "expected_sha256": "d6ea6c5d099288daeb7d5a92061bd3d7d8f296492632b42378e5f2f0e3066242",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 47959591,
+              "observed_sha256": "d6ea6c5d099288daeb7d5a92061bd3d7d8f296492632b42378e5f2f0e3066242"
+            }
+          },
+          {
+            "location": "/opt/spark/jars/spark-sql_2.13-4.1.3.jar",
+            "media_type": "application/java-archive",
+            "components": [
+              "spark-4.1"
+            ],
+            "expected_bytes": 13604536,
+            "expected_sha256": "6002f0e4430c36909db950a0b0863502260050ca2cc65ff8ca89baf404edb345",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 13604536,
+              "observed_sha256": "6002f0e4430c36909db950a0b0863502260050ca2cc65ff8ca89baf404edb345"
+            }
+          },
+          {
+            "location": "/usr/local/bin/catalog-bench-engine",
+            "media_type": "application/vnd.elf",
+            "components": [
+              "catalog-bench-engine",
+              "spark-4.1"
+            ],
+            "expected_bytes": 4986064,
+            "expected_sha256": "89bd01527310a48d61a7c4c70cddb116c6bbe716c9bedc1e005e87b4a3e6883f",
+            "outcome": {
+              "status": "match",
+              "observed_bytes": 4986064,
+              "observed_sha256": "89bd01527310a48d61a7c4c70cddb116c6bbe716c9bedc1e005e87b4a3e6883f"
+            }
+          }
+        ]
+      },
+      "outcome": {
+        "status": "completed"
+      },
+      "capture": {
+        "events": [
+          {
+            "event": "runtime-ready",
+            "runtime": {
+              "engine_version": "4.1.3",
+              "dependencies": {
+                "java": "21.0.11",
+                "scala": "2.13.17"
+              },
+              "operating_system": "Linux",
+              "architecture": "aarch64"
+            }
+          },
+          {
+            "event": "catalog-ready"
+          },
+          {
+            "event": "fixture-preflight",
+            "absent": true
+          },
+          {
+            "event": "namespace-ready",
+            "listed_exactly": true
+          },
+          {
+            "event": "table-ready",
+            "table": {
+              "table_uuid": "f7a8f681-360c-47c2-b888-07a8c70c23e2",
+              "metadata_location": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events/metadata/00000-622aeeee-f1a1-481e-8dfe-9d468e27feea.metadata.json",
+              "location": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events",
+              "format_version": 2,
+              "last_column_id": 3,
+              "schema": [
+                {
+                  "id": 1,
+                  "name": "id",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 2,
+                  "name": "category",
+                  "required": false,
+                  "field_type": "string"
+                },
+                {
+                  "id": 3,
+                  "name": "amount_cents",
+                  "required": true,
+                  "field_type": "long"
+                }
+              ],
+              "snapshots": 0,
+              "properties": {
+                "catalog-bench.owner": "match",
+                "write.metadata.delete-after-commit.enabled": "match",
+                "write.metadata.previous-versions-max": "match"
+              }
+            }
+          },
+          {
+            "event": "initial-appended",
+            "snapshots": 1
+          },
+          {
+            "event": "initial-read",
+            "read": {
+              "rows": 16,
+              "bytes": 346,
+              "sha256": "e78b526d7e757090a9a90c80802c2a543cbf8166cfac6d6ed48c618926e85a15"
+            }
+          },
+          {
+            "event": "schema-evolved",
+            "table": {
+              "table_uuid": "f7a8f681-360c-47c2-b888-07a8c70c23e2",
+              "metadata_location": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events/metadata/00002-04b7a77c-32cc-498d-ac50-7dfc1490070f.metadata.json",
+              "location": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events",
+              "format_version": 2,
+              "last_column_id": 4,
+              "schema": [
+                {
+                  "id": 1,
+                  "name": "id",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 2,
+                  "name": "category",
+                  "required": false,
+                  "field_type": "string"
+                },
+                {
+                  "id": 3,
+                  "name": "amount_cents",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 4,
+                  "name": "note",
+                  "required": false,
+                  "field_type": "string"
+                }
+              ],
+              "snapshots": 1,
+              "properties": {
+                "catalog-bench.owner": "match",
+                "write.metadata.delete-after-commit.enabled": "match",
+                "write.metadata.previous-versions-max": "match"
+              }
+            }
+          },
+          {
+            "event": "evolved-appended",
+            "snapshots": 2
+          },
+          {
+            "event": "evolved-read",
+            "read": {
+              "rows": 20,
+              "bytes": 570,
+              "sha256": "b2af6f475851e07d1ace3706d8867530c13dd5938bee90cfcc62d3939e01bea2"
+            }
+          },
+          {
+            "event": "final-table",
+            "table": {
+              "table_uuid": "f7a8f681-360c-47c2-b888-07a8c70c23e2",
+              "metadata_location": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events/metadata/00003-5612661b-f128-4a3c-a651-84fb53fd3a0c.metadata.json",
+              "location": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events",
+              "format_version": 2,
+              "last_column_id": 4,
+              "schema": [
+                {
+                  "id": 1,
+                  "name": "id",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 2,
+                  "name": "category",
+                  "required": false,
+                  "field_type": "string"
+                },
+                {
+                  "id": 3,
+                  "name": "amount_cents",
+                  "required": true,
+                  "field_type": "long"
+                },
+                {
+                  "id": 4,
+                  "name": "note",
+                  "required": false,
+                  "field_type": "string"
+                }
+              ],
+              "snapshots": 2,
+              "properties": {
+                "catalog-bench.owner": "match",
+                "write.metadata.delete-after-commit.enabled": "match",
+                "write.metadata.previous-versions-max": "match"
+              }
+            }
+          },
+          {
+            "event": "completed"
+          }
+        ],
+        "stdout_bytes_observed": 3147
+      },
+      "exit_code": 0,
+      "process_elapsed_micros": 11307851
+    },
+    "catalog_connection": {
+      "status": "ready",
+      "negotiation": {
+        "adapter": {
+          "catalog": "polaris",
+          "name": "Apache Polaris",
+          "version": "1.7.0",
+          "protocol": "iceberg-rest-v1",
+          "request_handling": {
+            "kind": "protocol-native"
+          }
+        },
+        "authentication": {
+          "mode": "o-auth2-client-credentials",
+          "outcome": "ready",
+          "http_status": 200
+        },
+        "config": {
+          "http_status": 200,
+          "response_bytes": 2160,
+          "prefix": "static",
+          "namespace_separator": "configured"
+        },
+        "redactions_observed": 3
+      }
+    },
+    "catalog_state": {
+      "status": "succeeded",
+      "output": {
+        "status": "present",
+        "http_status": 200,
+        "response_bytes": 4085,
+        "state": {
+          "current_schema_id": 1,
+          "table": {
+            "table_uuid": "f7a8f681-360c-47c2-b888-07a8c70c23e2",
+            "metadata_location": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events/metadata/00003-5612661b-f128-4a3c-a651-84fb53fd3a0c.metadata.json",
+            "location": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events",
+            "format_version": 2,
+            "last_column_id": 4,
+            "schema": [
+              {
+                "id": 1,
+                "name": "id",
+                "required": true,
+                "field_type": "long"
+              },
+              {
+                "id": 2,
+                "name": "category",
+                "required": false,
+                "field_type": "string"
+              },
+              {
+                "id": 3,
+                "name": "amount_cents",
+                "required": true,
+                "field_type": "long"
+              },
+              {
+                "id": 4,
+                "name": "note",
+                "required": false,
+                "field_type": "string"
+              }
+            ],
+            "snapshots": 2,
+            "properties": {
+              "catalog-bench.owner": "match",
+              "write.metadata.delete-after-commit.enabled": "match",
+              "write.metadata.previous-versions-max": "match"
+            }
+          }
+        }
+      }
+    },
+    "object_state": {
+      "status": "succeeded",
+      "output": {
+        "table_root": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events",
+        "metadata_objects": 4,
+        "metadata_bytes": 9767,
+        "parquet_objects": 2,
+        "parquet_bytes": 2437,
+        "referenced_metadata_location": "s3://warehouse/bench/cb_c201_polaris_sparkv2_08280548/events/metadata/00003-5612661b-f128-4a3c-a651-84fb53fd3a0c.metadata.json",
+        "referenced_metadata_exists": true
+      }
+    },
+    "cleanup": {
+      "drop_table_without_purge": {
+        "status": "succeeded",
+        "output": {
+          "http_status": 204,
+          "response_bytes": 0,
+          "already_absent": false
+        }
+      },
+      "verify_table_absent": {
+        "status": "succeeded",
+        "output": {
+          "status": "absent",
+          "http_status": 404,
+          "response_bytes": 126
+        }
+      },
+      "drop_namespace": {
+        "status": "succeeded",
+        "output": {
+          "http_status": 204,
+          "response_bytes": 0,
+          "already_absent": false
+        }
+      },
+      "verify_namespace_absent": {
+        "status": "succeeded",
+        "output": {
+          "status": "absent",
+          "http_status": 404,
+          "response_bytes": 127
+        }
+      }
+    },
+    "checks": {
+      "engine_runtime_pinned": true,
+      "stock_rest_catalog_ready": true,
+      "fixture_isolated": true,
+      "namespace_round_trip": true,
+      "table_round_trip": true,
+      "initial_append_committed": true,
+      "initial_read_exact": true,
+      "schema_evolved": true,
+      "evolved_append_committed": true,
+      "evolved_read_exact": true,
+      "catalog_state_correlated": true,
+      "shared_object_evidence_complete": true,
+      "fixture_clean": true
+    },
+    "classification": "pass"
+  },
+  "sanitization": {
+    "policy": "catalog-bench/value-safe-engine-v1",
+    "negotiation_redactions_observed": 3,
+    "raw_secrets_persisted": false,
+    "raw_engine_rows_persisted": false,
+    "raw_response_body_persisted": false,
+    "raw_backend_failure_detail_persisted": false,
+    "transcript_sanitized": true
+  }
+}
