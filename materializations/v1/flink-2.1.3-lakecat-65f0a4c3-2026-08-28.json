@@ -4,13 +4,13 @@
     "id": "catalog-community-flink-candidate-2.1.3-lakecat-65f0a4c3-2026-08-28-linux-arm64",
     "digest": {
       "algorithm": "sha256",
-      "value": "05d01b4c32aaf24a6e9f944a588fd61ece0ae318a7dd15a94d632f0beb8d5390"
+      "value": "647da8614b67746f67ae3b58c390d03cff23050d5548a29bc854051b38ad85f2"
     }
   },
   "output_profile": {
-    "id": "catalog-community-flink-2.1.3-engine-df38c818-lakecat-65f0a4c3-2026-08-28-linux-arm64",
+    "id": "catalog-community-flink-2.1.3-engine-ce0c11f2-lakecat-65f0a4c3-2026-08-28-linux-arm64",
     "title": "Flink 2.1.3, Iceberg 1.11.0, source-bound runner, and LakeCat 65f0a4c3 interoperability profile",
-    "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with the optimized Rust runner and Java effects JAR bound to catalog-bench@df38c818.",
+    "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with the optimized Rust runner and Java effects JAR bound to catalog-bench@ce0c11f2.",
     "resolved_at": "2026-08-28T05:58:02Z"
   },
   "images": [
@@ -128,10 +128,10 @@
     },
     {
       "component": "catalog-bench-engine",
-      "reference": "catalog-bench/flink-runner:df38c8186cfe",
+      "reference": "catalog-bench/flink-runner:ce0c11f25f79",
       "image_id": {
         "algorithm": "sha256",
-        "value": "fd39fa4f922f3f46963130dd852ee1bf7283a4de703749873d44edc0b4e09f15"
+        "value": "56b7ae6d590c30ec634ac81c733541e61355fcde6a2cc7685cc1a9d518e3b8f5"
       },
       "operating_system": "linux",
       "architecture": "arm64",
@@ -139,8 +139,8 @@
         "com.docker.compose.project": "catalog-bench",
         "com.docker.compose.service": "flink-runner-image",
         "com.docker.compose.version": "5.1.3",
-        "io.querygraph.catalog-bench.runner-source-revision": "df38c8186cfe3c2400113ae3308250a01d05c800",
-        "org.opencontainers.image.revision": "df38c8186cfe3c2400113ae3308250a01d05c800",
+        "io.querygraph.catalog-bench.runner-source-revision": "ce0c11f25f792f533de733f40ea10bc171d1866b",
+        "org.opencontainers.image.revision": "ce0c11f25f792f533de733f40ea10bc171d1866b",
         "org.opencontainers.image.title": "catalog-bench Flink runner donor"
       },
       "embedded_artifacts": [
@@ -149,9 +149,9 @@
           "media_type": "application/vnd.elf",
           "digest": {
             "algorithm": "sha256",
-            "value": "bd6fedb0d44cd3c267e14dc0214a004c77afbd0e9d1823ba46cdb25f0e47d2b6"
+            "value": "d090378fe02b7e71015a61157e32dfc2d0234248c6b6a6cd21946bc08ebbb928"
           },
-          "bytes": 4986064,
+          "bytes": 5051600,
           "description": "Optimized source-bound stock-engine harness."
         },
         {
@@ -235,7 +235,7 @@
       "reference": "catalog-bench/flink:2.1.3-iceberg1.11.0",
       "image_id": {
         "algorithm": "sha256",
-        "value": "ad27758a4977ec4f10809cb7e576fb59c6f779cb584180f615a73d543b7bea70"
+        "value": "fa046d79e4c9d6f76fdf1fe6d5cd4f38c8726a4f29427b56b939315cf93ff18f"
       },
       "operating_system": "linux",
       "architecture": "arm64",
@@ -244,7 +244,7 @@
         "com.docker.compose.service": "flink",
         "com.docker.compose.version": "5.1.3",
         "io.querygraph.catalog-bench.iceberg-source-revision": "6976e020b894f6a6777704df2b8c4458cb291ae9",
-        "io.querygraph.catalog-bench.runner-source-revision": "df38c8186cfe3c2400113ae3308250a01d05c800",
+        "io.querygraph.catalog-bench.runner-source-revision": "ce0c11f25f792f533de733f40ea10bc171d1866b",
         "org.opencontainers.image.base.digest": "sha256:99a499ed147b28d358486066ab8308e351b232b2ac81aff69157fdb349c84e18",
         "org.opencontainers.image.base.name": "docker.io/library/flink:2.1.3-scala_2.12-java17",
         "org.opencontainers.image.revision": "6cda56b084d5c337b36d2f8ed464bc92093b0a34",
@@ -298,9 +298,9 @@
           "media_type": "application/vnd.elf",
           "digest": {
             "algorithm": "sha256",
-            "value": "bd6fedb0d44cd3c267e14dc0214a004c77afbd0e9d1823ba46cdb25f0e47d2b6"
+            "value": "d090378fe02b7e71015a61157e32dfc2d0234248c6b6a6cd21946bc08ebbb928"
           },
-          "bytes": 4986064,
+          "bytes": 5051600,
           "description": "Byte-identical optimized harness copy."
         },
         {

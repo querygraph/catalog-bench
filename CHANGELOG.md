@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Rematerialize the local-target Flink runtime at `catalog-bench@ce0c11f` and
+  verify every source, image, and embedded-artifact identity. A direct complete
+  LakeCat v2 workflow now passes writes, reads, schema evolution, three-way
+  state reconciliation, shared-object checks, and cleanup.
+
 - Execute the one-shot stock Flink child with its supported `local` deployment
   target. Retained diagnostic logs proved the default target submitted INSERT
   jobs to an absent remote JobManager at `0.0.0.0:8081`; the exact invocation

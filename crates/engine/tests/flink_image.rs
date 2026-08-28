@@ -6,7 +6,7 @@ const BUILD_SCRIPT: &str = concat!(
     "/../../docker/build-flink-images.sh"
 );
 const COMPOSE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docker-compose.yml");
-const SOURCE_REVISION: &str = "df38c8186cfe3c2400113ae3308250a01d05c800";
+const SOURCE_REVISION: &str = "ce0c11f25f792f533de733f40ea10bc171d1866b";
 
 #[test]
 fn flink_image_definition_is_checksum_locked_and_source_correlated() {

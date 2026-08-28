@@ -13,7 +13,7 @@ const BROAD_SOURCE_PROFILE: &[u8] = include_bytes!("../../../profiles/v1/current
 const FLINK_SOURCE_PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/flink-candidate-2.1.3-2026-08-27.json");
 const ORIGINAL_RUNNER_REVISION: &str = "df3a68da787de82ae83d1a5034228b731f3bc588";
-const RUNNER_REVISION: &str = "df38c8186cfe3c2400113ae3308250a01d05c800";
+const RUNNER_REVISION: &str = "ce0c11f25f792f533de733f40ea10bc171d1866b";
 const CURRENT_SOURCE_PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/flink-candidate-2.1.3-lakecat-65f0a4c3-2026-08-28.json");
 const CURRENT_MATERIALIZATION: &[u8] =
