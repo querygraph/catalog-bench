@@ -1,5 +1,9 @@
 # Changelog
 
+- Advance the materialized Trino runner pin to `catalog-bench@0bbf0c40`, the
+  verified launcher-grammar correction, before producing any replacement live
+  evidence. The earlier `6131423f` image remains diagnostic-only.
+
 - Correct the stock Airlift launcher grammar from live Trino 483 help output:
   global `--etc-dir` must precede the `run` command. The previous order caused
   all four diagnostic executions in `trino_0828070341` to fail before startup;
