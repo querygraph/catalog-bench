@@ -9,10 +9,33 @@ use catalog_bench_contract::render_flink_profile;
 use serde_json::{json, Value};
 use sha2::{Digest as _, Sha256};
 
-const SOURCE_PROFILE: &[u8] = include_bytes!("../../../profiles/v1/current-2026-08-27.json");
+const BROAD_SOURCE_PROFILE: &[u8] = include_bytes!("../../../profiles/v1/current-2026-08-27.json");
+const FLINK_SOURCE_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/flink-candidate-2.1.3-2026-08-27.json");
 const SPARK_MATERIALIZATION: &[u8] =
     include_bytes!("../../../materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const RUNNER_REVISION: &str = "36906515b69a61ac26d44327b2a9ff94c2b84551";
+
+#[test]
+fn checked_in_candidate_advances_only_identity_and_runner_source() -> Result<()> {
+    assert_eq!(
+        sha256(FLINK_SOURCE_PROFILE),
+        "4accf24289c5249bc9b4998dc41370689fe47841d63b1407e8a288250746ed37"
+    );
+    let mut expected: Value = serde_json::from_slice(BROAD_SOURCE_PROFILE)?;
+    expected["id"] = json!("catalog-community-flink-candidate-2.1.3-2026-08-27-linux-arm64");
+    expected["title"] = json!("Catalog community Flink 2.1.3 source-bound candidate pinset");
+    expected["description"] = json!(
+        "Immutable versions and production build recipes selected for the Linux ARM64 same-Docker Flink 2.1.3 interoperability run. This draft preserves the broad stock-engine candidate while advancing only the catalog-bench engine runner to its source-bound Flink image revision; it is an input contract, not benchmark evidence."
+    );
+    component_mut(&mut expected, "catalog-bench-engine")?["version"] = json!(RUNNER_REVISION);
+    component_mut(&mut expected, "catalog-bench-engine")?["source"]["revision"] =
+        json!(RUNNER_REVISION);
+
+    let actual: Value = serde_json::from_slice(FLINK_SOURCE_PROFILE)?;
+    assert_eq!(actual, expected);
+    Ok(())
+}
 
 #[test]
 fn flink_profile_is_runnable_common_and_source_bound() -> Result<()> {
@@ -140,11 +163,7 @@ fn base_runner_and_connector_drift_fail_closed() -> Result<()> {
 }
 
 fn fixtures() -> Result<(Vec<u8>, Vec<u8>)> {
-    let mut source: Value = serde_json::from_slice(SOURCE_PROFILE)?;
-    source["id"] = json!("catalog-community-flink-candidate-2026-08-27-linux-arm64");
-    component_mut(&mut source, "catalog-bench-engine")?["source"]["revision"] =
-        json!(RUNNER_REVISION);
-    let source = serde_json::to_vec(&source)?;
+    let source = FLINK_SOURCE_PROFILE.to_vec();
 
     let spark: Value = serde_json::from_slice(SPARK_MATERIALIZATION)?;
     let mut images = Vec::new();
@@ -157,7 +176,7 @@ fn fixtures() -> Result<(Vec<u8>, Vec<u8>)> {
     let materialization = json!({
         "format": "catalog-bench/flink-profile-materialization/v1",
         "source_profile": {
-            "id": "catalog-community-flink-candidate-2026-08-27-linux-arm64",
+            "id": "catalog-community-flink-candidate-2.1.3-2026-08-27-linux-arm64",
             "digest": {"algorithm": "sha256", "value": sha256(&source)},
         },
         "output_profile": {

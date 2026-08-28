@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- C2-06 immutable Flink candidate: preserve the broad stock-engine and
+  already-materialized Spark inputs byte-for-byte while deriving a dedicated
+  Flink 2.1.3 candidate whose only semantic changes are its document identity
+  and the `catalog-bench-engine` version/source revision advanced to
+  `36906515b69a61ac26d44327b2a9ff94c2b84551`. A separate projection test
+  reconstructs the candidate from the broad profile and rejects any unrelated
+  catalog, engine, connector, topology, build, or policy drift. Flink policy
+  tests now consume the checked-in candidate directly. The profile remains a
+  draft source contract and makes no image-build or runtime claim.
+
 - C2-06 typed Flink profile materialization: add a deterministic projection
   from a dedicated source-bound Flink candidate and strict image-observation
   sidecar into the runnable v2 interoperability profile. The policy requires

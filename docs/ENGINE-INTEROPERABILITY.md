@@ -458,19 +458,20 @@ The existing broad candidate also supplies the already materialized Spark
 profile and identifies an older source-bound runner revision. Rewriting it
 would invalidate that immutable evidence. Flink therefore receives a separate
 candidate whose `catalog-bench-engine` component names revision
-`36906515b69a61ac26d44327b2a9ff94c2b84551`; the next unit will check in and
-validate that candidate before any image observation is admitted.
+`36906515b69a61ac26d44327b2a9ff94c2b84551`. That checked-in candidate is a
+tested minimal projection: every unrelated identity and policy remains equal to
+the preserved broad source profile.
 
 Once production images can safely be built and inspected, the deterministic
 commands are:
 
 ```console
 cargo run -p catalog-bench-contract --locked -- profile materialize-flink \
-  --source-profile <flink-candidate.json> \
+  --source-profile profiles/v1/flink-candidate-2.1.3-2026-08-27.json \
   --materialization <flink-image-observations.json> \
   --output <runnable-flink-profile.json>
 cargo run -p catalog-bench-contract --locked -- profile check-flink \
-  --source-profile <flink-candidate.json> \
+  --source-profile profiles/v1/flink-candidate-2.1.3-2026-08-27.json \
   --materialization <flink-image-observations.json> \
   --output <runnable-flink-profile.json>
 ```

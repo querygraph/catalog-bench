@@ -3,7 +3,7 @@
 Profiles separate environment selection from benchmark results. A profile says
 what would run; only a result plus its immutable manifest says what did run.
 
-Five v1 profiles preserve the Phase 0 boundary and carry the measured work
+Six v1 profiles preserve the Phase 0 boundary and carry the measured work
 forward:
 
 - [`reproduction-2026-08-08.json`](../profiles/v1/reproduction-2026-08-08.json)
@@ -18,6 +18,10 @@ forward:
   stock-engine source pinset. It adds the exact `catalog-bench-engine` source and
   optimized production build recipe while remaining a `draft` until every
   selected image and executable is independently observed.
+- [`flink-candidate-2.1.3-2026-08-27.json`](../profiles/v1/flink-candidate-2.1.3-2026-08-27.json)
+  preserves that broad candidate while advancing only the stock-engine runner
+  to the exact source revision used by the source-bound Flink image. It remains
+  a `draft` input contract, not runtime evidence.
 - [`contention-2026-08-27.json`](../profiles/v1/contention-2026-08-27.json) is
   the generated, `runnable` Linux ARM64 performance profile for the same-table
   contention v2 scenario only. It retains all five catalog adapters but removes
@@ -30,7 +34,7 @@ forward:
   Spark images. It remains infrastructure evidence rather than a claim that the
   interoperability scenario passed.
 
-All five target Linux ARM64 and one Docker network. All catalog, client, engine,
+All six target Linux ARM64 and one Docker network. All catalog, client, engine,
 and benchmark processes must run in that container environment against the same
 MinIO warehouse. Each catalog may have only its necessary private state backend.
 
@@ -167,6 +171,27 @@ run-owned MinIO evidence, cleanup, sanitization, repeated rounds, and generated
 median-with-range aggregation without changing historical inputs. The published
 2026-08-27 C110 bundle is the first immutable result bundle backed by that v2
 scenario and the runnable profile below.
+
+## Source-bound Flink candidate
+
+The [Flink 2.1.3 candidate](../profiles/v1/flink-candidate-2.1.3-2026-08-27.json)
+is a deliberately minimal projection of the broad stock-engine candidate. Its
+document identity, title, and description identify the narrower purpose, and
+its `catalog-bench-engine` version and source revision advance to
+`36906515b69a61ac26d44327b2a9ff94c2b84551`. Every other catalog, client,
+engine, connector, service, adapter, platform, build recipe, and extension is
+semantically identical to `current-2026-08-27.json`. A checked-in Rust test
+reconstructs this projection and rejects any additional difference.
+
+This separation is a provenance requirement. The broad profile is an immutable
+input to the runnable Spark profile and still names the exact earlier runner
+used by that image. Updating it in place would make Spark's source digest and
+runner attribution false. The Flink candidate instead binds the Rust runner and
+Java child to the exact revision used by the four-stage Flink image definition.
+Its SHA-256 is
+`4accf24289c5249bc9b4998dc41370689fe47841d63b1407e8a288250746ed37`.
+It remains `draft` until independently observed production images are admitted
+by the deterministic Flink materializer.
 
 ## Runnable contention profile
 
