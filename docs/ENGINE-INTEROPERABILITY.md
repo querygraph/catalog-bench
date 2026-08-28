@@ -612,6 +612,18 @@ Every produced stream is serialized back through the shared decoder in tests.
 The next unit must implement the effects with only the verified stock launcher
 and CLI, bound all parsed output, and supervise the complete process group.
 
+The process boundary first closes the subprocess grammar independently of
+process I/O. Server startup has exactly one shape: the profile-verified stock
+launcher receives `run --etc-dir` and a private absolute configuration path.
+Queries have exactly one stock-CLI batch shape against the fixed loopback
+server, `catalog_bench` user, `bench` catalog, and `catalog-bench` source, with
+progress disabled and either `JSON` or `NULL` output. Executable/configuration
+paths must be absolute and control-free; SQL must be nonempty, control-free,
+and no larger than 1 MiB. No shell, inherited arguments, interactive mode, or
+alternate server URI is representable. This grammar does not itself spawn the
+server or CLI; bounded execution and lifecycle supervision remain the next
+effect unit.
+
 ### Strict Trino CLI read boundary
 
 Scalar queries have a narrower boundary than canonical table reads. Fixture

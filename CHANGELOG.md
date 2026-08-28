@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- C2-06 closed stock Trino invocation grammar: represent server startup only as
+  the verified launcher `run --etc-dir <private absolute path>` and every query
+  only as a bounded single stock-CLI batch against the fixed loopback server,
+  benchmark user/catalog/source, disabled progress, and either JSON or discard
+  output. Reject relative or control-bearing paths and empty, control-bearing,
+  or over-1-MiB SQL before process creation. Separate tests freeze exact
+  arguments and malformed inputs. This unit starts no process and retains no
+  output.
+
 - C2-06 strict Trino CLI scalar decoder: admit preflight counts and immutable
   metadata locations only as one bounded JSON object, one closed identifier
   column, one exact unsigned integer or nonempty control-free text value, and
