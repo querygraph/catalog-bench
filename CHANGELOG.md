@@ -1,5 +1,8 @@
 # Changelog
 
+- Advance the Trino runner to the committed relative-snapshot and compressed
+  metadata observer before collecting replacement evidence.
+
 - Decode standard gzip-compressed Iceberg metadata under the same bounded,
   strict projection used for JSON metadata, enabling Lakekeeper observation.
 

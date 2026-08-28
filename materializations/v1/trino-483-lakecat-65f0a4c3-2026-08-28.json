@@ -4,14 +4,14 @@
     "id": "catalog-community-trino-candidate-483-lakecat-b424f778-2026-08-28-linux-arm64",
     "digest": {
       "algorithm": "sha256",
-      "value": "ca48e0e82e3114dd4c0e29ab11f2e6ed4fefd2a4e04a2bdaba872695b7a4a61e"
+      "value": "30039585568cf29d1b79387f781fc17e2195edd31db4de38327d45ca1db14fd6"
     }
   },
   "output_profile": {
-    "id": "catalog-community-trino-483-engine-46ca526-lakecat-b424f778-2026-08-28-linux-arm64",
+    "id": "catalog-community-trino-483-engine-f26c25a-lakecat-b424f778-2026-08-28-linux-arm64",
     "title": "Trino 483, Iceberg 1.11.0, source-bound runner, and LakeCat b424f778 interoperability profile",
-    "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with Trino 483 and the optimized Rust effects runner bound to catalog-bench@46ca526.",
-    "resolved_at": "2026-08-28T08:38:27Z"
+    "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with Trino 483 and the optimized Rust effects runner bound to catalog-bench@f26c25a.",
+    "resolved_at": "2026-08-28T08:52:43Z"
   },
   "images": [
     {
@@ -128,10 +128,10 @@
     },
     {
       "component": "catalog-bench-engine",
-      "reference": "catalog-bench-engine-trino:46ca526725e7",
+      "reference": "catalog-bench-engine-trino:f26c25a75be7",
       "image_id": {
         "algorithm": "sha256",
-        "value": "c674fb0a0cd365326aa5639e52f14f6def80c9c818203bcec7b31df9ac7b66dd"
+        "value": "506e47d94984d891d4e16599c1f93b2f9cbfcfbf6b79a03b4098408eed879cdb"
       },
       "operating_system": "linux",
       "architecture": "arm64",
@@ -139,7 +139,7 @@
         "com.docker.compose.project": "catalog-bench",
         "com.docker.compose.service": "trino-engine-runner-base",
         "com.docker.compose.version": "5.1.3",
-        "org.opencontainers.image.revision": "46ca526725e769c8cd0f49bde527960a84aafd00"
+        "org.opencontainers.image.revision": "f26c25a75be7112782ffc29638ada44afcaa1c0b"
       },
       "embedded_artifacts": [
         {
@@ -147,10 +147,10 @@
           "media_type": "application/vnd.elf",
           "digest": {
             "algorithm": "sha256",
-            "value": "97449b7016724a5897fdcdcf8b2fc1574762a3281de6d7783042261aaa19be3d"
+            "value": "2bc7122f897b00dcffff2f2d646198c16a50015a4b605647757256546daff15e"
           },
           "bytes": 5248208,
-          "description": "Production-optimized stock-engine runner built from catalog-bench@46ca526."
+          "description": "Production-optimized stock-engine runner built from catalog-bench@f26c25a."
         }
       ]
     },
@@ -217,10 +217,10 @@
     },
     {
       "component": "trino",
-      "reference": "catalog-bench/trino:483-runner-46ca526725e7",
+      "reference": "catalog-bench/trino:483-runner-f26c25a75be7",
       "image_id": {
         "algorithm": "sha256",
-        "value": "eb5ee089544b866d2abeef2a241fb55fb0612867011bdb66f7803ef7fbc12d55"
+        "value": "eb6c4f565be5fbe6aaaa7fc9e9578d648b749898f05aa623ff6b9b7db004632f"
       },
       "operating_system": "linux",
       "architecture": "arm64",
@@ -239,7 +239,7 @@
         "io.k8s.description": "Very small image which doesn't install the package manager.",
         "io.k8s.display-name": "Red Hat Universal Base Image 10 Micro",
         "io.openshift.expose-services": "",
-        "io.querygraph.catalog-bench.runner-source-revision": "46ca526725e769c8cd0f49bde527960a84aafd00",
+        "io.querygraph.catalog-bench.runner-source-revision": "f26c25a75be7112782ffc29638ada44afcaa1c0b",
         "maintainer": "Red Hat, Inc.",
         "name": "ubi10/ubi-micro",
         "org.opencontainers.image.base.digest": "sha256:db58cc93e593a2706553745f276bb119c9810e69918be56ecde088ba7ccb0534",
@@ -321,10 +321,10 @@
           "media_type": "application/vnd.elf",
           "digest": {
             "algorithm": "sha256",
-            "value": "97449b7016724a5897fdcdcf8b2fc1574762a3281de6d7783042261aaa19be3d"
+            "value": "2bc7122f897b00dcffff2f2d646198c16a50015a4b605647757256546daff15e"
           },
           "bytes": 5248208,
-          "description": "Production-optimized stock-engine runner built from catalog-bench@46ca526."
+          "description": "Production-optimized stock-engine runner built from catalog-bench@f26c25a."
         }
       ]
     }
