@@ -57,6 +57,8 @@
 - C3-02 restart recovery workflow: extend the protocol-native four-catalog
   scenario with a deterministic mid-body pause, target-service restart,
   direct durable-state reconciliation, exact commit retry, and cleanup proof.
+- Refresh an OAuth bearer after catalog restart so the Polaris recovery case
+  measures durable commit behavior instead of the process-local token epoch.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope

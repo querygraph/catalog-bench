@@ -313,6 +313,15 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         if release.status != 200:
             raise RuntimeError(f"in-flight gate release failed: {release}")
         interrupted, _ = pending.result(timeout=30)
+    if args.oauth:
+        bearer = oauth_token(
+            args.direct_base,
+            os.environ[args.oauth_client_id_env],
+            os.environ[args.oauth_client_secret_env],
+            args.oauth_scope,
+        )
+        proxy.bearer = bearer
+        direct.bearer = bearer
     after_restart = wait_for_table(direct, table_path)
     observed = property_value(after_restart, property_name)
     if observed is not None:
