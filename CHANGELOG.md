@@ -1,5 +1,9 @@
 # Changelog
 
+- Advance the Trino materialization to `catalog-bench@836a3cd0`, which binds
+  Airlift's private data directory before server startup. Both earlier Trino
+  diagnostic runs remain excluded from publication.
+
 - Pass Trino's private staged data directory through Airlift's `--data-dir`
   launcher option. Airlift resolves its PID/log paths before Trino expands
   `${ENV:...}` in `node.properties`; without the explicit option it attempted

@@ -6,7 +6,7 @@ const BUILD_SCRIPT: &str = concat!(
     "/../../docker/build-trino-images.sh"
 );
 const COMPOSE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../docker-compose.yml");
-const SOURCE_REVISION: &str = "0bbf0c409a58ee612f1ab8b982885172db5e9022";
+const SOURCE_REVISION: &str = "836a3cd039e404fe84d9f3f0fa3e4ab8da3baea8";
 const TRINO_DIGEST: &str =
     "sha256:db58cc93e593a2706553745f276bb119c9810e69918be56ecde088ba7ccb0534";
 
@@ -54,7 +54,7 @@ fn trino_compose_verifies_arm64_child_and_runs_one_composite_image() {
         "trino-engine-runner-base:",
         "trino-engine:",
         "catalog-bench-engine-runner: \"service:trino-engine-runner-base\"",
-        "catalog-bench/trino:483-runner-0bbf0c409a58",
+        "catalog-bench/trino:483-runner-836a3cd039e4",
     ] {
         assert!(
             compose.contains(required),

@@ -56,18 +56,18 @@ x-flink-build: &flink-build
     ICEBERG_SOURCE_REVISION: 6976e020b894f6a6777704df2b8c4458cb291ae9
   additional_contexts:
     catalog-bench-engine-runner: "service:flink-engine-runner-base"
-x-trino-engine-runner-image: &trino-engine-runner-image catalog-bench-engine-trino:0bbf0c409a58
+x-trino-engine-runner-image: &trino-engine-runner-image catalog-bench-engine-trino:836a3cd039e4
 x-trino-engine-runner-build: &trino-engine-runner-build
-  context: "https://github.com/querygraph/catalog-bench.git#0bbf0c409a58ee612f1ab8b982885172db5e9022"
+  context: "https://github.com/querygraph/catalog-bench.git#836a3cd039e404fe84d9f3f0fa3e4ab8da3baea8"
   dockerfile: docker/bench.Dockerfile
   args:
-    CATALOG_BENCH_SOURCE_REVISION: 0bbf0c409a58ee612f1ab8b982885172db5e9022
-x-trino-image: &trino-image catalog-bench/trino:483-runner-0bbf0c409a58
+    CATALOG_BENCH_SOURCE_REVISION: 836a3cd039e404fe84d9f3f0fa3e4ab8da3baea8
+x-trino-image: &trino-image catalog-bench/trino:483-runner-836a3cd039e4
 x-trino-build: &trino-build
   context: .
   dockerfile: docker/trino/Dockerfile
   args:
-    CATALOG_BENCH_SOURCE_REVISION: 0bbf0c409a58ee612f1ab8b982885172db5e9022
+    CATALOG_BENCH_SOURCE_REVISION: 836a3cd039e404fe84d9f3f0fa3e4ab8da3baea8
     TRINO_SOURCE_REVISION: 50b0b50b75abd47f830b7805ee1b51716eb4065e
   additional_contexts:
     catalog-bench-engine-runner: "service:trino-engine-runner-base"
