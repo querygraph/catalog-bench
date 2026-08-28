@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add a fresh-state stock Spark HadoopCatalog-to-LakeCat migration runner that
+  consumes QueryGraph's legacy-catalog verifier, shares only a run-owned
+  filesystem volume with a matching isolated LakeCat storage profile, and
+  emits sanitized evidence using LakeCat's parsed-URL prefix boundary.
+
 - Publish reviewed `migrate_0828d` evidence: all four LakeCat↔Polaris and
   LakeCat↔Lakekeeper directions preserve Iceberg identity, schemas, specs,
   orders, snapshots, refs, metadata pointers, and exact non-empty data scans.

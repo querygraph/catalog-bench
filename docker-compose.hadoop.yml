@@ -1,0 +1,32 @@
+# Run-owned shared filesystem for the stock HadoopCatalog migration cookbook.
+volumes:
+  hadoop-data:
+    name: ${CATALOG_BENCH_RUN_ID:?set CATALOG_BENCH_RUN_ID}_hadoop-data
+
+services:
+  hadoop-state-init:
+    image: lakecat-service:20116489d138
+    profiles: ["spark"]
+    networks: [lakehouse-net]
+    user: root
+    entrypoint: ["chown", "-R", "185:185", "/migration"]
+    restart: "no"
+    volumes:
+      - hadoop-data:/migration
+
+  lakecat:
+    environment:
+      # Hadoop normalizes local file URIs to the single-slash form in metadata.
+      LAKECAT_WAREHOUSE_LOCATION: file:/migration/hadoop
+    volumes:
+      - hadoop-data:/migration
+    depends_on:
+      hadoop-state-init:
+        condition: service_completed_successfully
+
+  spark:
+    volumes:
+      - hadoop-data:/migration
+    depends_on:
+      hadoop-state-init:
+        condition: service_completed_successfully
