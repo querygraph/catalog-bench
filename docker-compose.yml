@@ -71,6 +71,14 @@ x-trino-build: &trino-build
     TRINO_SOURCE_REVISION: 50b0b50b75abd47f830b7805ee1b51716eb4065e
   additional_contexts:
     catalog-bench-engine-runner: "service:trino-engine-runner-base"
+x-duckdb-image: &duckdb-image catalog-bench/duckdb:1.5.3-arm64
+x-duckdb-build: &duckdb-build
+  context: .
+  dockerfile: docker/duckdb/Dockerfile
+  args:
+    DUCKDB_SOURCE_REVISION: 14eca11bd9d4a0de2ea0f078be588a9c1c5b279c
+  additional_contexts:
+    duckdb-source: "https://github.com/duckdb/duckdb.git#14eca11bd9d4a0de2ea0f078be588a9c1c5b279c"
 x-rust-runner: &rust-runner
   build: *bench-build
   image: *bench-image
@@ -159,6 +167,11 @@ x-polaris-setup-environment: &polaris-setup-environment
   POLARIS_S3_REGION: us-east-1
 
 services:
+  duckdb-runtime-base:
+    build: *duckdb-build
+    image: *duckdb-image
+    profiles: ["duckdb"]
+
   # Exact source-built community MinIO. Host ports are intentionally omitted:
   # benchmark traffic stays on the one Docker network and cannot collide with a
   # separately running developer MinIO.

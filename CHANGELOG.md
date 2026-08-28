@@ -1,5 +1,9 @@
 # Changelog
 
+- Add a Linux ARM64 DuckDB 1.5.3 source build with the release-pinned Iceberg,
+  HTTPFS, and Avro revisions packaged as checksum-locked signed offline
+  extensions.
+
 - Admit the canonical stock-Trino launcher in reviewed engine evidence, enabling
   validated Trino bundle publication through the existing engine pipeline.
 
