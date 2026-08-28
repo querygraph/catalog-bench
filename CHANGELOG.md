@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Build the source-bound Flink Java effects runner in an immutable Linux ARM64
+  Eclipse Temurin 17 JDK stage instead of the stock Flink JRE image. The first
+  production build proved Maven had no `javac`; the executed runtime remains the
+  exact admitted stock Flink child and receives only the compiled runner JAR.
+
 - Add an immutable Flink 2.1.3 source candidate that preserves the admitted
   `catalog-bench@36906515` runner while advancing only LakeCat to `65f0a4c3`,
   the revision proven by Spark to support catalog-owned field IDs and multipart

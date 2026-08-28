@@ -2,9 +2,8 @@
 
 ARG FLINK_BASE_IMAGE=catalog-bench/flink-base:2.1.3-arm64-99a499ed
 
-FROM ${FLINK_BASE_IMAGE} AS java-build
+FROM eclipse-temurin:17-jdk-jammy@sha256:7d5ae9dfe05f32e2a93abd14966de3373961ad18022ee99a647cdbb8867d74e9 AS java-build
 
-USER root
 ARG CATALOG_BENCH_SOURCE_REVISION
 WORKDIR /src
 RUN printf '%s' "$CATALOG_BENCH_SOURCE_REVISION" \

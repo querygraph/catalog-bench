@@ -13,6 +13,7 @@ fn flink_image_definition_is_checksum_locked_and_source_correlated() {
     let source = fs::read_to_string(DOCKERFILE).unwrap();
     for required in [
         "catalog-bench/flink-base:2.1.3-arm64-99a499ed",
+        "eclipse-temurin:17-jdk-jammy@sha256:7d5ae9dfe05f32e2a93abd14966de3373961ad18022ee99a647cdbb8867d74e9 AS java-build",
         "sha256:80ffca22aed9e8b9713a232f3394fd81d7f20322df75efdb2b047dbd3e3a23bb",
         "831a8591fe20c8243b1dbe7d71e3244f31d1665b0804b2e825e38cbbe5ce0cafb8338851f90780735568773e0a6cd07bbec107cda0b896b008b861075358b6f6",
         "--strict-checksums",
