@@ -1,0 +1,27 @@
+services:
+  lakecat-volume-archive:
+    image: ${MINIO_IMAGE:-catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z}
+    profiles: ["backup"]
+    entrypoint: ["/usr/local/bin/volume-archive"]
+    volumes:
+      - lakecat-data:/state
+      - ${CATALOG_BENCH_BACKUP_DIR:?set CATALOG_BENCH_BACKUP_DIR}:/backup
+    networks: [lakehouse-net]
+
+  gravitino-volume-archive:
+    image: ${MINIO_IMAGE:-catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z}
+    profiles: ["backup"]
+    entrypoint: ["/usr/local/bin/volume-archive"]
+    volumes:
+      - gravitino-data:/state
+      - ${CATALOG_BENCH_BACKUP_DIR:?set CATALOG_BENCH_BACKUP_DIR}:/backup
+    networks: [lakehouse-net]
+
+  lakekeeper-volume-archive:
+    image: ${MINIO_IMAGE:-catalog-bench/minio:RELEASE.2025-10-15T17-29-55Z}
+    profiles: ["backup"]
+    entrypoint: ["/usr/local/bin/volume-archive"]
+    volumes:
+      - lakekeeper-postgres-data:/state
+      - ${CATALOG_BENCH_BACKUP_DIR:?set CATALOG_BENCH_BACKUP_DIR}:/backup
+    networks: [lakehouse-net]

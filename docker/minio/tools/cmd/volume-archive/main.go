@@ -140,6 +140,9 @@ func restore(directory, archive string) error {
 			if err := os.MkdirAll(target, fs.FileMode(header.Mode)&0o777); err != nil {
 				return err
 			}
+			if err := os.Chown(target, header.Uid, header.Gid); err != nil {
+				return err
+			}
 		case tar.TypeReg:
 			if err := os.MkdirAll(filepath.Dir(target), 0o700); err != nil {
 				return err
@@ -155,6 +158,9 @@ func restore(directory, archive string) error {
 			}
 			if closeErr != nil {
 				return closeErr
+			}
+			if err := os.Chown(target, header.Uid, header.Gid); err != nil {
+				return err
 			}
 		default:
 			return errors.New("archive contains unsupported entry type")

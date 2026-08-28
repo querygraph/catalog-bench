@@ -222,6 +222,10 @@
   state volumes.
 - Bind the volume archive helper into the checksum-pinned shared infrastructure
   image and deployment audit at its reviewed public source revision.
+- Add isolated run-scoped archive mounts and a standard Iceberg REST fixture
+  lifecycle probe for cold backup/restore comparison across the four catalogs.
+- Preserve archived numeric ownership on restore so unprivileged Gravitino and
+  PostgreSQL processes can reopen their restored run-owned state.
 
 - Add the exact-source DuckDB 1.5.3 four-catalog launcher and runnable profile,
   including official signed offline extensions, bounded result decoding, OAuth
