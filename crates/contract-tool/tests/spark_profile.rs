@@ -19,6 +19,12 @@ const V2_SOURCE_PROFILE: &[u8] =
 const V2_MATERIALIZATION: &[u8] =
     include_bytes!("../../../materializations/v1/spark-v2-2026-08-28.json");
 const V2_RUNNABLE_PROFILE: &[u8] = include_bytes!("../../../profiles/v1/spark-v2-2026-08-28.json");
+const V2_LAKECAT_SOURCE_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/current-engine-v2-lakecat-5d62f1c4-2026-08-28.json");
+const V2_LAKECAT_MATERIALIZATION: &[u8] =
+    include_bytes!("../../../materializations/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json");
+const V2_LAKECAT_RUNNABLE_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json");
 
 #[test]
 fn checked_in_spark_profile_exactly_matches_its_inputs() -> Result<()> {
@@ -57,6 +63,21 @@ fn checked_in_spark_v2_profile_is_source_bound_and_exact() -> Result<()> {
     assert_eq!(
         runner.source.as_ref().context("runner source")?.revision,
         "59840b95c33e753919f5c984d10d6df45c834243"
+    );
+    Ok(())
+}
+
+#[test]
+fn checked_in_spark_v2_lakecat_repair_profile_is_exact() -> Result<()> {
+    let root = repository_root();
+    check_spark_profile(
+        &root.join("profiles/v1/current-engine-v2-lakecat-5d62f1c4-2026-08-28.json"),
+        &root.join("materializations/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json"),
+        &root.join("profiles/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json"),
+    )?;
+    assert_eq!(
+        render_spark_profile(V2_LAKECAT_SOURCE_PROFILE, V2_LAKECAT_MATERIALIZATION)?,
+        V2_LAKECAT_RUNNABLE_PROFILE
     );
     Ok(())
 }

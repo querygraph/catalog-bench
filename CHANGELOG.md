@@ -6,6 +6,9 @@
   which assigns catalog-owned positive Iceberg field IDs for stock Spark
   `createTable` requests. Preserve the first v2 runtime generation while
   admitting a new immutable source profile for the corrected four-catalog run.
+  Materialize its exact ARM64 OCI identity and 19,691,168-byte service ELF,
+  deterministically derive the runnable profile, verify every selected live
+  image/artifact, and advance the Spark launcher to this additive generation.
 
 - C2-02 JVM native-library runtime boundary: preserve read-only Spark/Flink
   containers while marking only their bounded 512-MiB ephemeral `/tmp` tmpfs as

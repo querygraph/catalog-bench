@@ -17,9 +17,9 @@ run_id="$1"
 catalog_bench_validate_run_id "$run_id"
 
 evidence_dir="${CATALOG_BENCH_SPARK_EVIDENCE_DIR:-$repository_root/target/spark-evidence}"
-source_profile="$repository_root/profiles/v1/current-engine-v2-2026-08-28.json"
-materialization="$repository_root/materializations/v1/spark-v2-2026-08-28.json"
-runnable_profile="$repository_root/profiles/v1/spark-v2-2026-08-28.json"
+source_profile="$repository_root/profiles/v1/current-engine-v2-lakecat-5d62f1c4-2026-08-28.json"
+materialization="$repository_root/materializations/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json"
+runnable_profile="$repository_root/profiles/v1/spark-v2-lakecat-5d62f1c4-2026-08-28.json"
 run_directory="$evidence_dir/$run_id"
 catalogs=(lakecat polaris gravitino lakekeeper)
 
