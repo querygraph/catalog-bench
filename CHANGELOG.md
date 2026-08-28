@@ -228,6 +228,12 @@
   PostgreSQL processes can reopen their restored run-owned state.
 - Advance the immutable infrastructure source pin to the reviewed ownership-
   preserving archive implementation.
+- Add a fresh-state cold backup/restore runner that creates standard Iceberg
+  fixtures, archives stopped durable stores, deletes and recreates only its
+  run-owned volumes, restores them, compares table identity, records unsupported
+  Polaris persistence, and removes all project state.
+- Address immutable helper build context by the exact Git commit rather than a
+  moving branch-plus-checksum pair that becomes unbuildable after later commits.
 
 - Add the exact-source DuckDB 1.5.3 four-catalog launcher and runnable profile,
   including official signed offline extensions, bounded result decoding, OAuth

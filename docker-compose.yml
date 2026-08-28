@@ -13,7 +13,7 @@ x-minio-build: &minio-build
     MINIO_REVISION: 9e49d5e7a648f00e26f2246f4dc28e6b07f8c84a
     CATALOG_BENCH_HELPER_SOURCE_REVISION: ec4590b5f7828573b80cb2f85a5d14c9e2a770f1
   additional_contexts:
-    catalog-bench-helper-source: "https://github.com/querygraph/catalog-bench.git?ref=refs/heads/codex/catalog-community-phase-1&checksum=ec4590b5f7828573b80cb2f85a5d14c9e2a770f1"
+    catalog-bench-helper-source: "https://github.com/querygraph/catalog-bench.git#ec4590b5f7828573b80cb2f85a5d14c9e2a770f1"
 x-lakekeeper-image: &lakekeeper-image quay.io/lakekeeper/catalog:v0.13.3@sha256:db2ba6168eb107f22242fb7f2edc4016fa35e57bdcc606894e809c418e32e8dc
 x-gravitino-image: &gravitino-image apache/gravitino-iceberg-rest:1.3.0@sha256:80136ae753ee77735153fc1482a389018f8c2638a54f453cb96967c7194584c7
 x-bench-image: &bench-image catalog-bench-commit:e5345a260a42

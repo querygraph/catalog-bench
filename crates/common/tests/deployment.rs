@@ -608,7 +608,7 @@ fn minio_helpers_are_built_from_an_immutable_public_source() {
 
     for required in [
         format!("CATALOG_BENCH_HELPER_SOURCE_REVISION: {revision}"),
-        format!("catalog-bench-helper-source: \"https://github.com/querygraph/catalog-bench.git?ref=refs/heads/codex/catalog-community-phase-1&checksum={revision}\""),
+        format!("catalog-bench-helper-source: \"https://github.com/querygraph/catalog-bench.git#{revision}\""),
     ] {
         assert!(
             compose.lines().any(|line| line.trim() == required),

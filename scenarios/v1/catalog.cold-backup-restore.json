@@ -1,0 +1,37 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "kind": "scenario",
+  "id": "catalog.cold-backup-restore",
+  "version": 1,
+  "title": "Catalog cold backup and restore",
+  "description": "Create a standard Iceberg REST fixture, stop the catalog state owner, archive its run-owned durable volume, delete and recreate that volume, restore it, and compare table identity through Iceberg REST.",
+  "family": "operations",
+  "classification": "strict-v1",
+  "tags": ["backup", "restore", "durability", "operations"],
+  "capabilities": [
+    {"capability": "iceberg-rest.namespace.create", "level": "required", "description": "Create an isolated fixture namespace."},
+    {"capability": "iceberg-rest.table.create", "level": "required", "description": "Create an isolated fixture table."},
+    {"capability": "iceberg-rest.table.load", "level": "required", "description": "Load and compare the restored table."},
+    {"capability": "iceberg-rest.table.drop", "level": "required", "description": "Clean a restored fixture."},
+    {"capability": "iceberg-rest.namespace.drop", "level": "required", "description": "Clean a restored fixture namespace."}
+  ],
+  "parameters": {
+    "backup_mode": "cold-volume-archive",
+    "archive_format": "tar+gzip",
+    "restore_target": "fresh-empty-run-owned-volume"
+  },
+  "steps": [
+    {"id": "create", "actor": "client", "operation": "iceberg-rest.fixture.create", "description": "Create and record the table UUID and metadata-location hash."},
+    {"id": "stop", "actor": "harness", "operation": "catalog.stop", "description": "Stop the catalog and its state owner.", "depends_on": ["create"]},
+    {"id": "backup", "actor": "harness", "operation": "volume.archive", "description": "Create an exclusive archive of the stopped run-owned state.", "depends_on": ["stop"]},
+    {"id": "replace", "actor": "harness", "operation": "volume.replace", "description": "Delete and recreate only the run-owned state volume.", "depends_on": ["backup"]},
+    {"id": "restore", "actor": "harness", "operation": "volume.restore", "description": "Restore into the empty volume and restart the catalog.", "depends_on": ["replace"]},
+    {"id": "verify", "actor": "client", "operation": "iceberg-rest.table.load", "description": "Compare table UUID and metadata-location hash with pre-backup identity.", "depends_on": ["restore"]},
+    {"id": "clean", "actor": "harness", "operation": "fixture-and-project.cleanup", "description": "Drop restored fixtures and remove project containers and volumes.", "depends_on": ["verify"]}
+  ],
+  "assertions": [
+    {"id": "archive-nonempty", "step": "backup", "required": true, "description": "The archive exists, is non-empty, and has a SHA-256 digest.", "check": {"kind": "custom", "name": "querygraph/catalog-bench/archive-v1", "configuration": {"minimum_bytes": 1}}},
+    {"id": "identity-preserved", "step": "verify", "required": true, "description": "The restored table UUID and metadata-location hash equal their pre-backup values.", "check": {"kind": "custom", "name": "querygraph/catalog-bench/table-identity-v1", "configuration": {"expected": "equal"}}},
+    {"id": "cleanup", "step": "clean", "required": true, "description": "The fixture, project containers, and project volumes are removed.", "check": {"kind": "custom", "name": "querygraph/catalog-bench/fresh-project-cleanup-v1", "configuration": {"expected": "removed"}}}
+  ]
+}
