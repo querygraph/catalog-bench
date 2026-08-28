@@ -37,8 +37,14 @@ forward:
   engine runner to the same source revision and bytes in its donor and executed
   Spark images. It remains infrastructure evidence rather than a claim that the
   interoperability scenario passed.
+- [`spark-v2-2026-08-28.json`](../profiles/v1/spark-v2-2026-08-28.json) is the
+  fresh runnable v2 projection. Its
+  [materialization](../materializations/v1/spark-v2-2026-08-28.json) binds
+  `catalog-bench@59840b95c33e`, the optimized runner's exact bytes in both donor
+  and Spark images, and the independently observed local image identities. It
+  establishes runtime provenance, not a behavioral result.
 
-All seven target Linux ARM64 and one Docker network. All catalog, client, engine,
+All eight target Linux ARM64 and one Docker network. All catalog, client, engine,
 and benchmark processes must run in that container environment against the same
 MinIO warehouse. Each catalog may have only its necessary private state backend.
 

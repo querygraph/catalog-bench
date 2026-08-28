@@ -14,6 +14,11 @@ const MATERIALIZATION: &[u8] =
     include_bytes!("../../../materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
 const RUNNABLE_PROFILE: &[u8] =
     include_bytes!("../../../profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json");
+const V2_SOURCE_PROFILE: &[u8] =
+    include_bytes!("../../../profiles/v1/current-engine-v2-2026-08-28.json");
+const V2_MATERIALIZATION: &[u8] =
+    include_bytes!("../../../materializations/v1/spark-v2-2026-08-28.json");
+const V2_RUNNABLE_PROFILE: &[u8] = include_bytes!("../../../profiles/v1/spark-v2-2026-08-28.json");
 
 #[test]
 fn checked_in_spark_profile_exactly_matches_its_inputs() -> Result<()> {
@@ -23,6 +28,37 @@ fn checked_in_spark_profile_exactly_matches_its_inputs() -> Result<()> {
         &root.join("materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json"),
         &root.join("profiles/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json"),
     )
+}
+
+#[test]
+fn checked_in_spark_v2_profile_is_source_bound_and_exact() -> Result<()> {
+    let root = repository_root();
+    check_spark_profile(
+        &root.join("profiles/v1/current-engine-v2-2026-08-28.json"),
+        &root.join("materializations/v1/spark-v2-2026-08-28.json"),
+        &root.join("profiles/v1/spark-v2-2026-08-28.json"),
+    )?;
+    assert_eq!(
+        render_spark_profile(V2_SOURCE_PROFILE, V2_MATERIALIZATION)?,
+        V2_RUNNABLE_PROFILE
+    );
+    let ContractDocument::Profile(profile) = parse_contract(V2_RUNNABLE_PROFILE)? else {
+        panic!("Spark v2 materializer must produce a profile");
+    };
+    assert_eq!(
+        profile.extensions["querygraph/materialization"]["scope"],
+        "engine.iceberg.write-read-evolution/v2"
+    );
+    let runner = profile
+        .components
+        .iter()
+        .find(|component| component.id.as_str() == "catalog-bench-engine")
+        .context("v2 profile omits engine runner")?;
+    assert_eq!(
+        runner.source.as_ref().context("runner source")?.revision,
+        "59840b95c33e753919f5c984d10d6df45c834243"
+    );
+    Ok(())
 }
 
 #[test]

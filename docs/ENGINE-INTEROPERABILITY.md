@@ -949,10 +949,12 @@ Only the resulting typed set is available to the result materializer.
 
 The production launcher now selects the v2 scenario admitted by current source;
 it cannot silently fall back to the superseded v1 transcript contract. The
-checked-in runnable profile still binds the prior optimized runner bytes, so a
-fresh optimized runner/image materialization must replace that profile before
-the next production run. Artifact verification fails closed until those new
-bytes and labels are independently recorded.
+fresh [`spark-v2-2026-08-28` profile](../profiles/v1/spark-v2-2026-08-28.json)
+now binds optimized `catalog-bench@59840b95c33e` runner bytes in both the donor
+and executed Spark images. Its independently observed
+[materialization](../materializations/v1/spark-v2-2026-08-28.json) passes the
+artifact verifier. This closes runtime provenance only; behavioral publication
+still requires the fresh four-catalog run and reviewed admission below.
 
 ## Reviewed live-run envelope
 

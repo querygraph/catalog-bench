@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- C2-02 Spark v2 runtime materialization: build the optimized Linux ARM64 runner
+  from public `catalog-bench@59840b95c33e`, prove its 4,986,064-byte ELF is
+  byte-identical in the donor and Spark 4.1.3 images, record exact OCI identities
+  and labels for every selected image, and deterministically generate the new
+  runnable `spark-v2-2026-08-28` profile. The artifact verifier and separate v1
+  and v2 policy tests preserve both generations; no behavioral result is yet
+  claimed.
+
 - C2-02 immutable Spark v2 source selection: preserve the prior v1 profile and
   materialization, add a distinct draft v2 source profile, and pin the optimized
   runner donor plus Spark copy to public `catalog-bench@59840b95c33e`. Advance
