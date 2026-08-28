@@ -9,7 +9,7 @@ use crate::profile_materialization::{
     check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactCopyPolicy,
     ArtifactPolicy, ImagePolicy, RequiredLabelPolicy, ScenarioProfilePolicy,
 };
-use crate::profile_runtime_policy::{LAKECAT_IMAGE, MINIO_IMAGE};
+use crate::profile_runtime_policy::{MINIO_IMAGE, TRINO_LAKECAT_IMAGE};
 
 const TRINO_BASE_DIGEST: &str =
     "sha256:db58cc93e593a2706553745f276bb119c9810e69918be56ecde088ba7ccb0534";
@@ -128,7 +128,7 @@ const TRINO_LABELS: &[RequiredLabelPolicy] = &[
 
 const MATERIALIZED_IMAGES: &[ImagePolicy] = &[
     MINIO_IMAGE,
-    LAKECAT_IMAGE,
+    TRINO_LAKECAT_IMAGE,
     ImagePolicy {
         component: "catalog-bench-engine",
         compose_service: "trino-engine-runner-base",

@@ -53,3 +53,11 @@ pub(crate) const LAKECAT_IMAGE: ImagePolicy = ImagePolicy {
     required_labels: &[],
     build_extension_label: None,
 };
+
+pub(crate) const TRINO_LAKECAT_IMAGE: ImagePolicy = ImagePolicy {
+    component: "lakecat",
+    compose_service: "trino-lakecat",
+    required_artifacts: LAKECAT_ARTIFACTS,
+    required_labels: &[],
+    build_extension_label: None,
+};

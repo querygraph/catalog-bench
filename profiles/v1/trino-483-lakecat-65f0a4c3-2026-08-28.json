@@ -1,10 +1,10 @@
 {
   "contract_version": "catalog-bench/v1",
   "kind": "profile",
-  "id": "catalog-community-trino-483-engine-6ea0f80-lakecat-65f0a4c3-2026-08-28-linux-arm64",
-  "title": "Trino 483, Iceberg 1.11.0, source-bound runner, and LakeCat 65f0a4c3 interoperability profile",
+  "id": "catalog-community-trino-483-engine-6ea0f80-lakecat-b424f778-2026-08-28-linux-arm64",
+  "title": "Trino 483, Iceberg 1.11.0, source-bound runner, and LakeCat b424f778 interoperability profile",
   "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with Trino 483 and the optimized Rust effects runner bound to catalog-bench@6ea0f80.",
-  "resolved_at": "2026-08-28T07:56:26Z",
+  "resolved_at": "2026-08-28T08:32:13Z",
   "purpose": "conformance",
   "readiness": {
     "status": "runnable"
@@ -243,10 +243,10 @@
       "id": "lakecat",
       "kind": "catalog",
       "name": "LakeCat",
-      "version": "0.3.0-51-g65f0a4c3",
+      "version": "0.3.0-54-gb424f778",
       "source": {
         "repository": "https://github.com/querygraph/lakecat.git",
-        "revision": "65f0a4c3b7f2e023e7ca87388de700b654cf7c4d"
+        "revision": "b424f778109d4f4d5f3588e1b84f72613cce8058"
       },
       "build": {
         "toolchain": "Rust 1.97.1",
@@ -275,11 +275,11 @@
       },
       "artifact": {
         "kind": "container-image",
-        "reference": "lakecat-service:65f0a4c3b7f2",
+        "reference": "lakecat-service:b424f778109d",
         "digest_scope": "local-image",
         "digest": {
           "algorithm": "sha256",
-          "value": "fb10686c357d60b86f022169bea1d38e2526945b6b1ca96398bdcd17b00b79cb"
+          "value": "835ed3e8ffb9213cfe2dc8724b57081a492fe1f71d3780e251f310e4f1603c28"
         },
         "embedded_artifacts": [
           {
@@ -287,7 +287,7 @@
             "media_type": "application/vnd.elf",
             "digest": {
               "algorithm": "sha256",
-              "value": "06d17a5c6f348d3bccceeb37af608eb4e74576d02f6141a5218af33e5bdaff10"
+              "value": "af0fc78d1f9808fa28c38949d51d4d969c892544a3ce5a08dcfc83adcba30efc"
             },
             "bytes": 19691168,
             "description": "Stripped LakeCat service built with Rust 1.97.1, optimization level 3, fat LTO, one codegen unit, native CPU features, aborting panics, and the turso-local,sail-local feature set."
@@ -299,9 +299,9 @@
           "architecture": "arm64",
           "labels": {
             "com.docker.compose.project": "catalog-bench",
-            "com.docker.compose.service": "lakecat",
+            "com.docker.compose.service": "trino-lakecat",
             "com.docker.compose.version": "5.1.3",
-            "org.opencontainers.image.revision": "65f0a4c3b7f2e023e7ca87388de700b654cf7c4d"
+            "org.opencontainers.image.revision": "b424f778109d4f4d5f3588e1b84f72613cce8058"
           },
           "operating_system": "linux"
         },
@@ -655,11 +655,13 @@
     {
       "component": "lakecat",
       "role": "iceberg-rest-catalog",
-      "endpoint": "http://lakecat:8181/catalog",
+      "endpoint": "http://trino-lakecat:8181/catalog",
       "private_state": "lakecat-turso",
       "settings": {
         "state_mode": "file-backed Turso",
-        "warehouse": "local"
+        "state_volume": "trino-lakecat-data",
+        "warehouse": "local",
+        "warehouse_location": "s3://warehouse/lakecat"
       }
     },
     {
@@ -879,14 +881,16 @@
       "catalog": "lakecat",
       "protocol": "iceberg-rest-v1",
       "endpoint": {
-        "base_url": "http://lakecat:8181/catalog",
+        "base_url": "http://trino-lakecat:8181/catalog",
         "config": {
-          "path": "/v1/config"
+          "path": "/v1/config",
+          "query": {
+            "warehouse": "local"
+          }
         },
         "route_prefix": {
           "kind": "unprefixed"
-        },
-        "create_table_location": "s3://warehouse/lakecat"
+        }
       },
       "authentication": {
         "kind": "anonymous"
@@ -981,14 +985,14 @@
     "querygraph/iceberg-rest-spec": "Apache Iceberg 1.11.0 OpenAPI at source revision 6976e020b894f6a6777704df2b8c4458cb291ae9; exact YAML SHA-256 80d2ec83a70eeff6e7194853f8791c17cceb14610fae6a0e6afdd2921806ee4a",
     "querygraph/materialization": {
       "format": "catalog-bench/trino-profile-materialization/v1",
-      "observation_sha256": "2605349f221e7af5aa5aa0231901cc1e61e7a9166db00f719d505417a3a991e1",
+      "observation_sha256": "effc96d462c6e6f926452a73d0d3a0296aebd86488e61b6db5a8fe535e2811d7",
       "scope": "engine.iceberg.write-read-evolution/v2",
       "source_profile": {
         "digest": {
           "algorithm": "sha256",
-          "value": "c382d8d7c3d325908d19b2adf43fcf61a40e119f15d0514582986728d85c5828"
+          "value": "5c913cea689fe683595da936d07224a8d6552211f58c6fd4172bdded36794c79"
         },
-        "id": "catalog-community-trino-candidate-483-lakecat-65f0a4c3-2026-08-28-linux-arm64"
+        "id": "catalog-community-trino-candidate-483-lakecat-b424f778-2026-08-28-linux-arm64"
       }
     },
     "querygraph/profile-state": "Runnable scenario-scoped profile; every selected runtime artifact has an immutable identity."

@@ -71,6 +71,7 @@ catalog_bench_prepare_fresh_project() {
   volume_suffixes=(
     gravitino-data
     lakecat-data
+    trino-lakecat-data
     lakekeeper-postgres-data
     minio-data
   )

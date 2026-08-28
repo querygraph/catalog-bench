@@ -355,6 +355,50 @@ services:
     healthcheck:
       disable: true
 
+  # Trino exercises standard REST warehouse selection without an explicit
+  # table location. Keep this source pin isolated from the already-published
+  # Spark/Flink LakeCat image contract.
+  trino-lakecat:
+    build:
+      context: ./docker/lakecat
+      args:
+        LAKECAT_SOURCE_REVISION: b424f778109d4f4d5f3588e1b84f72613cce8058
+      additional_contexts:
+        lakecat-source: "https://github.com/querygraph/lakecat.git#b424f778109d4f4d5f3588e1b84f72613cce8058"
+    image: lakecat-service:b424f778109d
+    profiles: ["trino"]
+    networks: [lakehouse-net]
+    environment:
+      LAKECAT_BIND_ADDR: 0.0.0.0:8181
+      LAKECAT_WAREHOUSE: local
+      LAKECAT_WAREHOUSE_LOCATION: s3://warehouse/lakecat
+      LAKECAT_TURSO_PATH: /data/lakecat.db
+      AWS_ACCESS_KEY_ID: admin
+      AWS_SECRET_ACCESS_KEY: password
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT: http://minio:9000
+      AWS_ALLOW_HTTP: "true"
+    volumes:
+      - trino-lakecat-data:/data
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+
+  trino-lakecat-ready:
+    image: *minio-image
+    profiles: ["trino"]
+    networks: [lakehouse-net]
+    restart: "no"
+    entrypoint: ["/usr/local/bin/wait-http"]
+    command: []
+    environment:
+      READY_URL: http://trino-lakecat:8181/catalog/v1/config?warehouse=local
+    depends_on:
+      trino-lakecat:
+        condition: service_started
+    healthcheck:
+      disable: true
+
   # Optional catalog profiles are retained for behavior work. C1-02 validates
   # their current-version adapter bindings before any new evidence is accepted.
   nessie:
@@ -759,7 +803,7 @@ services:
       CATALOG_BENCH_POLARIS_CLIENT_ID: root
       CATALOG_BENCH_POLARIS_CLIENT_SECRET: secret
     depends_on:
-      lakecat-ready:
+      trino-lakecat-ready:
         condition: service_completed_successfully
       polaris-ready:
         condition: service_completed_successfully
@@ -771,6 +815,7 @@ services:
 volumes:
   gravitino-data:
   lakecat-data:
+  trino-lakecat-data:
   lakekeeper-postgres-data:
   minio-data:
 

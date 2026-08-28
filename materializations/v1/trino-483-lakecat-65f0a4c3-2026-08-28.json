@@ -1,17 +1,17 @@
 {
   "format": "catalog-bench/trino-profile-materialization/v1",
   "source_profile": {
-    "id": "catalog-community-trino-candidate-483-lakecat-65f0a4c3-2026-08-28-linux-arm64",
+    "id": "catalog-community-trino-candidate-483-lakecat-b424f778-2026-08-28-linux-arm64",
     "digest": {
       "algorithm": "sha256",
-      "value": "c382d8d7c3d325908d19b2adf43fcf61a40e119f15d0514582986728d85c5828"
+      "value": "5c913cea689fe683595da936d07224a8d6552211f58c6fd4172bdded36794c79"
     }
   },
   "output_profile": {
-    "id": "catalog-community-trino-483-engine-6ea0f80-lakecat-65f0a4c3-2026-08-28-linux-arm64",
-    "title": "Trino 483, Iceberg 1.11.0, source-bound runner, and LakeCat 65f0a4c3 interoperability profile",
+    "id": "catalog-community-trino-483-engine-6ea0f80-lakecat-b424f778-2026-08-28-linux-arm64",
+    "title": "Trino 483, Iceberg 1.11.0, source-bound runner, and LakeCat b424f778 interoperability profile",
     "description": "Runnable Linux ARM64 profile for the v2 stock-engine workflow through four protocol-native Iceberg REST catalogs and shared MinIO, with Trino 483 and the optimized Rust effects runner bound to catalog-bench@6ea0f80.",
-    "resolved_at": "2026-08-28T07:56:26Z"
+    "resolved_at": "2026-08-28T08:32:13Z"
   },
   "images": [
     {
@@ -100,18 +100,18 @@
     },
     {
       "component": "lakecat",
-      "reference": "lakecat-service:65f0a4c3b7f2",
+      "reference": "lakecat-service:b424f778109d",
       "image_id": {
         "algorithm": "sha256",
-        "value": "fb10686c357d60b86f022169bea1d38e2526945b6b1ca96398bdcd17b00b79cb"
+        "value": "835ed3e8ffb9213cfe2dc8724b57081a492fe1f71d3780e251f310e4f1603c28"
       },
       "operating_system": "linux",
       "architecture": "arm64",
       "labels": {
         "com.docker.compose.project": "catalog-bench",
-        "com.docker.compose.service": "lakecat",
+        "com.docker.compose.service": "trino-lakecat",
         "com.docker.compose.version": "5.1.3",
-        "org.opencontainers.image.revision": "65f0a4c3b7f2e023e7ca87388de700b654cf7c4d"
+        "org.opencontainers.image.revision": "b424f778109d4f4d5f3588e1b84f72613cce8058"
       },
       "embedded_artifacts": [
         {
@@ -119,7 +119,7 @@
           "media_type": "application/vnd.elf",
           "digest": {
             "algorithm": "sha256",
-            "value": "06d17a5c6f348d3bccceeb37af608eb4e74576d02f6141a5218af33e5bdaff10"
+            "value": "af0fc78d1f9808fa28c38949d51d4d969c892544a3ce5a08dcfc83adcba30efc"
           },
           "bytes": 19691168,
           "description": "Stripped LakeCat service built with Rust 1.97.1, optimization level 3, fat LTO, one codegen unit, native CPU features, aborting panics, and the turso-local,sail-local feature set."

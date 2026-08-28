@@ -1,5 +1,9 @@
 # Changelog
 
+- Add a Trino-only LakeCat `b424f778` service with a configured S3 warehouse
+  root, preserving the already-published Spark/Flink LakeCat image while Trino
+  exercises standard REST warehouse selection without explicit table location.
+
 - Render Trino schema evolution with the required `ALTER TABLE ... ADD COLUMN`
   grammar, covered by the catalog-neutral program test.
 

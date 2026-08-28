@@ -1,9 +1,9 @@
 {
   "contract_version": "catalog-bench/v1",
   "kind": "profile",
-  "id": "catalog-community-trino-candidate-483-lakecat-65f0a4c3-2026-08-28-linux-arm64",
-  "title": "Catalog community Trino 483 and LakeCat 65f0a4c3 source-bound candidate pinset",
-  "description": "Immutable versions and production build recipes selected for the Linux ARM64 same-Docker Trino 483 interoperability run. This draft preserves the LakeCat 65f0a4c3 candidate while advancing only the catalog-bench engine runner to its production Trino effects revision; it is an input contract, not benchmark evidence.",
+  "id": "catalog-community-trino-candidate-483-lakecat-b424f778-2026-08-28-linux-arm64",
+  "title": "Catalog community Trino 483 and LakeCat b424f778 source-bound candidate pinset",
+  "description": "Immutable versions and production build recipes selected for the Linux ARM64 same-Docker Trino 483 interoperability run. This draft preserves the LakeCat b424f778 warehouse-root candidate while advancing only the catalog-bench engine runner to its production Trino effects revision; it is an input contract, not benchmark evidence.",
   "resolved_at": "2026-08-28T07:30:00Z",
   "purpose": "current-candidate",
   "readiness": {
@@ -211,10 +211,10 @@
       "id": "lakecat",
       "kind": "catalog",
       "name": "LakeCat",
-      "version": "0.3.0-51-g65f0a4c3",
+      "version": "0.3.0-54-gb424f778",
       "source": {
         "repository": "https://github.com/querygraph/lakecat.git",
-        "revision": "65f0a4c3b7f2e023e7ca87388de700b654cf7c4d"
+        "revision": "b424f778109d4f4d5f3588e1b84f72613cce8058"
       },
       "build": {
         "toolchain": "Rust 1.97.1",
@@ -648,11 +648,13 @@
     {
       "component": "lakecat",
       "role": "iceberg-rest-catalog",
-      "endpoint": "http://lakecat:8181/catalog",
+      "endpoint": "http://trino-lakecat:8181/catalog",
       "private_state": "lakecat-turso",
       "settings": {
         "state_mode": "file-backed Turso",
-        "warehouse": "local"
+        "warehouse": "local",
+        "warehouse_location": "s3://warehouse/lakecat",
+        "state_volume": "trino-lakecat-data"
       }
     },
     {
@@ -913,14 +915,16 @@
       "catalog": "lakecat",
       "protocol": "iceberg-rest-v1",
       "endpoint": {
-        "base_url": "http://lakecat:8181/catalog",
+        "base_url": "http://trino-lakecat:8181/catalog",
         "config": {
-          "path": "/v1/config"
+          "path": "/v1/config",
+          "query": {
+            "warehouse": "local"
+          }
         },
         "route_prefix": {
           "kind": "unprefixed"
-        },
-        "create_table_location": "s3://warehouse/lakecat"
+        }
       },
       "authentication": {
         "kind": "anonymous"
