@@ -1,5 +1,9 @@
 # Changelog
 
+- Keep the contract's OAuth scope in evidence while omitting DuckDB's
+  unsupported `SCOPE` attach option; Polaris applies the principal-role scope
+  for the benchmark credential.
+
 - Decode DuckDB CLI setup and query result arrays as a bounded JSON stream and
   retain only the final query result.
 

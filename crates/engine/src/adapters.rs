@@ -629,7 +629,7 @@ impl DuckDbProductionEffects {
         );
         match (&self.program.authentication, &self.oauth) {
             (crate::EngineCatalogAuthentication::Anonymous, None) => attach.push_str(", AUTHORIZATION_TYPE 'none'"),
-            (crate::EngineCatalogAuthentication::OAuth2ClientCredentials { oauth2_server_uri, scope }, Some((id, secret))) => attach.push_str(&format!(", AUTHORIZATION_TYPE 'oauth2', CLIENT_ID {}, CLIENT_SECRET {}, OAUTH2_SERVER_URI {}, SCOPE {}", crate::sql::literal(id), crate::sql::literal(secret), crate::sql::literal(oauth2_server_uri), crate::sql::literal(scope))),
+            (crate::EngineCatalogAuthentication::OAuth2ClientCredentials { oauth2_server_uri, .. }, Some((id, secret))) => attach.push_str(&format!(", AUTHORIZATION_TYPE 'oauth2', CLIENT_ID {}, CLIENT_SECRET {}, OAUTH2_SERVER_URI {}", crate::sql::literal(id), crate::sql::literal(secret), crate::sql::literal(oauth2_server_uri))),
             _ => return None,
         }
         attach.push_str(");");
