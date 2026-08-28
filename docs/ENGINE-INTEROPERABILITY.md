@@ -947,11 +947,12 @@ fixture, bind the exact profile and scenario digests, reproduce all derived
 execution checks and classification, and pass the value-safety audit again.
 Only the resulting typed set is available to the result materializer.
 
-The placeholder is intentional: the checked-in source-bound Spark profile and
-launcher preserve the v1 runner and scenario for reproducibility, but current
-source admits only v2 evidence. They are not a publication path together. A
-fresh optimized v2 runner/image materialization must replace the placeholder
-and advance the launcher in one verified unit before the next production run.
+The production launcher now selects the v2 scenario admitted by current source;
+it cannot silently fall back to the superseded v1 transcript contract. The
+checked-in runnable profile still binds the prior optimized runner bytes, so a
+fresh optimized runner/image materialization must replace that profile before
+the next production run. Artifact verification fails closed until those new
+bytes and labels are independently recorded.
 
 ## Reviewed live-run envelope
 

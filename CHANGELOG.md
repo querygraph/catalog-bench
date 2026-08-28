@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+- C2-02 Spark v2 launch contract: advance the four-catalog production launcher
+  to the current engine interoperability v2 scenario and freeze that exact path
+  in deployment tests, while explicitly rejecting the superseded v1 selection.
+  The existing runnable profile still binds prior optimized runner bytes and
+  must be freshly materialized before execution; no result claim is created by
+  this launcher-only unit.
+
 - C2-04 supervised stock Trino server lifecycle: start only the closed verified
   launcher against the private staged configuration, discard server output,
   retain the isolated process-group boundary, and wait within positive bounds

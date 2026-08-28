@@ -749,7 +749,7 @@ fn spark_launcher_runs_all_four_catalogs_in_one_fresh_topology() {
         "materializations/v1/spark-4.1.3-iceberg-1.11.0-2026-08-27.json",
         "for catalog in \"${catalogs[@]}\"",
         "catalog_bench_clean_compose \"$repository_root\" run --rm spark-engine",
-        "--scenario /contracts/scenarios/v1/engine.iceberg.write-read-evolution.json",
+        "--scenario /contracts/scenarios/v1/engine.iceberg.write-read-evolution.v2.json",
         "--catalog \"$catalog\"",
         "--fixture-id \"$run_id\"",
         "host_output=\"$evidence_dir/$run_id/$catalog.json\"",
@@ -766,6 +766,7 @@ fn spark_launcher_runs_all_four_catalogs_in_one_fresh_topology() {
     }
     for forbidden in [
         "nessie",
+        "engine.iceberg.write-read-evolution.json ",
         "docker run",
         "cargo run",
         "--no-deps",
