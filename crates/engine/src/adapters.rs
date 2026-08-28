@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
+use std::process::Stdio;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
@@ -9,6 +10,8 @@ use catalog_bench_conformance::{
     connect_catalog_adapter, CatalogConnectionOutcome, CatalogNegotiationFailureStage,
     CATALOG_RESPONSE_LIMIT_BYTES,
 };
+use tokio::io::AsyncWriteExt as _;
+use tokio::process::Command;
 use zeroize::Zeroize as _;
 
 use crate::{
@@ -466,6 +469,415 @@ impl TrinoEffects for ProductionTrinoEffects {
         let output = self.query(&sql, TrinoCliOutput::Json, 64 * 1024)?;
         decode_trino_single_u64(&output, "snapshots").map_err(|_| TrinoEffectFailure)
     }
+}
+
+pub struct StockDuckDbRunner<S> {
+    profile: Arc<Profile>,
+    verifier: RuntimeVerifier,
+    secrets: Arc<S>,
+}
+
+impl<S> StockDuckDbRunner<S> {
+    #[must_use]
+    pub fn production(profile: Arc<Profile>, secrets: Arc<S>) -> Self {
+        Self {
+            profile,
+            verifier: RuntimeVerifier::host(),
+            secrets,
+        }
+    }
+}
+
+impl<S> Clone for StockDuckDbRunner<S> {
+    fn clone(&self) -> Self {
+        Self {
+            profile: Arc::clone(&self.profile),
+            verifier: self.verifier.clone(),
+            secrets: Arc::clone(&self.secrets),
+        }
+    }
+}
+
+impl<S> EngineRunner for StockDuckDbRunner<S>
+where
+    S: SecretSource + Send + Sync + 'static,
+{
+    async fn execute(&self, plan: &InteroperabilityPlan) -> EngineProcessExecution {
+        let runtime = self.verifier.verify(plan);
+        if !runtime.passed() {
+            return EngineProcessExecution::before_process(
+                runtime,
+                EngineProcessOutcome::RuntimeRejected {},
+            );
+        }
+        let Some(duckdb) = plan.duckdb() else {
+            return EngineProcessExecution::before_process(
+                runtime,
+                EngineProcessOutcome::PreparationFailed {
+                    kind: crate::EnginePreparationFailureKind::ExecutionPlanMismatch,
+                },
+            );
+        };
+        let program = match crate::DuckDbRenderedProgram::render(duckdb) {
+            Ok(program) => program,
+            Err(_) => return preparation_failed(runtime),
+        };
+        let access_key = match required_runner_secret(
+            self.secrets.as_ref(),
+            &plan.object_store().access_key_env,
+            EngineCredentialKind::ObjectStoreAccessKey,
+        ) {
+            Ok(value) => value,
+            Err(failure) => return credential_rejected(runtime, failure),
+        };
+        let secret_key = match required_runner_secret(
+            self.secrets.as_ref(),
+            &plan.object_store().secret_key_env,
+            EngineCredentialKind::ObjectStoreSecretKey,
+        ) {
+            Ok(value) => value,
+            Err(failure) => return credential_rejected(runtime, failure),
+        };
+        let oauth = match plan.credential_source() {
+            crate::CatalogCredentialSource::Anonymous => None,
+            crate::CatalogCredentialSource::OAuth2ClientCredentials {
+                client_id_env,
+                client_secret_env,
+            } => {
+                let id = match required_runner_secret(
+                    self.secrets.as_ref(),
+                    client_id_env,
+                    EngineCredentialKind::CatalogClientId,
+                ) {
+                    Ok(value) => value,
+                    Err(failure) => return credential_rejected(runtime, failure),
+                };
+                let secret = match required_runner_secret(
+                    self.secrets.as_ref(),
+                    client_secret_env,
+                    EngineCredentialKind::CatalogClientSecret,
+                ) {
+                    Ok(value) => value,
+                    Err(failure) => return credential_rejected(runtime, failure),
+                };
+                Some((id, secret))
+            }
+        };
+        let catalog =
+            match connect_observation_catalog(&self.profile, plan, self.secrets.as_ref()).await {
+                Some(value) => value,
+                None => return preparation_failed(runtime),
+            };
+        let store = match ObjectStoreAuditor::from_connection(plan.object_store(), |name| {
+            optional_secret(self.secrets.as_ref(), name)
+        }) {
+            Ok(value) => value,
+            Err(_) => return preparation_failed(runtime),
+        };
+        let started = Instant::now();
+        let mut effects = DuckDbProductionEffects {
+            program,
+            access_key,
+            secret_key,
+            oauth,
+            catalog,
+            store,
+        };
+        let (exit_code, events) = run_duckdb_program(&mut effects).await;
+        EngineProcessExecution::from_in_process_events(
+            runtime,
+            exit_code,
+            events,
+            u64::try_from(started.elapsed().as_micros()).unwrap_or(u64::MAX),
+        )
+    }
+}
+
+struct DuckDbProductionEffects {
+    program: crate::DuckDbRenderedProgram,
+    access_key: String,
+    secret_key: String,
+    oauth: Option<(String, String)>,
+    catalog: RestEngineCatalog,
+    store: ObjectStoreAuditor,
+}
+
+impl Drop for DuckDbProductionEffects {
+    fn drop(&mut self) {
+        self.access_key.zeroize();
+        self.secret_key.zeroize();
+        if let Some((id, secret)) = &mut self.oauth {
+            id.zeroize();
+            secret.zeroize();
+        }
+    }
+}
+
+impl DuckDbProductionEffects {
+    fn setup_sql(&self) -> Option<String> {
+        let endpoint = url::Url::parse(&self.program.file_io.endpoint).ok()?;
+        let host = endpoint.host_str()?;
+        let endpoint = match endpoint.port() {
+            Some(port) => format!("{host}:{port}"),
+            None => host.to_owned(),
+        };
+        let mut attach = format!(
+            "ATTACH {} AS \"{}\" (TYPE iceberg, ENDPOINT {}, ACCESS_DELEGATION_MODE 'none'",
+            crate::sql::literal(self.program.warehouse.as_deref().unwrap_or("")),
+            self.program.catalog_name,
+            crate::sql::literal(&self.program.catalog_uri)
+        );
+        match (&self.program.authentication, &self.oauth) {
+            (crate::EngineCatalogAuthentication::Anonymous, None) => attach.push_str(", AUTHORIZATION_TYPE 'none'"),
+            (crate::EngineCatalogAuthentication::OAuth2ClientCredentials { oauth2_server_uri, scope }, Some((id, secret))) => attach.push_str(&format!(", AUTHORIZATION_TYPE 'oauth2', CLIENT_ID {}, CLIENT_SECRET {}, OAUTH2_SERVER_URI {}, SCOPE {}", crate::sql::literal(id), crate::sql::literal(secret), crate::sql::literal(oauth2_server_uri), crate::sql::literal(scope))),
+            _ => return None,
+        }
+        attach.push_str(");");
+        Some(format!("LOAD httpfs; LOAD iceberg; CREATE OR REPLACE TEMP SECRET catalog_bench_s3 (TYPE s3, PROVIDER config, KEY_ID {}, SECRET {}, REGION {}, ENDPOINT {}, URL_STYLE 'path', USE_SSL {}); {attach}", crate::sql::literal(&self.access_key), crate::sql::literal(&self.secret_key), crate::sql::literal(&self.program.file_io.region), crate::sql::literal(&endpoint), endpoint_is_https(&self.program.file_io.endpoint)))
+    }
+
+    async fn query(&self, sql: &str) -> Result<Vec<serde_json::Value>, ()> {
+        let mut input = self.setup_sql().ok_or(())?;
+        input.push(' ');
+        input.push_str(sql);
+        input.push(';');
+        let mut child = Command::new(crate::DUCKDB_CLI_LOCATION)
+            .args(["-json"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
+            .kill_on_drop(true)
+            .spawn()
+            .map_err(|_| ())?;
+        child
+            .stdin
+            .take()
+            .ok_or(())?
+            .write_all(input.as_bytes())
+            .await
+            .map_err(|_| ())?;
+        input.zeroize();
+        let output = tokio::time::timeout(Duration::from_secs(60), child.wait_with_output())
+            .await
+            .map_err(|_| ())?
+            .map_err(|_| ())?;
+        if !output.status.success() {
+            return Err(());
+        }
+        if output.stdout.is_empty() {
+            return Ok(Vec::new());
+        }
+        serde_json::from_slice(&output.stdout).map_err(|_| ())
+    }
+
+    async fn table_observation(&self) -> Result<crate::EngineTableObservation, ()> {
+        let load = self.catalog.load_table().await.map_err(|_| ())?;
+        let EngineTableLoad::Present { state, .. } = load else {
+            return Err(());
+        };
+        let root = TableRoot::new(
+            &state.table.location,
+            &state.table.metadata_location,
+            &self.program.fixture.bucket,
+        )
+        .map_err(|_| ())?;
+        let bytes = self
+            .store
+            .read_metadata(&root, &state.table.metadata_location, TRINO_METADATA_LIMIT)
+            .await
+            .map_err(|_| ())?;
+        decode_iceberg_table_metadata(
+            &bytes,
+            &state.table.metadata_location,
+            &self.program.fixture,
+            &self.program.observation,
+        )
+        .map_err(|_| ())
+    }
+}
+
+fn endpoint_is_https(value: &str) -> bool {
+    url::Url::parse(value).is_ok_and(|url| url.scheme() == "https")
+}
+
+async fn run_duckdb_program(
+    effects: &mut DuckDbProductionEffects,
+) -> (i32, Vec<crate::EngineEvent>) {
+    use crate::{EngineEvent, EngineFailureCategory as Category, EngineStage as Stage};
+    let mut events = Vec::with_capacity(13);
+    let runtime_rows = match effects.query("SELECT version() AS version").await {
+        Ok(rows) => rows,
+        Err(_) => return duckdb_failed(events, Stage::VerifyRuntime, Category::Runtime),
+    };
+    if runtime_rows
+        .first()
+        .and_then(|row| row.get("version"))
+        .and_then(serde_json::Value::as_str)
+        != Some("v1.5.3")
+    {
+        return duckdb_failed(events, Stage::VerifyRuntime, Category::Runtime);
+    }
+    events.push(EngineEvent::RuntimeReady {
+        runtime: EngineRuntimeObservation {
+            engine_version: "1.5.3".to_owned(),
+            dependencies: BTreeMap::from([
+                ("avro".to_owned(), "1.5.3".to_owned()),
+                ("httpfs".to_owned(), "1.5.3".to_owned()),
+                ("iceberg".to_owned(), "1.5.3".to_owned()),
+            ]),
+            operating_system: std::env::consts::OS.to_owned(),
+            architecture: std::env::consts::ARCH.to_owned(),
+        },
+    });
+    events.push(EngineEvent::CatalogReady);
+    let fixture = &effects.program.fixture;
+    let absent_sql = format!("SELECT count(*) AS matches FROM information_schema.tables WHERE table_catalog = {} AND table_schema = {} AND table_name = {}", crate::sql::literal(&effects.program.catalog_name), crate::sql::literal(&fixture.namespace), crate::sql::literal(&fixture.table));
+    let absent = effects
+        .query(&absent_sql)
+        .await
+        .ok()
+        .and_then(|rows| duckdb_u64(&rows, "matches"))
+        .is_some_and(|count| count == 0);
+    events.push(EngineEvent::FixturePreflight { absent });
+    if !absent {
+        return (3, events);
+    }
+    let operations = effects.program.operations.clone();
+    if duckdb_execute(effects, &operations[0]).await.is_err() {
+        return duckdb_failed(events, Stage::CreateNamespace, Category::Catalog);
+    }
+    let namespace_sql = format!("SELECT count(*) AS matches FROM information_schema.schemata WHERE catalog_name = {} AND schema_name = {}", crate::sql::literal(&effects.program.catalog_name), crate::sql::literal(&fixture.namespace));
+    if effects
+        .query(&namespace_sql)
+        .await
+        .ok()
+        .and_then(|rows| duckdb_u64(&rows, "matches"))
+        != Some(1)
+    {
+        return duckdb_failed(events, Stage::CreateNamespace, Category::Catalog);
+    }
+    events.push(EngineEvent::NamespaceReady {
+        listed_exactly: true,
+    });
+    if duckdb_execute(effects, &operations[1]).await.is_err() {
+        return duckdb_failed(events, Stage::CreateTable, Category::Connector);
+    }
+    let table = match effects.table_observation().await {
+        Ok(value) => value,
+        Err(_) => return duckdb_failed(events, Stage::CreateTable, Category::Connector),
+    };
+    events.push(EngineEvent::TableReady { table });
+    if duckdb_execute(effects, &operations[2]).await.is_err() {
+        return duckdb_failed(events, Stage::AppendInitial, Category::Data);
+    }
+    let snapshots = match duckdb_snapshot_count(effects).await {
+        Ok(value) => value,
+        Err(_) => return duckdb_failed(events, Stage::AppendInitial, Category::Data),
+    };
+    events.push(EngineEvent::InitialAppended { snapshots });
+    let read = match duckdb_read(effects, &operations[3]).await {
+        Ok(value) => value,
+        Err(_) => return duckdb_failed(events, Stage::ReadInitial, Category::Data),
+    };
+    events.push(EngineEvent::InitialRead { read });
+    if duckdb_execute(effects, &operations[4]).await.is_err() {
+        return duckdb_failed(events, Stage::EvolveSchema, Category::Connector);
+    }
+    let table = match effects.table_observation().await {
+        Ok(value) => value,
+        Err(_) => return duckdb_failed(events, Stage::EvolveSchema, Category::Connector),
+    };
+    events.push(EngineEvent::SchemaEvolved { table });
+    if duckdb_execute(effects, &operations[5]).await.is_err() {
+        return duckdb_failed(events, Stage::AppendEvolved, Category::Data);
+    }
+    let snapshots = match duckdb_snapshot_count(effects).await {
+        Ok(value) => value,
+        Err(_) => return duckdb_failed(events, Stage::AppendEvolved, Category::Data),
+    };
+    events.push(EngineEvent::EvolvedAppended { snapshots });
+    let read = match duckdb_read(effects, &operations[6]).await {
+        Ok(value) => value,
+        Err(_) => return duckdb_failed(events, Stage::ReadEvolved, Category::Data),
+    };
+    events.push(EngineEvent::EvolvedRead { read });
+    let table = match effects.table_observation().await {
+        Ok(value) => value,
+        Err(_) => return duckdb_failed(events, Stage::ObserveFinalTable, Category::Connector),
+    };
+    events.push(EngineEvent::FinalTable { table });
+    events.push(EngineEvent::Completed);
+    (0, events)
+}
+
+async fn duckdb_execute(
+    effects: &DuckDbProductionEffects,
+    operation: &crate::DuckDbOperation,
+) -> Result<(), ()> {
+    effects.query(operation.sql().ok_or(())?).await.map(|_| ())
+}
+async fn duckdb_read(
+    effects: &DuckDbProductionEffects,
+    operation: &crate::DuckDbOperation,
+) -> Result<crate::RowReadObservation, ()> {
+    let expected = match operation {
+        crate::DuckDbOperation::InitialRead { expected, .. }
+        | crate::DuckDbOperation::EvolvedRead { expected, .. } => expected,
+        _ => return Err(()),
+    };
+    let rows = effects.query(operation.sql().ok_or(())?).await?;
+    if u64::try_from(rows.len()).ok() != Some(expected.rows) {
+        return Err(());
+    }
+    let mut canonical = Vec::new();
+    for row in &rows {
+        let object = row.as_object().ok_or(())?;
+        let values = expected
+            .columns
+            .iter()
+            .map(|column| object.get(column).ok_or(()))
+            .collect::<Result<Vec<_>, _>>()?;
+        serde_json::to_writer(&mut canonical, &values).map_err(|_| ())?;
+        canonical.push(b'\n');
+    }
+    let read = crate::RowReadObservation {
+        rows: expected.rows,
+        bytes: u64::try_from(canonical.len()).unwrap_or(u64::MAX),
+        sha256: catalog_bench_conformance::sha256_hex(&canonical),
+    };
+    let expected_read = crate::RowReadObservation {
+        rows: expected.rows,
+        bytes: expected.bytes,
+        sha256: expected.sha256.clone(),
+    };
+    if read == expected_read {
+        Ok(read)
+    } else {
+        Err(())
+    }
+}
+async fn duckdb_snapshot_count(effects: &DuckDbProductionEffects) -> Result<u64, ()> {
+    let load = effects.catalog.load_table().await.map_err(|_| ())?;
+    let EngineTableLoad::Present { state, .. } = load else {
+        return Err(());
+    };
+    let sql = format!(
+        "SELECT count(*) AS snapshots FROM iceberg_snapshots({})",
+        crate::sql::literal(&state.table.metadata_location)
+    );
+    let rows = effects.query(&sql).await?;
+    duckdb_u64(&rows, "snapshots").ok_or(())
+}
+fn duckdb_u64(rows: &[serde_json::Value], field: &str) -> Option<u64> {
+    rows.first()?.get(field)?.as_u64()
+}
+fn duckdb_failed(
+    mut events: Vec<crate::EngineEvent>,
+    stage: crate::EngineStage,
+    category: crate::EngineFailureCategory,
+) -> (i32, Vec<crate::EngineEvent>) {
+    events.push(crate::EngineEvent::Failed { stage, category });
+    (2, events)
 }
 
 async fn connect_observation_catalog(

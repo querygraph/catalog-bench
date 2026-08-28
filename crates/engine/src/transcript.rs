@@ -408,6 +408,34 @@ where
     )
 }
 
+pub async fn run_stock_duckdb_interoperability<S>(
+    contracts: &EngineContracts,
+    catalog: &ComponentId,
+    fixture_id: &str,
+    secrets: Arc<S>,
+) -> Result<EngineTranscript, EngineEvidenceError>
+where
+    S: SecretSource + Send + Sync + 'static,
+{
+    let plan = contracts.plan(catalog, fixture_id)?;
+    let observed = Arc::new(ObservedSecretSource::new(secrets));
+    let execution = run_engine_workflow(
+        &plan,
+        crate::StockDuckDbRunner::production(Arc::clone(&contracts.profile), Arc::clone(&observed)),
+        RestEngineCatalogConnector::new(Arc::clone(&contracts.profile), Arc::clone(&observed)),
+        SharedObjectStoreConnector::new(Arc::clone(&observed)),
+    )
+    .await;
+    let sensitive_values = observed.sensitive_values();
+    EngineTranscript::from_execution(
+        contracts,
+        &plan,
+        fixture_id,
+        execution,
+        sensitive_values.as_slice(),
+    )
+}
+
 pub async fn run_stock_engine_interoperability<S>(
     contracts: &EngineContracts,
     catalog: &ComponentId,
@@ -418,7 +446,9 @@ where
     S: SecretSource + Send + Sync + 'static,
 {
     let plan = contracts.plan(catalog, fixture_id)?;
-    if plan.trino().is_some() {
+    if plan.duckdb().is_some() {
+        run_stock_duckdb_interoperability(contracts, catalog, fixture_id, secrets).await
+    } else if plan.trino().is_some() {
         run_stock_trino_interoperability(contracts, catalog, fixture_id, secrets).await
     } else if plan.flink().is_some() {
         run_stock_flink_interoperability(contracts, catalog, fixture_id, secrets).await

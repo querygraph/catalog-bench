@@ -9,6 +9,7 @@ const PROFILE: &[u8] =
 const SCENARIO: &[u8] =
     include_bytes!("../../../scenarios/v1/engine.iceberg.write-read-evolution.v2.json");
 const RENDERER: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/duckdb.rs");
+const ADAPTERS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/adapters.rs");
 
 #[test]
 fn renders_the_complete_catalog_neutral_duckdb_program() {
@@ -79,6 +80,20 @@ fn renderer_has_no_catalog_specific_or_rest_client_branches() {
     ] {
         assert!(!source.to_ascii_lowercase().contains(forbidden));
     }
+}
+
+#[test]
+fn production_runner_keeps_credentials_out_of_process_arguments() {
+    let source = std::fs::read_to_string(ADAPTERS).unwrap();
+    for required in [
+        "stdin(Stdio::piped())",
+        "write_all(input.as_bytes())",
+        "input.zeroize()",
+        "CREATE OR REPLACE TEMP SECRET",
+    ] {
+        assert!(source.contains(required), "runner lost `{required}`");
+    }
+    assert!(!source.contains("args([\"-json\", &input])"));
 }
 
 fn statement(program: &DuckDbRenderedProgram, purpose: DuckDbOperationPurpose) -> &str {

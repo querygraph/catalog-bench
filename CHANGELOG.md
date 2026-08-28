@@ -1,5 +1,9 @@
 # Changelog
 
+- Execute DuckDB's full stock Iceberg REST workflow through its CLI, inject
+  credentials only over child stdin, and cross-check table metadata through
+  independent REST and object-store observations.
+
 - Add a closed, catalog-neutral DuckDB execution plan and renderer for the full
   namespace, table, append, read, schema-evolution, and snapshot workflow.
 

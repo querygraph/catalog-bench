@@ -26,8 +26,8 @@ mod trino_process;
 mod workflow;
 
 pub use adapters::{
-    RestEngineCatalogConnector, SharedObjectStoreConnector, StockFlinkRunner, StockSparkRunner,
-    StockTrinoRunner,
+    RestEngineCatalogConnector, SharedObjectStoreConnector, StockDuckDbRunner, StockFlinkRunner,
+    StockSparkRunner, StockTrinoRunner,
 };
 pub use catalog::{
     EngineCatalog, EngineCatalogFailure, EngineCatalogFailureKind, EngineCatalogTable,
@@ -46,9 +46,10 @@ pub use process::*;
 pub use protocol::*;
 pub use runtime::*;
 pub use transcript::{
-    run_stock_engine_interoperability, run_stock_flink_interoperability,
-    run_stock_spark_interoperability, run_stock_trino_interoperability, EngineContracts,
-    EngineEvidenceError, EngineEvidenceErrorKind, EngineSanitizationViolation, EngineTranscript,
+    run_stock_duckdb_interoperability, run_stock_engine_interoperability,
+    run_stock_flink_interoperability, run_stock_spark_interoperability,
+    run_stock_trino_interoperability, EngineContracts, EngineEvidenceError,
+    EngineEvidenceErrorKind, EngineSanitizationViolation, EngineTranscript,
     EngineTranscriptComponent, EngineTranscriptComponents, EngineTranscriptFixture,
     EngineTranscriptProfile, EngineTranscriptSanitization, EngineTranscriptValidationFailure,
     EngineTranscriptValidationFailureKind,
