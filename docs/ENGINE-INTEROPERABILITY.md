@@ -624,6 +624,17 @@ alternate server URI is representable. This grammar does not itself spawn the
 server or CLI; bounded execution and lifecycle supervision remain the next
 effect unit.
 
+CLI execution reuses the common stock-engine process boundary: inherited
+environment is cleared to the public runtime allowlist, HOME/TMPDIR/current
+directory point at the private run root, stdin and stderr are discarded, and a
+fresh process group contains the CLI and descendants. Stdout is drained
+concurrently only to an explicit positive limit no larger than 16 MiB. A
+nonzero exit, read/wait failure, elapsed timeout, or one byte beyond the limit
+fails closed; timeout and excess output terminate the complete group. Tests use
+fake executables to prove capture, environment, exit, timeout, and byte-limit
+behavior without requiring Trino. Server supervision and concrete effect
+mapping remain separate.
+
 ### Strict Trino CLI read boundary
 
 Scalar queries have a narrower boundary than canonical table reads. Fixture

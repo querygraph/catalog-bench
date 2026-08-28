@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- C2-06 bounded stock Trino CLI execution: execute the closed CLI invocation in
+  the shared cleared-environment, private-home, null-input/error, isolated
+  process-group boundary with one positive timeout and caller-selected output
+  limit up to 16 MiB. Drain stdout concurrently, terminate the whole group on
+  timeout or excess output, require a successful exit, and retain no stderr.
+  Separate fake-executable tests cover exact capture, private environment,
+  excess output, nonzero exit, timeout, and invalid limits. Server lifecycle
+  and concrete Trino effects remain separate.
+
 - C2-06 closed stock Trino invocation grammar: represent server startup only as
   the verified launcher `run --etc-dir <private absolute path>` and every query
   only as a bounded single stock-CLI batch against the fixed loopback server,

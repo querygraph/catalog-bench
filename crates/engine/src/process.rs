@@ -529,6 +529,27 @@ fn configure_child(
     root: &Path,
     secrets: &EngineSecrets,
 ) {
+    configure_sanitized_process(command, root);
+    command
+        .env(
+            "AWS_ACCESS_KEY_ID",
+            secrets.object_store_access_key.expose(),
+        )
+        .env(
+            "AWS_SECRET_ACCESS_KEY",
+            secrets.object_store_secret_key.expose(),
+        )
+        .env("AWS_REGION", &plan.object_store().region)
+        .env("AWS_DEFAULT_REGION", &plan.object_store().region)
+        .env("AWS_EC2_METADATA_DISABLED", "true");
+    if let Some((client_id, client_secret)) = &secrets.catalog_oauth {
+        command
+            .env(ENGINE_OAUTH_CLIENT_ID_ENV, client_id.expose())
+            .env(ENGINE_OAUTH_CLIENT_SECRET_ENV, client_secret.expose());
+    }
+}
+
+pub(crate) fn configure_sanitized_process(command: &mut Command, root: &Path) {
     command
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
@@ -546,25 +567,7 @@ fn configure_child(
     if std::env::var_os("PATH").is_none() {
         command.env("PATH", FALLBACK_PATH);
     }
-    command
-        .env("HOME", root)
-        .env("TMPDIR", root)
-        .env(
-            "AWS_ACCESS_KEY_ID",
-            secrets.object_store_access_key.expose(),
-        )
-        .env(
-            "AWS_SECRET_ACCESS_KEY",
-            secrets.object_store_secret_key.expose(),
-        )
-        .env("AWS_REGION", &plan.object_store().region)
-        .env("AWS_DEFAULT_REGION", &plan.object_store().region)
-        .env("AWS_EC2_METADATA_DISABLED", "true");
-    if let Some((client_id, client_secret)) = &secrets.catalog_oauth {
-        command
-            .env(ENGINE_OAUTH_CLIENT_ID_ENV, client_id.expose())
-            .env(ENGINE_OAUTH_CLIENT_SECRET_ENV, client_secret.expose());
-    }
+    command.env("HOME", root).env("TMPDIR", root);
 }
 
 enum WaitObservation {
@@ -694,7 +697,7 @@ fn finish_decoder(decoder: Arc<Mutex<EngineEventDecoder>>) -> EngineEventCapture
         .finish()
 }
 
-async fn terminate_child(child: &mut Child) {
+pub(crate) async fn terminate_child(child: &mut Child) {
     #[cfg(unix)]
     let group_killed = child.id().is_some_and(|id| {
         i32::try_from(id).is_ok_and(|id| {
