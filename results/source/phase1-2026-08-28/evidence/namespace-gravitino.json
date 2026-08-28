@@ -1,0 +1,1507 @@
+{
+  "format": "catalog-bench/namespace-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.namespace.behavior",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "0cd6262c9bda87ac217e8fc618cf3138ddabe6ca89aac94ee05628a67729b7ac"
+  },
+  "adapter": {
+    "catalog": "gravitino",
+    "name": "Apache Gravitino",
+    "version": "1.3.0",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_gravitino_ns",
+    "primary": [
+      "cb_c104_gravitino_pub_gravitino_ns_a"
+    ],
+    "sibling": [
+      "cb_c104_gravitino_pub_gravitino_ns_b"
+    ],
+    "child": [
+      "cb_c104_gravitino_pub_gravitino_ns_a",
+      "child"
+    ],
+    "missing_parent": [
+      "cb_c104_gravitino_pub_gravitino_ns_missing"
+    ]
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://gravitino:9001/iceberg/v1/config",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json"
+      },
+      "body_bytes_observed": 1398,
+      "raw_body_sha256": "df8e07c374fbafcbc699a7ed9ccd6d72d2eadbd27421cc70b31611c36f0ec836",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "client.region": "us-east-1",
+            "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+            "s3.endpoint": "http://minio:9000",
+            "s3.path-style-access": "true"
+          },
+          "endpoints": [
+            "GET /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/tables/rename",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/plan",
+            "GET /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/namespaces/{namespace}/views",
+            "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/views/rename",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}"
+          ],
+          "overrides": {}
+        }
+      }
+    },
+    "prefix": {
+      "mode": "unprefixed"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "operations": [
+    {
+      "id": "preflight-primary",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7100,
+        "raw_body_sha256": "695915341e0dde48deb11477c82d540040e8e3b42d08726ee96a12f7d67426e0",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_a",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchNamespaceException: Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_a",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.loadNamespaceMetadata(JdbcCatalog.java:519)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.loadNamespace(CatalogHandlers.java:351)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.loadNamespace(IcebergCatalogWrapper.java:185)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.loadNamespace(IcebergNamespaceOperationExecutor.java:106)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.loadNamespace(IcebergNamespaceEventDispatcher.java:177)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$loadNamespace$1(IcebergNamespaceOperations.java:164)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.loadNamespace(IcebergNamespaceOperations.java:158)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.produce(EatWhatYouKill.java:137)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "preflight-sibling",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_b",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7208,
+        "raw_body_sha256": "6c335ce1b1676133ba5bce5dae25aa18e29d3f95fdbabbe0154b356c4c6fa64e",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_b",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchNamespaceException: Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_b",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.loadNamespaceMetadata(JdbcCatalog.java:519)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.loadNamespace(CatalogHandlers.java:351)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.loadNamespace(IcebergCatalogWrapper.java:185)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.loadNamespace(IcebergNamespaceOperationExecutor.java:106)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.loadNamespace(IcebergNamespaceEventDispatcher.java:177)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$loadNamespace$1(IcebergNamespaceOperations.java:164)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.loadNamespace(IcebergNamespaceOperations.java:158)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "preflight-child",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7220,
+        "raw_body_sha256": "72e9c936ffbf5110725d960d2a6382535fe9947176c51d0d1328ba46bbb0922c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_a.child",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchNamespaceException: Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_a.child",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.loadNamespaceMetadata(JdbcCatalog.java:519)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.loadNamespace(CatalogHandlers.java:351)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.loadNamespace(IcebergCatalogWrapper.java:185)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.loadNamespace(IcebergNamespaceOperationExecutor.java:106)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.loadNamespace(IcebergNamespaceEventDispatcher.java:177)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$loadNamespace$1(IcebergNamespaceOperations.java:164)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.loadNamespace(IcebergNamespaceOperations.java:158)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_gravitino_pub_gravitino_ns_a"
+          ],
+          "properties": {
+            "c1-04.remove": "before",
+            "owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 182,
+        "raw_body_sha256": "770fca9e6c75148adf7236d948af7891164bb5c75946ccf1b3aeaa9873e4984c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_gravitino_pub_gravitino_ns_a"
+            ],
+            "properties": {
+              "c1-04.remove": "before",
+              "location": "s3://warehouse/cb_c104_gravitino_pub_gravitino_ns_a",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-sibling",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_gravitino_pub_gravitino_ns_b"
+          ],
+          "properties": {}
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 134,
+        "raw_body_sha256": "0c016eca896d18b50f08cf3c1946ab2df76279cf62d7b80e6b6db3693cec682d",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_gravitino_pub_gravitino_ns_b"
+            ],
+            "properties": {
+              "location": "s3://warehouse/cb_c104_gravitino_pub_gravitino_ns_b"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-child",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_gravitino_pub_gravitino_ns_a",
+            "child"
+          ],
+          "properties": {}
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 148,
+        "raw_body_sha256": "56c1097f39910f46f53d6928ff7eda39f555d981a9e430b06833a77d7086df28",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_gravitino_pub_gravitino_ns_a",
+              "child"
+            ],
+            "properties": {
+              "location": "s3://warehouse/cb_c104_gravitino_pub_gravitino_ns_a/child"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list-top-level",
+      "capability": "iceberg-rest.namespace.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 121,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_gravitino_pub_gravitino_ns_a"
+              ],
+              [
+                "cb_c104_gravitino_pub_gravitino_ns_b"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-primary",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 182,
+        "raw_body_sha256": "770fca9e6c75148adf7236d948af7891164bb5c75946ccf1b3aeaa9873e4984c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_gravitino_pub_gravitino_ns_a"
+            ],
+            "properties": {
+              "c1-04.remove": "before",
+              "location": "s3://warehouse/cb_c104_gravitino_pub_gravitino_ns_a",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "update-primary-properties",
+      "capability": "iceberg-rest.namespace.update-properties",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_a/properties",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "removals": [
+            "c1-04.remove"
+          ],
+          "updates": {
+            "c1-04.state": "after"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 67,
+        "raw_body_sha256": "90a87cb005861260b4189f92bdc7038e3bc7a115c7688863eacf700febb8804f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "missing": [],
+            "removed": [
+              "c1-04.remove"
+            ],
+            "updated": [
+              "c1-04.state"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-primary-properties",
+      "capability": "iceberg-rest.namespace.update-properties",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 180,
+        "raw_body_sha256": "1dea73945bce714a17eb6f17f6133b14810623798e85ae52f593a7582db73216",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_gravitino_pub_gravitino_ns_a"
+            ],
+            "properties": {
+              "c1-04.state": "after",
+              "location": "s3://warehouse/cb_c104_gravitino_pub_gravitino_ns_a",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary-duplicate",
+      "capability": "iceberg-rest.namespace.error.duplicate",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_gravitino_pub_gravitino_ns_a"
+          ],
+          "properties": {
+            "c1-04.remove": "before",
+            "owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7208,
+        "raw_body_sha256": "0ce4219fe62d78e7f5f6d58602f15685003c1c5c56eb45a6a52a84f87b58d0d2",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "Namespace already exists: cb_c104_gravitino_pub_gravitino_ns_a",
+              "stack": [
+                "org.apache.iceberg.exceptions.AlreadyExistsException: Namespace already exists: cb_c104_gravitino_pub_gravitino_ns_a",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.createNamespace(JdbcCatalog.java:416)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.createNamespace(CatalogHandlers.java:336)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.createNamespace(IcebergCatalogWrapper.java:175)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.createNamespace(IcebergNamespaceOperationExecutor.java:84)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.createNamespace(IcebergNamespaceEventDispatcher.java:97)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$createNamespace$4(IcebergNamespaceOperations.java:262)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.createNamespace(IcebergNamespaceOperations.java:256)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "AlreadyExistsException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list-primary-children",
+      "capability": "iceberg-rest.namespace.hierarchy",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces?parent=cb_c104_gravitino_pub_gravitino_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 88,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_gravitino_pub_gravitino_ns_a",
+                "child"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-001",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 114,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_gravitino_pub_gravitino_ns_a"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-002",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 80,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_gravitino_pub_gravitino_ns_b"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-missing-parent",
+      "capability": "iceberg-rest.namespace.error.missing-parent",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces?parent=cb_c104_gravitino_pub_gravitino_ns_missing",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7218,
+        "raw_body_sha256": "ffd58f9d2de114dd333984411a655f1d2349d906cbb84cfb2e097ac960d89684",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_missing",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchNamespaceException: Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_missing",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.listNamespaces(JdbcCatalog.java:467)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.listNamespaces(CatalogHandlers.java:309)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.listNamespace(IcebergCatalogWrapper.java:195)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.listNamespaces(IcebergNamespaceOperationExecutor.java:114)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.listNamespaces(IcebergNamespaceEventDispatcher.java:197)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$listNamespaces$0(IcebergNamespaceOperations.java:123)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.listNamespaces(IcebergNamespaceOperations.java:117)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "drop-child",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "drop-sibling",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_b",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "drop-primary",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "verify-child-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7220,
+        "raw_body_sha256": "72e9c936ffbf5110725d960d2a6382535fe9947176c51d0d1328ba46bbb0922c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_a.child",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchNamespaceException: Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_a.child",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.loadNamespaceMetadata(JdbcCatalog.java:519)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.loadNamespace(CatalogHandlers.java:351)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.loadNamespace(IcebergCatalogWrapper.java:185)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.loadNamespace(IcebergNamespaceOperationExecutor.java:106)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.loadNamespace(IcebergNamespaceEventDispatcher.java:177)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$loadNamespace$1(IcebergNamespaceOperations.java:164)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.loadNamespace(IcebergNamespaceOperations.java:158)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-sibling-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_b",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7208,
+        "raw_body_sha256": "6c335ce1b1676133ba5bce5dae25aa18e29d3f95fdbabbe0154b356c4c6fa64e",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_b",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchNamespaceException: Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_b",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.loadNamespaceMetadata(JdbcCatalog.java:519)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.loadNamespace(CatalogHandlers.java:351)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.loadNamespace(IcebergCatalogWrapper.java:185)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.loadNamespace(IcebergNamespaceOperationExecutor.java:106)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.loadNamespace(IcebergNamespaceEventDispatcher.java:177)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$loadNamespace$1(IcebergNamespaceOperations.java:164)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.loadNamespace(IcebergNamespaceOperations.java:158)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-primary-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c104_gravitino_pub_gravitino_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7208,
+        "raw_body_sha256": "af8f927df2d6f914723f3a7e03831430081c0b40dd21310c11f1d9119d6bf075",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_a",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchNamespaceException: Namespace does not exist: cb_c104_gravitino_pub_gravitino_ns_a",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.loadNamespaceMetadata(JdbcCatalog.java:519)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.loadNamespace(CatalogHandlers.java:351)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.loadNamespace(IcebergCatalogWrapper.java:185)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.loadNamespace(IcebergNamespaceOperationExecutor.java:106)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.loadNamespace(IcebergNamespaceEventDispatcher.java:177)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$loadNamespace$1(IcebergNamespaceOperations.java:164)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.loadNamespace(IcebergNamespaceOperations.java:158)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "mode": "paginated",
+    "pages": 2,
+    "unique_namespaces": 2
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-create-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-list-visible",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-load-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-properties-updated",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "duplicate-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-hierarchy-preserved",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-pagination-complete",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-parent-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-drop-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "operations.list-page-001.request.url",
+      "operations.list-page-001.response.body/next-page-token",
+      "operations.list-page-002.request.url",
+      "operations.list-page-002.response.body/next-page-token",
+      "operations.list-primary-children.response.body/next-page-token",
+      "operations.list-top-level.response.body/next-page-token"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

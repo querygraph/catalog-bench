@@ -1,0 +1,1290 @@
+{
+  "format": "catalog-bench/namespace-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.namespace.behavior",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "0cd6262c9bda87ac217e8fc618cf3138ddabe6ca89aac94ee05628a67729b7ac"
+  },
+  "adapter": {
+    "catalog": "lakecat",
+    "name": "LakeCat",
+    "version": "0.3.0-42-g962f43cb",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_lakecat_ns",
+    "primary": [
+      "cb_c104_lakecat_pub_lakecat_ns_a"
+    ],
+    "sibling": [
+      "cb_c104_lakecat_pub_lakecat_ns_b"
+    ],
+    "child": [
+      "cb_c104_lakecat_pub_lakecat_ns_a",
+      "child"
+    ],
+    "missing_parent": [
+      "cb_c104_lakecat_pub_lakecat_ns_missing"
+    ]
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://lakecat:8181/catalog/v1/config",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json"
+      },
+      "body_bytes_observed": 1028,
+      "raw_body_sha256": "b98357c9292abdbc5d3e506f649f3b701bfc78ebc2959e48ab40a67ea1c24c0e",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "lakecat.compatibility": "iceberg-rest",
+            "lakecat.format.baseline": "iceberg-v1-v3",
+            "lakecat.format.v4": "extension-ready",
+            "lakecat.format.v4.bridge": "json-passthrough",
+            "lakecat.format.v4.typed-sail": "unavailable"
+          },
+          "endpoints": [
+            "GET /v1/config",
+            "GET /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "POST /v1/{prefix}/tables/rename",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/plan",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials"
+          ],
+          "overrides": {}
+        }
+      }
+    },
+    "prefix": {
+      "mode": "unprefixed"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "operations": [
+    {
+      "id": "preflight-primary",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 122,
+        "raw_body_sha256": "8e8d466822eda8c0ce7386d2d13d396828e46ca6133068a666e4894feb1d1aee",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c104_lakecat_pub_lakecat_ns_a",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "preflight-sibling",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_b",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 122,
+        "raw_body_sha256": "0e09f1124457e9df2cf88dff6fc65b3edb8760e62996aeea5c04b8c3add7b701",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c104_lakecat_pub_lakecat_ns_b",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "preflight-child",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 128,
+        "raw_body_sha256": "64f3d8bbab3c776489b1d2bfc3a591c10579a2adc4cdc8cfa2b8fd611825521a",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c104_lakecat_pub_lakecat_ns_a.child",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_lakecat_pub_lakecat_ns_a"
+          ],
+          "properties": {
+            "c1-04.remove": "before",
+            "owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 113,
+        "raw_body_sha256": "313c3ae213881579685ec3e9fa6fe4dfc3dc01dce3ebb3b899dd46ee86db5ef5",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_lakecat_pub_lakecat_ns_a"
+            ],
+            "properties": {
+              "c1-04.remove": "before",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-sibling",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_lakecat_pub_lakecat_ns_b"
+          ],
+          "properties": {}
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 66,
+        "raw_body_sha256": "9244bef5d5d1d23ba869da46af2b2d217f31de928e59394933a18d4c01ada556",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_lakecat_pub_lakecat_ns_b"
+            ],
+            "properties": {}
+          }
+        }
+      }
+    },
+    {
+      "id": "create-child",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_lakecat_pub_lakecat_ns_a",
+            "child"
+          ],
+          "properties": {}
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 74,
+        "raw_body_sha256": "85a369f7aca3977ac7b836984444a5b697047c548c74653f10df509e32e6cc1f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_lakecat_pub_lakecat_ns_a",
+              "child"
+            ],
+            "properties": {}
+          }
+        }
+      }
+    },
+    {
+      "id": "list-top-level",
+      "capability": "iceberg-rest.namespace.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 380,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "benchdocker1"
+              ],
+              [
+                "benchdocker2"
+              ],
+              [
+                "benchdocker3"
+              ],
+              [
+                "cb_c104_lakecat_pub_lakecat_ns_a"
+              ],
+              [
+                "cb_c104_lakecat_pub_lakecat_ns_b"
+              ],
+              [
+                "cb_c105_lakecat_live_lakecat_01"
+              ],
+              [
+                "perfbase0807b"
+              ],
+              [
+                "readpool-s3-1786149434"
+              ],
+              [
+                "readpool1786149298"
+              ],
+              [
+                "readpool1786149317"
+              ],
+              [
+                "readpool1786149328"
+              ],
+              [
+                "rw_docker_baseline"
+              ],
+              [
+                "rw_pyi_probe"
+              ],
+              [
+                "write_docker_baseline"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-primary",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 113,
+        "raw_body_sha256": "313c3ae213881579685ec3e9fa6fe4dfc3dc01dce3ebb3b899dd46ee86db5ef5",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_lakecat_pub_lakecat_ns_a"
+            ],
+            "properties": {
+              "c1-04.remove": "before",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "update-primary-properties",
+      "capability": "iceberg-rest.namespace.update-properties",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_a/properties",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "removals": [
+            "c1-04.remove"
+          ],
+          "updates": {
+            "c1-04.state": "after"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 67,
+        "raw_body_sha256": "c01a6f057f07c18e673f7b48eec83ca5434fdc938a7b6703065a57a1f7a7a7da",
+        "body": {
+          "kind": "json",
+          "value": {
+            "missing": [],
+            "removed": [
+              "c1-04.remove"
+            ],
+            "updated": [
+              "c1-04.state"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-primary-properties",
+      "capability": "iceberg-rest.namespace.update-properties",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 111,
+        "raw_body_sha256": "0b5c68f7b050837bb0823a9095c65292d460a887c7beb40010fb0e96991d060c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_lakecat_pub_lakecat_ns_a"
+            ],
+            "properties": {
+              "c1-04.state": "after",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary-duplicate",
+      "capability": "iceberg-rest.namespace.error.duplicate",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_lakecat_pub_lakecat_ns_a"
+          ],
+          "properties": {
+            "c1-04.remove": "before",
+            "owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 125,
+        "raw_body_sha256": "2057c25865c1b661518347c841e68c74fb3ab793bffb8c5dfce5a4b053566edd",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "namespace already exists: cb_c104_lakecat_pub_lakecat_ns_a",
+              "type": "AlreadyExistsException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list-primary-children",
+      "capability": "iceberg-rest.namespace.hierarchy",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?parent=cb_c104_lakecat_pub_lakecat_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 84,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_lakecat_pub_lakecat_ns_a",
+                "child"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-001",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 66,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "benchdocker1"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-002",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 66,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "benchdocker2"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-003",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 66,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "benchdocker3"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-004",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 86,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_lakecat_pub_lakecat_ns_a"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-005",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 86,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_lakecat_pub_lakecat_ns_b"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-006",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 85,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c105_lakecat_live_lakecat_01"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-007",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 67,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "perfbase0807b"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-008",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 76,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "readpool-s3-1786149434"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-009",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 72,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "readpool1786149298"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-010",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 73,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "readpool1786149317"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-011",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 73,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "readpool1786149328"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-012",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 73,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "rw_docker_baseline"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-013",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 67,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "rw_pyi_probe"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-014",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 65,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "write_docker_baseline"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-missing-parent",
+      "capability": "iceberg-rest.namespace.error.missing-parent",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces?parent=cb_c104_lakecat_pub_lakecat_ns_missing",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 128,
+        "raw_body_sha256": "b3d23fd779fdbce96f30337e8bce3ece193fec046f6a152b50868a3a32cf4c67",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c104_lakecat_pub_lakecat_ns_missing",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "drop-child",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "drop-sibling",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_b",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "drop-primary",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "verify-child-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 128,
+        "raw_body_sha256": "64f3d8bbab3c776489b1d2bfc3a591c10579a2adc4cdc8cfa2b8fd611825521a",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c104_lakecat_pub_lakecat_ns_a.child",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-sibling-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_b",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 122,
+        "raw_body_sha256": "0e09f1124457e9df2cf88dff6fc65b3edb8760e62996aeea5c04b8c3add7b701",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c104_lakecat_pub_lakecat_ns_b",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-primary-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c104_lakecat_pub_lakecat_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 122,
+        "raw_body_sha256": "8e8d466822eda8c0ce7386d2d13d396828e46ca6133068a666e4894feb1d1aee",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c104_lakecat_pub_lakecat_ns_a",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "mode": "paginated",
+    "pages": 14,
+    "unique_namespaces": 14
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-create-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-list-visible",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-load-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-properties-updated",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "duplicate-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-hierarchy-preserved",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-pagination-complete",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-parent-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-drop-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "operations.list-page-001.request.url",
+      "operations.list-page-001.response.body/next-page-token",
+      "operations.list-page-002.request.url",
+      "operations.list-page-002.response.body/next-page-token",
+      "operations.list-page-003.request.url",
+      "operations.list-page-003.response.body/next-page-token",
+      "operations.list-page-004.request.url",
+      "operations.list-page-004.response.body/next-page-token",
+      "operations.list-page-005.request.url",
+      "operations.list-page-005.response.body/next-page-token",
+      "operations.list-page-006.request.url",
+      "operations.list-page-006.response.body/next-page-token",
+      "operations.list-page-007.request.url",
+      "operations.list-page-007.response.body/next-page-token",
+      "operations.list-page-008.request.url",
+      "operations.list-page-008.response.body/next-page-token",
+      "operations.list-page-009.request.url",
+      "operations.list-page-009.response.body/next-page-token",
+      "operations.list-page-010.request.url",
+      "operations.list-page-010.response.body/next-page-token",
+      "operations.list-page-011.request.url",
+      "operations.list-page-011.response.body/next-page-token",
+      "operations.list-page-012.request.url",
+      "operations.list-page-012.response.body/next-page-token",
+      "operations.list-page-013.request.url",
+      "operations.list-page-013.response.body/next-page-token",
+      "operations.list-page-014.request.url",
+      "operations.list-page-014.response.body/next-page-token",
+      "operations.list-primary-children.response.body/next-page-token",
+      "operations.list-top-level.response.body/next-page-token"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

@@ -1,0 +1,170 @@
+{
+  "format": "catalog-bench/config-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.config.negotiation",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "c1352f1f10c5e8b3853fa45a12c2edc3dd42c1be1be4fae113c7789a2678574f"
+  },
+  "adapter": {
+    "catalog": "gravitino",
+    "name": "Apache Gravitino",
+    "version": "1.3.0",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "request": {
+    "method": "GET",
+    "url": "http://gravitino:9001/iceberg/v1/config",
+    "headers": {
+      "accept": "application/json"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_bytes_observed": 1398,
+    "raw_body_sha256": "df8e07c374fbafcbc699a7ed9ccd6d72d2eadbd27421cc70b31611c36f0ec836",
+    "body": {
+      "kind": "json",
+      "value": {
+        "defaults": {
+          "client.region": "us-east-1",
+          "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+          "s3.endpoint": "http://minio:9000",
+          "s3.path-style-access": "true"
+        },
+        "endpoints": [
+          "GET /v1/{prefix}/namespaces",
+          "GET /v1/{prefix}/namespaces/{namespace}",
+          "POST /v1/{prefix}/namespaces",
+          "POST /v1/{prefix}/namespaces/{namespace}/properties",
+          "DELETE /v1/{prefix}/namespaces/{namespace}",
+          "HEAD /v1/{prefix}/namespaces/{namespace}",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "POST /v1/{prefix}/tables/rename",
+          "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "POST /v1/{prefix}/namespaces/{namespace}/register",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/plan",
+          "GET /v1/{prefix}/namespaces/{namespace}/views",
+          "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "POST /v1/{prefix}/namespaces/{namespace}/views",
+          "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "POST /v1/{prefix}/views/rename",
+          "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}"
+        ],
+        "overrides": {}
+      }
+    }
+  },
+  "prefix": {
+    "mode": "unprefixed"
+  },
+  "endpoints": {
+    "mode": "explicit",
+    "endpoints": [
+      "GET /v1/{prefix}/namespaces",
+      "GET /v1/{prefix}/namespaces/{namespace}",
+      "POST /v1/{prefix}/namespaces",
+      "POST /v1/{prefix}/namespaces/{namespace}/properties",
+      "DELETE /v1/{prefix}/namespaces/{namespace}",
+      "HEAD /v1/{prefix}/namespaces/{namespace}",
+      "GET /v1/{prefix}/namespaces/{namespace}/tables",
+      "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "POST /v1/{prefix}/tables/rename",
+      "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "POST /v1/{prefix}/namespaces/{namespace}/register",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+      "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/plan",
+      "GET /v1/{prefix}/namespaces/{namespace}/views",
+      "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+      "POST /v1/{prefix}/namespaces/{namespace}/views",
+      "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+      "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+      "POST /v1/{prefix}/views/rename",
+      "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}"
+    ]
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-http-success",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-media-type",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-map-shape",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "route-prefix-resolved",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "endpoint-advertisement-valid",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

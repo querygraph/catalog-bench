@@ -1,0 +1,608 @@
+{
+  "contract_version": "catalog-bench/v1",
+  "created_at": "2026-08-28T04:48:00Z",
+  "extensions": {
+    "querygraph/evidence-matrix": "5 scenarios x 5 catalogs; correctness only; no timing claim",
+    "querygraph/source-profile": {
+      "id": "catalog-community-current-2026-08-26-linux-arm64",
+      "sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465"
+    }
+  },
+  "id": "phase1-behavior-2026-08-28",
+  "kind": "manifest",
+  "profile": {
+    "bytes": 34917,
+    "description": "Runnable artifact-resolved Phase 1 correctness profile.",
+    "digest": {
+      "algorithm": "sha256",
+      "value": "99f940600836c3f98fca92a79f9ab0c5ddea4cf52081ea251f809bad1bd25495"
+    },
+    "location": "../../../profiles/v1/phase1-2026-08-28.json",
+    "media_type": "application/json"
+  },
+  "provenance": {
+    "completed_at": "2026-08-28T04:45:15Z",
+    "kind": "live-run",
+    "runner": "catalog-bench-conformance",
+    "sanitized_invocation": "optimized Compose conformance matrix (4 scenarios x 5 catalogs), followed by stock PyIceberg matrix (1 scenario x 5 catalogs)",
+    "started_at": "2026-08-28T04:44:05Z"
+  },
+  "redaction": {
+    "policy": "All runners use value-safe transcript contracts: authorization, OAuth tokens, delegated storage credentials, idempotency keys, raw row values, and raw response bodies are omitted or redacted before persistence. The publication scanner independently rejects credential shapes and non-redacted structured secret fields.",
+    "removed_fields": [
+      "OAuth client credentials and bearer tokens",
+      "authorization and idempotency request header values",
+      "delegated object-store credentials",
+      "raw row values and raw response bodies",
+      "unbounded client exception text"
+    ],
+    "reviewed": true
+  },
+  "results": [
+    {
+      "bytes": 6742,
+      "description": "client.pyiceberg.interoperability result for Apache Gravitino.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "99958fa9782fa705a047f2183a392e217a27a75b4c2bf69b1c93f80544dcada4"
+      },
+      "location": "client-pyiceberg-interoperability--gravitino.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6908,
+      "description": "client.pyiceberg.interoperability result for LakeCat.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "8d9cdff9e11c992207b57a4f72635f0d36306f293caad403d8b6780198e56a89"
+      },
+      "location": "client-pyiceberg-interoperability--lakecat.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6741,
+      "description": "client.pyiceberg.interoperability result for Lakekeeper.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "ddc865508573a572f7af181f48a8c732ac02464ffbb4396c9a9ab6207f787015"
+      },
+      "location": "client-pyiceberg-interoperability--lakekeeper.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6899,
+      "description": "client.pyiceberg.interoperability result for Apache Nessie.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "3524158462510c224e3c0c094ead92b170a10e60aa5b04e0627523408126aa81"
+      },
+      "location": "client-pyiceberg-interoperability--nessie.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6732,
+      "description": "client.pyiceberg.interoperability result for Apache Polaris.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "c25a575ba0c83e2907e074f11fdaca1c509ccfd7a82cddf91315ec39cfb7eaa3"
+      },
+      "location": "client-pyiceberg-interoperability--polaris.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5703,
+      "description": "iceberg-rest.commit.correctness result for Apache Gravitino.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "38fbff8b2f289d339be99eab0d611d0b1d8b4696a5afb45dbff4f94f06440ee5"
+      },
+      "location": "iceberg-rest-commit-correctness--gravitino.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5699,
+      "description": "iceberg-rest.commit.correctness result for LakeCat.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "59a37c12cf4cbe327c3f7e1c15afc4d73f9a9e67a7c2947a1e1822cb8828c38d"
+      },
+      "location": "iceberg-rest-commit-correctness--lakecat.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5826,
+      "description": "iceberg-rest.commit.correctness result for Lakekeeper.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "a1040984f636e8526828596f38bdcb42a4eec00ea17c23f759d8505608213414"
+      },
+      "location": "iceberg-rest-commit-correctness--lakekeeper.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5951,
+      "description": "iceberg-rest.commit.correctness result for Apache Nessie.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "f75ba47665b6bd80c6b03f9baf89b5cfc87a0e6a4b300072085ea5259a539184"
+      },
+      "location": "iceberg-rest-commit-correctness--nessie.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5693,
+      "description": "iceberg-rest.commit.correctness result for Apache Polaris.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "010515616dec9f07a4e856c0f772f67ae5cf1844baa2f66a1283b20984cfd0ea"
+      },
+      "location": "iceberg-rest-commit-correctness--polaris.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 4258,
+      "description": "iceberg-rest.config.negotiation result for Apache Gravitino.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "baff125949c3c7c5b030a3f719568cbb6ff3f83ecb7597cafdc08e430e7ba196"
+      },
+      "location": "iceberg-rest-config-negotiation--gravitino.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 4254,
+      "description": "iceberg-rest.config.negotiation result for LakeCat.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "5414335ff2c81c05cfc6b93bb177bbf806b08c0190a74ced768586cb1f2fa666"
+      },
+      "location": "iceberg-rest-config-negotiation--lakecat.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 4257,
+      "description": "iceberg-rest.config.negotiation result for Lakekeeper.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "c1c0db6f99dcc68ae42145b5e8bea951a48df054c2701880c0557d35f652a8cc"
+      },
+      "location": "iceberg-rest-config-negotiation--lakekeeper.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 4245,
+      "description": "iceberg-rest.config.negotiation result for Apache Nessie.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "a7c0aecdeaaa774feca04ab8bfa3310e7ed339ea83d08633a92c41b4fcc0e41b"
+      },
+      "location": "iceberg-rest-config-negotiation--nessie.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 4599,
+      "description": "iceberg-rest.config.negotiation result for Apache Polaris.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "c676129d2785d1d29b5b143482a668fe983d376b0bcfdfd6e91737ee63097cdc"
+      },
+      "location": "iceberg-rest-config-negotiation--polaris.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5454,
+      "description": "iceberg-rest.namespace.behavior result for Apache Gravitino.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "c770f25dc44338fcaf143eb71036bcf15fd1cd124dca64221a4306a9e07a70f5"
+      },
+      "location": "iceberg-rest-namespace-behavior--gravitino.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5450,
+      "description": "iceberg-rest.namespace.behavior result for LakeCat.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "e442274e21733c74de0605ee507e88ed0648dfa3a5284433fefd7329bb895aa0"
+      },
+      "location": "iceberg-rest-namespace-behavior--lakecat.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5453,
+      "description": "iceberg-rest.namespace.behavior result for Lakekeeper.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "787e39d3a9778271b715d2c708d079b695bc271f8becc343a9df22396de6a1f8"
+      },
+      "location": "iceberg-rest-namespace-behavior--lakekeeper.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5707,
+      "description": "iceberg-rest.namespace.behavior result for Apache Nessie.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "1790b2fa07e1cdfc02dbf8613aab894ce9e2e30d6d4540d8cea9e52af7695b7a"
+      },
+      "location": "iceberg-rest-namespace-behavior--nessie.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5495,
+      "description": "iceberg-rest.namespace.behavior result for Apache Polaris.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "fe981908cb94800bdc3e53906785992346b5f6921477a0a46f7550300530c33b"
+      },
+      "location": "iceberg-rest-namespace-behavior--polaris.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6190,
+      "description": "iceberg-rest.table.behavior result for Apache Gravitino.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "3eebb10225d938df188c222ada6dd20cc07e67b3b75ec3ddf5ba96db43a51f6d"
+      },
+      "location": "iceberg-rest-table-behavior--gravitino.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6185,
+      "description": "iceberg-rest.table.behavior result for LakeCat.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "7cb31e084b799a421851194eb0d46a8f0c586f010bc559cd001e158e877b85ee"
+      },
+      "location": "iceberg-rest-table-behavior--lakecat.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6188,
+      "description": "iceberg-rest.table.behavior result for Lakekeeper.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "db8a8a467222fd654b8920b7779a6c896b041cd45ebfe317c3259762caecfa0b"
+      },
+      "location": "iceberg-rest-table-behavior--lakekeeper.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6434,
+      "description": "iceberg-rest.table.behavior result for Apache Nessie.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "ccba28ca19f27db5cbc83ff324322872a382516204f75bbb5c87311489adbe36"
+      },
+      "location": "iceberg-rest-table-behavior--nessie.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6179,
+      "description": "iceberg-rest.table.behavior result for Apache Polaris.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "83a079e18087f61357a5a4bf8c93aaa5be6fb001975e709325228ca1304c9200"
+      },
+      "location": "iceberg-rest-table-behavior--polaris.json",
+      "media_type": "application/json"
+    }
+  ],
+  "scenarios": [
+    {
+      "bytes": 20274,
+      "description": "Canonical Phase 1 correctness scenario.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "d2a6f01cfb6c39a38a10f9a5aaa3d5ef86dd45e02bcc2aad54889c3bb26adfc3"
+      },
+      "location": "../../../scenarios/v1/client.pyiceberg.interoperability.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 18037,
+      "description": "Canonical Phase 1 correctness scenario.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "7df567363927001aa25e55c607f60feb63b2fe5442d82d800d298d87e8bc886d"
+      },
+      "location": "../../../scenarios/v1/iceberg-rest.commit.correctness.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 6847,
+      "description": "Canonical Phase 1 correctness scenario.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "c1352f1f10c5e8b3853fa45a12c2edc3dd42c1be1be4fae113c7789a2678574f"
+      },
+      "location": "../../../scenarios/v1/iceberg-rest.config.negotiation.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 14334,
+      "description": "Canonical Phase 1 correctness scenario.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "0cd6262c9bda87ac217e8fc618cf3138ddabe6ca89aac94ee05628a67729b7ac"
+      },
+      "location": "../../../scenarios/v1/iceberg-rest.namespace.behavior.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 18829,
+      "description": "Canonical Phase 1 correctness scenario.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "50237ef4dfefb2e3f58f0cca3d6a0550c6b7d08a3cceccf4ecc68d5a606fe6e9"
+      },
+      "location": "../../../scenarios/v1/iceberg-rest.table.behavior.json",
+      "media_type": "application/json"
+    }
+  ],
+  "source_evidence": [
+    {
+      "bytes": 75501,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "25f4695a9c74acd830aa08596b01ce623e79e258aec50e8e719fc7fe6d049854"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/commit-gravitino.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 39078,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "8ca53c847af3a86a2382ff0670bc05bd0246cf75fd1b2d26249f022fffec54bc"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/commit-lakecat.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 71735,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "12faecd3ac2bde22c42826e56ccf72d2f81c03385640a931c4e8ad457deb61d5"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/commit-lakekeeper.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 47081,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "e77b7b67b51c80dba61121f35a5e54e40d92241c11a8c2b32d34db2681abc478"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/commit-nessie.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 47513,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "cf559514e65019de64a0765195e84e1ea09e2cf9f58bf2303e5e07665680a18d"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/commit-polaris.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5540,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "c532c6b2352c48a0d6a9865f1261ef878601800192ec561a2d48cb96816ac5e9"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/config-gravitino.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 4597,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "1714eb5f48b180b81cde3328403e0d424eb0d614a9d98342d6c134f2ab41b80e"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/config-lakecat.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5728,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "b854bb4d5301cf4984542f094ab09aa311082f5a7d62967061ad672f10dfd68b"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/config-lakekeeper.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5899,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "a9a4a07cc125d05cb2f60eeeb83d3b7adf1221a6d7bfbe7334db3fce45c186cd"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/config-nessie.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 5819,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "1834f05a8b31a483deec0a888006818c4cd2ce4ed9bac66fc43b200f05323bce"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/config-polaris.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 91948,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "a0817a95136209ac523cd7d9f78247913d9c50de9949104b1315942bca9eb253"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/namespace-gravitino.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 34890,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "f40d0b23dddbb3344c93a1b1b3500a33cd1657a075a8d02527b696f7deb8d590"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/namespace-lakecat.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 30158,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "e7fd4201a9d79deccc9bbf54d5917bc406ac39f09ac686c39ace9261c75a8089"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/namespace-lakekeeper.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 25053,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "335be7a30f97246b884ba017453319305372a545bbda2e47db9819e4c1137bcc"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/namespace-nessie.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 29688,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "6b901cb6eee481498e7da9262a3eaca705d125dcce1a5a0aa309d976b47d68db"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/namespace-polaris.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 13454,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "732cd709624c867a118ae414f477ba547944d6caed94a0c7ae95f2f283225861"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/pyiceberg/pyiceberg-gravitino-pub_pyiceberg_0828.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 13693,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "f534676297315adb6273c23d49683f56c42facfb327e49d5896fc230b1ecd108"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/pyiceberg/pyiceberg-lakecat-pub_pyiceberg_0828.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 13507,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "5541f4b90935397b66b1abd3eb4f88e800729eefaed7aa439b1d3f621ebc5d1a"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/pyiceberg/pyiceberg-lakekeeper-pub_pyiceberg_0828.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 13753,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "0853f94035c67ff0170957c65b7802ce42d8cd2e63ff6e6850da3436e45cfab4"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/pyiceberg/pyiceberg-nessie-pub_pyiceberg_0828.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 13525,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "ec7332cc285e1d7c2b10c8297d9b8c3086571122b28695ee8f70a3750fb4781a"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/pyiceberg/pyiceberg-polaris-pub_pyiceberg_0828.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 161686,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "9965254741faed7324630cf4eff960601a32401a0dc32c37903230571d970f3c"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/table-gravitino.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 50926,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "ab3d8e0502ed9979547378a59fed12da0aba05ec521efa0a6f971e4ddeda0e38"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/table-lakecat.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 61336,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "f2e35c2a6a763f94dc4370148f98bd421a3ac5973b39c20153fc6c5c404475c3"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/table-lakekeeper.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 62023,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "4248275dd5e6e6a80f58493e9a9c5046a7cd48e631a4f89e54dce72198fb22e9"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/table-nessie.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 61130,
+      "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "7e4d113715bc623f90a4436b0acc0d39d25b0e2c94d4f1b833818fc85fddb818"
+      },
+      "location": "../../source/phase1-2026-08-28/evidence/table-polaris.json",
+      "media_type": "application/json"
+    },
+    {
+      "bytes": 1814,
+      "description": "Human-reviewed execution environment, time boundary, and redaction admission.",
+      "digest": {
+        "algorithm": "sha256",
+        "value": "8b39fe14db435bbf0d3a33c2feb49536647dfaf1314ca15fd0d0d9b898c0f2b4"
+      },
+      "location": "../../source/phase1-2026-08-28/review.json",
+      "media_type": "application/json"
+    }
+  ],
+  "title": "2026-08-28 Phase 1 catalog behavior and stock-client interoperability"
+}

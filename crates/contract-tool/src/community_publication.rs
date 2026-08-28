@@ -8,7 +8,8 @@ use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{AssertionOutcome, Provenance, ResultOutcome};
 
 use crate::{
-    check_contention_result_bundle, check_historical_commit_bundle, load_bundle, ValidatedBundle,
+    check_contention_result_bundle, check_historical_commit_bundle, check_phase1_result_bundle,
+    load_bundle, ValidatedBundle,
 };
 
 const INDEX: &str = "results/v1/INDEX.md";
@@ -32,6 +33,7 @@ pub fn check_publication(root: &Path, profile: PublicationProfile) -> Result<()>
     if profile == PublicationProfile::Full {
         check_historical_commit_bundle(root)?;
         check_contention_result_bundle(root)?;
+        check_phase1_result_bundle(root)?;
     }
     let publication = render_publication(root, profile)?;
     check_bytes(root, INDEX, publication.index.as_bytes())?;

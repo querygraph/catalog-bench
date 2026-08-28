@@ -1,0 +1,169 @@
+{
+  "format": "catalog-bench/config-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.config.negotiation",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "c1352f1f10c5e8b3853fa45a12c2edc3dd42c1be1be4fae113c7789a2678574f"
+  },
+  "adapter": {
+    "catalog": "polaris",
+    "name": "Apache Polaris",
+    "version": "1.7.0",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "classification": {
+    "status": "fail",
+    "summary": "one or more required config-negotiation assertions did not pass"
+  },
+  "authentication": {
+    "mode": "oauth2-client-credentials",
+    "outcome": "ready",
+    "token_url": "http://polaris:8181/api/catalog/v1/oauth/tokens",
+    "scope": "PRINCIPAL_ROLE:ALL",
+    "http_status": 200
+  },
+  "request": {
+    "method": "GET",
+    "url": "http://polaris:8181/api/catalog/v1/config?warehouse=bench",
+    "headers": {
+      "accept": "application/json",
+      "authorization": "<redacted>"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json;charset=UTF-8",
+      "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000011"
+    },
+    "body_bytes_observed": 2160,
+    "raw_body_sha256": "50814e76ceed435eb070ccb48db6ed9bbb4a71b76480fb1d8cbb791310391296",
+    "body": {
+      "kind": "json",
+      "value": {
+        "defaults": {
+          "default-base-location": "s3://warehouse/bench"
+        },
+        "endpoints": [
+          "GET /v1/{prefix}/namespaces",
+          "GET /v1/{prefix}/namespaces/{namespace}",
+          "HEAD /v1/{prefix}/namespaces/{namespace}",
+          "POST /v1/{prefix}/namespaces",
+          "POST /v1/{prefix}/namespaces/{namespace}/properties",
+          "DELETE /v1/{prefix}/namespaces/{namespace}",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "POST /v1/{prefix}/tables/rename",
+          "POST /v1/{prefix}/namespaces/{namespace}/register",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+          "POST /v1/{prefix}/transactions/commit",
+          "GET /v1/{prefix}/namespaces/{namespace}/views",
+          "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "POST /v1/{prefix}/namespaces/{namespace}/views",
+          "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "POST /v1/{prefix}/views/rename",
+          "POST /v1/{prefix}/namespaces/{namespace}/register-view",
+          "GET polaris/v1/{prefix}/namespaces/{namespace}/generic-tables",
+          "POST polaris/v1/{prefix}/namespaces/{namespace}/generic-tables",
+          "DELETE polaris/v1/{prefix}/namespaces/{namespace}/generic-tables/{generic-table}",
+          "GET polaris/v1/{prefix}/namespaces/{namespace}/generic-tables/{generic-table}",
+          "GET /polaris/v1/{prefix}/namespaces/{namespace}/policies",
+          "POST /polaris/v1/{prefix}/namespaces/{namespace}/policies",
+          "GET /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}",
+          "PUT /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}",
+          "DELETE /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}",
+          "PUT /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}/mappings",
+          "POST /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}/mappings",
+          "GET /polaris/v1/{prefix}/applicable-policies"
+        ],
+        "overrides": {
+          "namespace-separator": "%1F",
+          "prefix": "bench"
+        }
+      }
+    }
+  },
+  "prefix": {
+    "mode": "static",
+    "value": "bench"
+  },
+  "endpoints": {
+    "mode": "invalid",
+    "explanation": "`GET polaris/v1/{prefix}/namespaces/{namespace}/generic-tables` is not an Apache Iceberg 1.11.0 REST endpoint"
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-http-success",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-media-type",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-map-shape",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "route-prefix-resolved",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "endpoint-advertisement-valid",
+      "required": true,
+      "outcome": {
+        "status": "fail",
+        "explanation": "`GET polaris/v1/{prefix}/namespaces/{namespace}/generic-tables` is not an Apache Iceberg 1.11.0 REST endpoint"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "authentication.oauth2-request-credentials",
+      "authentication.oauth2-response-token",
+      "request.headers.authorization"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

@@ -1,0 +1,889 @@
+{
+  "format": "catalog-bench/namespace-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.namespace.behavior",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "0cd6262c9bda87ac217e8fc618cf3138ddabe6ca89aac94ee05628a67729b7ac"
+  },
+  "adapter": {
+    "catalog": "nessie",
+    "name": "Apache Nessie",
+    "version": "0.108.4",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_nessie_ns",
+    "primary": [
+      "cb_c104_nessie_pub_nessie_ns_a"
+    ],
+    "sibling": [
+      "cb_c104_nessie_pub_nessie_ns_b"
+    ],
+    "child": [
+      "cb_c104_nessie_pub_nessie_ns_a",
+      "child"
+    ],
+    "missing_parent": [
+      "cb_c104_nessie_pub_nessie_ns_missing"
+    ]
+  },
+  "classification": {
+    "status": "fail",
+    "summary": "one or more required namespace-behavior assertions did not pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://nessie:19120/iceberg/v1/config",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "body_bytes_observed": 1786,
+      "raw_body_sha256": "32d0a2aa56929a2fb0882ae510afa2945fae209de49d36ad67d9ff20977f4f06",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "prefix": "main",
+            "rest-metrics-reporting-enabled": "false",
+            "rest-page-size": "200",
+            "warehouse": "s3://warehouse"
+          },
+          "endpoints": [
+            "GET /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/transactions/commit",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/tables/rename",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+            "GET /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/namespaces/{namespace}/views",
+            "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/views/rename"
+          ],
+          "overrides": {
+            "nessie.catalog-base-uri": "http://nessie:19120/catalog/v1/",
+            "nessie.core-base-uri": "http://nessie:19120/api/",
+            "nessie.default-branch.name": "main",
+            "nessie.iceberg-base-uri": "http://nessie:19120/iceberg/",
+            "nessie.is-nessie-catalog": "true",
+            "nessie.prefix-pattern": "{ref}|{warehouse}",
+            "uri": "http://nessie:19120/iceberg/"
+          }
+        }
+      }
+    },
+    "prefix": {
+      "mode": "static",
+      "value": "main"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "operations": [
+    {
+      "id": "preflight-primary",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 155,
+        "raw_body_sha256": "61f90bd55c22259b695c284fbc6d9c354d81849d842d61b1aa11c5bd7aed265e",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_nessie_pub_nessie_ns_a",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "preflight-sibling",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_b",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 155,
+        "raw_body_sha256": "ec0fd64961531f705ee9117e54dd83476f8f99c481c606c660e138d0288ed225",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_nessie_pub_nessie_ns_b",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "preflight-child",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 161,
+        "raw_body_sha256": "04f1eab2ae092e894741a7cf75734a4a6f2f514c75d234a42415915510463376",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_nessie_pub_nessie_ns_a.child",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_nessie_pub_nessie_ns_a"
+          ],
+          "properties": {
+            "c1-04.remove": "before",
+            "owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 141,
+        "raw_body_sha256": "6e96691f1bbb6839db7f7ebdfc074130b3ddc66f7f505a2b6ad03119cbf06244",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_nessie_pub_nessie_ns_a"
+            ],
+            "properties": {
+              "c1-04.remove": "before",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-sibling",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_nessie_pub_nessie_ns_b"
+          ],
+          "properties": {}
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 78,
+        "raw_body_sha256": "ef5e0a2b1cefdffdb774778e8cb445af0f36f48387571ae204f23d63b4614dda",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_nessie_pub_nessie_ns_b"
+            ],
+            "properties": {}
+          }
+        }
+      }
+    },
+    {
+      "id": "create-child",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_nessie_pub_nessie_ns_a",
+            "child"
+          ],
+          "properties": {}
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 87,
+        "raw_body_sha256": "82c06f8d414f3006af3e1263dc8435910407d65c39232209503877d3bea5755b",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_nessie_pub_nessie_ns_a",
+              "child"
+            ],
+            "properties": {}
+          }
+        }
+      }
+    },
+    {
+      "id": "list-top-level",
+      "capability": "iceberg-rest.namespace.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 127,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_nessie_pub_nessie_ns_a"
+              ],
+              [
+                "cb_c104_nessie_pub_nessie_ns_b"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-primary",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 208,
+        "raw_body_sha256": "f28241c38e13823d241d6518b47abb58cf45fc4d02705f4fdcb69353aead522b",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_nessie_pub_nessie_ns_a"
+            ],
+            "properties": {
+              "c1-04.remove": "before",
+              "location": "s3://warehouse/cb_c104_nessie_pub_nessie_ns_a/",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "update-primary-properties",
+      "capability": "iceberg-rest.namespace.update-properties",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_a/properties",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "removals": [
+            "c1-04.remove"
+          ],
+          "updates": {
+            "c1-04.state": "after"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 102,
+        "raw_body_sha256": "aa84c5bfc0b906e21da09f4d6157166b227c2d3a0ac5e60e19bcf1ee534d308d",
+        "body": {
+          "kind": "json",
+          "value": {
+            "missing": [
+              "c1-04.state"
+            ],
+            "removed": [
+              "c1-04.remove"
+            ],
+            "updated": [
+              "c1-04.state"
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-primary-properties",
+      "capability": "iceberg-rest.namespace.update-properties",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 206,
+        "raw_body_sha256": "1bc35199370cfdfc3e4b911a4be3575c60a01cea10864f4c7ae15093e96b594f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_nessie_pub_nessie_ns_a"
+            ],
+            "properties": {
+              "c1-04.state": "after",
+              "location": "s3://warehouse/cb_c104_nessie_pub_nessie_ns_a/",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary-duplicate",
+      "capability": "iceberg-rest.namespace.error.duplicate",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_nessie_pub_nessie_ns_a"
+          ],
+          "properties": {
+            "c1-04.remove": "before",
+            "owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 153,
+        "raw_body_sha256": "d7ffcc7f010f5cd3a2e7287715f48e922cf2401de767a4506ace403b1e8ce8f7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "Namespace already exists: cb_c104_nessie_pub_nessie_ns_a",
+              "type": "AlreadyExistsException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list-primary-children",
+      "capability": "iceberg-rest.namespace.hierarchy",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces?parent=cb_c104_nessie_pub_nessie_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 98,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_nessie_pub_nessie_ns_a",
+                "child"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-001",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 155,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_nessie_pub_nessie_ns_a"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-002",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 89,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_nessie_pub_nessie_ns_b"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-missing-parent",
+      "capability": "iceberg-rest.namespace.error.missing-parent",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces?parent=cb_c104_nessie_pub_nessie_ns_missing",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 52,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "drop-child",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "drop-sibling",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_b",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "drop-primary",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "verify-child-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 161,
+        "raw_body_sha256": "04f1eab2ae092e894741a7cf75734a4a6f2f514c75d234a42415915510463376",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_nessie_pub_nessie_ns_a.child",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-sibling-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_b",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 155,
+        "raw_body_sha256": "ec0fd64961531f705ee9117e54dd83476f8f99c481c606c660e138d0288ed225",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_nessie_pub_nessie_ns_b",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-primary-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c104_nessie_pub_nessie_ns_a",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 155,
+        "raw_body_sha256": "61f90bd55c22259b695c284fbc6d9c354d81849d842d61b1aa11c5bd7aed265e",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_nessie_pub_nessie_ns_a",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "mode": "paginated",
+    "pages": 2,
+    "unique_namespaces": 2
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-create-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-list-visible",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-load-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-properties-updated",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "duplicate-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-hierarchy-preserved",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-pagination-complete",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-parent-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "fail",
+        "explanation": "HTTP 200 is not in [404]"
+      }
+    },
+    {
+      "assertion": "namespace-drop-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "operations.list-missing-parent.response.body/next-page-token",
+      "operations.list-page-001.request.url",
+      "operations.list-page-001.response.body/next-page-token",
+      "operations.list-page-002.request.url",
+      "operations.list-page-002.response.body/next-page-token",
+      "operations.list-primary-children.response.body/next-page-token",
+      "operations.list-top-level.response.body/next-page-token"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

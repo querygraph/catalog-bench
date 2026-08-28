@@ -1,0 +1,1597 @@
+{
+  "format": "catalog-bench/commit-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.commit.correctness",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "7df567363927001aa25e55c607f60feb63b2fe5442d82d800d298d87e8bc886d"
+  },
+  "adapter": {
+    "catalog": "gravitino",
+    "name": "Apache Gravitino",
+    "version": "1.3.0",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_gravitino_cmt",
+    "namespace": [
+      "cb_c106_gravitino_pub_gravitino_cmt"
+    ],
+    "table": "commit_correctness"
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://gravitino:9001/iceberg/v1/config",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json"
+      },
+      "body_bytes_observed": 1398,
+      "raw_body_sha256": "df8e07c374fbafcbc699a7ed9ccd6d72d2eadbd27421cc70b31611c36f0ec836",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "client.region": "us-east-1",
+            "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+            "s3.endpoint": "http://minio:9000",
+            "s3.path-style-access": "true"
+          },
+          "endpoints": [
+            "GET /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/tables/rename",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/plan",
+            "GET /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/namespaces/{namespace}/views",
+            "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/views/rename",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}"
+          ],
+          "overrides": {}
+        }
+      }
+    },
+    "prefix": {
+      "mode": "unprefixed"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "idempotency": {
+    "status": "not-advertised"
+  },
+  "operations": [
+    {
+      "id": "preflight-namespace",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7206,
+        "raw_body_sha256": "d3c2f34045930ee00e73975680bd3b4030238366fe1da39d61d84637355f2be2",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c106_gravitino_pub_gravitino_cmt",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchNamespaceException: Namespace does not exist: cb_c106_gravitino_pub_gravitino_cmt",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.loadNamespaceMetadata(JdbcCatalog.java:519)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.loadNamespace(CatalogHandlers.java:351)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.loadNamespace(IcebergCatalogWrapper.java:185)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.loadNamespace(IcebergNamespaceOperationExecutor.java:106)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.loadNamespace(IcebergNamespaceEventDispatcher.java:177)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$loadNamespace$1(IcebergNamespaceOperations.java:164)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.loadNamespace(IcebergNamespaceOperations.java:158)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-namespace",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c106_gravitino_pub_gravitino_cmt"
+          ],
+          "properties": {
+            "catalog-bench.owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 170,
+        "raw_body_sha256": "b5de1278f91aa04b97e495f61d0e3763daa3a6ec64ef4b90dcb799e0f7111a0b",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c106_gravitino_pub_gravitino_cmt"
+            ],
+            "properties": {
+              "catalog-bench.owner": "catalog-bench",
+              "location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-table",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "commit_correctness",
+          "properties": {
+            "c1-06.state": "initial",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 939,
+        "raw_body_sha256": "07c1f78e7ef1b5bf2163bd05029c4770ccdcf1777f140e7ea828ad2cbae15852",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892284315,
+              "location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00000-0889707f-3160-4c1e-a75f-f290cffbf113.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-initial-table",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 939,
+        "raw_body_sha256": "07c1f78e7ef1b5bf2163bd05029c4770ccdcf1777f140e7ea828ad2cbae15852",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892284315,
+              "location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00000-0889707f-3160-4c1e-a75f-f290cffbf113.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-current-requirements",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.state": "requirement-accepted"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1136,
+        "raw_body_sha256": "f63a7eb2ffa35b01fe3413eacc85a6edd4b01c5c05e9edf704b08e113c1ac7e7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892284340,
+              "location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00000-0889707f-3160-4c1e-a75f-f290cffbf113.metadata.json",
+                  "timestamp-ms": 1787892284315
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00001-7bf1b86f-5768-4573-816a-0881c93f0d7a.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-current-requirements",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1136,
+        "raw_body_sha256": "f63a7eb2ffa35b01fe3413eacc85a6edd4b01c5c05e9edf704b08e113c1ac7e7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892284340,
+              "location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00000-0889707f-3160-4c1e-a75f-f290cffbf113.metadata.json",
+                  "timestamp-ms": 1787892284315
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00001-7bf1b86f-5768-4573-816a-0881c93f0d7a.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-schema-transition",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            },
+            {
+              "last-assigned-field-id": 1,
+              "type": "assert-last-assigned-field-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "add-schema",
+              "last-column-id": 2,
+              "schema": {
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "value",
+                    "required": false,
+                    "type": "long"
+                  },
+                  {
+                    "id": 2,
+                    "name": "note",
+                    "required": false,
+                    "type": "string"
+                  }
+                ],
+                "schema-id": 1,
+                "type": "struct"
+              }
+            },
+            {
+              "action": "set-current-schema",
+              "schema-id": 1
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1475,
+        "raw_body_sha256": "3ea8057bec6abe5484b1a09c7c2bd57e34f321c092b5e1e5eed2d23185d976dd",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892284361,
+              "location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00000-0889707f-3160-4c1e-a75f-f290cffbf113.metadata.json",
+                  "timestamp-ms": 1787892284315
+                },
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00001-7bf1b86f-5768-4573-816a-0881c93f0d7a.metadata.json",
+                  "timestamp-ms": 1787892284340
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00002-6ed3bda9-25e3-4ef8-a023-3f36b78ad7e3.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-schema-transition",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1475,
+        "raw_body_sha256": "3ea8057bec6abe5484b1a09c7c2bd57e34f321c092b5e1e5eed2d23185d976dd",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892284361,
+              "location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00000-0889707f-3160-4c1e-a75f-f290cffbf113.metadata.json",
+                  "timestamp-ms": 1787892284315
+                },
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00001-7bf1b86f-5768-4573-816a-0881c93f0d7a.metadata.json",
+                  "timestamp-ms": 1787892284340
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00002-6ed3bda9-25e3-4ef8-a023-3f36b78ad7e3.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-stale-requirement",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.stale": "must-not-apply"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7785,
+        "raw_body_sha256": "05081ec6eab4e41c736e794bccf4b968f5b4646867f6598e9fc13c12428ad2bf",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "Requirement failed: current schema changed: expected id 0 != 1",
+              "stack": [
+                "org.apache.iceberg.exceptions.CommitFailedException: Requirement failed: current schema changed: expected id 0 != 1",
+                "\tat org.apache.iceberg.UpdateRequirement$AssertCurrentSchemaID.validate(UpdateRequirement.java:166)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.lambda$commit$7(CatalogHandlers.java:631)",
+                "\tat java.base/java.util.ArrayList.forEach(ArrayList.java:1511)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.lambda$commit$9(CatalogHandlers.java:631)",
+                "\tat org.apache.iceberg.util.Tasks$Builder.runTaskWithRetry(Tasks.java:413)",
+                "\tat org.apache.iceberg.util.Tasks$Builder.runSingleThreaded(Tasks.java:219)",
+                "\tat org.apache.iceberg.util.Tasks$Builder.run(Tasks.java:203)",
+                "\tat org.apache.iceberg.util.Tasks$Builder.run(Tasks.java:196)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.commit(CatalogHandlers.java:624)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.updateTable(CatalogHandlers.java:565)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.updateTable(IcebergCatalogWrapper.java:325)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergTableOperationExecutor.updateTable(IcebergTableOperationExecutor.java:118)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergTableEventDispatcher.updateTable(IcebergTableEventDispatcher.java:135)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergTableOperations.lambda$updateTable$2(IcebergTableOperations.java:241)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergTableOperations.updateTable(IcebergTableOperations.java:234)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "CommitFailedException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-stale-requirement",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1475,
+        "raw_body_sha256": "3ea8057bec6abe5484b1a09c7c2bd57e34f321c092b5e1e5eed2d23185d976dd",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892284361,
+              "location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00000-0889707f-3160-4c1e-a75f-f290cffbf113.metadata.json",
+                  "timestamp-ms": 1787892284315
+                },
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00001-7bf1b86f-5768-4573-816a-0881c93f0d7a.metadata.json",
+                  "timestamp-ms": 1787892284340
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00002-6ed3bda9-25e3-4ef8-a023-3f36b78ad7e3.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-required-final-state",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1475,
+        "raw_body_sha256": "3ea8057bec6abe5484b1a09c7c2bd57e34f321c092b5e1e5eed2d23185d976dd",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892284361,
+              "location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00000-0889707f-3160-4c1e-a75f-f290cffbf113.metadata.json",
+                  "timestamp-ms": 1787892284315
+                },
+                {
+                  "metadata-file": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00001-7bf1b86f-5768-4573-816a-0881c93f0d7a.metadata.json",
+                  "timestamp-ms": 1787892284340
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "c819ba09-4a85-4228-b5fe-8d51f78349aa"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_gravitino_pub_gravitino_cmt/commit_correctness/metadata/00002-6ed3bda9-25e3-4ef8-a023-3f36b78ad7e3.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "commit-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "commit-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "cleanup-drop-table",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-table-absent",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7166,
+        "raw_body_sha256": "bba0257c00c9ff3736e83c0323e9af87bd710d604b374c94dbd1a41743d49cf6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c106_gravitino_pub_gravitino_cmt.commit_correctness",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchTableException: Table does not exist: cb_c106_gravitino_pub_gravitino_cmt.commit_correctness",
+                "\tat org.apache.iceberg.BaseMetastoreCatalog.loadTable(BaseMetastoreCatalog.java:55)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.loadTable(CatalogHandlers.java:516)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.loadTable(IcebergCatalogWrapper.java:283)",
+                "\tat org.apache.gravitino.iceberg.service.CatalogWrapperForREST.loadTable(CatalogWrapperForREST.java:130)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergTableOperationExecutor.loadTable(IcebergTableOperationExecutor.java:171)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergTableEventDispatcher.loadTable(IcebergTableEventDispatcher.java:180)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergTableOperations.lambda$loadTable$4(IcebergTableOperations.java:345)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergTableOperations.loadTable(IcebergTableOperations.java:325)",
+                "\tat jdk.internal.reflect.GeneratedMethodAccessor9.invoke(Unknown Source)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-namespace",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-namespace-absent",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://gravitino:9001/iceberg/v1/namespaces/cb_c106_gravitino_pub_gravitino_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 7206,
+        "raw_body_sha256": "d3c2f34045930ee00e73975680bd3b4030238366fe1da39d61d84637355f2be2",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c106_gravitino_pub_gravitino_cmt",
+              "stack": [
+                "org.apache.iceberg.exceptions.NoSuchNamespaceException: Namespace does not exist: cb_c106_gravitino_pub_gravitino_cmt",
+                "\tat org.apache.iceberg.jdbc.JdbcCatalog.loadNamespaceMetadata(JdbcCatalog.java:519)",
+                "\tat org.apache.iceberg.rest.CatalogHandlers.loadNamespace(CatalogHandlers.java:351)",
+                "\tat org.apache.gravitino.iceberg.common.ops.IcebergCatalogWrapper.loadNamespace(IcebergCatalogWrapper.java:185)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceOperationExecutor.loadNamespace(IcebergNamespaceOperationExecutor.java:106)",
+                "\tat org.apache.gravitino.iceberg.service.dispatcher.IcebergNamespaceEventDispatcher.loadNamespace(IcebergNamespaceEventDispatcher.java:177)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.lambda$loadNamespace$1(IcebergNamespaceOperations.java:164)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.web.Utils.doAs(Utils.java:209)",
+                "\tat org.apache.gravitino.iceberg.service.rest.IcebergNamespaceOperations.loadNamespace(IcebergNamespaceOperations.java:158)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)",
+                "\tat java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)",
+                "\tat java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)",
+                "\tat java.base/java.lang.reflect.Method.invoke(Method.java:569)",
+                "\tat org.glassfish.jersey.server.model.internal.ResourceMethodInvocationHandlerFactory.lambda$static$0(ResourceMethodInvocationHandlerFactory.java:52)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher$1.run(AbstractJavaResourceMethodDispatcher.java:146)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.invoke(AbstractJavaResourceMethodDispatcher.java:189)",
+                "\tat org.glassfish.jersey.server.model.internal.JavaResourceMethodDispatcherProvider$ResponseOutInvoker.doDispatch(JavaResourceMethodDispatcherProvider.java:176)",
+                "\tat org.glassfish.jersey.server.model.internal.AbstractJavaResourceMethodDispatcher.dispatch(AbstractJavaResourceMethodDispatcher.java:93)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.invoke(ResourceMethodInvoker.java:478)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:400)",
+                "\tat org.glassfish.jersey.server.model.ResourceMethodInvoker.apply(ResourceMethodInvoker.java:81)",
+                "\tat org.glassfish.jersey.server.ServerRuntime$1.run(ServerRuntime.java:256)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:248)",
+                "\tat org.glassfish.jersey.internal.Errors$1.call(Errors.java:244)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:292)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:274)",
+                "\tat org.glassfish.jersey.internal.Errors.process(Errors.java:244)",
+                "\tat org.glassfish.jersey.process.internal.RequestScope.runInScope(RequestScope.java:265)",
+                "\tat org.glassfish.jersey.server.ServerRuntime.process(ServerRuntime.java:235)",
+                "\tat org.glassfish.jersey.server.ApplicationHandler.handle(ApplicationHandler.java:684)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.serviceImpl(WebComponent.java:394)",
+                "\tat org.glassfish.jersey.servlet.WebComponent.service(WebComponent.java:346)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:358)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:311)",
+                "\tat org.glassfish.jersey.servlet.ServletContainer.service(ServletContainer.java:205)",
+                "\tat org.eclipse.jetty.servlet.ServletHolder.handle(ServletHolder.java:799)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$ChainEnd.doFilter(ServletHandler.java:1656)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.lambda$doFilter$0(AuthenticationFilter.java:106)",
+                "\tat java.base/java.security.AccessController.doPrivileged(AccessController.java:712)",
+                "\tat java.base/javax.security.auth.Subject.doAs(Subject.java:439)",
+                "\tat org.apache.gravitino.utils.PrincipalUtils.doAs(PrincipalUtils.java:53)",
+                "\tat org.apache.gravitino.server.authentication.AuthenticationFilter.doFilter(AuthenticationFilter.java:103)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.apache.gravitino.server.web.HttpAuditFilter.doFilter(HttpAuditFilter.java:162)",
+                "\tat org.eclipse.jetty.servlet.FilterHolder.doFilter(FilterHolder.java:193)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler$Chain.doFilter(ServletHandler.java:1626)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doHandle(ServletHandler.java:552)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextHandle(ScopedHandler.java:233)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doHandle(ContextHandler.java:1440)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:188)",
+                "\tat org.eclipse.jetty.servlet.ServletHandler.doScope(ServletHandler.java:505)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.nextScope(ScopedHandler.java:186)",
+                "\tat org.eclipse.jetty.server.handler.ContextHandler.doScope(ContextHandler.java:1355)",
+                "\tat org.eclipse.jetty.server.handler.ScopedHandler.handle(ScopedHandler.java:141)",
+                "\tat org.eclipse.jetty.server.handler.HandlerCollection.handle(HandlerCollection.java:146)",
+                "\tat org.eclipse.jetty.server.handler.HandlerWrapper.handle(HandlerWrapper.java:127)",
+                "\tat org.eclipse.jetty.server.Server.handle(Server.java:516)",
+                "\tat org.eclipse.jetty.server.HttpChannel.lambda$handle$1(HttpChannel.java:487)",
+                "\tat org.eclipse.jetty.server.HttpChannel.dispatch(HttpChannel.java:732)",
+                "\tat org.eclipse.jetty.server.HttpChannel.handle(HttpChannel.java:479)",
+                "\tat org.eclipse.jetty.server.HttpConnection.onFillable(HttpConnection.java:277)",
+                "\tat org.eclipse.jetty.io.AbstractConnection$ReadCallback.succeeded(AbstractConnection.java:311)",
+                "\tat org.eclipse.jetty.io.FillInterest.fillable(FillInterest.java:105)",
+                "\tat org.eclipse.jetty.io.ChannelEndPoint$1.run(ChannelEndPoint.java:104)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.runTask(EatWhatYouKill.java:338)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.doProduce(EatWhatYouKill.java:315)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.tryProduce(EatWhatYouKill.java:173)",
+                "\tat org.eclipse.jetty.util.thread.strategy.EatWhatYouKill.run(EatWhatYouKill.java:131)",
+                "\tat org.eclipse.jetty.util.thread.ReservedThreadExecutor$ReservedThread.run(ReservedThreadExecutor.java:409)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool.runJob(QueuedThreadPool.java:883)",
+                "\tat org.eclipse.jetty.util.thread.QueuedThreadPool$Runner.run(QueuedThreadPool.java:1034)",
+                "\tat java.base/java.lang.Thread.run(Thread.java:840)"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "current-requirements-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "schema-transition-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "stale-requirement-rejected-atomically",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "idempotency-support-advertised",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "exact-request-replayed-once",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "idempotency-content-drift-rejected",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "required-final-state-exact",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

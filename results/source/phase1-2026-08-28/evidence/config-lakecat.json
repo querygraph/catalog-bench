@@ -1,0 +1,155 @@
+{
+  "format": "catalog-bench/config-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.config.negotiation",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "c1352f1f10c5e8b3853fa45a12c2edc3dd42c1be1be4fae113c7789a2678574f"
+  },
+  "adapter": {
+    "catalog": "lakecat",
+    "name": "LakeCat",
+    "version": "0.3.0-42-g962f43cb",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "request": {
+    "method": "GET",
+    "url": "http://lakecat:8181/catalog/v1/config",
+    "headers": {
+      "accept": "application/json"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json"
+    },
+    "body_bytes_observed": 1028,
+    "raw_body_sha256": "b98357c9292abdbc5d3e506f649f3b701bfc78ebc2959e48ab40a67ea1c24c0e",
+    "body": {
+      "kind": "json",
+      "value": {
+        "defaults": {
+          "lakecat.compatibility": "iceberg-rest",
+          "lakecat.format.baseline": "iceberg-v1-v3",
+          "lakecat.format.v4": "extension-ready",
+          "lakecat.format.v4.bridge": "json-passthrough",
+          "lakecat.format.v4.typed-sail": "unavailable"
+        },
+        "endpoints": [
+          "GET /v1/config",
+          "GET /v1/{prefix}/namespaces",
+          "POST /v1/{prefix}/namespaces",
+          "GET /v1/{prefix}/namespaces/{namespace}",
+          "DELETE /v1/{prefix}/namespaces/{namespace}",
+          "POST /v1/{prefix}/namespaces/{namespace}/properties",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables",
+          "POST /v1/{prefix}/namespaces/{namespace}/register",
+          "POST /v1/{prefix}/tables/rename",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/plan",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials"
+        ],
+        "overrides": {}
+      }
+    }
+  },
+  "prefix": {
+    "mode": "unprefixed"
+  },
+  "endpoints": {
+    "mode": "explicit",
+    "endpoints": [
+      "GET /v1/config",
+      "GET /v1/{prefix}/namespaces",
+      "POST /v1/{prefix}/namespaces",
+      "GET /v1/{prefix}/namespaces/{namespace}",
+      "DELETE /v1/{prefix}/namespaces/{namespace}",
+      "POST /v1/{prefix}/namespaces/{namespace}/properties",
+      "GET /v1/{prefix}/namespaces/{namespace}/tables",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables",
+      "POST /v1/{prefix}/namespaces/{namespace}/register",
+      "POST /v1/{prefix}/tables/rename",
+      "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/plan",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks",
+      "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials"
+    ]
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-http-success",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-media-type",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-map-shape",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "route-prefix-resolved",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "endpoint-advertisement-valid",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

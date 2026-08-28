@@ -58,6 +58,7 @@ Contract maintenance and validation use the companion CLI:
 ```sh
 cargo run -p catalog-bench-contract --locked -- schemas check
 cargo run -p catalog-bench-contract --locked -- publication check --root . --profile smoke
+cargo run -p catalog-bench-contract --locked -- phase1-import check --root .
 cargo run -p catalog-bench-contract --locked -- validate profiles/v1 scenarios/v1 results/v1
 cargo run -p catalog-bench-contract --locked -- bundle validate \
   --manifest results/v1/2026-08-27/manifest.json
@@ -97,8 +98,11 @@ Both profiles validate every manifest, referenced contract, result, and raw or
 derived evidence artifact; run the bundle-wide structured/literal secret scan;
 and reject drift in the generated [bundle index](results/v1/INDEX.md) and
 [known-gaps report](results/v1/KNOWN-GAPS.md). `full` additionally recomputes
-the historical and production-contention bundles from their hash-bound source
-evidence before those shared gates. Neither profile publishes ignored mutable
+the historical, production-contention, and 25-result Phase 1 behavioral bundles
+from their hash-bound source evidence before those shared gates. The reviewed
+[Phase 1 bundle](results/v1/2026-08-28-phase1/manifest.json) covers config,
+namespace, table, commit, and stock PyIceberg correctness for all five catalogs;
+it makes no performance claim. Neither profile publishes ignored mutable
 transcripts under `target/`.
 
 `SOURCE_BOUND_V2_ENGINE_PROFILE.json` is deliberately a placeholder. The checked-in

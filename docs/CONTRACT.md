@@ -427,6 +427,9 @@ cargo run -p catalog-bench-contract --locked -- historical-import check --root .
 # hash-pinned C110 transcript plus reviewed environment/failure sidecar.
 cargo run -p catalog-bench-contract --locked -- contention-import check --root .
 
+# Recompute all 25 reviewed Phase 1 behavioral/stock-client records.
+cargo run -p catalog-bench-contract --locked -- phase1-import check --root .
+
 # Detect drift in the human matrix generated from the validated records.
 cargo run -p catalog-bench-contract --locked -- matrix check \
   --manifest results/v1/2026-08-27/manifest.json \
@@ -455,7 +458,11 @@ and result-evidence file for credential shapes and non-redacted structured
 secret fields, then regenerates `INDEX.md` and `KNOWN-GAPS.md` solely from the
 validated records. It never treats mutable `target/` smoke transcripts as
 published evidence. The `full` profile also invokes each checked-in
-source-specific deterministic importer before this shared gate.
+source-specific deterministic importer before this shared gate. The Phase 1
+importer validates an exact five-scenario by five-catalog matrix, binds every
+transcript to source-profile/scenario digests and runnable publication-profile
+identities, checks the complete assertion vocabulary and value-safe
+sanitization flags, and emits correctness-only records without measurements.
 
 The C110 contention importer deserializes the production transcript through the
 same closed ADTs used by the runner, reconstructs the scenario-derived schedule,

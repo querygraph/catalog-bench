@@ -1,0 +1,939 @@
+{
+  "format": "catalog-bench/namespace-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.namespace.behavior",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "0cd6262c9bda87ac217e8fc618cf3138ddabe6ca89aac94ee05628a67729b7ac"
+  },
+  "adapter": {
+    "catalog": "polaris",
+    "name": "Apache Polaris",
+    "version": "1.7.0",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_polaris_ns",
+    "primary": [
+      "cb_c104_polaris_pub_polaris_ns_a"
+    ],
+    "sibling": [
+      "cb_c104_polaris_pub_polaris_ns_b"
+    ],
+    "child": [
+      "cb_c104_polaris_pub_polaris_ns_a",
+      "child"
+    ],
+    "missing_parent": [
+      "cb_c104_polaris_pub_polaris_ns_missing"
+    ]
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "oauth2-client-credentials",
+    "outcome": "ready",
+    "token_url": "http://polaris:8181/api/catalog/v1/oauth/tokens",
+    "scope": "PRINCIPAL_ROLE:ALL",
+    "http_status": 200
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://polaris:8181/api/catalog/v1/config?warehouse=bench",
+      "headers": {
+        "accept": "application/json",
+        "authorization": "<redacted>"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000013"
+      },
+      "body_bytes_observed": 2160,
+      "raw_body_sha256": "50814e76ceed435eb070ccb48db6ed9bbb4a71b76480fb1d8cbb791310391296",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "default-base-location": "s3://warehouse/bench"
+          },
+          "endpoints": [
+            "GET /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/tables/rename",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+            "POST /v1/{prefix}/transactions/commit",
+            "GET /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/namespaces/{namespace}/views",
+            "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/views/rename",
+            "POST /v1/{prefix}/namespaces/{namespace}/register-view",
+            "GET polaris/v1/{prefix}/namespaces/{namespace}/generic-tables",
+            "POST polaris/v1/{prefix}/namespaces/{namespace}/generic-tables",
+            "DELETE polaris/v1/{prefix}/namespaces/{namespace}/generic-tables/{generic-table}",
+            "GET polaris/v1/{prefix}/namespaces/{namespace}/generic-tables/{generic-table}",
+            "GET /polaris/v1/{prefix}/namespaces/{namespace}/policies",
+            "POST /polaris/v1/{prefix}/namespaces/{namespace}/policies",
+            "GET /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}",
+            "PUT /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}",
+            "DELETE /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}",
+            "PUT /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}/mappings",
+            "POST /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}/mappings",
+            "GET /polaris/v1/{prefix}/applicable-policies"
+          ],
+          "overrides": {
+            "namespace-separator": "%1F",
+            "prefix": "bench"
+          }
+        }
+      }
+    },
+    "prefix": {
+      "mode": "static",
+      "value": "bench"
+    },
+    "namespace_separator": {
+      "mode": "configured",
+      "json_pointer": "/overrides/namespace-separator",
+      "encoded": "%1F"
+    }
+  },
+  "operations": [
+    {
+      "id": "preflight-primary",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_a",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000014"
+        },
+        "body_bytes_observed": 127,
+        "raw_body_sha256": "6706b96e7f2b146064b3241a4e46d3334f39642cb3844cbefa87b4eaf126f235",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_polaris_pub_polaris_ns_a",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "preflight-sibling",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_b",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000015"
+        },
+        "body_bytes_observed": 127,
+        "raw_body_sha256": "34763bc0e363c4df5ffebc83d0f432e99c2ba08eb951eefd31853525a34b0e5d",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_polaris_pub_polaris_ns_b",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "preflight-child",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000016"
+        },
+        "body_bytes_observed": 133,
+        "raw_body_sha256": "67ef98be502f23bcca5ed1359165c29bcd006ce7d5b260b36c29722a314b833f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_polaris_pub_polaris_ns_a.child",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_polaris_pub_polaris_ns_a"
+          ],
+          "properties": {
+            "c1-04.remove": "before",
+            "owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000017"
+        },
+        "body_bytes_observed": 181,
+        "raw_body_sha256": "ead4e91dea37b958ba7be95f2badb555371e601ace8320fa290e26ac9f596b98",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_polaris_pub_polaris_ns_a"
+            ],
+            "properties": {
+              "c1-04.remove": "before",
+              "location": "s3://warehouse/bench/cb_c104_polaris_pub_polaris_ns_a/",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-sibling",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_polaris_pub_polaris_ns_b"
+          ],
+          "properties": {}
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000018"
+        },
+        "body_bytes_observed": 133,
+        "raw_body_sha256": "d0d5e6535b43eb740ffd7a2c4f8c227350ca350cd07ba75557ce2f3204c71116",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_polaris_pub_polaris_ns_b"
+            ],
+            "properties": {
+              "location": "s3://warehouse/bench/cb_c104_polaris_pub_polaris_ns_b/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-child",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_polaris_pub_polaris_ns_a",
+            "child"
+          ],
+          "properties": {}
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000019"
+        },
+        "body_bytes_observed": 147,
+        "raw_body_sha256": "c88bf25d78a43f8048c040d64e13a492886181f05b736d3a0a974e665ed14d7e",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_polaris_pub_polaris_ns_a",
+              "child"
+            ],
+            "properties": {
+              "location": "s3://warehouse/bench/cb_c104_polaris_pub_polaris_ns_a/child/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list-top-level",
+      "capability": "iceberg-rest.namespace.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000020"
+        },
+        "body_bytes_observed": 113,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_polaris_pub_polaris_ns_a"
+              ],
+              [
+                "cb_c104_polaris_pub_polaris_ns_b"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-primary",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_a",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000021"
+        },
+        "body_bytes_observed": 181,
+        "raw_body_sha256": "ead4e91dea37b958ba7be95f2badb555371e601ace8320fa290e26ac9f596b98",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_polaris_pub_polaris_ns_a"
+            ],
+            "properties": {
+              "c1-04.remove": "before",
+              "location": "s3://warehouse/bench/cb_c104_polaris_pub_polaris_ns_a/",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "update-primary-properties",
+      "capability": "iceberg-rest.namespace.update-properties",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_a/properties",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "removals": [
+            "c1-04.remove"
+          ],
+          "updates": {
+            "c1-04.state": "after"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000022"
+        },
+        "body_bytes_observed": 138,
+        "raw_body_sha256": "7c70ef86cc0229a3d3960769df8aeba2c998dd2c7fb9aa0821b6655661f57ce6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "Concurrent modification of namespace: cb_c104_polaris_pub_polaris_ns_a",
+              "type": "CommitConflictException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-primary-properties",
+      "capability": "iceberg-rest.namespace.update-properties",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_a",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000023"
+        },
+        "body_bytes_observed": 203,
+        "raw_body_sha256": "21302ef5a5f990a2ae58f45dc23f91d9893238c1d488fc9ba1e913927729901e",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c104_polaris_pub_polaris_ns_a"
+            ],
+            "properties": {
+              "c1-04.remove": "before",
+              "c1-04.state": "after",
+              "location": "s3://warehouse/bench/cb_c104_polaris_pub_polaris_ns_a/",
+              "owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary-duplicate",
+      "capability": "iceberg-rest.namespace.error.duplicate",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c104_polaris_pub_polaris_ns_a"
+          ],
+          "properties": {
+            "c1-04.remove": "before",
+            "owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000024"
+        },
+        "body_bytes_observed": 149,
+        "raw_body_sha256": "9708247a8d33265f9f320bbf2979a74d55c11626c21685eb18476a89fd7453e3",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "Cannot create namespace cb_c104_polaris_pub_polaris_ns_a. Namespace already exists",
+              "type": "AlreadyExistsException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list-primary-children",
+      "capability": "iceberg-rest.namespace.hierarchy",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces?parent=cb_c104_polaris_pub_polaris_ns_a",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000025"
+        },
+        "body_bytes_observed": 84,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_polaris_pub_polaris_ns_a",
+                "child"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-001",
+      "capability": "iceberg-rest.namespace.pagination",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000026"
+        },
+        "body_bytes_observed": 113,
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespaces": [
+              [
+                "cb_c104_polaris_pub_polaris_ns_a"
+              ],
+              [
+                "cb_c104_polaris_pub_polaris_ns_b"
+              ]
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-missing-parent",
+      "capability": "iceberg-rest.namespace.error.missing-parent",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces?parent=cb_c104_polaris_pub_polaris_ns_missing",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000027"
+        },
+        "body_bytes_observed": 133,
+        "raw_body_sha256": "7da03d5f79f09296a4a974ced432096adf059d2fbe21fbfc8a5250d8d433307b",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_polaris_pub_polaris_ns_missing",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "drop-child",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000028"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "drop-sibling",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_b",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000029"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "drop-primary",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_a",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000030"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "verify-child-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_a%1Fchild",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000031"
+        },
+        "body_bytes_observed": 133,
+        "raw_body_sha256": "67ef98be502f23bcca5ed1359165c29bcd006ce7d5b260b36c29722a314b833f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_polaris_pub_polaris_ns_a.child",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-sibling-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_b",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000032"
+        },
+        "body_bytes_observed": 127,
+        "raw_body_sha256": "34763bc0e363c4df5ffebc83d0f432e99c2ba08eb951eefd31853525a34b0e5d",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_polaris_pub_polaris_ns_b",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "verify-primary-absent",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c104_polaris_pub_polaris_ns_a",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000033"
+        },
+        "body_bytes_observed": 127,
+        "raw_body_sha256": "6706b96e7f2b146064b3241a4e46d3334f39642cb3844cbefa87b4eaf126f235",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c104_polaris_pub_polaris_ns_a",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "mode": "unpaginated-fallback",
+    "unique_namespaces": 2
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-create-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-list-visible",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-load-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-properties-updated",
+      "required": false,
+      "outcome": {
+        "status": "fail",
+        "explanation": "HTTP 409 is not in [200]"
+      }
+    },
+    {
+      "assertion": "duplicate-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-hierarchy-preserved",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-pagination-complete",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-parent-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "namespace-drop-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "authentication.oauth2-request-credentials",
+      "authentication.oauth2-response-token",
+      "config.request.headers.authorization",
+      "operations.create-child.request.headers.authorization",
+      "operations.create-primary-duplicate.request.headers.authorization",
+      "operations.create-primary.request.headers.authorization",
+      "operations.create-sibling.request.headers.authorization",
+      "operations.drop-child.request.headers.authorization",
+      "operations.drop-primary.request.headers.authorization",
+      "operations.drop-sibling.request.headers.authorization",
+      "operations.list-missing-parent.request.headers.authorization",
+      "operations.list-page-001.request.headers.authorization",
+      "operations.list-page-001.request.url",
+      "operations.list-page-001.response.body/next-page-token",
+      "operations.list-primary-children.request.headers.authorization",
+      "operations.list-primary-children.response.body/next-page-token",
+      "operations.list-top-level.request.headers.authorization",
+      "operations.list-top-level.response.body/next-page-token",
+      "operations.load-primary.request.headers.authorization",
+      "operations.preflight-child.request.headers.authorization",
+      "operations.preflight-primary.request.headers.authorization",
+      "operations.preflight-sibling.request.headers.authorization",
+      "operations.reload-primary-properties.request.headers.authorization",
+      "operations.update-primary-properties.request.headers.authorization",
+      "operations.verify-child-absent.request.headers.authorization",
+      "operations.verify-primary-absent.request.headers.authorization",
+      "operations.verify-sibling-absent.request.headers.authorization"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

@@ -1,0 +1,2049 @@
+{
+  "format": "catalog-bench/commit-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.commit.correctness",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "7df567363927001aa25e55c607f60feb63b2fe5442d82d800d298d87e8bc886d"
+  },
+  "adapter": {
+    "catalog": "lakekeeper",
+    "name": "Lakekeeper",
+    "version": "0.13.3",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_lakekeeper_cmt",
+    "namespace": [
+      "cb_c106_lakekeeper_pub_lakekeeper_cmt"
+    ],
+    "table": "commit_correctness"
+  },
+  "classification": {
+    "status": "fail",
+    "summary": "one or more required commit-correctness assertions did not pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://lakekeeper:8181/catalog/v1/config?warehouse=bench",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "x-request-id": "01a046af-569d-7fb2-bac0-2e35ef469945"
+      },
+      "body_bytes_observed": 1397,
+      "raw_body_sha256": "2dcc693bf238859df82791bf570d3846ade17b031ec9d1082835cd05fbfa7c7d",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "prefix": "1cd5bab6-a11c-11f1-8f9b-83357e228e31",
+            "rest-page-size": "100"
+          },
+          "endpoints": [
+            "GET /v1/config",
+            "GET /v1/{prefix}/namespaces",
+            "HEAD /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+            "POST /v1/{prefix}/tables/rename",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+            "POST /v1/{prefix}/transactions/commit",
+            "POST /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/views/rename"
+          ],
+          "overrides": {
+            "idempotency-key-lifetime": "PT30M",
+            "uri": "http://lakekeeper:8181/catalog"
+          }
+        }
+      }
+    },
+    "prefix": {
+      "mode": "negotiated",
+      "json_pointer": "/defaults/prefix",
+      "value": "1cd5bab6-a11c-11f1-8f9b-83357e228e31"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "idempotency": {
+    "status": "advertised",
+    "source": "/overrides/idempotency-key-lifetime",
+    "lifetime": "PT30M"
+  },
+  "operations": [
+    {
+      "id": "preflight-namespace",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-569d-7fb2-bac0-2e658e501a73"
+        },
+        "body_bytes_observed": 293,
+        "raw_body_sha256": "bc6390a4e5ce5eb36682dcebfe392a3cb127303518b48b6b48d9cc2a5be0ff19",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace with name 'cb_c106_lakekeeper_pub_lakekeeper_cmt' does not exist in warehouse '1cd5bab6-a11c-11f1-8f9b-83357e228e31'",
+              "stack": [
+                "Namespace not found or access denied",
+                "Error ID: 01a046af-569e-7b93-9b18-cf6d6d661e4b"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-namespace",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c106_lakekeeper_pub_lakekeeper_cmt"
+          ],
+          "properties": {
+            "catalog-bench.owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-569e-7b93-9b18-cf89781bdb3d"
+        },
+        "body_bytes_observed": 201,
+        "raw_body_sha256": "c6aa65777999a6161ba172e4c6d6ff3361b803f35662c2a32a79b19bdf849d79",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c106_lakekeeper_pub_lakekeeper_cmt"
+            ],
+            "properties": {
+              "catalog-bench.owner": "catalog-bench",
+              "location": "s3://warehouse/lakekeeper",
+              "namespace_id": "01a046af-569e-7b93-9b18-cfa579a26070"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-table",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "commit_correctness",
+          "properties": {
+            "c1-06.state": "initial",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56a0-71d0-a691-3b50d0e64ec0"
+        },
+        "body_bytes_observed": 4415,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291232,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-initial-table",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56ae-7222-b6cd-020633aac25a"
+        },
+        "body_bytes_observed": 4415,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291232,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-current-requirements",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.state": "requirement-accepted"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56b6-7213-b3e2-efac81af4aa0"
+        },
+        "body_bytes_observed": 994,
+        "raw_body_sha256": "c2d687a170cafdfd7a961ce19c401cf3385904f0c42e0060d1bd8af503c39d75",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": null,
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291261,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-current-requirements",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56c4-7ba2-ae23-17997b43bad4"
+        },
+        "body_bytes_observed": 4626,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291261,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-schema-transition",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            },
+            {
+              "last-assigned-field-id": 1,
+              "type": "assert-last-assigned-field-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "add-schema",
+              "last-column-id": 2,
+              "schema": {
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "value",
+                    "required": false,
+                    "type": "long"
+                  },
+                  {
+                    "id": 2,
+                    "name": "note",
+                    "required": false,
+                    "type": "string"
+                  }
+                ],
+                "schema-id": 1,
+                "type": "struct"
+              }
+            },
+            {
+              "action": "set-current-schema",
+              "schema-id": 1
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56ca-7eb2-9064-6656d6e46319"
+        },
+        "body_bytes_observed": 1329,
+        "raw_body_sha256": "2b1aeed6ff1903a277f56c2a45ef80d49dcfa9eefdf36284e2cb267537d85598",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": null,
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291280,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-schema-transition",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56d6-7002-8e26-9b12b8b263a1"
+        },
+        "body_bytes_observed": 4961,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291280,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-stale-requirement",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.stale": "must-not-apply"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56de-7323-a56c-d7fce6d0ae4e"
+        },
+        "body_bytes_observed": 240,
+        "raw_body_sha256": "7771d4abca5f7453755cf743957e12a9082b7bf7ed879db29f3e5efd2c35c1de",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "CatalogCommitConflicts, context: { expected: 0, found: 1 } => Requirement failed: Current schema id does not match",
+              "stack": [
+                "Error ID: 01a046af-56e3-7991-a70a-b9f7052e2884"
+              ],
+              "type": "CatalogCommitConflicts"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-stale-requirement",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56e4-77a2-b40d-6ba81537052a"
+        },
+        "body_bytes_observed": 4961,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291280,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-required-final-state",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56e8-74e2-b04f-16a91c98d08a"
+        },
+        "body_bytes_observed": 4961,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291280,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json",
+          "idempotency-key": "<redacted>"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            {
+              "current-schema-id": 1,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.retry": "accepted-once"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56ee-7630-9b03-a47e21e12081"
+        },
+        "body_bytes_observed": 1540,
+        "raw_body_sha256": "911b8d0a658e2774d375bf21415649d87f8cc47c655204a51c191c52edcadb3f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": null,
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291315,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json",
+                  "timestamp-ms": 1787892291280
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.retry": "accepted-once",
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00003-01a046af-56f3-7362-81e0-7f3ae960fd3d.gz.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56f9-74e0-b065-2a55111354cc"
+        },
+        "body_bytes_observed": 5172,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291315,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json",
+                  "timestamp-ms": 1787892291280
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.retry": "accepted-once",
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00003-01a046af-56f3-7362-81e0-7f3ae960fd3d.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json",
+          "idempotency-key": "<redacted>"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            {
+              "current-schema-id": 1,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.retry": "accepted-once"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-56fe-7f91-af55-0f99019c2c8b"
+        },
+        "body_bytes_observed": 1540,
+        "raw_body_sha256": "9491046b2048c5e93d2efe91b38c2272cadc2cbb579581925a9e6ccbe3d2b3ee",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": null,
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291315,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json",
+                  "timestamp-ms": 1787892291280
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.retry": "accepted-once",
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00003-01a046af-56f3-7362-81e0-7f3ae960fd3d.gz.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5703-7b30-b0b8-381875a99776"
+        },
+        "body_bytes_observed": 5172,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291315,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json",
+                  "timestamp-ms": 1787892291280
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.retry": "accepted-once",
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00003-01a046af-56f3-7362-81e0-7f3ae960fd3d.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json",
+          "idempotency-key": "<redacted>"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            {
+              "current-schema-id": 1,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.retry": "drifted-must-not-apply"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5708-75f0-90d5-9e66fe31c032"
+        },
+        "body_bytes_observed": 1540,
+        "raw_body_sha256": "e856925f019efa345b76a677f73f8b9b4ac47dffbbe5344cf3ebe8d677739280",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": null,
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291315,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json",
+                  "timestamp-ms": 1787892291280
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.retry": "accepted-once",
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00003-01a046af-56f3-7362-81e0-7f3ae960fd3d.gz.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-570e-75b3-84cf-bca98f0aec0d"
+        },
+        "body_bytes_observed": 5172,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892291315,
+              "location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00000-01a046af-56a0-71d0-a691-3b8e4cc5272a.gz.metadata.json",
+                  "timestamp-ms": 1787892291232
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00001-01a046af-56bd-7d42-a9c9-7288b2f94ae1.gz.metadata.json",
+                  "timestamp-ms": 1787892291261
+                },
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00002-01a046af-56d0-7581-a000-12c0252ea555.gz.metadata.json",
+                  "timestamp-ms": 1787892291280
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.retry": "accepted-once",
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-56a0-71d0-a691-3b7d26e53130"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-56a0-71d0-a691-3b7d26e53130/metadata/00003-01a046af-56f3-7362-81e0-7f3ae960fd3d.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-table",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "01a046af-5710-7191-b48d-8575e8b342b3"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-table-absent",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5713-7db3-a7a5-0479ff722720"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "b84c5560648f30ed0cf11de60284e84620768a92a401d4b351c17d60a6742b3c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-5713-7db3-a7a5-049dce27008e"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-namespace",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "01a046af-5713-7db3-a7a5-04b3f08600d7"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-namespace-absent",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c106_lakekeeper_pub_lakekeeper_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5715-79f1-a7c2-5e9c887dcba3"
+        },
+        "body_bytes_observed": 293,
+        "raw_body_sha256": "340aa8ba304a6140409b51818276fae5b8a338bcfdfa54d00a9f1b69b54e9597",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace with name 'cb_c106_lakekeeper_pub_lakekeeper_cmt' does not exist in warehouse '1cd5bab6-a11c-11f1-8f9b-83357e228e31'",
+              "stack": [
+                "Namespace not found or access denied",
+                "Error ID: 01a046af-5716-7ef2-aaff-d6732e697978"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "current-requirements-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "schema-transition-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "stale-requirement-rejected-atomically",
+      "required": true,
+      "outcome": {
+        "status": "fail",
+        "explanation": "error type `CatalogCommitConflicts` does not match `CommitFailedException`"
+      }
+    },
+    {
+      "assertion": "idempotency-support-advertised",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "exact-request-replayed-once",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "idempotency-content-drift-rejected",
+      "required": false,
+      "outcome": {
+        "status": "fail",
+        "explanation": "HTTP 200 is not in [409]"
+      }
+    },
+    {
+      "assertion": "required-final-state-exact",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "operations.commit-idempotency-drift.request.headers.idempotency-key",
+      "operations.commit-idempotent-first.request.headers.idempotency-key",
+      "operations.commit-idempotent-replay.request.headers.idempotency-key",
+      "operations.create-table.response.body/config/s3.access-key-id",
+      "operations.create-table.response.body/config/s3.secret-access-key",
+      "operations.create-table.response.body/config/s3.session-token",
+      "operations.create-table.response.body/storage-credentials",
+      "operations.load-initial-table.response.body/config/s3.access-key-id",
+      "operations.load-initial-table.response.body/config/s3.secret-access-key",
+      "operations.load-initial-table.response.body/config/s3.session-token",
+      "operations.load-initial-table.response.body/storage-credentials",
+      "operations.load-required-final-state.response.body/config/s3.access-key-id",
+      "operations.load-required-final-state.response.body/config/s3.secret-access-key",
+      "operations.load-required-final-state.response.body/config/s3.session-token",
+      "operations.load-required-final-state.response.body/storage-credentials",
+      "operations.reload-after-current-requirements.response.body/config/s3.access-key-id",
+      "operations.reload-after-current-requirements.response.body/config/s3.secret-access-key",
+      "operations.reload-after-current-requirements.response.body/config/s3.session-token",
+      "operations.reload-after-current-requirements.response.body/storage-credentials",
+      "operations.reload-after-idempotency-drift.response.body/config/s3.access-key-id",
+      "operations.reload-after-idempotency-drift.response.body/config/s3.secret-access-key",
+      "operations.reload-after-idempotency-drift.response.body/config/s3.session-token",
+      "operations.reload-after-idempotency-drift.response.body/storage-credentials",
+      "operations.reload-after-idempotent-first.response.body/config/s3.access-key-id",
+      "operations.reload-after-idempotent-first.response.body/config/s3.secret-access-key",
+      "operations.reload-after-idempotent-first.response.body/config/s3.session-token",
+      "operations.reload-after-idempotent-first.response.body/storage-credentials",
+      "operations.reload-after-idempotent-replay.response.body/config/s3.access-key-id",
+      "operations.reload-after-idempotent-replay.response.body/config/s3.secret-access-key",
+      "operations.reload-after-idempotent-replay.response.body/config/s3.session-token",
+      "operations.reload-after-idempotent-replay.response.body/storage-credentials",
+      "operations.reload-after-schema-transition.response.body/config/s3.access-key-id",
+      "operations.reload-after-schema-transition.response.body/config/s3.secret-access-key",
+      "operations.reload-after-schema-transition.response.body/config/s3.session-token",
+      "operations.reload-after-schema-transition.response.body/storage-credentials",
+      "operations.reload-after-stale-requirement.response.body/config/s3.access-key-id",
+      "operations.reload-after-stale-requirement.response.body/config/s3.secret-access-key",
+      "operations.reload-after-stale-requirement.response.body/config/s3.session-token",
+      "operations.reload-after-stale-requirement.response.body/storage-credentials"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

@@ -1,0 +1,476 @@
+{
+  "adapter": {
+    "authentication": "oauth2-client-credentials",
+    "catalog": "polaris",
+    "endpoint": "http://polaris:8181/api/catalog",
+    "name": "Apache Polaris",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    },
+    "version": "1.7.0"
+  },
+  "assertions": [
+    {
+      "assertion": "client-runtime-pinned",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "catalog-auth-config-ready",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "fixture-isolated",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "namespace-round-trip",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "table-round-trip",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "append-scan-exact",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "property-update-round-trip",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": false
+    },
+    {
+      "assertion": "schema-evolution-round-trip",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": false
+    },
+    {
+      "assertion": "row-delete-round-trip",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": false
+    },
+    {
+      "assertion": "conflict-recovery-round-trip",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": false
+    },
+    {
+      "assertion": "credential-vending-classified",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": false
+    },
+    {
+      "assertion": "table-rename-round-trip",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": false
+    },
+    {
+      "assertion": "table-register-round-trip",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": false
+    },
+    {
+      "assertion": "view-lifecycle-classified",
+      "outcome": {
+        "reason": "unsupported by client: PyIceberg 0.11.1 exposes list/drop/exists helpers but no public create_view or load_view API, so a stock-client lifecycle cannot be sent.",
+        "status": "not-evaluated"
+      },
+      "required": false
+    },
+    {
+      "assertion": "pagination-classified",
+      "outcome": {
+        "reason": "unsupported by client: PyIceberg 0.11.1 parses next-page-token fields but its public list_namespaces and list_tables methods neither accept page controls nor traverse returned tokens.",
+        "status": "not-evaluated"
+      },
+      "required": false
+    },
+    {
+      "assertion": "fixture-clean",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    }
+  ],
+  "classification": {
+    "status": "pass"
+  },
+  "client": {
+    "catalog_client": {
+      "artifact": {
+        "digest": {
+          "algorithm": "sha256",
+          "value": "ddb360da76c62c7c23ec3da40e1af48e6712a563905fea2d1a8911ff7a3b6c4d"
+        },
+        "ecosystem": "PyPI wheel for CPython 3.13 Linux ARM64",
+        "kind": "package",
+        "package": "pyiceberg",
+        "version": "0.11.1"
+      },
+      "id": "pyiceberg",
+      "name": "PyIceberg",
+      "source": {
+        "repository": "https://github.com/apache/iceberg-python.git",
+        "revision": "8dee48a8e0218353f706133ed035334869a7ee12",
+        "tag": "pyiceberg-0.11.1"
+      },
+      "version": "0.11.1"
+    },
+    "data_plane": {
+      "artifact": {
+        "digest": {
+          "algorithm": "sha256",
+          "value": "44a9120ce5bd81936b8ab9a88076e3fd47c2c6838e0e43630fed83626aca81d9"
+        },
+        "ecosystem": "PyPI wheel for CPython 3.13 Linux ARM64",
+        "kind": "package",
+        "package": "pyarrow",
+        "version": "25.0.1"
+      },
+      "id": "pyarrow",
+      "name": "Apache Arrow Python",
+      "source": {
+        "repository": "https://github.com/apache/arrow.git",
+        "revision": "beccec0d0c451b7aa3e4530416ac431b3c035c69",
+        "tag": "apache-arrow-25.0.1"
+      },
+      "version": "25.0.1"
+    },
+    "object_store_io": {
+      "artifact": {
+        "digest": {
+          "algorithm": "sha256",
+          "value": "64edf3c01ebffab1eec38ff9c09eefbf86a3db14c87d248f795da0e7b801d698"
+        },
+        "ecosystem": "PyPI universal Python wheel",
+        "kind": "package",
+        "package": "s3fs",
+        "version": "2026.7.0"
+      },
+      "id": "s3fs",
+      "name": "S3FS",
+      "source": {
+        "repository": "https://github.com/fsspec/s3fs.git",
+        "revision": "609950a67e1d2f26bd98b5053b016200272a35dd",
+        "tag": "2026.7.0"
+      },
+      "version": "2026.7.0"
+    },
+    "observed": {
+      "architecture": "aarch64",
+      "operating_system": "Linux",
+      "pyarrow": "25.0.1",
+      "pyiceberg": "0.11.1",
+      "python": "3.13.15",
+      "s3fs": "2026.7.0"
+    },
+    "runtime": {
+      "artifact": {
+        "digest": {
+          "algorithm": "sha256",
+          "value": "c45a22ea000adfd9cda29364bbe7edd23001ce5cc2ad15857cfbf7766943b9ca"
+        },
+        "digest_scope": "index",
+        "kind": "container-image",
+        "platform_digest": {
+          "algorithm": "sha256",
+          "value": "e424b523c9296fdef9d2533c368facee1dc45be4c1f8e1555f90c4feac439594"
+        },
+        "reference": "python:3.13.15-slim-bookworm"
+      },
+      "id": "cpython",
+      "name": "CPython",
+      "source": {
+        "repository": "https://github.com/python/cpython.git",
+        "revision": "4061bc4c35f7c26f25264666d4ba083b93d2f6f9",
+        "tag": "v3.13.15"
+      },
+      "version": "3.13.15"
+    },
+    "shim": false
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "d2a6f01cfb6c39a38a10f9a5aaa3d5ef86dd45e02bcc2aad54889c3bb26adfc3"
+  },
+  "fixture": {
+    "id": "pub_pyiceberg_0828",
+    "namespace": [
+      "cb_c107_polaris_pub_pyiceberg_0828"
+    ],
+    "table_candidates": [
+      "events",
+      "events_renamed",
+      "events_registered"
+    ]
+  },
+  "format": "catalog-bench/pyiceberg-transcript/v1",
+  "operations": [
+    {
+      "id": "verify-client-runtime",
+      "observations": {
+        "architecture": "aarch64",
+        "operating_system": "Linux",
+        "pyarrow": "25.0.1",
+        "pyiceberg": "0.11.1",
+        "python": "3.13.15",
+        "s3fs": "2026.7.0"
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.round-trip",
+      "id": "initialize-catalog",
+      "observations": {
+        "authentication": "oauth2-client-credentials",
+        "request_handling": "protocol-native",
+        "shim": false
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.round-trip",
+      "id": "preflight-fixture",
+      "observations": {
+        "mutation_attempted": false,
+        "namespace_absent": true
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.round-trip",
+      "id": "namespace-round-trip",
+      "observations": {
+        "created": true,
+        "listed": true,
+        "loaded_property_count": 1
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.round-trip",
+      "id": "table-round-trip",
+      "observations": {
+        "metadata_location": "s3://warehouse/bench/cb_c107_polaris_pub_pyiceberg_0828/events/metadata/00000-2d11ff20-037a-4a6c-84f9-ddebf7ffebc6.metadata.json",
+        "schema_fields": [
+          "id",
+          "category",
+          "amount"
+        ],
+        "snapshot_count": 0,
+        "table_uuid": "a4ec844e-f89f-4f77-8fc1-4e57f6c12674"
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.round-trip",
+      "id": "append-scan",
+      "observations": {
+        "maximum_id": 31,
+        "metadata_location": "s3://warehouse/bench/cb_c107_polaris_pub_pyiceberg_0828/events/metadata/00001-25b36ddf-8b73-480f-9d94-db9d7a04c873.metadata.json",
+        "minimum_id": 0,
+        "row_count": 32,
+        "row_sha256": "be39436d6b4ca628516f75079ee5e2d80cf414d4f573ac948bbdb68755344cba",
+        "snapshot_count": 1
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.property-update",
+      "id": "update-properties",
+      "observations": {
+        "metadata_location": "s3://warehouse/bench/cb_c107_polaris_pub_pyiceberg_0828/events/metadata/00002-d0304ab0-10c8-46e3-b9fb-c8672a387af0.metadata.json",
+        "removed": [
+          "c1-07.remove"
+        ],
+        "updated": [
+          "c1-07.state"
+        ]
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.schema-evolution",
+      "id": "evolve-schema",
+      "observations": {
+        "current_fields": [
+          "id",
+          "category",
+          "amount",
+          "note"
+        ],
+        "maximum_id": 39,
+        "minimum_id": 0,
+        "row_count": 40,
+        "row_sha256": "bbd08c1df9f17f418d320e1e0ac3fd6dd312470cb352a7de4812797671b032dc"
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.row-delete",
+      "id": "delete-rows",
+      "observations": {
+        "maximum_id": 39,
+        "minimum_id": 4,
+        "predicate": "id < 4",
+        "row_count": 36,
+        "row_sha256": "3dc90f603d82135840c832a3f2bb3ee9e34a097d226b9351a5bf640cc4f34450"
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.conflict-recovery",
+      "id": "recover-conflict",
+      "observations": {
+        "maximum_id": 47,
+        "minimum_id": 4,
+        "refresh_count": 1,
+        "retry_count": 1,
+        "row_count": 44,
+        "row_sha256": "b6e4fe2403a212aed3a2d0482dc1146a61a210391882c9ef14b934d736cc5cda",
+        "stale_attempt": "commit-failed",
+        "stale_exception_class": "pyiceberg.exceptions.CommitFailedException"
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.credential-vending",
+      "id": "observe-delegated-access",
+      "observations": {
+        "categories": [
+          "key-pair",
+          "session-token"
+        ],
+        "credential_values_persisted": false,
+        "object_io_verified": true,
+        "requested": "vended-credentials"
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.table-rename",
+      "id": "rename-table",
+      "observations": {
+        "destination_present": true,
+        "maximum_id": 47,
+        "minimum_id": 4,
+        "row_count": 44,
+        "row_sha256": "b6e4fe2403a212aed3a2d0482dc1146a61a210391882c9ef14b934d736cc5cda",
+        "source_absent": true
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.table-register",
+      "id": "register-table",
+      "observations": {
+        "maximum_id": 47,
+        "metadata_location": "s3://warehouse/bench/cb_c107_polaris_pub_pyiceberg_0828/events/metadata/00007-7134a55f-b8ed-4b95-8566-75d249ebddaf.metadata.json",
+        "minimum_id": 4,
+        "purge_requested": false,
+        "row_count": 44,
+        "row_sha256": "b6e4fe2403a212aed3a2d0482dc1146a61a210391882c9ef14b934d736cc5cda"
+      },
+      "status": "pass"
+    },
+    {
+      "capability": "client.pyiceberg.view-lifecycle",
+      "id": "classify-views",
+      "limitation": {
+        "attributed_to": "client",
+        "explanation": "PyIceberg 0.11.1 exposes list/drop/exists helpers but no public create_view or load_view API, so a stock-client lifecycle cannot be sent.",
+        "upstream_reference": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
+      },
+      "status": "unsupported"
+    },
+    {
+      "capability": "client.pyiceberg.pagination",
+      "id": "classify-pagination",
+      "limitation": {
+        "attributed_to": "client",
+        "explanation": "PyIceberg 0.11.1 parses next-page-token fields but its public list_namespaces and list_tables methods neither accept page controls nor traverse returned tokens.",
+        "upstream_reference": "https://github.com/apache/iceberg-python/blob/8dee48a8e0218353f706133ed035334869a7ee12/pyiceberg/catalog/rest/__init__.py"
+      },
+      "status": "unsupported"
+    },
+    {
+      "capability": "client.pyiceberg.round-trip",
+      "id": "cleanup-fixture",
+      "observations": {
+        "dropped_tables": [
+          "events_registered"
+        ],
+        "namespace_absent": true,
+        "purge_requested": false,
+        "table_candidates_absent": true
+      },
+      "status": "pass"
+    },
+    {
+      "id": "sanitize-transcript",
+      "observations": {
+        "credential_policy": "categories-only",
+        "exception_policy": "class-and-fixed-explanation-only",
+        "row_policy": "count-range-and-sha256-only"
+      },
+      "status": "pass"
+    }
+  ],
+  "profile": {
+    "id": "catalog-community-current-2026-08-26-linux-arm64",
+    "resolved_at": "2026-08-27T04:21:39Z"
+  },
+  "sanitization": {
+    "policy": "stock-client-values-omitted-v1",
+    "raw_exception_message_persisted": false,
+    "raw_response_body_persisted": false,
+    "raw_row_values_persisted": false,
+    "raw_secrets_persisted": false,
+    "redactions": []
+  },
+  "scenario": {
+    "id": "client.pyiceberg.interoperability",
+    "version": 1
+  }
+}

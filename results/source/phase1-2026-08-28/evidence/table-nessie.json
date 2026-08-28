@@ -1,0 +1,1827 @@
+{
+  "format": "catalog-bench/table-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.table.behavior",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "50237ef4dfefb2e3f58f0cca3d6a0550c6b7d08a3cceccf4ecc68d5a606fe6e9"
+  },
+  "adapter": {
+    "catalog": "nessie",
+    "name": "Apache Nessie",
+    "version": "0.108.4",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_nessie_tbl",
+    "namespace": [
+      "cb_c105_nessie_pub_nessie_tbl"
+    ],
+    "missing_namespace": [
+      "cb_c105_nessie_pub_nessie_tbl_missing"
+    ],
+    "primary": {
+      "namespace": [
+        "cb_c105_nessie_pub_nessie_tbl"
+      ],
+      "name": "primary"
+    },
+    "sibling": {
+      "namespace": [
+        "cb_c105_nessie_pub_nessie_tbl"
+      ],
+      "name": "sibling"
+    },
+    "renamed": {
+      "namespace": [
+        "cb_c105_nessie_pub_nessie_tbl"
+      ],
+      "name": "renamed"
+    },
+    "registered": {
+      "namespace": [
+        "cb_c105_nessie_pub_nessie_tbl"
+      ],
+      "name": "registered"
+    },
+    "missing": {
+      "namespace": [
+        "cb_c105_nessie_pub_nessie_tbl"
+      ],
+      "name": "missing"
+    }
+  },
+  "classification": {
+    "status": "fail",
+    "summary": "one or more required table-behavior assertions did not pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://nessie:19120/iceberg/v1/config",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "body_bytes_observed": 1786,
+      "raw_body_sha256": "32d0a2aa56929a2fb0882ae510afa2945fae209de49d36ad67d9ff20977f4f06",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "prefix": "main",
+            "rest-metrics-reporting-enabled": "false",
+            "rest-page-size": "200",
+            "warehouse": "s3://warehouse"
+          },
+          "endpoints": [
+            "GET /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/transactions/commit",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/tables/rename",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+            "GET /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/namespaces/{namespace}/views",
+            "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/views/rename"
+          ],
+          "overrides": {
+            "nessie.catalog-base-uri": "http://nessie:19120/catalog/v1/",
+            "nessie.core-base-uri": "http://nessie:19120/api/",
+            "nessie.default-branch.name": "main",
+            "nessie.iceberg-base-uri": "http://nessie:19120/iceberg/",
+            "nessie.is-nessie-catalog": "true",
+            "nessie.prefix-pattern": "{ref}|{warehouse}",
+            "uri": "http://nessie:19120/iceberg/"
+          }
+        }
+      }
+    },
+    "prefix": {
+      "mode": "static",
+      "value": "main"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "operations": [
+    {
+      "id": "preflight-namespace",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "c0425a32d6819164c63fc84b4339c0cc8416b2980938a9e723e60954092c375e",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c105_nessie_pub_nessie_tbl",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-namespace",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c105_nessie_pub_nessie_tbl"
+          ],
+          "properties": {
+            "catalog-bench.owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 123,
+        "raw_body_sha256": "431f2ee6c88423b758c940ff1a4fc4e904f228f7d905804abf033ad10ae9ba63",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c105_nessie_pub_nessie_tbl"
+            ],
+            "properties": {
+              "catalog-bench.owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "primary",
+          "properties": {
+            "c1-05.remove": "before",
+            "c1-05.state": "before",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2380,
+        "raw_body_sha256": "7853cde74379caa09bcf8949509943abe6d742f9f08d3c5d669fee204ec8e7c3",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32PvU7EMBCERUtLR01DYeL4J9lcSwsUQB-t7TVYkFxk53R3FRUIJECIR-GJeAzup-BA3CEaup2d0Xyawf721vzuiqYn2JC1wJUuyDHtSsuUKIkBLwpmTSGlLx3kyt6ncNFiP4p0YzlIFB6EAax47ixUjsh4YUqvsZS29CSIC3JOcynBg0IADauANwju-auK4tm6cH7bRfJhcthgaB-Co7YPPlB01tQ257puKaVAdTcy67M31wddDA3G6csYI10OR4mOhhb7MGyPkxxk2eb9NI6h35jp4_2vnf1LyX4otcilkcZoJrTgTFlRsdUoZMqAqYgXCktYzh4joftFzV5p0oX4rc5DQ6nHptvbPd2xb4vFJ-sXnhSEAQAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892296953,
+              "location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:56.615201514Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "ca1036a4-1970-469f-b1ec-87dccf39a241",
+                "nessie.commit.id": "302b0976e4e4910ad41f9833e21aa7af70232045c3a3b41642395c4df3f65563",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "2b8c5f08-a753-4c17-bc25-a642df93f0a8"
+            },
+            "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78/metadata/00000-2f398901-27ad-4748-a8dc-686dfa67241a.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "create-sibling",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "sibling",
+          "properties": {
+            "c1-05.remove": "before",
+            "c1-05.state": "before",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2378,
+        "raw_body_sha256": "e115e3572f512522d912c142cf72cb95d0f377ceb1fd6c63518bbe747276441f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32Nu07DMBSGxcrKxszCYOLYTux0ZQUGYI98jo-LRZNGdqqWiQkEEiDEo_BEPAa9DFxEi1jY_ov-_xvsb28tbi_p6sQ2hGi4KkpyrHAamRKamOFlyRBKKb12Jld4l8Kwtf0k0nWF8nMhCnLSCZtbSd5JqJxBcIUToIEDV1Ba8gBeK6EQlRYFCs61Aff0dUXxbH24uOki-TA7bGxo74Ojtg8-UHQINea8qFtKKVDdTWAtexgdpACj0A6fpzbSxXiS6GiMtg_j9jjJQZZt4sdpDP2mTO9vf-vsX0r2Q6kJgBtFihkkyZQsOAOrBXPWiJK8zKsKV_OHSNb9ouYvNOtC_HbnoaHU26bb2z3dwdfl8gOx2bx8hAEAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892297234,
+              "location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/sibling_ebb084e4-8ce3-4350-ba72-da826ef3199c",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:57.230929500Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "665ca690-8f93-4bde-9fbd-8e095061e23e",
+                "nessie.commit.id": "ca69a60d3868c6b223db0e8e201b566b51f19e1d610d15d2327ff7adfd28f5d5",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "ed3fce13-0aa6-4a2e-ab69-cf21e3bef7c7"
+            },
+            "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/sibling_ebb084e4-8ce3-4350-ba72-da826ef3199c/metadata/00000-6969812b-ea2b-4b6a-8db5-8275ed94676b.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-tables",
+      "capability": "iceberg-rest.table.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 222,
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": [
+              {
+                "name": "primary",
+                "namespace": [
+                  "cb_c105_nessie_pub_nessie_tbl"
+                ]
+              },
+              {
+                "name": "sibling",
+                "namespace": [
+                  "cb_c105_nessie_pub_nessie_tbl"
+                ]
+              }
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-primary",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2380,
+        "raw_body_sha256": "84862fe9dde5abbccc5bf8066a908886e4b1e1cf6677fe13856f7fef98686ae5",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32PvU7EMBCERUtLR01DYeL4J9lcSwsUQB-t7TVYkFxk53R3FRUIJECIR-GJeAzup-BA3CEaup2d0Xyawf721vzuiqYn2JC1wJUuyDHtSsuUKIkBLwpmTSGlLx3kyt6ncNFiP4p0YzlIFB6EAax47ixUjsh4YUqvsZS29CSIC3JOcynBg0IADauANwju-auK4tm6cH7bRfJhcthgaB-Co7YPPlB01tQ257puKaVAdTcy67M31wddDA3G6csYI10OR4mOhhb7MGyPkxxk2eb9NI6h35jp4_2vnf1LyX4otcilkcZoJrTgTFlRsdUoZMqAqYgXCktYzh4joftFzV5p0oX4rc5DQ6nHptvbPd2xb4vFJ-sXnhSEAQAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892296953,
+              "location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:56.615201514Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "ca1036a4-1970-469f-b1ec-87dccf39a241",
+                "nessie.commit.id": "ca69a60d3868c6b223db0e8e201b566b51f19e1d610d15d2327ff7adfd28f5d5",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "2b8c5f08-a753-4c17-bc25-a642df93f0a8"
+            },
+            "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78/metadata/00000-2f398901-27ad-4748-a8dc-686dfa67241a.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-sibling",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/sibling",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2378,
+        "raw_body_sha256": "e115e3572f512522d912c142cf72cb95d0f377ceb1fd6c63518bbe747276441f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32Nu07DMBSGxcrKxszCYOLYTux0ZQUGYI98jo-LRZNGdqqWiQkEEiDEo_BEPAa9DFxEi1jY_ov-_xvsb28tbi_p6sQ2hGi4KkpyrHAamRKamOFlyRBKKb12Jld4l8Kwtf0k0nWF8nMhCnLSCZtbSd5JqJxBcIUToIEDV1Ba8gBeK6EQlRYFCs61Aff0dUXxbH24uOki-TA7bGxo74Ojtg8-UHQINea8qFtKKVDdTWAtexgdpACj0A6fpzbSxXiS6GiMtg_j9jjJQZZt4sdpDP2mTO9vf-vsX0r2Q6kJgBtFihkkyZQsOAOrBXPWiJK8zKsKV_OHSNb9ouYvNOtC_HbnoaHU26bb2z3dwdfl8gOx2bx8hAEAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892297234,
+              "location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/sibling_ebb084e4-8ce3-4350-ba72-da826ef3199c",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:57.230929500Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "665ca690-8f93-4bde-9fbd-8e095061e23e",
+                "nessie.commit.id": "ca69a60d3868c6b223db0e8e201b566b51f19e1d610d15d2327ff7adfd28f5d5",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "ed3fce13-0aa6-4a2e-ab69-cf21e3bef7c7"
+            },
+            "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/sibling_ebb084e4-8ce3-4350-ba72-da826ef3199c/metadata/00000-6969812b-ea2b-4b6a-8db5-8275ed94676b.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-001",
+      "capability": "iceberg-rest.table.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 217,
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": [
+              {
+                "name": "primary",
+                "namespace": [
+                  "cb_c105_nessie_pub_nessie_tbl"
+                ]
+              }
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-002",
+      "capability": "iceberg-rest.table.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 137,
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": [
+              {
+                "name": "sibling",
+                "namespace": [
+                  "cb_c105_nessie_pub_nessie_tbl"
+                ]
+              }
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "update-primary-properties",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-05.state": "after"
+              }
+            },
+            {
+              "action": "remove-properties",
+              "removals": [
+                "c1-05.remove"
+              ]
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 1539,
+        "raw_body_sha256": "a272ea2c4ff2446cf09683002fd1044397f2580a78387134ce064349f56143b5",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892297355,
+              "location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-05.state": "after",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:56.615201514Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "ca1036a4-1970-469f-b1ec-87dccf39a241",
+                "nessie.commit.id": "799c4d9073f34360f808abcc5932b0c25e63e0ba378df87676697dfb8d8bfffe",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "2b8c5f08-a753-4c17-bc25-a642df93f0a8"
+            },
+            "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78/metadata/00000-0e989590-049a-4089-a196-8e4d601f4d25.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-primary-after-update",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2346,
+        "raw_body_sha256": "67190d6a994e3b94ac463a6ddca21674386ddf9a55653a976d0e7f0434117396",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32PvU7EMBCERUtLR01DYeL4J9lcSwsUQB-t7TVYkFxk53R3FRUIJECIR-GJeAzup-BA3CEaup2d0Xyawf721vzuiqYn2JC1wJUuyDHtSsuUKIkBLwpmTSGlLx3kyt6ncNFiP4p0YzlIFB6EAax47ixUjsh4YUqvsZS29CSIC3JOcynBg0IADauANwju-auK4tm6cH7bRfJhcthgaB-Co7YPPlB01tQ257puKaVAdTcy67M31wddDA3G6csYI10OR4mOhhb7MGyPkxxk2eb9NI6h35jp4_2vnf1LyX4otcilkcZoJrTgTFlRsdUoZMqAqYgXCktYzh4joftFzV5p0oX4rc5DQ6nHptvbPd2xb4vFJ-sXnhSEAQAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892297355,
+              "location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-05.state": "after",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:56.615201514Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "ca1036a4-1970-469f-b1ec-87dccf39a241",
+                "nessie.commit.id": "799c4d9073f34360f808abcc5932b0c25e63e0ba378df87676697dfb8d8bfffe",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "2b8c5f08-a753-4c17-bc25-a642df93f0a8"
+            },
+            "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78/metadata/00000-0e989590-049a-4089-a196-8e4d601f4d25.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary-duplicate",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "primary",
+          "properties": {
+            "c1-05.remove": "before",
+            "c1-05.state": "before",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 156,
+        "raw_body_sha256": "6a34f7b8633c91c5d749e116bf6792cca708197b6213aa8b7537fbcfa8fdef89",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "Table already exists: cb_c105_nessie_pub_nessie_tbl.primary",
+              "type": "AlreadyExistsException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "load-missing-table",
+      "capability": "iceberg-rest.error.spec-shape",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/missing",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "4b189e5fbbb5e9bee64c8107bb4e28c3d339b95a748cc04f99519482f0b4f0ed",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c105_nessie_pub_nessie_tbl.missing",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list-tables-missing-namespace",
+      "capability": "iceberg-rest.error.spec-shape",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl_missing/tables",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 53,
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": [],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "rename-primary",
+      "capability": "iceberg-rest.table.rename",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/tables/rename",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "destination": {
+            "name": "renamed",
+            "namespace": [
+              "cb_c105_nessie_pub_nessie_tbl"
+            ]
+          },
+          "source": {
+            "name": "primary",
+            "namespace": [
+              "cb_c105_nessie_pub_nessie_tbl"
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "load-primary-after-rename",
+      "capability": "iceberg-rest.table.rename",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "22fa673d0bf04dce0ebad39c417b2a0647cebd2ee30ef71e8f84b11e777f07e7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c105_nessie_pub_nessie_tbl.primary",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "load-renamed-after-rename",
+      "capability": "iceberg-rest.table.rename",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/renamed",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2349,
+        "raw_body_sha256": "3be1aa9ac263768d2ff8fc8e22c1f657c9899bcdd7849cc26b5874b6a6e78988",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32PvU7DQBCERUtLR01Dcfjs-_ElLS1QAL21t7uGE9ix7hwlqahAIAFCPApPxGOQhIKAlCAaut2d0Xw7w_3trcXdFc9OoGFEJ7WxTMJQiUIXJQsnrRXorVJ1SS7XeJ_CRQv9OPINWCJLUEtfKiO1K12uPJgc69IWxCu_0YA2Z-NB65oUIQOjBkmKncmfv6M4nq0DF7dd5DpMDxsI7UMgbvtQB46EvsJcmqrllAJX3divx95fH0RuV8_TywQiX47GiY9GCH0YtcdJDbNsc36axNBvxPTx_lfO_qVkXQwNxFlVrDoq740oTCGFxmIgwDkQ2js_YGk1lO5z_hgZ6Bc1f-VpF-LPdh4aTj003d7u6Q6-LZdfkUKcEoQBAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892297355,
+              "location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-05.state": "after",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:56.615201514Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "ca1036a4-1970-469f-b1ec-87dccf39a241",
+                "nessie.commit.id": "6544594073ed94a6fc4b880932b7b144cf207a293ce1eb500042ca092cbb44cb",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "2b8c5f08-a753-4c17-bc25-a642df93f0a8"
+            },
+            "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/primary_213b3bb5-2520-4c29-a88a-4b8b9e064a78/metadata/00000-0e989590-049a-4089-a196-8e4d601f4d25.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "drop-sibling-without-purge",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/sibling?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "load-sibling-after-drop",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/sibling",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "5913429f29cc9eb603b5d8e8d206c6e5edfd6b114e0516ce6258d9ad0df69ab7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c105_nessie_pub_nessie_tbl.sibling",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "register-sibling-metadata",
+      "capability": "iceberg-rest.table.register",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/register",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/sibling_ebb084e4-8ce3-4350-ba72-da826ef3199c/metadata/00000-6969812b-ea2b-4b6a-8db5-8275ed94676b.metadata.json",
+          "name": "registered",
+          "overwrite": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2387,
+        "raw_body_sha256": "d92d6cddf20106aac7f039ce1c81f59fb1f13a782bbd8e3188527794ca12124f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32PvU7DMBSFxcrKxszCYOL4J066sgIDsEe-1zfBokkj21XLxAQCCRDiUXgiHoO2DPxILWJhO-d80jk6o_3treXtJV2d2I4QS650QY5pZ5ApYYiVvCgYQiFlY1yZK7yLvu1tmga65mi05oVRkJeKUFTKQlUZJQ000DgQZQOU20oKKyoNaKRACVw7rcEox5--qyicrQuXN0Ogxs8PO-v7e--oT77xFFqEGnOu655i9FQPU1jLBOODQK2PiQK555kNdDGZRjqaoE1-0h9HOcqyTfw4Cz5tYHx_-4uzf4ey6GHs-7YmAP51WLESSTIlNWdgjWDOlqKgRuZVhR-Lh0DW_U4tXmg--PDjzn1HMdlu2Ns93cHX1eoTOf63V4cBAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892297234,
+              "location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/sibling_ebb084e4-8ce3-4350-ba72-da826ef3199c",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:57.230929500Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "665ca690-8f93-4bde-9fbd-8e095061e23e",
+                "nessie.commit.id": "fe4ab48560562dbcdc1817d6f45b4ad06da0dcc1690536aa9d9580e0b6a90ebd",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "ed3fce13-0aa6-4a2e-ab69-cf21e3bef7c7"
+            },
+            "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/sibling_ebb084e4-8ce3-4350-ba72-da826ef3199c/metadata/00000-6969812b-ea2b-4b6a-8db5-8275ed94676b.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-registered-after-register",
+      "capability": "iceberg-rest.table.register",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/registered",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2387,
+        "raw_body_sha256": "d92d6cddf20106aac7f039ce1c81f59fb1f13a782bbd8e3188527794ca12124f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32PvU7DMBSFxcrKxszCYOL4J066sgIDsEe-1zfBokkj21XLxAQCCRDiUXgiHoO2DPxILWJhO-d80jk6o_3treXtJV2d2I4QS650QY5pZ5ApYYiVvCgYQiFlY1yZK7yLvu1tmga65mi05oVRkJeKUFTKQlUZJQ000DgQZQOU20oKKyoNaKRACVw7rcEox5--qyicrQuXN0Ogxs8PO-v7e--oT77xFFqEGnOu655i9FQPU1jLBOODQK2PiQK555kNdDGZRjqaoE1-0h9HOcqyTfw4Cz5tYHx_-4uzf4ey6GHs-7YmAP51WLESSTIlNWdgjWDOlqKgRuZVhR-Lh0DW_U4tXmg--PDjzn1HMdlu2Ns93cHX1eoTOf63V4cBAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892297234,
+              "location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/sibling_ebb084e4-8ce3-4350-ba72-da826ef3199c",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:57.230929500Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "665ca690-8f93-4bde-9fbd-8e095061e23e",
+                "nessie.commit.id": "fe4ab48560562dbcdc1817d6f45b4ad06da0dcc1690536aa9d9580e0b6a90ebd",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "ed3fce13-0aa6-4a2e-ab69-cf21e3bef7c7"
+            },
+            "metadata-location": "s3://warehouse/cb_c105_nessie_pub_nessie_tbl/sibling_ebb084e4-8ce3-4350-ba72-da826ef3199c/metadata/00000-6969812b-ea2b-4b6a-8db5-8275ed94676b.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-primary",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/primary?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "22fa673d0bf04dce0ebad39c417b2a0647cebd2ee30ef71e8f84b11e777f07e7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c105_nessie_pub_nessie_tbl.primary",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-renamed",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/renamed?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-sibling",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/sibling?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "5913429f29cc9eb603b5d8e8d206c6e5edfd6b114e0516ce6258d9ad0df69ab7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c105_nessie_pub_nessie_tbl.sibling",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-registered",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/registered?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-primary-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "22fa673d0bf04dce0ebad39c417b2a0647cebd2ee30ef71e8f84b11e777f07e7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c105_nessie_pub_nessie_tbl.primary",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-renamed-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/renamed",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "a84c427c17c2c39f86a47187717f5154e4ffde8504fe6b3ce8ec990781364be1",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c105_nessie_pub_nessie_tbl.renamed",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-sibling-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/sibling",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "5913429f29cc9eb603b5d8e8d206c6e5edfd6b114e0516ce6258d9ad0df69ab7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c105_nessie_pub_nessie_tbl.sibling",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-registered-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl/tables/registered",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 157,
+        "raw_body_sha256": "3205d37c837b2742bbca84a83968d867b64603a125323d3ed28aaa7d6a08d54b",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c105_nessie_pub_nessie_tbl.registered",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-namespace",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-namespace-absent",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c105_nessie_pub_nessie_tbl",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "c0425a32d6819164c63fc84b4339c0cc8416b2980938a9e723e60954092c375e",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c105_nessie_pub_nessie_tbl",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "mode": "paginated",
+    "pages": 2,
+    "unique_tables": 2
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-namespace-created",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-create-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-list-visible",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-load-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-pagination-complete",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-update-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "duplicate-table-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-table-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-namespace-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "fail",
+        "explanation": "HTTP 200 is not in [404]"
+      }
+    },
+    {
+      "assertion": "table-rename-round-trip",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-drop-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-register-round-trip",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "operations.list-page-001.request.url",
+      "operations.list-page-001.response.body/next-page-token",
+      "operations.list-page-002.request.url",
+      "operations.list-page-002.response.body/next-page-token",
+      "operations.list-tables-missing-namespace.response.body/next-page-token",
+      "operations.list-tables.response.body/next-page-token"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

@@ -1,0 +1,1246 @@
+{
+  "format": "catalog-bench/commit-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.commit.correctness",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "7df567363927001aa25e55c607f60feb63b2fe5442d82d800d298d87e8bc886d"
+  },
+  "adapter": {
+    "catalog": "lakecat",
+    "name": "LakeCat",
+    "version": "0.3.0-42-g962f43cb",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_lakecat_cmt",
+    "namespace": [
+      "cb_c106_lakecat_pub_lakecat_cmt"
+    ],
+    "table": "commit_correctness"
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://lakecat:8181/catalog/v1/config",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json"
+      },
+      "body_bytes_observed": 1028,
+      "raw_body_sha256": "b98357c9292abdbc5d3e506f649f3b701bfc78ebc2959e48ab40a67ea1c24c0e",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "lakecat.compatibility": "iceberg-rest",
+            "lakecat.format.baseline": "iceberg-v1-v3",
+            "lakecat.format.v4": "extension-ready",
+            "lakecat.format.v4.bridge": "json-passthrough",
+            "lakecat.format.v4.typed-sail": "unavailable"
+          },
+          "endpoints": [
+            "GET /v1/config",
+            "GET /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "POST /v1/{prefix}/tables/rename",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/plan",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials"
+          ],
+          "overrides": {}
+        }
+      }
+    },
+    "prefix": {
+      "mode": "unprefixed"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "idempotency": {
+    "status": "not-advertised"
+  },
+  "operations": [
+    {
+      "id": "preflight-namespace",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 121,
+        "raw_body_sha256": "c44759b393c08e03b5086351ee71dab1d22e26725056d23c4fc00c20e1c5f58d",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c106_lakecat_pub_lakecat_cmt",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-namespace",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c106_lakecat_pub_lakecat_cmt"
+          ],
+          "properties": {
+            "catalog-bench.owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 102,
+        "raw_body_sha256": "a4998bd254be9ed7f9834b4b8fe71e64303372cbd3b9c8fc5b0f0cbfb2b0e9c3",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c106_lakecat_pub_lakecat_cmt"
+            ],
+            "properties": {
+              "catalog-bench.owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-table",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness",
+          "name": "commit_correctness",
+          "properties": {
+            "c1-06.state": "initial",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 957,
+        "raw_body_sha256": "a1aec828fec4591e312618c688a9ceabf80481c1d9c387ea35d52c705a82aad4",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "commit_correctness",
+              "namespace": [
+                "cb_c106_lakecat_pub_lakecat_cmt"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892270186,
+              "location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness/metadata/00000-7716155c-feac-4258-bd15-c640786a4cc8.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-initial-table",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 957,
+        "raw_body_sha256": "a1aec828fec4591e312618c688a9ceabf80481c1d9c387ea35d52c705a82aad4",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "commit_correctness",
+              "namespace": [
+                "cb_c106_lakecat_pub_lakecat_cmt"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892270186,
+              "location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness/metadata/00000-7716155c-feac-4258-bd15-c640786a4cc8.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-current-requirements",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.state": "requirement-accepted"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1004,
+        "raw_body_sha256": "7ec117a7248ca99da1b4f0725912486310f713cd90d83b1a11980d89159f912c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "lakecat:last-request-hash": "sha256:e5aca25bc1097042ddfc41931765712354971ba7724625f134bff64066c88066",
+              "lakecat:version": 1,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892270199,
+              "location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness/metadata/00000001787892270199-1ce27348-575a-4627-a6e4-caee00f5bbfc.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-current-requirements",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1107,
+        "raw_body_sha256": "09cdc51cfe2111543f37058f6454716e036c5d02cf70319b103ac4d4cc8066c6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "commit_correctness",
+              "namespace": [
+                "cb_c106_lakecat_pub_lakecat_cmt"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "lakecat:last-request-hash": "sha256:e5aca25bc1097042ddfc41931765712354971ba7724625f134bff64066c88066",
+              "lakecat:version": 1,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892270199,
+              "location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness/metadata/00000001787892270199-1ce27348-575a-4627-a6e4-caee00f5bbfc.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-schema-transition",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            },
+            {
+              "last-assigned-field-id": 1,
+              "type": "assert-last-assigned-field-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "add-schema",
+              "last-column-id": 2,
+              "schema": {
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "value",
+                    "required": false,
+                    "type": "long"
+                  },
+                  {
+                    "id": 2,
+                    "name": "note",
+                    "required": false,
+                    "type": "string"
+                  }
+                ],
+                "schema-id": 1,
+                "type": "struct"
+              }
+            },
+            {
+              "action": "set-current-schema",
+              "schema-id": 1
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1158,
+        "raw_body_sha256": "2ca98967d027726c022ace0538a9b9a790919c4ed4418f053582a30b449274d2",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "lakecat:last-request-hash": "sha256:86e0a79882e6a40e313813dbc1507cfee66c22b5acebf2881a97bea23d62d556",
+              "lakecat:version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892270211,
+              "location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness/metadata/00000001787892270211-8152cfcc-0bd5-4af4-a1e3-1c9b9f13c543.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-schema-transition",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1261,
+        "raw_body_sha256": "b1b51c3ce75f3f1415485575fad1ba62c26ed88c7a14120bfeb232d09ac9cd45",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "commit_correctness",
+              "namespace": [
+                "cb_c106_lakecat_pub_lakecat_cmt"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "lakecat:last-request-hash": "sha256:86e0a79882e6a40e313813dbc1507cfee66c22b5acebf2881a97bea23d62d556",
+              "lakecat:version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892270211,
+              "location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness/metadata/00000001787892270211-8152cfcc-0bd5-4af4-a1e3-1c9b9f13c543.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-stale-requirement",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.stale": "must-not-apply"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 139,
+        "raw_body_sha256": "67d9c15c49e1ff58832ff1066b3772b8d97336ea2ddf0069c5cb6709801ff9cc",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "conflict: Iceberg commit failed: expected current schema id 0 but found 1",
+              "type": "CommitFailedException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-stale-requirement",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1261,
+        "raw_body_sha256": "b1b51c3ce75f3f1415485575fad1ba62c26ed88c7a14120bfeb232d09ac9cd45",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "commit_correctness",
+              "namespace": [
+                "cb_c106_lakecat_pub_lakecat_cmt"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "lakecat:last-request-hash": "sha256:86e0a79882e6a40e313813dbc1507cfee66c22b5acebf2881a97bea23d62d556",
+              "lakecat:version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892270211,
+              "location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness/metadata/00000001787892270211-8152cfcc-0bd5-4af4-a1e3-1c9b9f13c543.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-required-final-state",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1261,
+        "raw_body_sha256": "b1b51c3ce75f3f1415485575fad1ba62c26ed88c7a14120bfeb232d09ac9cd45",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "commit_correctness",
+              "namespace": [
+                "cb_c106_lakecat_pub_lakecat_cmt"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "lakecat:last-request-hash": "sha256:86e0a79882e6a40e313813dbc1507cfee66c22b5acebf2881a97bea23d62d556",
+              "lakecat:version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892270211,
+              "location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "7716155c-feac-4258-bd15-c640786a4cc8"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c106_lakecat_pub_lakecat_cmt/commit_correctness/metadata/00000001787892270211-8152cfcc-0bd5-4af4-a1e3-1c9b9f13c543.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "commit-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "commit-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "cleanup-drop-table",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-table-absent",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 152,
+        "raw_body_sha256": "8054c90f2eb4fe030005cbbe04d0111790d6c7a120ab71c2008a7eff26d4b994",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c106_lakecat_pub_lakecat_cmt:commit_correctness",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-namespace",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-namespace-absent",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c106_lakecat_pub_lakecat_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 121,
+        "raw_body_sha256": "c44759b393c08e03b5086351ee71dab1d22e26725056d23c4fc00c20e1c5f58d",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c106_lakecat_pub_lakecat_cmt",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "current-requirements-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "schema-transition-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "stale-requirement-rejected-atomically",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "idempotency-support-advertised",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "exact-request-replayed-once",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "idempotency-content-drift-rejected",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "required-final-state-exact",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

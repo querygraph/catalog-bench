@@ -6,11 +6,12 @@ use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
     check_contention_profile, check_contention_result_bundle, check_engine_result_bundle,
-    check_flink_profile, check_historical_commit_bundle, check_publication, check_spark_profile,
-    load_bundle, render_matrix, validate_engine_evidence_set, validate_engine_result_review,
-    write_contention_profile, write_contention_result_bundle, write_engine_result_bundle,
-    write_flink_profile, write_historical_commit_bundle, write_publication, write_spark_profile,
-    PublicationProfile,
+    check_flink_profile, check_historical_commit_bundle, check_phase1_profile,
+    check_phase1_result_bundle, check_publication, check_spark_profile, load_bundle, render_matrix,
+    validate_engine_evidence_set, validate_engine_result_review, write_contention_profile,
+    write_contention_result_bundle, write_engine_result_bundle, write_flink_profile,
+    write_historical_commit_bundle, write_phase1_profile, write_phase1_result_bundle,
+    write_publication, write_spark_profile, PublicationProfile,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -77,6 +78,11 @@ enum Command {
         #[command(subcommand)]
         command: PublicationCommand,
     },
+    /// Materialize or verify the reviewed Phase 1 behavioral result bundle.
+    Phase1Import {
+        #[command(subcommand)]
+        command: Phase1ImportCommand,
+    },
 }
 
 #[derive(Debug, Subcommand)]
@@ -122,6 +128,10 @@ enum MatrixCommand {
 
 #[derive(Debug, Subcommand)]
 enum ProfileCommand {
+    /// Derive the runnable Phase 1 behavioral publication profile.
+    MaterializePhase1(ProfileFiles),
+    /// Check that the Phase 1 profile exactly matches its audited inputs.
+    CheckPhase1(ProfileFiles),
     /// Derive a runnable contention profile from a draft and image observations.
     MaterializeContention(ProfileFiles),
     /// Check that a runnable contention profile exactly matches its inputs.
@@ -218,6 +228,20 @@ enum PublicationCommand {
     Check(PublicationFiles),
 }
 
+#[derive(Debug, Subcommand)]
+enum Phase1ImportCommand {
+    /// Create the immutable 25-result Phase 1 correctness bundle.
+    Write {
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
+    /// Recompute every result and reject source or output drift.
+    Check {
+        #[arg(long, default_value = ".")]
+        root: PathBuf,
+    },
+}
+
 #[derive(Debug, Args)]
 struct PublicationFiles {
     #[arg(long, default_value = ".")]
@@ -251,6 +275,24 @@ fn run(cli: Cli) -> Result<()> {
             MatrixCommand::Check { manifest, output } => check_matrix(&manifest, &output),
         },
         Command::Profile { command } => match command {
+            ProfileCommand::MaterializePhase1(ProfileFiles {
+                source_profile,
+                materialization,
+                output,
+            }) => {
+                write_phase1_profile(&source_profile, &materialization, &output)?;
+                println!("wrote {}", output.display());
+                Ok(())
+            }
+            ProfileCommand::CheckPhase1(ProfileFiles {
+                source_profile,
+                materialization,
+                output,
+            }) => {
+                check_phase1_profile(&source_profile, &materialization, &output)?;
+                println!("{} matches its materialization inputs", output.display());
+                Ok(())
+            }
             ProfileCommand::MaterializeContention(ProfileFiles {
                 source_profile,
                 materialization,
@@ -387,6 +429,16 @@ fn run(cli: Cli) -> Result<()> {
                 check_publication(&files.root, profile)?;
                 println!("valid cross-scenario publication ({})", files.profile);
                 Ok(())
+            }
+        },
+        Command::Phase1Import { command } => match command {
+            Phase1ImportCommand::Write { root } => {
+                let manifest = write_phase1_result_bundle(&root)?;
+                validate_bundle(&manifest)
+            }
+            Phase1ImportCommand::Check { root } => {
+                let manifest = check_phase1_result_bundle(&root)?;
+                validate_bundle(&manifest)
             }
         },
     }

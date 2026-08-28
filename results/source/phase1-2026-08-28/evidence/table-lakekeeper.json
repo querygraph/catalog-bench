@@ -1,0 +1,1883 @@
+{
+  "format": "catalog-bench/table-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.table.behavior",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "50237ef4dfefb2e3f58f0cca3d6a0550c6b7d08a3cceccf4ecc68d5a606fe6e9"
+  },
+  "adapter": {
+    "catalog": "lakekeeper",
+    "name": "Lakekeeper",
+    "version": "0.13.3",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_lakekeeper_tbl",
+    "namespace": [
+      "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+    ],
+    "missing_namespace": [
+      "cb_c105_lakekeeper_pub_lakekeeper_tbl_missing"
+    ],
+    "primary": {
+      "namespace": [
+        "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+      ],
+      "name": "primary"
+    },
+    "sibling": {
+      "namespace": [
+        "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+      ],
+      "name": "sibling"
+    },
+    "renamed": {
+      "namespace": [
+        "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+      ],
+      "name": "renamed"
+    },
+    "registered": {
+      "namespace": [
+        "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+      ],
+      "name": "registered"
+    },
+    "missing": {
+      "namespace": [
+        "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+      ],
+      "name": "missing"
+    }
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://lakekeeper:8181/catalog/v1/config?warehouse=bench",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json",
+        "x-request-id": "01a046af-4f82-7a63-9e51-41c66bd928f1"
+      },
+      "body_bytes_observed": 1397,
+      "raw_body_sha256": "c0a75de49d8548ee9f4b095c3a44330d7cfd71d995712affe14bba9a3c75037b",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "prefix": "1cd5bab6-a11c-11f1-8f9b-83357e228e31",
+            "rest-page-size": "100"
+          },
+          "endpoints": [
+            "GET /v1/config",
+            "GET /v1/{prefix}/namespaces",
+            "HEAD /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+            "POST /v1/{prefix}/tables/rename",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+            "POST /v1/{prefix}/transactions/commit",
+            "POST /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/views/rename"
+          ],
+          "overrides": {
+            "idempotency-key-lifetime": "PT30M",
+            "uri": "http://lakekeeper:8181/catalog"
+          }
+        }
+      }
+    },
+    "prefix": {
+      "mode": "negotiated",
+      "json_pointer": "/defaults/prefix",
+      "value": "1cd5bab6-a11c-11f1-8f9b-83357e228e31"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "operations": [
+    {
+      "id": "preflight-namespace",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4f83-7353-93a4-f556a0c051c8"
+        },
+        "body_bytes_observed": 293,
+        "raw_body_sha256": "2299cc06d4bbc01dbf6b1009fd15be66b591f11b968914868d5a415f1b314e74",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace with name 'cb_c105_lakekeeper_pub_lakekeeper_tbl' does not exist in warehouse '1cd5bab6-a11c-11f1-8f9b-83357e228e31'",
+              "stack": [
+                "Namespace not found or access denied",
+                "Error ID: 01a046af-4f84-7373-82a0-30758de1a57c"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-namespace",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+          ],
+          "properties": {
+            "catalog-bench.owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4f84-7373-82a0-3089ed75dbf9"
+        },
+        "body_bytes_observed": 201,
+        "raw_body_sha256": "dbc5d17e9e6039a29215f74409b3f72270cf0b967e28d5e93331974aaee307c0",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+            ],
+            "properties": {
+              "catalog-bench.owner": "catalog-bench",
+              "location": "s3://warehouse/lakekeeper",
+              "namespace_id": "01a046af-4f84-7373-82a0-30aab24fe980"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "primary",
+          "properties": {
+            "c1-05.remove": "before",
+            "c1-05.state": "before",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4f86-7a03-8f78-01066bf162d0"
+        },
+        "body_bytes_observed": 4425,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892289416,
+              "location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5",
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-4f87-7702-88da-799e447e51d5"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5/metadata/00000-01a046af-4f88-7aa0-b4e0-1c7c4e0a1b98.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "create-sibling",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "sibling",
+          "properties": {
+            "c1-05.remove": "before",
+            "c1-05.state": "before",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4fbb-7b33-80a1-4aa4dd37794f"
+        },
+        "body_bytes_observed": 4425,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892289467,
+              "location": "s3://warehouse/lakekeeper/01a046af-4fbb-7b33-80a1-4ac43f4c3ab1",
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-4fbb-7b33-80a1-4ac43f4c3ab1"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-4fbb-7b33-80a1-4ac43f4c3ab1/metadata/00000-01a046af-4fbb-7b33-80a1-4ad0a45cef99.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-tables",
+      "capability": "iceberg-rest.table.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4fca-7d51-aeee-067a3a76a8d7"
+        },
+        "body_bytes_observed": 163,
+        "raw_body_sha256": "310e68eceed061cd0e40962c0c48a51c3ea13cbb80de514446c05540a501d38c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": [
+              {
+                "name": "primary",
+                "namespace": [
+                  "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+                ]
+              },
+              {
+                "name": "sibling",
+                "namespace": [
+                  "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "load-primary",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4fcf-7a43-9445-b95c7470d974"
+        },
+        "body_bytes_observed": 4425,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892289416,
+              "location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5",
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-4f87-7702-88da-799e447e51d5"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5/metadata/00000-01a046af-4f88-7aa0-b4e0-1c7c4e0a1b98.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-sibling",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/sibling",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4fdc-73a1-b918-4eebcb54b9ea"
+        },
+        "body_bytes_observed": 4425,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892289467,
+              "location": "s3://warehouse/lakekeeper/01a046af-4fbb-7b33-80a1-4ac43f4c3ab1",
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-4fbb-7b33-80a1-4ac43f4c3ab1"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-4fbb-7b33-80a1-4ac43f4c3ab1/metadata/00000-01a046af-4fbb-7b33-80a1-4ad0a45cef99.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-001",
+      "capability": "iceberg-rest.table.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4fe5-7ca0-9b6f-ea9ecbc9dd9b"
+        },
+        "body_bytes_observed": 185,
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": [
+              {
+                "name": "primary",
+                "namespace": [
+                  "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+                ]
+              }
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-002",
+      "capability": "iceberg-rest.table.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4fe9-71c0-a505-42dd3af411c0"
+        },
+        "body_bytes_observed": 185,
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": [
+              {
+                "name": "sibling",
+                "namespace": [
+                  "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+                ]
+              }
+            ],
+            "next-page-token": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-003",
+      "capability": "iceberg-rest.table.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4fea-7b63-9896-f7f13a8f7d86"
+        },
+        "body_bytes_observed": 18,
+        "raw_body_sha256": "85b419a3fb229bb0c7cd4fd588816afdc87abf863a752285f84d050be8dd2aec",
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": []
+          }
+        }
+      }
+    },
+    {
+      "id": "update-primary-properties",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-05.state": "after"
+              }
+            },
+            {
+              "action": "remove-properties",
+              "removals": [
+                "c1-05.remove"
+              ]
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-4fed-7ad3-bf8e-877e76161021"
+        },
+        "body_bytes_observed": 979,
+        "raw_body_sha256": "a928140bd38a15044c88291f367639bac0432fd9ee5ac382e5e4ada07b4ea7c6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": null,
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892289526,
+              "location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5/metadata/00000-01a046af-4f88-7aa0-b4e0-1c7c4e0a1b98.gz.metadata.json",
+                  "timestamp-ms": 1787892289416
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.state": "after",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-4f87-7702-88da-799e447e51d5"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5/metadata/00001-01a046af-4ff6-7fa3-8d12-e1eec7044bed.gz.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-primary-after-update",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5000-7a10-8d0e-ed10cbd1bd9e"
+        },
+        "body_bytes_observed": 4598,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892289526,
+              "location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5/metadata/00000-01a046af-4f88-7aa0-b4e0-1c7c4e0a1b98.gz.metadata.json",
+                  "timestamp-ms": 1787892289416
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.state": "after",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-4f87-7702-88da-799e447e51d5"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5/metadata/00001-01a046af-4ff6-7fa3-8d12-e1eec7044bed.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary-duplicate",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "primary",
+          "properties": {
+            "c1-05.remove": "before",
+            "c1-05.state": "before",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5006-75e3-9c97-9c578b56e6c4"
+        },
+        "body_bytes_observed": 220,
+        "raw_body_sha256": "868107d04ca64cdc39d226fd75cfeb1f478b10c180d0267ac97f00bc944b071d",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "Tabular with the same name already exists in the namespace",
+              "stack": [
+                "Error creating tabular in catalog",
+                "Error ID: 01a046af-5007-7033-97de-1f1a4214b931"
+              ],
+              "type": "AlreadyExistsException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "load-missing-table",
+      "capability": "iceberg-rest.error.spec-shape",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/missing",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5008-7e11-ac55-939fba07a62c"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "1996eda4cd506f3d4fcbf3d92e142825d6b6361db72cdef10298ec4eb743a0e1",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-5009-76a3-bedc-115ad59d363c"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list-tables-missing-namespace",
+      "capability": "iceberg-rest.error.spec-shape",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl_missing/tables",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5009-76a3-bedc-117cd56d83e0"
+        },
+        "body_bytes_observed": 301,
+        "raw_body_sha256": "ec78eef3dd6fb224bd5a5ce18cb7c0ecd945f3b84e65804a3890d1b74cbfd90f",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace with name 'cb_c105_lakekeeper_pub_lakekeeper_tbl_missing' does not exist in warehouse '1cd5bab6-a11c-11f1-8f9b-83357e228e31'",
+              "stack": [
+                "Namespace not found or access denied",
+                "Error ID: 01a046af-5009-76a3-bedc-1191a6dec943"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "rename-primary",
+      "capability": "iceberg-rest.table.rename",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/tables/rename",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "destination": {
+            "name": "renamed",
+            "namespace": [
+              "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+            ]
+          },
+          "source": {
+            "name": "primary",
+            "namespace": [
+              "cb_c105_lakekeeper_pub_lakekeeper_tbl"
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "01a046af-500a-7542-9469-8fb4ab7a5a90"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "load-primary-after-rename",
+      "capability": "iceberg-rest.table.rename",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-500d-7071-90eb-365fbd86b8ed"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "cd2921772e62e8946355f48e55cc469b9d1eb634713f0bbc278c8a3b2f57d5ac",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-500e-7393-9e89-4d1cc167f9d8"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "load-renamed-after-rename",
+      "capability": "iceberg-rest.table.rename",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/renamed",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-500e-7393-9e89-4d39efa1f036"
+        },
+        "body_bytes_observed": 4598,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892289526,
+              "location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5/metadata/00000-01a046af-4f88-7aa0-b4e0-1c7c4e0a1b98.gz.metadata.json",
+                  "timestamp-ms": 1787892289416
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.state": "after",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-4f87-7702-88da-799e447e51d5"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-4f87-7702-88da-799e447e51d5/metadata/00001-01a046af-4ff6-7fa3-8d12-e1eec7044bed.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "drop-sibling-without-purge",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/sibling?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "01a046af-5013-7b21-a877-a6c0d78b98c8"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "load-sibling-after-drop",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/sibling",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5019-7d73-9665-d261ac33d798"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "51c8a640ec7a5ebc2a0c24c60c2b69430437a09830bfa9211502c885d40353bf",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-501a-70c0-9ab5-10fa52946097"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "register-sibling-metadata",
+      "capability": "iceberg-rest.table.register",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/register",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "metadata-location": "s3://warehouse/lakekeeper/01a046af-4fbb-7b33-80a1-4ac43f4c3ab1/metadata/00000-01a046af-4fbb-7b33-80a1-4ad0a45cef99.gz.metadata.json",
+          "name": "registered",
+          "overwrite": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-501a-70c0-9ab5-111b583e42ec"
+        },
+        "body_bytes_observed": 2429,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892289467,
+              "location": "s3://warehouse/lakekeeper/01a046af-4fbb-7b33-80a1-4ac43f4c3ab1",
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-4fbb-7b33-80a1-4ac43f4c3ab1"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-4fbb-7b33-80a1-4ac43f4c3ab1/metadata/00000-01a046af-4fbb-7b33-80a1-4ad0a45cef99.gz.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-registered-after-register",
+      "capability": "iceberg-rest.table.register",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/registered",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5022-7192-afd2-f6cece08247c"
+        },
+        "body_bytes_observed": 4428,
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "region": "us-east-1",
+              "s3.access-key-id": "<redacted>",
+              "s3.endpoint": "http://minio:9000/",
+              "s3.path-style-access": "true",
+              "s3.region": "us-east-1",
+              "s3.secret-access-key": "<redacted>",
+              "s3.session-token": "<redacted>"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892289467,
+              "location": "s3://warehouse/lakekeeper/01a046af-4fbb-7b33-80a1-4ac43f4c3ab1",
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "01a046af-4fbb-7b33-80a1-4ac43f4c3ab1"
+            },
+            "metadata-location": "s3://warehouse/lakekeeper/01a046af-4fbb-7b33-80a1-4ac43f4c3ab1/metadata/00000-01a046af-4fbb-7b33-80a1-4ad0a45cef99.gz.metadata.json",
+            "storage-credentials": "<redacted>"
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-primary",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/primary?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5028-7b82-9349-805354a8faa6"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "4d33ae69a30a00f51f0b298e680c01414809744968d2a2c0e81f4d12b81cd2b2",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-5029-7142-babf-05c3d1907ee4"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-renamed",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/renamed?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "01a046af-5029-7142-babf-05ee8a139606"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-sibling",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/sibling?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-502d-7033-acae-cba4463b8d3a"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "1e7a22bcd60009044f47efff3c41673a75c85258844630af437ffbc8feb0c56a",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-502e-7ac0-811c-9736678279bc"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-registered",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/registered?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "01a046af-502e-7ac0-811c-9752d293460e"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-primary-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5032-7f93-b800-b4df18feeaf5"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "13f3e83f057c1912fd56a9cb2410dc9ca1621f0b340dc35c69fcc9d1e188ebf7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-5033-7181-87e2-5f596004bfd9"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-renamed-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/renamed",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5033-7181-87e2-5f7775f11b25"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "337dd0e3fcca8628fe0b295cc4d98f918aa5306759c483d913a4962924b9daa7",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-5034-7a13-9cc5-bd01aa23530a"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-sibling-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/sibling",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5034-7a13-9cc5-bd2365128c5e"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "f4c6dbca4eeca226827308bf5212fb935cf5ca24a0046effb4173a1588ea18c2",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-5034-7a13-9cc5-bd422d058aa7"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-registered-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl/tables/registered",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5035-77d2-ad92-28df86f5c6a6"
+        },
+        "body_bytes_observed": 158,
+        "raw_body_sha256": "edd6d1423336826de899231d67fe772666d6b704faca49fdc573901a1abec1d1",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Error getting tabular from catalog",
+              "stack": [
+                "Error ID: 01a046af-5035-77d2-ad92-28f1342f81e5"
+              ],
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-namespace",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "01a046af-5036-7b01-a3e3-ee7c36399a53"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-namespace-absent",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakekeeper:8181/catalog/v1/1cd5bab6-a11c-11f1-8f9b-83357e228e31/namespaces/cb_c105_lakekeeper_pub_lakekeeper_tbl",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "01a046af-5039-7c12-8ce2-8deeab2622a0"
+        },
+        "body_bytes_observed": 293,
+        "raw_body_sha256": "7ca0f2930616abede2a556cc31b88f369a78ca605aaf8f9c9bfa9dd1edd38cdc",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace with name 'cb_c105_lakekeeper_pub_lakekeeper_tbl' does not exist in warehouse '1cd5bab6-a11c-11f1-8f9b-83357e228e31'",
+              "stack": [
+                "Namespace not found or access denied",
+                "Error ID: 01a046af-5039-7c12-8ce2-8e035d4f4431"
+              ],
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "mode": "paginated",
+    "pages": 3,
+    "unique_tables": 2
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-namespace-created",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-create-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-list-visible",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-load-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-pagination-complete",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-update-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "duplicate-table-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-table-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-namespace-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-rename-round-trip",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-drop-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-register-round-trip",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "operations.create-primary.response.body/config/s3.access-key-id",
+      "operations.create-primary.response.body/config/s3.secret-access-key",
+      "operations.create-primary.response.body/config/s3.session-token",
+      "operations.create-primary.response.body/storage-credentials",
+      "operations.create-sibling.response.body/config/s3.access-key-id",
+      "operations.create-sibling.response.body/config/s3.secret-access-key",
+      "operations.create-sibling.response.body/config/s3.session-token",
+      "operations.create-sibling.response.body/storage-credentials",
+      "operations.list-page-001.request.url",
+      "operations.list-page-001.response.body/next-page-token",
+      "operations.list-page-002.request.url",
+      "operations.list-page-002.response.body/next-page-token",
+      "operations.list-page-003.request.url",
+      "operations.load-primary.response.body/config/s3.access-key-id",
+      "operations.load-primary.response.body/config/s3.secret-access-key",
+      "operations.load-primary.response.body/config/s3.session-token",
+      "operations.load-primary.response.body/storage-credentials",
+      "operations.load-registered-after-register.response.body/config/s3.access-key-id",
+      "operations.load-registered-after-register.response.body/config/s3.secret-access-key",
+      "operations.load-registered-after-register.response.body/config/s3.session-token",
+      "operations.load-registered-after-register.response.body/storage-credentials",
+      "operations.load-renamed-after-rename.response.body/config/s3.access-key-id",
+      "operations.load-renamed-after-rename.response.body/config/s3.secret-access-key",
+      "operations.load-renamed-after-rename.response.body/config/s3.session-token",
+      "operations.load-renamed-after-rename.response.body/storage-credentials",
+      "operations.load-sibling.response.body/config/s3.access-key-id",
+      "operations.load-sibling.response.body/config/s3.secret-access-key",
+      "operations.load-sibling.response.body/config/s3.session-token",
+      "operations.load-sibling.response.body/storage-credentials",
+      "operations.register-sibling-metadata.response.body/config/s3.access-key-id",
+      "operations.register-sibling-metadata.response.body/config/s3.secret-access-key",
+      "operations.register-sibling-metadata.response.body/config/s3.session-token",
+      "operations.reload-primary-after-update.response.body/config/s3.access-key-id",
+      "operations.reload-primary-after-update.response.body/config/s3.secret-access-key",
+      "operations.reload-primary-after-update.response.body/config/s3.session-token",
+      "operations.reload-primary-after-update.response.body/storage-credentials"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

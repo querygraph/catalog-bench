@@ -2,13 +2,22 @@
 
 ## Unreleased
 
+- C1-09 Phase 1 behavioral publication: archive a fresh optimized 5-scenario by
+  5-catalog matrix covering config, namespace, table, deterministic commit, and
+  stock PyIceberg workflows; bind all 25 value-safe transcripts to a runnable
+  artifact-resolved profile and human-reviewed runtime/redaction sidecar; and
+  deterministically emit 25 correctness results plus one immutable manifest.
+  The admitted matrix has 20 pass and five fail outcomes, preserves every
+  optional not-evaluated assertion, and makes no timing or resource claim.
+
 - C1-09 cross-scenario publication gate: add one-command `smoke` and `full`
   result checks, discover and validate every checked-in immutable bundle,
   recursively secret-scan manifests plus all referenced profiles, scenarios,
   results, raw source evidence, and result evidence, and generate the bundle
   index and known-gaps report strictly from admitted records. The full profile
-  first recomputes both source-backed historical and production contention
-  bundles. Mutable operation-level transcripts remain outside publication.
+  first recomputes the historical, production-contention, and Phase 1
+  behavioral bundles. Mutable operation-level transcripts remain outside
+  publication unless admitted through a reviewed immutable bundle.
 
 - C2-06 private Trino server staging: materialize the closed source-derived
   Trino configuration into a create-new temporary tree with `0700` directories

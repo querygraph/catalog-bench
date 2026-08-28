@@ -1,0 +1,179 @@
+{
+  "format": "catalog-bench/config-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.config.negotiation",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "c1352f1f10c5e8b3853fa45a12c2edc3dd42c1be1be4fae113c7789a2678574f"
+  },
+  "adapter": {
+    "catalog": "nessie",
+    "name": "Apache Nessie",
+    "version": "0.108.4",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "request": {
+    "method": "GET",
+    "url": "http://nessie:19120/iceberg/v1/config",
+    "headers": {
+      "accept": "application/json"
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "content-type": "application/json;charset=UTF-8"
+    },
+    "body_bytes_observed": 1786,
+    "raw_body_sha256": "32d0a2aa56929a2fb0882ae510afa2945fae209de49d36ad67d9ff20977f4f06",
+    "body": {
+      "kind": "json",
+      "value": {
+        "defaults": {
+          "prefix": "main",
+          "rest-metrics-reporting-enabled": "false",
+          "rest-page-size": "200",
+          "warehouse": "s3://warehouse"
+        },
+        "endpoints": [
+          "GET /v1/{prefix}/namespaces",
+          "GET /v1/{prefix}/namespaces/{namespace}",
+          "HEAD /v1/{prefix}/namespaces/{namespace}",
+          "POST /v1/{prefix}/namespaces",
+          "POST /v1/{prefix}/namespaces/{namespace}/properties",
+          "DELETE /v1/{prefix}/namespaces/{namespace}",
+          "POST /v1/{prefix}/transactions/commit",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+          "POST /v1/{prefix}/tables/rename",
+          "POST /v1/{prefix}/namespaces/{namespace}/register",
+          "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+          "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+          "GET /v1/{prefix}/namespaces/{namespace}/views",
+          "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "POST /v1/{prefix}/namespaces/{namespace}/views",
+          "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+          "POST /v1/{prefix}/views/rename"
+        ],
+        "overrides": {
+          "nessie.catalog-base-uri": "http://nessie:19120/catalog/v1/",
+          "nessie.core-base-uri": "http://nessie:19120/api/",
+          "nessie.default-branch.name": "main",
+          "nessie.iceberg-base-uri": "http://nessie:19120/iceberg/",
+          "nessie.is-nessie-catalog": "true",
+          "nessie.prefix-pattern": "{ref}|{warehouse}",
+          "uri": "http://nessie:19120/iceberg/"
+        }
+      }
+    }
+  },
+  "prefix": {
+    "mode": "static",
+    "value": "main"
+  },
+  "endpoints": {
+    "mode": "explicit",
+    "endpoints": [
+      "GET /v1/{prefix}/namespaces",
+      "GET /v1/{prefix}/namespaces/{namespace}",
+      "HEAD /v1/{prefix}/namespaces/{namespace}",
+      "POST /v1/{prefix}/namespaces",
+      "POST /v1/{prefix}/namespaces/{namespace}/properties",
+      "DELETE /v1/{prefix}/namespaces/{namespace}",
+      "POST /v1/{prefix}/transactions/commit",
+      "GET /v1/{prefix}/namespaces/{namespace}/tables",
+      "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+      "POST /v1/{prefix}/tables/rename",
+      "POST /v1/{prefix}/namespaces/{namespace}/register",
+      "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+      "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+      "GET /v1/{prefix}/namespaces/{namespace}/views",
+      "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+      "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+      "POST /v1/{prefix}/namespaces/{namespace}/views",
+      "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+      "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+      "POST /v1/{prefix}/views/rename"
+    ]
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-http-success",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-media-type",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-map-shape",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "route-prefix-resolved",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "endpoint-advertisement-valid",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

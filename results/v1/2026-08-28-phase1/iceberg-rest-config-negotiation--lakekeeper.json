@@ -1,0 +1,160 @@
+{
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "config-http-success",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "config-media-type",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "config-map-shape",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "route-prefix-resolved",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "endpoint-advertisement-valid",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    }
+  ],
+  "catalog": {
+    "name": "Lakekeeper",
+    "profile_component": "lakekeeper",
+    "version": "0.13.3"
+  },
+  "contract_version": "catalog-bench/v1",
+  "environment": {
+    "architecture": "aarch64",
+    "container_runtime": {
+      "precision": "exact",
+      "value": "Docker Engine 29.4.3; Docker Compose v5.1.3"
+    },
+    "cpu_model": {
+      "explanation": "The LinuxKit container boundary did not expose a CPU model; no host model is substituted.",
+      "precision": "unknown"
+    },
+    "logical_cpus": {
+      "precision": "exact",
+      "value": 10
+    },
+    "memory_bytes": {
+      "precision": "exact",
+      "value": 8321712128
+    },
+    "network": "catalog-bench-net: one Docker bridge shared by the optimized runner, all catalogs, state stores, and source-built MinIO",
+    "operating_system": "Linux 6.12.76-linuxkit",
+    "runtime_flags": {
+      "claim_scope": "correctness only; elapsed time and resource utilization are not measured",
+      "runner_build": "Rust 1.97.1; release; opt-level=3; fat LTO; codegen-units=1; target-cpu=native; panic=abort; stripped"
+    }
+  },
+  "evidence": [
+    {
+      "artifact": {
+        "bytes": 5728,
+        "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "b854bb4d5301cf4984542f094ab09aa311082f5a7d62967061ad672f10dfd68b"
+        },
+        "location": "../../source/phase1-2026-08-28/evidence/config-lakekeeper.json",
+        "media_type": "application/json"
+      },
+      "id": "source-transcript",
+      "kind": "http-transcript",
+      "redactions": [
+        "OAuth client credentials and bearer tokens",
+        "authorization and idempotency request header values",
+        "delegated object-store credentials",
+        "raw row values and raw response bodies",
+        "unbounded client exception text"
+      ],
+      "sanitized": true
+    }
+  ],
+  "extensions": {
+    "querygraph/source-transcript-format": "catalog-bench/config-transcript/v1"
+  },
+  "id": "phase1-behavior-2026-08-28-iceberg-rest-config-negotiation-lakekeeper",
+  "kind": "result",
+  "outcome": {
+    "status": "pass",
+    "summary": "Every required assertion passed in the reviewed value-safe transcript."
+  },
+  "profile": {
+    "digest": {
+      "algorithm": "sha256",
+      "value": "99f940600836c3f98fca92a79f9ab0c5ddea4cf52081ea251f809bad1bd25495"
+    },
+    "id": "catalog-community-phase1-2026-08-28-linux-arm64"
+  },
+  "run": {
+    "finished_at": "2026-08-28T04:45:15Z",
+    "id": "phase1-publication-2026-08-28-iceberg-rest-config-negotiation-lakekeeper",
+    "kind": "single",
+    "repetition": 1,
+    "started_at": "2026-08-28T04:44:05Z"
+  },
+  "scenario": {
+    "digest": {
+      "algorithm": "sha256",
+      "value": "c1352f1f10c5e8b3853fa45a12c2edc3dd42c1be1be4fae113c7789a2678574f"
+    },
+    "id": "iceberg-rest.config.negotiation",
+    "version": 1
+  }
+}

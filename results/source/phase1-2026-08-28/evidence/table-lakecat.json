@@ -1,0 +1,1694 @@
+{
+  "format": "catalog-bench/table-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.table.behavior",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "50237ef4dfefb2e3f58f0cca3d6a0550c6b7d08a3cceccf4ecc68d5a606fe6e9"
+  },
+  "adapter": {
+    "catalog": "lakecat",
+    "name": "LakeCat",
+    "version": "0.3.0-42-g962f43cb",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_lakecat_tbl",
+    "namespace": [
+      "cb_c105_lakecat_pub_lakecat_tbl"
+    ],
+    "missing_namespace": [
+      "cb_c105_lakecat_pub_lakecat_tbl_missing"
+    ],
+    "primary": {
+      "namespace": [
+        "cb_c105_lakecat_pub_lakecat_tbl"
+      ],
+      "name": "primary"
+    },
+    "sibling": {
+      "namespace": [
+        "cb_c105_lakecat_pub_lakecat_tbl"
+      ],
+      "name": "sibling"
+    },
+    "renamed": {
+      "namespace": [
+        "cb_c105_lakecat_pub_lakecat_tbl"
+      ],
+      "name": "renamed"
+    },
+    "registered": {
+      "namespace": [
+        "cb_c105_lakecat_pub_lakecat_tbl"
+      ],
+      "name": "registered"
+    },
+    "missing": {
+      "namespace": [
+        "cb_c105_lakecat_pub_lakecat_tbl"
+      ],
+      "name": "missing"
+    }
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://lakecat:8181/catalog/v1/config",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json"
+      },
+      "body_bytes_observed": 1028,
+      "raw_body_sha256": "b98357c9292abdbc5d3e506f649f3b701bfc78ebc2959e48ab40a67ea1c24c0e",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "lakecat.compatibility": "iceberg-rest",
+            "lakecat.format.baseline": "iceberg-v1-v3",
+            "lakecat.format.v4": "extension-ready",
+            "lakecat.format.v4.bridge": "json-passthrough",
+            "lakecat.format.v4.typed-sail": "unavailable"
+          },
+          "endpoints": [
+            "GET /v1/config",
+            "GET /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "POST /v1/{prefix}/tables/rename",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/plan",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/tasks",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials"
+          ],
+          "overrides": {}
+        }
+      }
+    },
+    "prefix": {
+      "mode": "unprefixed"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "operations": [
+    {
+      "id": "preflight-namespace",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 121,
+        "raw_body_sha256": "d8a7aae3ad4abee12435d19e92f0d3ffd1e49dc4480a3bc8135a13a3d93f4d8c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c105_lakecat_pub_lakecat_tbl",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-namespace",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c105_lakecat_pub_lakecat_tbl"
+          ],
+          "properties": {
+            "catalog-bench.owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 102,
+        "raw_body_sha256": "98cf61a11fe881d1cffbd556e1ff40903dad4c2fe524cf325bd33706704ff809",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c105_lakecat_pub_lakecat_tbl"
+            ],
+            "properties": {
+              "catalog-bench.owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary",
+          "name": "primary",
+          "properties": {
+            "c1-05.remove": "before",
+            "c1-05.state": "before",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 947,
+        "raw_body_sha256": "71826070182bed17953f16ad84baa426127a4ff9c5e2135aa284f8324e4d549a",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "primary",
+              "namespace": [
+                "cb_c105_lakecat_pub_lakecat_tbl"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892268302,
+              "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "ee548cfa-559a-4f4f-9ad5-7377e4d15a95"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary/metadata/00000-ee548cfa-559a-4f4f-9ad5-7377e4d15a95.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "create-sibling",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling",
+          "name": "sibling",
+          "properties": {
+            "c1-05.remove": "before",
+            "c1-05.state": "before",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 947,
+        "raw_body_sha256": "df9870e58a64f8bc48c39dd325ab3457b267432b2de7c3fb4d6808437570ab11",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "sibling",
+              "namespace": [
+                "cb_c105_lakecat_pub_lakecat_tbl"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892268342,
+              "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "52a10224-ee7c-46b0-9eab-7fb58dfd53e5"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling/metadata/00000-52a10224-ee7c-46b0-9eab-7fb58dfd53e5.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-tables",
+      "capability": "iceberg-rest.table.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 151,
+        "raw_body_sha256": "f00270db365e41c9ad4efa4ea1303e2b99c595a27b290ed0efcf1a43a0acd803",
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": [
+              {
+                "name": "primary",
+                "namespace": [
+                  "cb_c105_lakecat_pub_lakecat_tbl"
+                ]
+              },
+              {
+                "name": "sibling",
+                "namespace": [
+                  "cb_c105_lakecat_pub_lakecat_tbl"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "load-primary",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 947,
+        "raw_body_sha256": "71826070182bed17953f16ad84baa426127a4ff9c5e2135aa284f8324e4d549a",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "primary",
+              "namespace": [
+                "cb_c105_lakecat_pub_lakecat_tbl"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892268302,
+              "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "ee548cfa-559a-4f4f-9ad5-7377e4d15a95"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary/metadata/00000-ee548cfa-559a-4f4f-9ad5-7377e4d15a95.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-sibling",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/sibling",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 947,
+        "raw_body_sha256": "df9870e58a64f8bc48c39dd325ab3457b267432b2de7c3fb4d6808437570ab11",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "sibling",
+              "namespace": [
+                "cb_c105_lakecat_pub_lakecat_tbl"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892268342,
+              "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "52a10224-ee7c-46b0-9eab-7fb58dfd53e5"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling/metadata/00000-52a10224-ee7c-46b0-9eab-7fb58dfd53e5.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "list-page-001",
+      "capability": "iceberg-rest.table.list",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables?pageToken=%3Credacted%3E&pageSize=1",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 151,
+        "raw_body_sha256": "f00270db365e41c9ad4efa4ea1303e2b99c595a27b290ed0efcf1a43a0acd803",
+        "body": {
+          "kind": "json",
+          "value": {
+            "identifiers": [
+              {
+                "name": "primary",
+                "namespace": [
+                  "cb_c105_lakecat_pub_lakecat_tbl"
+                ]
+              },
+              {
+                "name": "sibling",
+                "namespace": [
+                  "cb_c105_lakecat_pub_lakecat_tbl"
+                ]
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "update-primary-properties",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-05.state": "after"
+              }
+            },
+            {
+              "action": "remove-properties",
+              "removals": [
+                "c1-05.remove"
+              ]
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 967,
+        "raw_body_sha256": "3e902ccba33878423b4d0b897e74730e77f59c7297917fe654f76474ea09d86c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "lakecat:last-request-hash": "sha256:6534c9c4e505fa08f5a03e50643da2dccf84984523daef2db872d09407dc979e",
+              "lakecat:version": 1,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892268358,
+              "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.state": "after",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "ee548cfa-559a-4f4f-9ad5-7377e4d15a95"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary/metadata/00000001787892268358-107648bc-6382-4c5b-9797-0fe8b814d2f4.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-primary-after-update",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1059,
+        "raw_body_sha256": "04d8c8d543160258045d7f148276928ed33ba23effcb6e6dd5c09ce4251863e0",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "primary",
+              "namespace": [
+                "cb_c105_lakecat_pub_lakecat_tbl"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "lakecat:last-request-hash": "sha256:6534c9c4e505fa08f5a03e50643da2dccf84984523daef2db872d09407dc979e",
+              "lakecat:version": 1,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892268358,
+              "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.state": "after",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "ee548cfa-559a-4f4f-9ad5-7377e4d15a95"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary/metadata/00000001787892268358-107648bc-6382-4c5b-9797-0fe8b814d2f4.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "create-primary-duplicate",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary",
+          "name": "primary",
+          "properties": {
+            "c1-05.remove": "before",
+            "c1-05.state": "before",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 148,
+        "raw_body_sha256": "0c73544f4c8346807f5685027f83c7caf78ca2173e235e7bd6c0d358e94d7cd3",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "table already exists: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:primary",
+              "type": "AlreadyExistsException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "load-missing-table",
+      "capability": "iceberg-rest.error.spec-shape",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/missing",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 141,
+        "raw_body_sha256": "7984b39775b76d20fe960b64ab70163b21109cd853c5c0427a2e6d60593bcd59",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:missing",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "list-tables-missing-namespace",
+      "capability": "iceberg-rest.error.spec-shape",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl_missing/tables",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 129,
+        "raw_body_sha256": "1feba0d16686e6251fe2a6502e9e71ff1f0e5c14f20ba646365395fc6acf1c2a",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c105_lakecat_pub_lakecat_tbl_missing",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "rename-primary",
+      "capability": "iceberg-rest.table.rename",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/tables/rename",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "destination": {
+            "name": "renamed",
+            "namespace": [
+              "cb_c105_lakecat_pub_lakecat_tbl"
+            ]
+          },
+          "source": {
+            "name": "primary",
+            "namespace": [
+              "cb_c105_lakecat_pub_lakecat_tbl"
+            ]
+          }
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "load-primary-after-rename",
+      "capability": "iceberg-rest.table.rename",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 141,
+        "raw_body_sha256": "d79c8ed68ea04d6feb7698397bc20c4928d72abf36fd4f6e0e313d6a941752bb",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:primary",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "load-renamed-after-rename",
+      "capability": "iceberg-rest.table.rename",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/renamed",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 1059,
+        "raw_body_sha256": "15b4b877c281bac541b3a1ca4d5f06170ffd81ba01ec856a3baec9f9c0621e43",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "renamed",
+              "namespace": [
+                "cb_c105_lakecat_pub_lakecat_tbl"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "lakecat:last-request-hash": "sha256:6534c9c4e505fa08f5a03e50643da2dccf84984523daef2db872d09407dc979e",
+              "lakecat:version": 1,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892268358,
+              "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.state": "after",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "ee548cfa-559a-4f4f-9ad5-7377e4d15a95"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/primary/metadata/00000001787892268358-107648bc-6382-4c5b-9797-0fe8b814d2f4.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "drop-sibling-without-purge",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/sibling?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "load-sibling-after-drop",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/sibling",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 141,
+        "raw_body_sha256": "5930b272e1c98bdeb51710af4977728486ae84c824ee6fc4eb0a8353f87d0cf6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:sibling",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "register-sibling-metadata",
+      "capability": "iceberg-rest.table.register",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/register",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling/metadata/00000-52a10224-ee7c-46b0-9eab-7fb58dfd53e5.metadata.json",
+          "name": "registered",
+          "overwrite": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 950,
+        "raw_body_sha256": "c7b043d827ffd3b178c684a167550f29e70afe0eac4ce6e637a126a3fdced7f6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "registered",
+              "namespace": [
+                "cb_c105_lakecat_pub_lakecat_tbl"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892268342,
+              "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "52a10224-ee7c-46b0-9eab-7fb58dfd53e5"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling/metadata/00000-52a10224-ee7c-46b0-9eab-7fb58dfd53e5.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-registered-after-register",
+      "capability": "iceberg-rest.table.register",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/registered",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 950,
+        "raw_body_sha256": "c7b043d827ffd3b178c684a167550f29e70afe0eac4ce6e637a126a3fdced7f6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {},
+            "identifier": {
+              "name": "registered",
+              "namespace": [
+                "cb_c105_lakecat_pub_lakecat_tbl"
+              ]
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892268342,
+              "location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "properties": {
+                "c1-05.remove": "before",
+                "c1-05.state": "before",
+                "catalog-bench.owner": "catalog-bench"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "table-uuid": "52a10224-ee7c-46b0-9eab-7fb58dfd53e5"
+            },
+            "metadata-location": "s3://warehouse/lakecat/cb_c105_lakecat_pub_lakecat_tbl/sibling/metadata/00000-52a10224-ee7c-46b0-9eab-7fb58dfd53e5.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-primary",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/primary?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 141,
+        "raw_body_sha256": "d79c8ed68ea04d6feb7698397bc20c4928d72abf36fd4f6e0e313d6a941752bb",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:primary",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-renamed",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/renamed?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-sibling",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/sibling?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 141,
+        "raw_body_sha256": "5930b272e1c98bdeb51710af4977728486ae84c824ee6fc4eb0a8353f87d0cf6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:sibling",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-registered",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/registered?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-primary-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/primary",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 141,
+        "raw_body_sha256": "d79c8ed68ea04d6feb7698397bc20c4928d72abf36fd4f6e0e313d6a941752bb",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:primary",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-renamed-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/renamed",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 141,
+        "raw_body_sha256": "423e58edb5db2eb9e70c69d15cba9cb1ad4dd6232fdf33b6419a85278eadc648",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:renamed",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-sibling-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/sibling",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 141,
+        "raw_body_sha256": "5930b272e1c98bdeb51710af4977728486ae84c824ee6fc4eb0a8353f87d0cf6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:sibling",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-registered-absent",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl/tables/registered",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 144,
+        "raw_body_sha256": "84ad40d79397dd9882b5f91a22c589013e7f57a7928af00d91500e6b6ccf098d",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "table not found: lakecat:table:local:cb_c105_lakecat_pub_lakecat_tbl:registered",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-namespace",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-namespace-absent",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://lakecat:8181/catalog/v1/namespaces/cb_c105_lakecat_pub_lakecat_tbl",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json"
+        },
+        "body_bytes_observed": 121,
+        "raw_body_sha256": "d8a7aae3ad4abee12435d19e92f0d3ffd1e49dc4480a3bc8135a13a3d93f4d8c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "namespace not found: cb_c105_lakecat_pub_lakecat_tbl",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "pagination": {
+    "mode": "unpaginated-fallback",
+    "unique_tables": 2
+  },
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-namespace-created",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-create-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-list-visible",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-load-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-pagination-complete",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-update-round-trip",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "duplicate-table-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-table-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "missing-namespace-error-spec-shaped",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-rename-round-trip",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-drop-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-register-round-trip",
+      "required": false,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "table-fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "operations.list-page-001.request.url"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

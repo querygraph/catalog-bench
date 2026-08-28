@@ -1,0 +1,1385 @@
+{
+  "format": "catalog-bench/commit-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.commit.correctness",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "7df567363927001aa25e55c607f60feb63b2fe5442d82d800d298d87e8bc886d"
+  },
+  "adapter": {
+    "catalog": "polaris",
+    "name": "Apache Polaris",
+    "version": "1.7.0",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_polaris_cmt",
+    "namespace": [
+      "cb_c106_polaris_pub_polaris_cmt"
+    ],
+    "table": "commit_correctness"
+  },
+  "classification": {
+    "status": "pass"
+  },
+  "authentication": {
+    "mode": "oauth2-client-credentials",
+    "outcome": "ready",
+    "token_url": "http://polaris:8181/api/catalog/v1/oauth/tokens",
+    "scope": "PRINCIPAL_ROLE:ALL",
+    "http_status": 200
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://polaris:8181/api/catalog/v1/config?warehouse=bench",
+      "headers": {
+        "accept": "application/json",
+        "authorization": "<redacted>"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8",
+        "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000067"
+      },
+      "body_bytes_observed": 2160,
+      "raw_body_sha256": "50814e76ceed435eb070ccb48db6ed9bbb4a71b76480fb1d8cbb791310391296",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "default-base-location": "s3://warehouse/bench"
+          },
+          "endpoints": [
+            "GET /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/tables/rename",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+            "POST /v1/{prefix}/transactions/commit",
+            "GET /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/namespaces/{namespace}/views",
+            "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/views/rename",
+            "POST /v1/{prefix}/namespaces/{namespace}/register-view",
+            "GET polaris/v1/{prefix}/namespaces/{namespace}/generic-tables",
+            "POST polaris/v1/{prefix}/namespaces/{namespace}/generic-tables",
+            "DELETE polaris/v1/{prefix}/namespaces/{namespace}/generic-tables/{generic-table}",
+            "GET polaris/v1/{prefix}/namespaces/{namespace}/generic-tables/{generic-table}",
+            "GET /polaris/v1/{prefix}/namespaces/{namespace}/policies",
+            "POST /polaris/v1/{prefix}/namespaces/{namespace}/policies",
+            "GET /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}",
+            "PUT /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}",
+            "DELETE /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}",
+            "PUT /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}/mappings",
+            "POST /polaris/v1/{prefix}/namespaces/{namespace}/policies/{policy-name}/mappings",
+            "GET /polaris/v1/{prefix}/applicable-policies"
+          ],
+          "overrides": {
+            "namespace-separator": "%1F",
+            "prefix": "bench"
+          }
+        }
+      }
+    },
+    "prefix": {
+      "mode": "static",
+      "value": "bench"
+    },
+    "namespace_separator": {
+      "mode": "configured",
+      "json_pointer": "/overrides/namespace-separator",
+      "encoded": "%1F"
+    }
+  },
+  "idempotency": {
+    "status": "not-advertised"
+  },
+  "operations": [
+    {
+      "id": "preflight-namespace",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000068"
+        },
+        "body_bytes_observed": 126,
+        "raw_body_sha256": "a301679f05887d3692ff64933d13f2e3a28207931636adb904018527928ed4a9",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c106_polaris_pub_polaris_cmt",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-namespace",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c106_polaris_pub_polaris_cmt"
+          ],
+          "properties": {
+            "catalog-bench.owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000069"
+        },
+        "body_bytes_observed": 169,
+        "raw_body_sha256": "fae5d4c622d95312e1aec76b0ee4e54cdeb1e30e534eb625ed7eb37519fb641a",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c106_polaris_pub_polaris_cmt"
+            ],
+            "properties": {
+              "catalog-bench.owner": "catalog-bench",
+              "location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-table",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "commit_correctness",
+          "properties": {
+            "c1-06.state": "initial",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000070"
+        },
+        "body_bytes_observed": 1092,
+        "raw_body_sha256": "f3e06c23fcce8fbf95e68a97588d195af9f8a180f43cec5fa9a595dd7e404dce",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892276421,
+              "location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:36.420939462Z",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            "metadata-location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00000-174c1e2d-dadb-45a0-bdf7-ab3a635c347f.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-initial-table",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000071"
+        },
+        "body_bytes_observed": 1092,
+        "raw_body_sha256": "f3e06c23fcce8fbf95e68a97588d195af9f8a180f43cec5fa9a595dd7e404dce",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892276421,
+              "location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:36.420939462Z",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            "metadata-location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00000-174c1e2d-dadb-45a0-bdf7-ab3a635c347f.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-current-requirements",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.state": "requirement-accepted"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000072"
+        },
+        "body_bytes_observed": 1188,
+        "raw_body_sha256": "5cd629a25d3f7ff05a6cabb244cc7c35f3364ae89fab019dd89a8233ef7af7c3",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892276475,
+              "location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00000-174c1e2d-dadb-45a0-bdf7-ab3a635c347f.metadata.json",
+                  "timestamp-ms": 1787892276421
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:36.420939462Z",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            "metadata-location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00001-adcac15d-8a80-4fa0-ae94-b6e9ed42f296.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-current-requirements",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000073"
+        },
+        "body_bytes_observed": 1291,
+        "raw_body_sha256": "18b8c34bf553d0d8c95942c0a880a312f93fb6c26d65658bb7881eb72cc7a45a",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892276475,
+              "location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00000-174c1e2d-dadb-45a0-bdf7-ab3a635c347f.metadata.json",
+                  "timestamp-ms": 1787892276421
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:36.420939462Z",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            "metadata-location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00001-adcac15d-8a80-4fa0-ae94-b6e9ed42f296.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-schema-transition",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            },
+            {
+              "last-assigned-field-id": 1,
+              "type": "assert-last-assigned-field-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "add-schema",
+              "last-column-id": 2,
+              "schema": {
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "value",
+                    "required": false,
+                    "type": "long"
+                  },
+                  {
+                    "id": 2,
+                    "name": "note",
+                    "required": false,
+                    "type": "string"
+                  }
+                ],
+                "schema-id": 1,
+                "type": "struct"
+              }
+            },
+            {
+              "action": "set-current-schema",
+              "schema-id": 1
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000074"
+        },
+        "body_bytes_observed": 1529,
+        "raw_body_sha256": "50bb5f522c5495a5daa3ea7e868aab07f522646ff2e4ad3e08d928d12f68a723",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892276505,
+              "location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00000-174c1e2d-dadb-45a0-bdf7-ab3a635c347f.metadata.json",
+                  "timestamp-ms": 1787892276421
+                },
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00001-adcac15d-8a80-4fa0-ae94-b6e9ed42f296.metadata.json",
+                  "timestamp-ms": 1787892276475
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:36.420939462Z",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            "metadata-location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00002-b529f0df-d1e9-44c9-b0ef-d6532813a89e.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-schema-transition",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000075"
+        },
+        "body_bytes_observed": 1632,
+        "raw_body_sha256": "ef332cd31173b892ac356c66e4555136346a2a39a1f5a4b3c66af5a8f33a715b",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892276505,
+              "location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00000-174c1e2d-dadb-45a0-bdf7-ab3a635c347f.metadata.json",
+                  "timestamp-ms": 1787892276421
+                },
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00001-adcac15d-8a80-4fa0-ae94-b6e9ed42f296.metadata.json",
+                  "timestamp-ms": 1787892276475
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:36.420939462Z",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            "metadata-location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00002-b529f0df-d1e9-44c9-b0ef-d6532813a89e.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-stale-requirement",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.stale": "must-not-apply"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000076"
+        },
+        "body_bytes_observed": 128,
+        "raw_body_sha256": "59274f0fbe3d1fb61a1ddcf15dd3aeb97b9e20d91ed5dfe56573be58246ee36d",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "Requirement failed: current schema changed: expected id 0 != 1",
+              "type": "CommitFailedException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-stale-requirement",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000077"
+        },
+        "body_bytes_observed": 1632,
+        "raw_body_sha256": "ef332cd31173b892ac356c66e4555136346a2a39a1f5a4b3c66af5a8f33a715b",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892276505,
+              "location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00000-174c1e2d-dadb-45a0-bdf7-ab3a635c347f.metadata.json",
+                  "timestamp-ms": 1787892276421
+                },
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00001-adcac15d-8a80-4fa0-ae94-b6e9ed42f296.metadata.json",
+                  "timestamp-ms": 1787892276475
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:36.420939462Z",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            "metadata-location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00002-b529f0df-d1e9-44c9-b0ef-d6532813a89e.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-required-final-state",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000078"
+        },
+        "body_bytes_observed": 1632,
+        "raw_body_sha256": "ef332cd31173b892ac356c66e4555136346a2a39a1f5a4b3c66af5a8f33a715b",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892276505,
+              "location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness",
+              "metadata-log": [
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00000-174c1e2d-dadb-45a0-bdf7-ab3a635c347f.metadata.json",
+                  "timestamp-ms": 1787892276421
+                },
+                {
+                  "metadata-file": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00001-adcac15d-8a80-4fa0-ae94-b6e9ed42f296.metadata.json",
+                  "timestamp-ms": 1787892276475
+                }
+              ],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:36.420939462Z",
+                "write.parquet.compression-codec": "zstd"
+              },
+              "refs": {},
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "b60dd38e-1816-442f-8136-ad6e7facdd51"
+            },
+            "metadata-location": "s3://warehouse/bench/cb_c106_polaris_pub_polaris_cmt/commit_correctness/metadata/00002-b529f0df-d1e9-44c9-b0ef-d6532813a89e.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "commit-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "commit-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "cleanup-drop-table",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness?purgeRequested=false",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000079"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-table-absent",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000080"
+        },
+        "body_bytes_observed": 137,
+        "raw_body_sha256": "e120cc3684ac94b72c62fd582a5b81c88ebb50585bd47fb97fa39fd348aa3b55",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c106_polaris_pub_polaris_cmt.commit_correctness",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-namespace",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000081"
+        },
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-namespace-absent",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://polaris:8181/api/catalog/v1/bench/namespaces/cb_c106_polaris_pub_polaris_cmt",
+        "headers": {
+          "accept": "application/json",
+          "authorization": "<redacted>"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json",
+          "x-request-id": "e0826e74-20a4-4929-a2fb-67e5fda93bb5_0000000000000000082"
+        },
+        "body_bytes_observed": 126,
+        "raw_body_sha256": "a301679f05887d3692ff64933d13f2e3a28207931636adb904018527928ed4a9",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c106_polaris_pub_polaris_cmt",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "current-requirements-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "schema-transition-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "stale-requirement-rejected-atomically",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "idempotency-support-advertised",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "exact-request-replayed-once",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "idempotency-content-drift-rejected",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "required-final-state-exact",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [
+      "authentication.oauth2-request-credentials",
+      "authentication.oauth2-response-token",
+      "config.request.headers.authorization",
+      "operations.cleanup-drop-namespace.request.headers.authorization",
+      "operations.cleanup-drop-table.request.headers.authorization",
+      "operations.cleanup-verify-namespace-absent.request.headers.authorization",
+      "operations.cleanup-verify-table-absent.request.headers.authorization",
+      "operations.commit-current-requirements.request.headers.authorization",
+      "operations.commit-schema-transition.request.headers.authorization",
+      "operations.commit-stale-requirement.request.headers.authorization",
+      "operations.create-namespace.request.headers.authorization",
+      "operations.create-table.request.headers.authorization",
+      "operations.load-initial-table.request.headers.authorization",
+      "operations.load-required-final-state.request.headers.authorization",
+      "operations.preflight-namespace.request.headers.authorization",
+      "operations.reload-after-current-requirements.request.headers.authorization",
+      "operations.reload-after-schema-transition.request.headers.authorization",
+      "operations.reload-after-stale-requirement.request.headers.authorization"
+    ],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

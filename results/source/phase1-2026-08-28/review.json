@@ -1,0 +1,37 @@
+{
+  "format": "catalog-bench/phase1-result-review/v1",
+  "bundle": {
+    "id": "phase1-behavior-2026-08-28",
+    "title": "2026-08-28 Phase 1 catalog behavior and stock-client interoperability",
+    "output_directory": "results/v1/2026-08-28-phase1",
+    "created_at": "2026-08-28T04:48:00Z"
+  },
+  "run": {
+    "id": "phase1-publication-2026-08-28",
+    "started_at": "2026-08-28T04:44:05Z",
+    "completed_at": "2026-08-28T04:45:15Z",
+    "sanitized_invocation": "optimized Compose conformance matrix (4 scenarios x 5 catalogs), followed by stock PyIceberg matrix (1 scenario x 5 catalogs)"
+  },
+  "source_profile": "profiles/v1/current-2026-08-26.json",
+  "publication_profile": "profiles/v1/phase1-2026-08-28.json",
+  "evidence_directory": "results/source/phase1-2026-08-28/evidence",
+  "environment": {
+    "operating_system": "Linux 6.12.76-linuxkit",
+    "architecture": "aarch64",
+    "logical_cpus": 10,
+    "memory_bytes": 8321712128,
+    "container_runtime": "Docker Engine 29.4.3; Docker Compose v5.1.3",
+    "network": "catalog-bench-net: one Docker bridge shared by the optimized runner, all catalogs, state stores, and source-built MinIO"
+  },
+  "redaction": {
+    "reviewed": true,
+    "policy": "All runners use value-safe transcript contracts: authorization, OAuth tokens, delegated storage credentials, idempotency keys, raw row values, and raw response bodies are omitted or redacted before persistence. The publication scanner independently rejects credential shapes and non-redacted structured secret fields.",
+    "removed_fields": [
+      "OAuth client credentials and bearer tokens",
+      "authorization and idempotency request header values",
+      "delegated object-store credentials",
+      "raw row values and raw response bodies",
+      "unbounded client exception text"
+    ]
+  }
+}

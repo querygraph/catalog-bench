@@ -1,0 +1,1331 @@
+{
+  "format": "catalog-bench/commit-transcript/v1",
+  "profile": "catalog-community-current-2026-08-26-linux-arm64",
+  "scenario": {
+    "id": "iceberg-rest.commit.correctness",
+    "version": 1
+  },
+  "contract_digests": {
+    "profile_sha256": "648d02ec4df5faceeca95d60feb896a5598ff87f075ce77ab633ed580f594465",
+    "scenario_sha256": "7df567363927001aa25e55c607f60feb63b2fe5442d82d800d298d87e8bc886d"
+  },
+  "adapter": {
+    "catalog": "nessie",
+    "name": "Apache Nessie",
+    "version": "0.108.4",
+    "protocol": "iceberg-rest-v1",
+    "request_handling": {
+      "kind": "protocol-native"
+    }
+  },
+  "fixture": {
+    "id": "pub_nessie_cmt",
+    "namespace": [
+      "cb_c106_nessie_pub_nessie_cmt"
+    ],
+    "table": "commit_correctness"
+  },
+  "classification": {
+    "status": "fail",
+    "summary": "one or more required commit-correctness assertions did not pass"
+  },
+  "authentication": {
+    "mode": "anonymous",
+    "outcome": "ready"
+  },
+  "config": {
+    "request": {
+      "method": "GET",
+      "url": "http://nessie:19120/iceberg/v1/config",
+      "headers": {
+        "accept": "application/json"
+      }
+    },
+    "response": {
+      "status": 200,
+      "headers": {
+        "content-type": "application/json;charset=UTF-8"
+      },
+      "body_bytes_observed": 1786,
+      "raw_body_sha256": "32d0a2aa56929a2fb0882ae510afa2945fae209de49d36ad67d9ff20977f4f06",
+      "body": {
+        "kind": "json",
+        "value": {
+          "defaults": {
+            "prefix": "main",
+            "rest-metrics-reporting-enabled": "false",
+            "rest-page-size": "200",
+            "warehouse": "s3://warehouse"
+          },
+          "endpoints": [
+            "GET /v1/{prefix}/namespaces",
+            "GET /v1/{prefix}/namespaces/{namespace}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/namespaces",
+            "POST /v1/{prefix}/namespaces/{namespace}/properties",
+            "DELETE /v1/{prefix}/namespaces/{namespace}",
+            "POST /v1/{prefix}/transactions/commit",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/tables/{table}",
+            "POST /v1/{prefix}/tables/rename",
+            "POST /v1/{prefix}/namespaces/{namespace}/register",
+            "GET /v1/{prefix}/namespaces/{namespace}/tables/{table}/credentials",
+            "POST /v1/{prefix}/namespaces/{namespace}/tables/{table}/metrics",
+            "GET /v1/{prefix}/namespaces/{namespace}/views",
+            "GET /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "HEAD /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/namespaces/{namespace}/views",
+            "POST /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "DELETE /v1/{prefix}/namespaces/{namespace}/views/{view}",
+            "POST /v1/{prefix}/views/rename"
+          ],
+          "overrides": {
+            "nessie.catalog-base-uri": "http://nessie:19120/catalog/v1/",
+            "nessie.core-base-uri": "http://nessie:19120/api/",
+            "nessie.default-branch.name": "main",
+            "nessie.iceberg-base-uri": "http://nessie:19120/iceberg/",
+            "nessie.is-nessie-catalog": "true",
+            "nessie.prefix-pattern": "{ref}|{warehouse}",
+            "uri": "http://nessie:19120/iceberg/"
+          }
+        }
+      }
+    },
+    "prefix": {
+      "mode": "static",
+      "value": "main"
+    },
+    "namespace_separator": {
+      "mode": "default",
+      "encoded": "%1F"
+    }
+  },
+  "idempotency": {
+    "status": "not-advertised"
+  },
+  "operations": [
+    {
+      "id": "preflight-namespace",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "d2aba615b24b39207ef828106bf0181a3e5692f66087d96a4a4dd07804d462f5",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c106_nessie_pub_nessie_cmt",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-namespace",
+      "capability": "iceberg-rest.namespace.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "namespace": [
+            "cb_c106_nessie_pub_nessie_cmt"
+          ],
+          "properties": {
+            "catalog-bench.owner": "catalog-bench"
+          }
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 123,
+        "raw_body_sha256": "b173550fb83f004b8d278f95ee6b929cb3971a6e097bb05d1e798552cb051b04",
+        "body": {
+          "kind": "json",
+          "value": {
+            "namespace": [
+              "cb_c106_nessie_pub_nessie_cmt"
+            ],
+            "properties": {
+              "catalog-bench.owner": "catalog-bench"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "create-table",
+      "capability": "iceberg-rest.table.create",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "name": "commit_correctness",
+          "properties": {
+            "c1-06.state": "initial",
+            "catalog-bench.owner": "catalog-bench"
+          },
+          "schema": {
+            "fields": [
+              {
+                "id": 1,
+                "name": "value",
+                "required": false,
+                "type": "long"
+              }
+            ],
+            "schema-id": 0,
+            "type": "struct"
+          },
+          "stage-create": false
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2376,
+        "raw_body_sha256": "b096096d7235a52c57345651e1b96f7f2671c647e57b7984a3b4c8bd0e5bd220",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32NvUoEMRSFsbW1s7axiDOTyeRnW1u1UPvh5uZGg8wPmQy7VlaKgor4MD6Pj-HuWsgKuyKC3Tnng_NN9re3FndXdH0CDSHqXFSSHKucQia4IqZzKRlaWZZeOV0IvB_CRQtpjHST81J4bgl05S33aKQplfBSS2G5Qqs0cOKojSwrhSaHkhvuOFiw1ngtn1dXFM_Wh4vbPpIPs8MGQvsQHLUp-ECxQ1tjkcu6pWEIVPejXUds0gF2TRNSjV2MhGkFXqYQ6bIbBzrqEFLo2uOhnGTZZn6axpA2cPh4_42zf4XZX2HtSHgiVIxyUTBhAZgmI5kH7WxRKHTWfM4fI4H7sc5fadaH-N3OQ0NDgqbf2z3dwbfl8gsKFmElmgEAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892299172,
+              "location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:59.169709501Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "7bdb458a-db49-4214-98e5-87291d4b1777",
+                "nessie.commit.id": "2e2fdc0cbc3c4ae2ecedc277c899d28f309513d1835ae4f8ef578408d4956218",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9/metadata/00000-c5a43712-66f8-4576-9348-caa8cfe49dd1.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-initial-table",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2376,
+        "raw_body_sha256": "b096096d7235a52c57345651e1b96f7f2671c647e57b7984a3b4c8bd0e5bd220",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32NvUoEMRSFsbW1s7axiDOTyeRnW1u1UPvh5uZGg8wPmQy7VlaKgor4MD6Pj-HuWsgKuyKC3Tnng_NN9re3FndXdH0CDSHqXFSSHKucQia4IqZzKRlaWZZeOV0IvB_CRQtpjHST81J4bgl05S33aKQplfBSS2G5Qqs0cOKojSwrhSaHkhvuOFiw1ngtn1dXFM_Wh4vbPpIPs8MGQvsQHLUp-ECxQ1tjkcu6pWEIVPejXUds0gF2TRNSjV2MhGkFXqYQ6bIbBzrqEFLo2uOhnGTZZn6axpA2cPh4_42zf4XZX2HtSHgiVIxyUTBhAZgmI5kH7WxRKHTWfM4fI4H7sc5fadaH-N3OQ0NDgqbf2z3dwbfl8gsKFmElmgEAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892299172,
+              "location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "initial",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:59.169709501Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "7bdb458a-db49-4214-98e5-87291d4b1777",
+                "nessie.commit.id": "2e2fdc0cbc3c4ae2ecedc277c899d28f309513d1835ae4f8ef578408d4956218",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9/metadata/00000-c5a43712-66f8-4576-9348-caa8cfe49dd1.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-current-requirements",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.state": "requirement-accepted"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 1576,
+        "raw_body_sha256": "f17caf7e0d0fa1bef9995c7ccaad9f9aee2cc64882ed0dc3d4a88936e6040e45",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892299198,
+              "location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:59.169709501Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "7bdb458a-db49-4214-98e5-87291d4b1777",
+                "nessie.commit.id": "56ea0f2030f63cc8c1a44719391eac16c613572a708a2a9d0abebbc4a032a5ea",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9/metadata/00000-71e2981f-b184-4b3b-b54c-b537cc569237.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-current-requirements",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2389,
+        "raw_body_sha256": "67ec5e58bd0d4ae37549585f5d6bbe7578d43f1588db959629735e68a7c0da9b",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32NvUoEMRSFsbW1s7axiDOTyeRnW1u1UPvh5uZGg8wPmQy7VlaKgor4MD6Pj-HuWsgKuyKC3Tnng_NN9re3FndXdH0CDSHqXFSSHKucQia4IqZzKRlaWZZeOV0IvB_CRQtpjHST81J4bgl05S33aKQplfBSS2G5Qqs0cOKojSwrhSaHkhvuOFiw1ngtn1dXFM_Wh4vbPpIPs8MGQvsQHLUp-ECxQ1tjkcu6pWEIVPejXUds0gF2TRNSjV2MhGkFXqYQ6bIbBzrqEFLo2uOhnGTZZn6axpA2cPh4_42zf4XZX2HtSHgiVIxyUTBhAZgmI5kH7WxRKHTWfM4fI4H7sc5fadaH-N3OQ0NDgqbf2z3dwbfl8gsKFmElmgEAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 0,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 1,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892299198,
+              "location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:59.169709501Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "7bdb458a-db49-4214-98e5-87291d4b1777",
+                "nessie.commit.id": "56ea0f2030f63cc8c1a44719391eac16c613572a708a2a9d0abebbc4a032a5ea",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9/metadata/00000-71e2981f-b184-4b3b-b54c-b537cc569237.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-schema-transition",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            },
+            {
+              "last-assigned-field-id": 1,
+              "type": "assert-last-assigned-field-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "add-schema",
+              "last-column-id": 2,
+              "schema": {
+                "fields": [
+                  {
+                    "id": 1,
+                    "name": "value",
+                    "required": false,
+                    "type": "long"
+                  },
+                  {
+                    "id": 2,
+                    "name": "note",
+                    "required": false,
+                    "type": "string"
+                  }
+                ],
+                "schema-id": 1,
+                "type": "struct"
+              }
+            },
+            {
+              "action": "set-current-schema",
+              "schema-id": 1
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 1868,
+        "raw_body_sha256": "3b5ba4f881ce3f49f583a11f939ed84ac91357d3a73d61c776666808c7529e6c",
+        "body": {
+          "kind": "json",
+          "value": {
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892299228,
+              "location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:59.169709501Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "7bdb458a-db49-4214-98e5-87291d4b1777",
+                "nessie.commit.id": "cad1d781fe4ae915413f72ab05b57089946a0cfef567e29bcb296363f35a0506",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9/metadata/00000-ee17f2cc-2f36-405e-a077-b9684b1c42b5.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-schema-transition",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2681,
+        "raw_body_sha256": "e6341e6371055fea74b967ac24e1156cd700a2a4d4a53a59cc6699fb4d448a95",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32NvUoEMRSFsbW1s7axiDOTyeRnW1u1UPvh5uZGg8wPmQy7VlaKgor4MD6Pj-HuWsgKuyKC3Tnng_NN9re3FndXdH0CDSHqXFSSHKucQia4IqZzKRlaWZZeOV0IvB_CRQtpjHST81J4bgl05S33aKQplfBSS2G5Qqs0cOKojSwrhSaHkhvuOFiw1ngtn1dXFM_Wh4vbPpIPs8MGQvsQHLUp-ECxQ1tjkcu6pWEIVPejXUds0gF2TRNSjV2MhGkFXqYQ6bIbBzrqEFLo2uOhnGTZZn6axpA2cPh4_42zf4XZX2HtSHgiVIxyUTBhAZgmI5kH7WxRKHTWfM4fI4H7sc5fadaH-N3OQ0NDgqbf2z3dwbfl8gsKFmElmgEAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892299228,
+              "location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:59.169709501Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "7bdb458a-db49-4214-98e5-87291d4b1777",
+                "nessie.commit.id": "cad1d781fe4ae915413f72ab05b57089946a0cfef567e29bcb296363f35a0506",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9/metadata/00000-ee17f2cc-2f36-405e-a077-b9684b1c42b5.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-stale-requirement",
+      "capability": "iceberg-rest.table.update",
+      "status": "attempted",
+      "request": {
+        "method": "POST",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json",
+          "content-type": "application/json"
+        },
+        "body": {
+          "requirements": [
+            {
+              "type": "assert-table-uuid",
+              "uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            {
+              "current-schema-id": 0,
+              "type": "assert-current-schema-id"
+            }
+          ],
+          "updates": [
+            {
+              "action": "set-properties",
+              "updates": {
+                "c1-06.stale": "must-not-apply"
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 409,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 134,
+        "raw_body_sha256": "a993d6cbad11b4be51ea2a82967d538a9d40c914a7a7075070be9f3897a4cb74",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 409,
+              "message": "Requirement failed: current schema changed: expected 1 != 0",
+              "type": ""
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "reload-after-stale-requirement",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2681,
+        "raw_body_sha256": "e6341e6371055fea74b967ac24e1156cd700a2a4d4a53a59cc6699fb4d448a95",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32NvUoEMRSFsbW1s7axiDOTyeRnW1u1UPvh5uZGg8wPmQy7VlaKgor4MD6Pj-HuWsgKuyKC3Tnng_NN9re3FndXdH0CDSHqXFSSHKucQia4IqZzKRlaWZZeOV0IvB_CRQtpjHST81J4bgl05S33aKQplfBSS2G5Qqs0cOKojSwrhSaHkhvuOFiw1ngtn1dXFM_Wh4vbPpIPs8MGQvsQHLUp-ECxQ1tjkcu6pWEIVPejXUds0gF2TRNSjV2MhGkFXqYQ6bIbBzrqEFLo2uOhnGTZZn6axpA2cPh4_42zf4XZX2HtSHgiVIxyUTBhAZgmI5kH7WxRKHTWfM4fI4H7sc5fadaH-N3OQ0NDgqbf2z3dwbfl8gsKFmElmgEAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892299228,
+              "location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:59.169709501Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "7bdb458a-db49-4214-98e5-87291d4b1777",
+                "nessie.commit.id": "cad1d781fe4ae915413f72ab05b57089946a0cfef567e29bcb296363f35a0506",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9/metadata/00000-ee17f2cc-2f36-405e-a077-b9684b1c42b5.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "load-required-final-state",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 2681,
+        "raw_body_sha256": "e6341e6371055fea74b967ac24e1156cd700a2a4d4a53a59cc6699fb4d448a95",
+        "body": {
+          "kind": "json",
+          "value": {
+            "config": {
+              "client.region": "us-east-1",
+              "io-impl": "org.apache.iceberg.aws.s3.S3FileIO",
+              "py-io-impl": "pyiceberg.io.fsspec.FsspecFileIO",
+              "s3.endpoint": "http://minio:9000",
+              "s3.path-style-access": "true",
+              "s3.remote-signing-enabled": "true",
+              "s3.signer": "S3V4RestSigner",
+              "s3.signer.endpoint": "v1/main/s3sign/H4sIAAAAAAAA_32NvUoEMRSFsbW1s7axiDOTyeRnW1u1UPvh5uZGg8wPmQy7VlaKgor4MD6Pj-HuWsgKuyKC3Tnng_NN9re3FndXdH0CDSHqXFSSHKucQia4IqZzKRlaWZZeOV0IvB_CRQtpjHST81J4bgl05S33aKQplfBSS2G5Qqs0cOKojSwrhSaHkhvuOFiw1ngtn1dXFM_Wh4vbPpIPs8MGQvsQHLUp-ECxQ1tjkcu6pWEIVPejXUds0gF2TRNSjV2MhGkFXqYQ6bIbBzrqEFLo2uOhnGTZZn6axpA2cPh4_42zf4XZX2HtSHgiVIxyUTBhAZgmI5kH7WxRKHTWfM4fI4H7sc5fadaH-N3OQ0NDgqbf2z3dwbfl8gsKFmElmgEAAA",
+              "s3.signer.uri": "http://nessie:19120/iceberg/"
+            },
+            "metadata": {
+              "current-schema-id": 1,
+              "current-snapshot-id": -1,
+              "default-sort-order-id": 0,
+              "default-spec-id": 0,
+              "format-version": 2,
+              "last-column-id": 2,
+              "last-partition-id": 999,
+              "last-sequence-number": 0,
+              "last-updated-ms": 1787892299228,
+              "location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9",
+              "metadata-log": [],
+              "partition-specs": [
+                {
+                  "fields": [],
+                  "spec-id": 0
+                }
+              ],
+              "partition-statistics": [],
+              "properties": {
+                "c1-06.state": "requirement-accepted",
+                "catalog-bench.owner": "catalog-bench",
+                "created-at": "2026-08-28T04:44:59.169709501Z",
+                "gc.enabled": "false",
+                "nessie.catalog.content-id": "7bdb458a-db49-4214-98e5-87291d4b1777",
+                "nessie.commit.id": "cad1d781fe4ae915413f72ab05b57089946a0cfef567e29bcb296363f35a0506",
+                "nessie.commit.ref": "main"
+              },
+              "schemas": [
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    }
+                  ],
+                  "schema-id": 0,
+                  "type": "struct"
+                },
+                {
+                  "fields": [
+                    {
+                      "id": 1,
+                      "name": "value",
+                      "required": false,
+                      "type": "long"
+                    },
+                    {
+                      "id": 2,
+                      "name": "note",
+                      "required": false,
+                      "type": "string"
+                    }
+                  ],
+                  "schema-id": 1,
+                  "type": "struct"
+                }
+              ],
+              "snapshot-log": [],
+              "snapshots": [],
+              "sort-orders": [
+                {
+                  "fields": [],
+                  "order-id": 0
+                }
+              ],
+              "statistics": [],
+              "table-uuid": "5647c031-7cc1-449e-9e31-1e48f79c9ea3"
+            },
+            "metadata-location": "s3://warehouse/cb_c106_nessie_pub_nessie_cmt/commit_correctness_de4feec7-e041-4baa-8e96-fa8db117cdb9/metadata/00000-ee17f2cc-2f36-405e-a077-b9684b1c42b5.metadata.json"
+          }
+        }
+      }
+    },
+    {
+      "id": "commit-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotent-first",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "commit-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotent-replay",
+      "capability": "iceberg-rest.table.commit.exact-retry",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "commit-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "reload-after-idempotency-drift",
+      "capability": "iceberg-rest.idempotency-key.content-binding",
+      "status": "not-attempted",
+      "reason": "config does not advertise idempotency-key-lifetime"
+    },
+    {
+      "id": "cleanup-drop-table",
+      "capability": "iceberg-rest.table.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness?purgeRequested=false",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-table-absent",
+      "capability": "iceberg-rest.table.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt/tables/commit_correctness",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 165,
+        "raw_body_sha256": "bb2f160dd4497f0ae060de3dface031307b17600030f32c8ee96ac4345cfb7a6",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Table does not exist: cb_c106_nessie_pub_nessie_cmt.commit_correctness",
+              "type": "NoSuchTableException"
+            }
+          }
+        }
+      }
+    },
+    {
+      "id": "cleanup-drop-namespace",
+      "capability": "iceberg-rest.namespace.drop",
+      "status": "attempted",
+      "request": {
+        "method": "DELETE",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 204,
+        "headers": {},
+        "body_bytes_observed": 0,
+        "body": {
+          "kind": "omitted",
+          "reason": "response body is empty"
+        }
+      }
+    },
+    {
+      "id": "cleanup-verify-namespace-absent",
+      "capability": "iceberg-rest.namespace.load",
+      "status": "attempted",
+      "request": {
+        "method": "GET",
+        "url": "http://nessie:19120/iceberg/v1/main/namespaces/cb_c106_nessie_pub_nessie_cmt",
+        "headers": {
+          "accept": "application/json"
+        }
+      },
+      "response": {
+        "status": 404,
+        "headers": {
+          "content-type": "application/json;charset=UTF-8"
+        },
+        "body_bytes_observed": 154,
+        "raw_body_sha256": "d2aba615b24b39207ef828106bf0181a3e5692f66087d96a4a4dd07804d462f5",
+        "body": {
+          "kind": "json",
+          "value": {
+            "error": {
+              "code": 404,
+              "message": "Namespace does not exist: cb_c106_nessie_pub_nessie_cmt",
+              "type": "NoSuchNamespaceException"
+            }
+          }
+        }
+      }
+    }
+  ],
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "config-routing-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "fixture-isolated",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-ready",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "current-requirements-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "schema-transition-admitted",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "stale-requirement-rejected-atomically",
+      "required": true,
+      "outcome": {
+        "status": "fail",
+        "explanation": "error type is empty"
+      }
+    },
+    {
+      "assertion": "idempotency-support-advertised",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "exact-request-replayed-once",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "idempotency-content-drift-rejected",
+      "required": false,
+      "outcome": {
+        "status": "not-evaluated",
+        "reason": "config does not advertise idempotency-key-lifetime"
+      }
+    },
+    {
+      "assertion": "required-final-state-exact",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "commit-fixture-clean",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "required": true,
+      "outcome": {
+        "status": "pass"
+      }
+    }
+  ],
+  "sanitization": {
+    "policy": "automated-v1",
+    "redactions": [],
+    "raw_secrets_persisted": false,
+    "raw_response_body_persisted": false
+  }
+}

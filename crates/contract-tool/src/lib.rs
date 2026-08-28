@@ -12,6 +12,8 @@ mod engine_review;
 mod flink_profile;
 mod legacy_commit;
 mod matrix;
+mod phase1_bundle;
+mod phase1_profile;
 mod profile_materialization;
 mod profile_runtime_policy;
 mod publication;
@@ -35,6 +37,8 @@ pub use engine_review::{validate_engine_result_review, ValidatedEngineResultRevi
 pub use flink_profile::{check_flink_profile, render_flink_profile, write_flink_profile};
 pub use legacy_commit::{check_historical_commit_bundle, write_historical_commit_bundle};
 pub use matrix::{render_commit_matrix, render_matrix};
+pub use phase1_bundle::{check_phase1_result_bundle, write_phase1_result_bundle};
+pub use phase1_profile::{check_phase1_profile, render_phase1_profile, write_phase1_profile};
 pub use profile_materialization::{
     check_scenario_profile, render_scenario_profile, write_scenario_profile, ArtifactCopyPolicy,
     ArtifactPolicy, BuildExtensionLabelPolicy, ImagePolicy, RequiredLabelPolicy,

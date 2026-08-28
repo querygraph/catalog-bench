@@ -1,0 +1,220 @@
+{
+  "assertions": [
+    {
+      "assertion": "authentication-ready",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "config-routing-ready",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "fixture-isolated",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "namespace-create-round-trip",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "namespace-list-visible",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "namespace-load-round-trip",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "namespace-properties-updated",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": false
+    },
+    {
+      "assertion": "duplicate-error-spec-shaped",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "namespace-hierarchy-preserved",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "namespace-pagination-complete",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "missing-parent-error-spec-shaped",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "namespace-drop-clean",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    },
+    {
+      "assertion": "transcript-sanitized",
+      "evidence": [
+        "source-transcript"
+      ],
+      "outcome": {
+        "status": "pass"
+      },
+      "required": true
+    }
+  ],
+  "catalog": {
+    "name": "LakeCat",
+    "profile_component": "lakecat",
+    "version": "0.3.0-42-g962f43cb"
+  },
+  "contract_version": "catalog-bench/v1",
+  "environment": {
+    "architecture": "aarch64",
+    "container_runtime": {
+      "precision": "exact",
+      "value": "Docker Engine 29.4.3; Docker Compose v5.1.3"
+    },
+    "cpu_model": {
+      "explanation": "The LinuxKit container boundary did not expose a CPU model; no host model is substituted.",
+      "precision": "unknown"
+    },
+    "logical_cpus": {
+      "precision": "exact",
+      "value": 10
+    },
+    "memory_bytes": {
+      "precision": "exact",
+      "value": 8321712128
+    },
+    "network": "catalog-bench-net: one Docker bridge shared by the optimized runner, all catalogs, state stores, and source-built MinIO",
+    "operating_system": "Linux 6.12.76-linuxkit",
+    "runtime_flags": {
+      "claim_scope": "correctness only; elapsed time and resource utilization are not measured",
+      "runner_build": "Rust 1.97.1; release; opt-level=3; fat LTO; codegen-units=1; target-cpu=native; panic=abort; stripped"
+    }
+  },
+  "evidence": [
+    {
+      "artifact": {
+        "bytes": 34890,
+        "description": "Sanitized value-safe Phase 1 stock-client transcript.",
+        "digest": {
+          "algorithm": "sha256",
+          "value": "f40d0b23dddbb3344c93a1b1b3500a33cd1657a075a8d02527b696f7deb8d590"
+        },
+        "location": "../../source/phase1-2026-08-28/evidence/namespace-lakecat.json",
+        "media_type": "application/json"
+      },
+      "id": "source-transcript",
+      "kind": "http-transcript",
+      "redactions": [
+        "OAuth client credentials and bearer tokens",
+        "authorization and idempotency request header values",
+        "delegated object-store credentials",
+        "raw row values and raw response bodies",
+        "unbounded client exception text"
+      ],
+      "sanitized": true
+    }
+  ],
+  "extensions": {
+    "querygraph/source-transcript-format": "catalog-bench/namespace-transcript/v1"
+  },
+  "id": "phase1-behavior-2026-08-28-iceberg-rest-namespace-behavior-lakecat",
+  "kind": "result",
+  "outcome": {
+    "status": "pass",
+    "summary": "Every required assertion passed in the reviewed value-safe transcript."
+  },
+  "profile": {
+    "digest": {
+      "algorithm": "sha256",
+      "value": "99f940600836c3f98fca92a79f9ab0c5ddea4cf52081ea251f809bad1bd25495"
+    },
+    "id": "catalog-community-phase1-2026-08-28-linux-arm64"
+  },
+  "run": {
+    "finished_at": "2026-08-28T04:45:15Z",
+    "id": "phase1-publication-2026-08-28-iceberg-rest-namespace-behavior-lakecat",
+    "kind": "single",
+    "repetition": 1,
+    "started_at": "2026-08-28T04:44:05Z"
+  },
+  "scenario": {
+    "digest": {
+      "algorithm": "sha256",
+      "value": "0cd6262c9bda87ac217e8fc618cf3138ddabe6ca89aac94ee05628a67729b7ac"
+    },
+    "id": "iceberg-rest.namespace.behavior",
+    "version": 1
+  }
+}
