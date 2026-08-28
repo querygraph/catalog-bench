@@ -18,6 +18,8 @@
   arms the proxy, performs one metadata PUT, observes the object directly, and
   emits bounded JSON proving absence before upstream admission and presence
   after an upstream success whose response was disconnected.
+- C3-01 metadata-probe source binding: compile the retry-resistant proxy and
+  object persistence observer together from their immutable public revision.
 
 - Keep the contract's OAuth scope in evidence while omitting DuckDB's
   unsupported `SCOPE` attach option; Polaris applies the principal-role scope

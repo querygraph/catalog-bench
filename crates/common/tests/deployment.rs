@@ -604,7 +604,7 @@ fn minio_helpers_are_built_from_an_immutable_public_source() {
         fs::read_to_string(root.join("docker-compose.yml")).expect("read docker-compose.yml");
     let dockerfile =
         fs::read_to_string(root.join("docker/minio/Dockerfile")).expect("read MinIO Dockerfile");
-    let revision = "573866d48b7291767ba61a27d9a9dbf6981941a2";
+    let revision = "8e04f70f2d509f01a233ea3d54690748a03b7efc";
 
     for required in [
         format!("CATALOG_BENCH_HELPER_SOURCE_REVISION: {revision}"),
