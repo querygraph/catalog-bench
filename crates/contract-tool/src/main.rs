@@ -6,10 +6,11 @@ use anyhow::{bail, Context, Result};
 use catalog_bench_common::contract::{generated_schemas, parse_contract};
 use catalog_bench_contract::{
     check_contention_profile, check_contention_result_bundle, check_engine_result_bundle,
-    check_flink_profile, check_historical_commit_bundle, check_spark_profile, load_bundle,
-    render_matrix, validate_engine_evidence_set, validate_engine_result_review,
+    check_flink_profile, check_historical_commit_bundle, check_publication, check_spark_profile,
+    load_bundle, render_matrix, validate_engine_evidence_set, validate_engine_result_review,
     write_contention_profile, write_contention_result_bundle, write_engine_result_bundle,
-    write_flink_profile, write_historical_commit_bundle, write_spark_profile,
+    write_flink_profile, write_historical_commit_bundle, write_publication, write_spark_profile,
+    PublicationProfile,
 };
 use clap::{Args, Parser, Subcommand};
 
@@ -70,6 +71,11 @@ enum Command {
     EngineImport {
         #[command(subcommand)]
         command: EngineImportCommand,
+    },
+    /// Generate or verify the cross-scenario public result surface.
+    Publication {
+        #[command(subcommand)]
+        command: PublicationCommand,
     },
 }
 
@@ -202,6 +208,22 @@ enum EngineImportCommand {
     Write(EngineReviewFile),
     /// Recompute every byte and reject missing or unexpected output.
     Check(EngineReviewFile),
+}
+
+#[derive(Debug, Subcommand)]
+enum PublicationCommand {
+    /// Generate the bundle index and known-gaps report, then verify all bundles.
+    Write(PublicationFiles),
+    /// Verify generated reports, exact bundles, and the bundle-wide secret scan.
+    Check(PublicationFiles),
+}
+
+#[derive(Debug, Args)]
+struct PublicationFiles {
+    #[arg(long, default_value = ".")]
+    root: PathBuf,
+    #[arg(long, value_parser = ["smoke", "full"], default_value = "smoke")]
+    profile: String,
 }
 
 fn main() -> ExitCode {
@@ -353,6 +375,28 @@ fn run(cli: Cli) -> Result<()> {
                 validate_bundle(&manifest)
             }
         },
+        Command::Publication { command } => match command {
+            PublicationCommand::Write(files) => {
+                let profile = publication_profile(&files.profile)?;
+                write_publication(&files.root, profile)?;
+                println!("wrote and verified cross-scenario publication");
+                Ok(())
+            }
+            PublicationCommand::Check(files) => {
+                let profile = publication_profile(&files.profile)?;
+                check_publication(&files.root, profile)?;
+                println!("valid cross-scenario publication ({})", files.profile);
+                Ok(())
+            }
+        },
+    }
+}
+
+fn publication_profile(value: &str) -> Result<PublicationProfile> {
+    match value {
+        "smoke" => Ok(PublicationProfile::Smoke),
+        "full" => Ok(PublicationProfile::Full),
+        value => bail!("unsupported publication profile `{value}`"),
     }
 }
 

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- C1-09 cross-scenario publication gate: add one-command `smoke` and `full`
+  result checks, discover and validate every checked-in immutable bundle,
+  recursively secret-scan manifests plus all referenced profiles, scenarios,
+  results, raw source evidence, and result evidence, and generate the bundle
+  index and known-gaps report strictly from admitted records. The full profile
+  first recomputes both source-backed historical and production contention
+  bundles. Mutable operation-level transcripts remain outside publication.
+
 - C2-06 private Trino server staging: materialize the closed source-derived
   Trino configuration into a create-new temporary tree with `0700` directories
   and `0600` files, fsync each file before launch, reject non-normal relative

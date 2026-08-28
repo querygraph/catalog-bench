@@ -57,6 +57,7 @@ Contract maintenance and validation use the companion CLI:
 
 ```sh
 cargo run -p catalog-bench-contract --locked -- schemas check
+cargo run -p catalog-bench-contract --locked -- publication check --root . --profile smoke
 cargo run -p catalog-bench-contract --locked -- validate profiles/v1 scenarios/v1 results/v1
 cargo run -p catalog-bench-contract --locked -- bundle validate \
   --manifest results/v1/2026-08-27/manifest.json
@@ -84,6 +85,21 @@ cargo run -p catalog-bench-contract --locked -- engine-import check \
   --root . \
   --review results/source/engine/<run-id>/review.json
 ```
+
+For the complete checked-in publication surface, use one command:
+
+```sh
+./publish-results.sh smoke
+./publish-results.sh full
+```
+
+Both profiles validate every manifest, referenced contract, result, and raw or
+derived evidence artifact; run the bundle-wide structured/literal secret scan;
+and reject drift in the generated [bundle index](results/v1/INDEX.md) and
+[known-gaps report](results/v1/KNOWN-GAPS.md). `full` additionally recomputes
+the historical and production-contention bundles from their hash-bound source
+evidence before those shared gates. Neither profile publishes ignored mutable
+transcripts under `target/`.
 
 `SOURCE_BOUND_V2_ENGINE_PROFILE.json` is deliberately a placeholder. The checked-in
 Spark profile preserves immutable v1 runner bytes; it must not be paired with

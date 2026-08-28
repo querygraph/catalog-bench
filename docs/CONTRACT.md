@@ -431,6 +431,13 @@ cargo run -p catalog-bench-contract --locked -- contention-import check --root .
 cargo run -p catalog-bench-contract --locked -- matrix check \
   --manifest results/v1/2026-08-27/manifest.json \
   --output results/v1/2026-08-27/MATRIX.md
+
+# Validate every published bundle, all referenced raw/derived evidence, the
+# generated cross-scenario index/known-gaps pages, and the bundle secret scan.
+./publish-results.sh smoke
+
+# First recompute every source-backed checked-in bundle, then run the same gate.
+./publish-results.sh full
 ```
 
 `validate` recurses through directories and examines `.json` files. Schema files
@@ -440,6 +447,15 @@ arithmetic, request-rate arithmetic, expected and observed MinIO growth, and
 legacy rank fields before emitting v1 records. `matrix check` first runs full
 bundle validation and ranks only `pass` outcomes; non-pass measurements remain
 visible but unranked.
+
+The cross-scenario publication command discovers immutable manifests only below
+`results/v1/<bundle>/manifest.json`. It validates exact artifact bytes and links,
+scans manifests and every referenced profile, scenario, result, source-evidence,
+and result-evidence file for credential shapes and non-redacted structured
+secret fields, then regenerates `INDEX.md` and `KNOWN-GAPS.md` solely from the
+validated records. It never treats mutable `target/` smoke transcripts as
+published evidence. The `full` profile also invokes each checked-in
+source-specific deterministic importer before this shared gate.
 
 The C110 contention importer deserializes the production transcript through the
 same closed ADTs used by the runner, reconstructs the scenario-derived schedule,

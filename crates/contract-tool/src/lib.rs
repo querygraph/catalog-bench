@@ -2,6 +2,7 @@
 //! `catalog-bench/v1` evidence bundles.
 
 mod bundle;
+mod community_publication;
 mod contention_bundle;
 mod contention_profile;
 mod engine_bundle;
@@ -19,6 +20,7 @@ mod spark_profile;
 use sha2::{Digest as _, Sha256};
 
 pub use bundle::{load_bundle, ValidatedBundle, ValidatedResult, ValidatedScenario};
+pub use community_publication::{check_publication, write_publication, PublicationProfile};
 pub use contention_bundle::{check_contention_result_bundle, write_contention_result_bundle};
 pub use contention_profile::{
     check_contention_profile, render_contention_profile, write_contention_profile,
