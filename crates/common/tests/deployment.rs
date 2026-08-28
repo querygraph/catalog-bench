@@ -810,6 +810,37 @@ fn spark_launcher_runs_all_four_catalogs_in_one_fresh_topology() {
 }
 
 #[test]
+fn flink_launcher_runs_all_four_catalogs_in_one_fresh_topology() {
+    let root = repository_root();
+    let launcher = fs::read_to_string(root.join("docker/run-flink-interoperability.sh"))
+        .expect("read Flink interoperability launcher");
+    for required in [
+        "catalogs=(lakecat polaris gravitino lakekeeper)",
+        "CATALOG_BENCH_FLINK_EVIDENCE_DIR",
+        "COMPOSE_PROFILES=\"lakekeeper,polaris,gravitino,flink\"",
+        "catalog_bench_prepare_fresh_project \"$repository_root\" \"$run_id\"",
+        "build --provenance=false minio lakecat",
+        "\"$script_dir/build-flink-images.sh\"",
+        "flink-candidate-2.1.3-lakecat-65f0a4c3-2026-08-28.json",
+        "flink-2.1.3-lakecat-65f0a4c3-2026-08-28.json",
+        "run --rm flink-engine",
+        "--scenario /contracts/scenarios/v1/engine.iceberg.write-read-evolution.v2.json",
+        "all four stock-Flink workflows passed",
+    ] {
+        assert!(
+            launcher.contains(required),
+            "Flink launcher must contain `{required}`"
+        );
+    }
+    for forbidden in ["spark-engine", "docker run", "cargo run", "--no-deps"] {
+        assert!(
+            !launcher.contains(forbidden),
+            "Flink launcher must not contain `{forbidden}`"
+        );
+    }
+}
+
+#[test]
 fn evidence_launchers_and_shared_library_parse_as_bash() {
     let root = repository_root();
     for relative in [

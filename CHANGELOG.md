@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Add the fresh four-catalog Flink production launcher. It rebuilds and verifies
+  the exact materialized images, creates isolated run-owned state, executes the
+  same v2 workflow sequentially through LakeCat, Polaris, Gravitino, and
+  Lakekeeper, and requires complete exit/transcript classification agreement.
+
 - Materialize the buildable Flink 2.1.3 runtime: bind the exact stock ARM64
   image, Iceberg 1.11.0 JARs, optimized Rust harness, source-bound Java effects
   JAR, current LakeCat image, and every copied artifact byte into a verified
