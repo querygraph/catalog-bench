@@ -9,6 +9,8 @@
 
 - Extend the clean TPC-DS flow with realized-schema hashes, a governed policy
   binding, and exact upstream artifact CAS publication/read-after-write in LakeCat.
+- Publish reviewed `tpcds_0828e` evidence for the exact Ossie artifact,
+  governed model publication, five realized schemas, and zero cleanup residue.
 
 ## Unreleased
 

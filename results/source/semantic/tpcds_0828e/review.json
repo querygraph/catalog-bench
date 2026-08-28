@@ -1,0 +1,17 @@
+{
+  "cleanup": {"containers": 0, "volumes": 0},
+  "iceberg_version": "1.11.0",
+  "lakecat_image_digest": "sha256:5734cc9eb6d262c84e0b66e1276bf606f681e9e53b0fe6cfa196321dfaefb3bc",
+  "lakecat_revision": "d7b9e3bef36134aeeac11eccf2761488d3ace463",
+  "ossie_revision": "1d9ebcea2932d3381c0840cc8304f0850d366509",
+  "source_hashes": {
+    "compose": "sha256:1b13633e921b12714c6026313514048865e748cbba3ba566ca6d60ce2034361d",
+    "fixture_planner": "sha256:d568654ae8793aaccc50c6ccd9fb96682b9911ffe6ebf052d7f2c27114283ee7",
+    "live_fixture": "sha256:21a009848c054e3facfc79a231967dfe24848da7f7eb80cc185f608041fd0f85",
+    "ossie_manifest": "sha256:6d095d82c6144723642fe1130c3b475248b447ae6efa83af6134d55a6901994a",
+    "runner": "sha256:9bf9aec4b9c46b37d212db0494b48391a06ac3f728b8f14a148a8634c765d76f"
+  },
+  "spark_version": "4.1.3",
+  "status": "accepted",
+  "summary_content_sha256": "sha256:ca937144fdf14627a1e2b9b1b4528a77793aae9df9a4dc57a95bab5cd45b9063"
+}
