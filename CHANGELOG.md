@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Add a fresh-state QueryGraph migration harness that uses stock PyIceberg to
+  prove non-empty semantic and data preservation in both directions between
+  LakeCat and Polaris and between LakeCat and Lakekeeper, advancing its
+  source-built LakeCat image to the bounded gzip-registration fix.
+
 - C3-01 deterministic fault substrate: add a benchmark-owned HTTP reverse
   proxy with typed one-shot before-upstream and after-upstream disconnect rules,
   occurrence matching, sanitized hash-only event evidence, strict control input,
